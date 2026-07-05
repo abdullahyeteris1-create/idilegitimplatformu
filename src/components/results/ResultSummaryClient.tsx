@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { getCurrentStudent } from "@/lib/auth/auth";
+import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import {
-  getLatestResultByStudentAndExercise,
+  getExerciseResultsForCurrentUser,
+  getExerciseResultsForCurrentUserWithRemote,
   getResultsByStudent,
 } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
@@ -69,20 +70,31 @@ export function ResultSummaryClient({
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      const currentStudent = getCurrentStudent();
-      setStudent(currentStudent);
+      void (async () => {
+        const currentStudent = getCurrentStudent();
+        const currentUser = getResolvedCurrentUser();
 
-      if (currentStudent) {
-        setStudentResults(getResultsByStudent(currentStudent.id, currentStudent.name));
-        setLatestRelevantResult(
-          getLatestResultByStudentAndExercise(currentStudent.id, resolvedExerciseType, currentStudent.name),
-        );
-      } else {
-        setStudentResults([]);
-        setLatestRelevantResult(null);
-      }
+        setStudent(currentStudent);
 
-      setIsMounted(true);
+        if (currentUser?.role === "student") {
+          const scopedResults = await getExerciseResultsForCurrentUserWithRemote();
+          const nextResults = scopedResults.length > 0 ? scopedResults : getExerciseResultsForCurrentUser();
+          const fallbackResults = currentStudent
+            ? getResultsByStudent(currentStudent.id, currentStudent.name, currentStudent.username)
+            : [];
+          const mergedResults = nextResults.length > 0 ? nextResults : fallbackResults;
+
+          setStudentResults(mergedResults);
+          setLatestRelevantResult(
+            mergedResults.find((result) => result.exerciseType === resolvedExerciseType) ?? null,
+          );
+        } else {
+          setStudentResults([]);
+          setLatestRelevantResult(null);
+        }
+
+        setIsMounted(true);
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);

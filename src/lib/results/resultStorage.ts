@@ -5,6 +5,12 @@ import { supabase } from "@/lib/supabase/client";
 const STORAGE_KEY = "idil-exercise-results";
 const RESULTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_RESULTS_TABLE ?? "exercise_results";
 
+type ResultIdentity = {
+  studentId?: string;
+  studentName?: string;
+  username?: string;
+};
+
 function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
@@ -43,12 +49,48 @@ function writeResults(results: ExerciseResult[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
 }
 
+function normalizeLookup(value: string | undefined): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/İ/g, "i")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 function isUuid(value: string | undefined): boolean {
   if (!value) {
     return false;
   }
 
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function filterResultsByIdentity(results: ExerciseResult[], identity: ResultIdentity): ExerciseResult[] {
+  if (isUuid(identity.studentId)) {
+    return results.filter((result) => result.studentId === identity.studentId);
+  }
+
+  const normalizedUsername = normalizeLookup(identity.username);
+  if (normalizedUsername) {
+    return results.filter((result) => normalizeLookup(result.username) === normalizedUsername);
+  }
+
+  const normalizedStudentName = normalizeLookup(identity.studentName);
+  if (!normalizedStudentName) {
+    return [];
+  }
+
+  return results.filter((result) => normalizeLookup(result.studentName) === normalizedStudentName);
 }
 
 function getResultIdentityDefaults(): { studentId?: string; studentName?: string; username?: string } {
@@ -128,12 +170,27 @@ async function insertResultToSupabase(result: ExerciseResult): Promise<void> {
   console.warn("Exercise result Supabase save failed");
 }
 
-async function fetchResultsFromSupabase(): Promise<ExerciseResult[] | null> {
+async function fetchResultsFromSupabase(identity?: ResultIdentity): Promise<ExerciseResult[] | null> {
   if (!supabase) {
     return null;
   }
 
-  const { data, error } = await supabase.from(RESULTS_TABLE).select("*").order("completed_at", { ascending: false });
+  let query = supabase.from(RESULTS_TABLE).select("*");
+
+  if (identity) {
+    if (isUuid(identity.studentId)) {
+      query = query.eq("student_id", identity.studentId);
+    } else {
+      const username = identity.username?.trim();
+      if (username) {
+        query = query.eq("username", username);
+      } else if (identity.studentName?.trim()) {
+        query = query.eq("student_name", identity.studentName.trim());
+      }
+    }
+  }
+
+  const { data, error } = await query.order("completed_at", { ascending: false });
 
   if (error || !Array.isArray(data)) {
     return null;
@@ -174,6 +231,19 @@ export function getExerciseResults(): ExerciseResult[] {
   return readResults();
 }
 
+export function getExerciseResultsByStudent(studentId: string): ExerciseResult[] {
+  return readResults().filter((result) => result.studentId === studentId);
+}
+
+export function getExerciseResultsByUsername(username: string): ExerciseResult[] {
+  const normalizedUsername = normalizeLookup(username);
+  if (!normalizedUsername) {
+    return [];
+  }
+
+  return readResults().filter((result) => normalizeLookup(result.username) === normalizedUsername);
+}
+
 export async function getExerciseResultsWithRemote(): Promise<ExerciseResult[]> {
   const remoteResults = await fetchResultsFromSupabase();
 
@@ -185,17 +255,46 @@ export async function getExerciseResultsWithRemote(): Promise<ExerciseResult[]> 
   return getExerciseResults();
 }
 
-export function getResultsByStudent(studentId: string, studentName?: string): ExerciseResult[] {
-  const normalizedStudentName = studentName?.trim().toLocaleLowerCase("tr-TR") ?? "";
-  const byStudentId = readResults().filter((result) => result.studentId === studentId);
+export function getExerciseResultsForCurrentUser(): ExerciseResult[] {
+  const currentUser = getCurrentUser();
 
-  if (byStudentId.length > 0 || !normalizedStudentName) {
-    return byStudentId;
+  if (currentUser?.role !== "student") {
+    return getExerciseResults();
   }
 
-  return readResults().filter(
-    (result) => result.studentName?.trim().toLocaleLowerCase("tr-TR") === normalizedStudentName,
-  );
+  return filterResultsByIdentity(readResults(), {
+    studentId: currentUser.studentId,
+    studentName: currentUser.studentName,
+    username: currentUser.username,
+  });
+}
+
+export async function getExerciseResultsForCurrentUserWithRemote(): Promise<ExerciseResult[]> {
+  const currentUser = getCurrentUser();
+
+  if (currentUser?.role !== "student") {
+    return getExerciseResultsWithRemote();
+  }
+
+  const identity: ResultIdentity = {
+    studentId: currentUser.studentId,
+    studentName: currentUser.studentName,
+    username: currentUser.username,
+  };
+
+  const remoteResults = await fetchResultsFromSupabase(identity);
+
+  if (remoteResults && remoteResults.length > 0) {
+    const filteredRemoteResults = filterResultsByIdentity(remoteResults, identity);
+    writeResults(filteredRemoteResults);
+    return filteredRemoteResults;
+  }
+
+  return filterResultsByIdentity(readResults(), identity);
+}
+
+export function getResultsByStudent(studentId: string, studentName?: string, username?: string): ExerciseResult[] {
+  return filterResultsByIdentity(readResults(), { studentId, studentName, username });
 }
 
 export function getResultsByExercise(exerciseType: ExerciseType): ExerciseResult[] {
@@ -211,8 +310,9 @@ export function getLatestResultByStudentAndExercise(
   studentId: string,
   exerciseType: ExerciseType,
   studentName?: string,
+  username?: string,
 ): ExerciseResult | null {
-  const results = getResultsByStudent(studentId, studentName).filter((result) => result.exerciseType === exerciseType);
+  const results = getResultsByStudent(studentId, studentName, username).filter((result) => result.exerciseType === exerciseType);
   return results[0] ?? null;
 }
 

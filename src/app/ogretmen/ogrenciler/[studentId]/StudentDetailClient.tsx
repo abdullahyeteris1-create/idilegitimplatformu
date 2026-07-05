@@ -110,8 +110,16 @@ export function StudentDetailClient() {
     const timeoutId = window.setTimeout(() => {
       const currentStudent = getStudentById(studentId);
       setStudent(currentStudent);
-      setResults(currentStudent ? getResultsByStudent(studentId, currentStudent.name) : getResultsByStudent(studentId));
-      setReadingTests(currentStudent ? getReadingTestsByStudent(studentId, currentStudent.name) : getReadingTestsByStudent(studentId));
+      setResults(
+        currentStudent
+          ? getResultsByStudent(studentId, currentStudent.name, currentStudent.username)
+          : getResultsByStudent(studentId),
+      );
+      setReadingTests(
+        currentStudent
+          ? getReadingTestsByStudent(studentId, currentStudent.name, currentStudent.username)
+          : getReadingTestsByStudent(studentId),
+      );
       setIsMounted(true);
     }, 0);
 

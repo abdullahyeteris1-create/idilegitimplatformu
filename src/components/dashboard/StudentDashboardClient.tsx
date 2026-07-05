@@ -6,8 +6,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { clearCurrentUser, getCurrentStudent } from "@/lib/auth/auth";
-import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
-import { getResultsByStudent } from "@/lib/results/resultStorage";
+import { getReadingTestsForCurrentUser, type ReadingTestResult } from "@/lib/results/readingTestStorage";
+import {
+  getExerciseResultsForCurrentUser,
+  getExerciseResultsForCurrentUserWithRemote,
+} from "@/lib/results/resultStorage";
 import type { ExerciseResult } from "@/lib/results/types";
 import type { Student } from "@/lib/students/types";
 
@@ -45,11 +48,15 @@ export function StudentDashboardClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      const currentStudent = getCurrentStudent();
-      setStudent(currentStudent);
-      setAllResults(currentStudent ? getResultsByStudent(currentStudent.id, currentStudent.name) : []);
-      setReadingTests(currentStudent ? getReadingTestsByStudent(currentStudent.id, currentStudent.name) : []);
-      setIsMounted(true);
+      void (async () => {
+        const currentStudent = getCurrentStudent();
+        setStudent(currentStudent);
+
+        const scopedResults = await getExerciseResultsForCurrentUserWithRemote();
+        setAllResults(scopedResults.length > 0 ? scopedResults : getExerciseResultsForCurrentUser());
+        setReadingTests(getReadingTestsForCurrentUser());
+        setIsMounted(true);
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);

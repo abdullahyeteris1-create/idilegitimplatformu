@@ -311,6 +311,7 @@ export function ReadingComprehensionTestClient() {
     saveReadingTestResult({
       studentId: student?.id ?? "no-student",
       studentName: student?.name ?? "Secilmemis Ogrenci",
+      username: student?.username,
       date: completedAt,
       category: selectedText.category,
       textTitle: selectedText.title,
