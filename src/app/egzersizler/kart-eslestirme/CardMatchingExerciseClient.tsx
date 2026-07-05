@@ -94,7 +94,7 @@ export function CardMatchingExerciseClient() {
   const router = useRouter();
   const timerRef = useRef<number | null>(null);
   const resolveRef = useRef<number | null>(null);
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [startLevel, setStartLevel] = useState(1);
@@ -141,7 +141,7 @@ export function CardMatchingExerciseClient() {
   const resetToReady = useCallback((nextStartLevel = startLevel) => {
     clearTimer();
     clearResolveTimer();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setLevel(nextStartLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -161,7 +161,7 @@ export function CardMatchingExerciseClient() {
   };
 
   const handleStart = () => {
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setLevel(startLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -303,11 +303,11 @@ export function CardMatchingExerciseClient() {
   };
 
   const finishExercise = () => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearTimer();
     clearResolveTimer();
 

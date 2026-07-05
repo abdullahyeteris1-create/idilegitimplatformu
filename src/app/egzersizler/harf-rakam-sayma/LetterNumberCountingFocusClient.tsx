@@ -82,7 +82,7 @@ export function LetterNumberCountingFocusClient() {
   const router = useRouter();
   const timerRef = useRef<number | null>(null);
   const feedbackRef = useRef<number | null>(null);
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
@@ -126,7 +126,7 @@ export function LetterNumberCountingFocusClient() {
   const resetToReady = useCallback((nextStartLevel = startLevel) => {
     clearTimer();
     clearFeedbackTimer();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     startedAtRef.current = null;
     setLevel(nextStartLevel);
     setCorrectCount(0);
@@ -154,7 +154,7 @@ export function LetterNumberCountingFocusClient() {
   }, [clearFeedbackTimer, clearTimer, createRound, level]);
 
   const handleStart = () => {
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     startedAtRef.current = Date.now();
     setCorrectCount(0);
     setWrongCount(0);
@@ -270,11 +270,11 @@ export function LetterNumberCountingFocusClient() {
   };
 
   const finishExercise = () => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearTimer();
     clearFeedbackTimer();
 

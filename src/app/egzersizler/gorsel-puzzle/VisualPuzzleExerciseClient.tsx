@@ -100,7 +100,7 @@ export function VisualPuzzleExerciseClient() {
   const router = useRouter();
   const timerRef = useRef<number | null>(null);
   const feedbackRef = useRef<number | null>(null);
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [startLevel, setStartLevel] = useState(1);
@@ -165,7 +165,7 @@ export function VisualPuzzleExerciseClient() {
   const resetToReady = useCallback((nextStartLevel = startLevel, imageIndex = currentImageIndex) => {
     clearTimer();
     clearFeedbackTimer();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setLevel(nextStartLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -189,7 +189,7 @@ export function VisualPuzzleExerciseClient() {
   };
 
   const handleStart = () => {
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setLevel(startLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -351,11 +351,11 @@ export function VisualPuzzleExerciseClient() {
   };
 
   const finishExercise = () => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearTimer();
     clearFeedbackTimer();
 

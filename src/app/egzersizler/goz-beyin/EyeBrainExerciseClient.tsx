@@ -44,7 +44,7 @@ export function EyeBrainExerciseClient() {
   const router = useRouter();
   const elapsedTimerRef = useRef<number | null>(null);
   const symbolTimerRef = useRef<number | null>(null);
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
 
   const [phase, setPhase] = useState<ExercisePhase>("intro");
   const [speedMs, setSpeedMs] = useState<SpeedMs>(DEFAULT_SPEED);
@@ -123,7 +123,7 @@ export function EyeBrainExerciseClient() {
 
   function prepareReady(): void {
     clearTimers();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setElapsedSeconds(0);
     setSessionSymbols([]);
     setPlacements([]);
@@ -132,7 +132,7 @@ export function EyeBrainExerciseClient() {
 
   function startExercise(): void {
     clearTimers();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     const nextSymbols = createSessionSymbols(symbolCount);
 
     setElapsedSeconds(0);
@@ -151,7 +151,7 @@ export function EyeBrainExerciseClient() {
 
   function restartExercise(): void {
     clearTimers();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setElapsedSeconds(0);
     setSessionSymbols([]);
     setPlacements([]);
@@ -159,11 +159,11 @@ export function EyeBrainExerciseClient() {
   }
 
   function finishExercise(): void {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearTimers();
     setPhase("completed");
 

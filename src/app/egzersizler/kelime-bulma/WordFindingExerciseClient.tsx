@@ -62,7 +62,7 @@ function getTextIndex(seed: number): number {
 
 export function WordFindingExerciseClient() {
   const router = useRouter();
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
   const tickRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
@@ -101,7 +101,7 @@ export function WordFindingExerciseClient() {
       tickRef.current = null;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = false;
     setTargetIndex(0);
     setFoundInRound(0);
     setCompletedRounds(0);
@@ -116,11 +116,11 @@ export function WordFindingExerciseClient() {
   }, [durationMinutes]);
 
   const finalizeExercise = useCallback(() => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     if (tickRef.current !== null) {
       window.clearInterval(tickRef.current);
       tickRef.current = null;
@@ -176,13 +176,13 @@ export function WordFindingExerciseClient() {
   ]);
 
   const handleStartIntro = () => {
-    saveLockRef.current = true;
+    hasSavedResultRef.current = false;
     setPhase("ready");
     setRemainingSeconds(durationMinutes * 60);
   };
 
   const handleBeginPlay = () => {
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     setTargetIndex(0);
     setFoundInRound(0);
     setCompletedRounds(0);

@@ -74,7 +74,7 @@ function getAnswerLabel(group: TwoSideFocusGroup | null): string {
 
 export function TwoSideFocusExerciseClient() {
   const router = useRouter();
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
   const answeredForCurrentGroupRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const groupTimerRef = useRef<number | null>(null);
@@ -190,11 +190,11 @@ export function TwoSideFocusExerciseClient() {
   );
 
   const finishExercise = useCallback(() => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearGroupTimer();
 
     const startedAt = startedAtRef.current;
@@ -261,7 +261,7 @@ export function TwoSideFocusExerciseClient() {
 
   const handleStart = () => {
     clearGroupTimer();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     latestLevelRef.current = level;
     startedAtRef.current = null;
     setCurrentGroup(null);
@@ -283,7 +283,7 @@ export function TwoSideFocusExerciseClient() {
 
   const handleBeginPlay = () => {
     clearGroupTimer();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     latestLevelRef.current = level;
     startedAtRef.current = Date.now();
     setCurrentCorrect(0);

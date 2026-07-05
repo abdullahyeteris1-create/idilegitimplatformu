@@ -74,7 +74,7 @@ export function TachistoscopeExerciseClient() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const revealTimerRef = useRef<number | null>(null);
   const autoAdvanceTimerRef = useRef<number | null>(null);
-  const finishLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
 
   const [phase, setPhase] = useState<ExercisePhase>("start");
   const [responsePhase, setResponsePhase] = useState<ResponsePhase>("show");
@@ -194,7 +194,7 @@ export function TachistoscopeExerciseClient() {
   };
 
   const handleStart = () => {
-    finishLockRef.current = false;
+    hasSavedResultRef.current = false;
     setCurrentCorrect(0);
     setCurrentWrong(0);
     setCurrentLevelCorrect(0);
@@ -213,17 +213,18 @@ export function TachistoscopeExerciseClient() {
   };
 
   const handleBeginPlay = () => {
+    hasSavedResultRef.current = false;
     setPhase("play");
     setSessionStartedAt(Date.now());
     startNextRound({ level, speedMs, contentType });
   };
 
   const finishExercise = () => {
-    if (finishLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    finishLockRef.current = true;
+    hasSavedResultRef.current = true;
 
     if (revealTimerRef.current) {
       window.clearTimeout(revealTimerRef.current);

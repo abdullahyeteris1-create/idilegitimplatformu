@@ -66,7 +66,7 @@ export function EyeMuscleExerciseClient() {
   const timerRef = useRef<number | null>(null);
   const pointRef = useRef<number | null>(null);
   const symbolRef = useRef<number | null>(null);
-  const saveLockRef = useRef(true);
+  const hasSavedResultRef = useRef(false);
   const maxReachedLevelRef = useRef<EyeMuscleLevel>(1);
   const automaticLevelChangesRef = useRef(0);
 
@@ -175,7 +175,7 @@ export function EyeMuscleExerciseClient() {
 
   const resetToReady = useCallback(() => {
     clearTimers();
-    saveLockRef.current = true;
+    hasSavedResultRef.current = false;
     setElapsedSeconds(0);
     setCurrentPointIndex(0);
     setBlinkKey((prev) => prev + 1);
@@ -190,11 +190,11 @@ export function EyeMuscleExerciseClient() {
   }, [clearTimers, selectedLevel, selectedSymbolId]);
 
   const finalizeExercise = useCallback(() => {
-    if (saveLockRef.current) {
+    if (hasSavedResultRef.current) {
       return;
     }
 
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
     clearTimers();
 
     const completedSeconds = Math.max(0, elapsedSeconds);
@@ -251,7 +251,7 @@ export function EyeMuscleExerciseClient() {
   };
 
   const handleBeginPlay = () => {
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     clearTimers();
     setElapsedSeconds(0);
     setCurrentPointIndex(0);
