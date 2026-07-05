@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-label="Visual puzzle exercise">
+  <rect width="240" height="160" rx="28" fill="#fff7ed"/>
+  <rect x="36" y="24" width="168" height="112" rx="18" fill="#ffffff" stroke="#fed7aa" stroke-width="6"/>
+  <path d="M42 80h156" stroke="#fed7aa" stroke-width="5"/>
+  <path d="M120 30v100" stroke="#fed7aa" stroke-width="5"/>
+  <circle cx="78" cy="56" r="22" fill="#facc15"/>
+  <path d="M120 30h78v50h-78Z" fill="#bae6fd"/>
+  <path d="M136 72l20-24 14 16 10-10 18 18H136Z" fill="#22c55e"/>
+  <path d="M42 82h78v48H42Z" fill="#fecaca"/>
+  <path d="M57 118c18-28 38-28 55 0H57Z" fill="#ef4444"/>
+  <path d="M120 82h78v48h-78Z" fill="#ede9fe"/>
+  <path d="M160 92l8 17 19 2-14 13 4 18-17-9-17 9 4-18-14-13 19-2 8-17Z" fill="#8b5cf6"/>
+  <circle cx="120" cy="80" r="13" fill="#ffffff" stroke="#f97316" stroke-width="6"/>
+  <path d="M108 80h24" stroke="#f97316" stroke-width="5" stroke-linecap="round"/>
+</svg>

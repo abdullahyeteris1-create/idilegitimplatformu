@@ -9,14 +9,14 @@ type PanelCardProps = {
 
 export function PanelCard({ title, subtitle, children, className = "" }: PanelCardProps) {
   return (
-    <section className={`idil-card relative overflow-hidden p-5 md:p-7 ${className}`}>
+    <section className={`idil-card idil-hover-surface relative overflow-hidden p-4 md:p-[18px] ${className}`}>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-red-400 to-red-500"
+        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-red-500"
       />
-      {title ? <h2 className="text-xl font-bold md:text-2xl">{title}</h2> : null}
+      {title ? <h2 className="text-[18px] font-semibold tracking-tight text-slate-950 md:text-[20px]">{title}</h2> : null}
       {subtitle ? <p className="mt-1 text-sm text-[var(--muted)] md:text-base">{subtitle}</p> : null}
-      <div className={title || subtitle ? "mt-5" : ""}>{children}</div>
+      <div className={title || subtitle ? "mt-3" : ""}>{children}</div>
     </section>
   );
 }

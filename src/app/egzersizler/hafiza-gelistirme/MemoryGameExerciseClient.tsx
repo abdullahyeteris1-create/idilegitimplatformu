@@ -66,7 +66,7 @@ function getBoxSizeClass(cols: number): string {
 
 export function MemoryGameExerciseClient() {
   const router = useRouter();
-  const saveLockRef = useRef(false);
+  const hasSavedResultRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const prepareTimerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
@@ -156,12 +156,12 @@ export function MemoryGameExerciseClient() {
   }, []);
 
   const finishExercise = useCallback(() => {
-    if (!session || saveLockRef.current) {
+    if (!session || hasSavedResultRef.current) {
       return;
     }
 
     clearRoundTimers();
-    saveLockRef.current = true;
+    hasSavedResultRef.current = true;
 
     const startedAt = startedAtRef.current;
     const durationSeconds = Math.max(
@@ -170,6 +170,13 @@ export function MemoryGameExerciseClient() {
     );
 
     const student = getCurrentStudent();
+
+    console.log("[Exercise Complete] saving result", {
+      exerciseType: "memory-game",
+      exerciseTitle: "Hafıza Geliştirme",
+      score,
+      successRate,
+    });
 
     saveExerciseResult({
       studentId: student?.id ?? "no-student",
@@ -198,7 +205,7 @@ export function MemoryGameExerciseClient() {
 
   const handleStart = () => {
     clearRoundTimers();
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     startedAtRef.current = null;
     setSession(null);
     setCurrentRound(1);
@@ -222,7 +229,7 @@ export function MemoryGameExerciseClient() {
       totalRounds,
     });
 
-    saveLockRef.current = false;
+    hasSavedResultRef.current = false;
     startedAtRef.current = Date.now();
 
     setSession(nextSession);

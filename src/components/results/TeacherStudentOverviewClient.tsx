@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getExerciseResults } from "@/lib/results/resultStorage";
-import { activateStudent, deactivateStudent, getStudents } from "@/lib/students/studentStorage";
+import { getExerciseResults, getExerciseResultsWithRemote } from "@/lib/results/resultStorage";
+import { activateStudent, deactivateStudent, getStudents, getStudentsWithRemote } from "@/lib/students/studentStorage";
 import type { StudentStatus } from "@/lib/students/types";
 
 type FilterType = "all" | StudentStatus;
@@ -16,9 +16,16 @@ export function TeacherStudentOverviewClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setStudents(getStudents());
-      setAllResults(getExerciseResults());
-      setIsMounted(true);
+      void (async () => {
+        const [nextStudents, nextResults] = await Promise.all([
+          getStudentsWithRemote(),
+          getExerciseResultsWithRemote(),
+        ]);
+
+        setStudents(nextStudents);
+        setAllResults(nextResults);
+        setIsMounted(true);
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -29,7 +36,13 @@ export function TeacherStudentOverviewClient() {
       filter === "all" ? students : students.filter((student) => student.status === filter);
 
     return filteredStudents.map((student) => {
-      const studentResults = allResults.filter((result) => result.studentId === student.id);
+      const byStudentId = allResults.filter((result) => result.studentId === student.id);
+      const studentResults =
+        byStudentId.length > 0
+          ? byStudentId
+          : allResults.filter(
+              (result) => result.studentName?.toLocaleLowerCase("tr-TR") === student.name.toLocaleLowerCase("tr-TR"),
+            );
       const lastResult = studentResults[0] ?? null;
 
       return {

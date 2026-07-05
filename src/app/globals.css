@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f8f8;
-  --foreground: #1f2937;
-  --muted: #6b7280;
+  --background: #f8fafc;
+  --foreground: #172033;
+  --muted: #64748b;
   --surface: #ffffff;
   --surface-soft: #fff1f2;
   --brand: #dc2626;
   --brand-strong: #b91c1c;
+  --brand-deep: #7f1d1d;
+  --accent-blue: #2563eb;
+  --accent-purple: #7c3aed;
+  --accent-green: #16a34a;
+  --accent-orange: #ea580c;
+  --border-soft: #fee2e2;
   --ok: #15803d;
   --bad: #991b1b;
 }
@@ -16,11 +22,14 @@ html,
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100vh;
-  background-color: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(254, 226, 226, 0.52) 0, rgba(254, 226, 226, 0) 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   color: var(--foreground);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -28,22 +37,76 @@ body {
 }
 
 .idil-shell {
-  width: min(100%, 1120px);
+  width: min(100%, 1360px);
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 @media (min-width: 768px) {
   .idil-shell {
-    padding: 1.25rem;
+    width: min(calc(100% - 32px), 1360px);
+    padding: 1rem 0;
   }
 }
 
 .idil-card {
-  border-radius: 1.5rem;
-  border: 1px solid #fecaca;
-  background-color: var(--surface);
-  box-shadow: 0 10px 28px rgba(127, 29, 29, 0.1);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(6px);
+}
+
+.idil-hover-surface {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.idil-hover-surface:hover {
+  border-color: rgba(248, 113, 113, 0.38);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+input,
+select,
+textarea {
+  min-height: 40px;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  border-radius: 0.875rem;
+  border-color: #fee2e2;
+  background-color: rgba(255, 255, 255, 0.96);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22);
+  outline: none;
+}
+
+button,
+a,
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(239, 68, 68, 0.32);
+  outline-offset: 3px;
 }
 
 @keyframes idil-fade-in {
@@ -109,6 +172,26 @@ body {
   50% {
     transform: scale(1.02);
     box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.1);
+  }
+}
+
+@keyframes idil-glow-success {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(34, 197, 94, 0.1);
+  }
+}
+
+@keyframes idil-blink-soft {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -188,6 +271,17 @@ body {
   animation: idil-pulse-soft 780ms ease-in-out both;
 }
 
+.fx-hover-lift {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease;
+}
+
+.fx-hover-lift:hover {
+  transform: translateY(-1px);
+}
+
 .eye-symbol-pulse {
   animation: eye-symbol-blink 260ms ease-in-out both;
   will-change: opacity, transform, filter;
@@ -201,21 +295,44 @@ body {
   animation: idil-glow-green 680ms ease-in-out both;
 }
 
+.fx-glow-success {
+  animation: idil-glow-success 760ms ease-in-out both;
+}
+
+.fx-blink-soft {
+  animation: idil-blink-soft 860ms ease-in-out both;
+}
+
 .fx-flow-through {
   animation: idil-flow-through 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .glass-control-bar {
-  border: 1px solid rgba(252, 165, 165, 0.55);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 -8px 30px rgba(185, 28, 28, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(8px);
 }
 
 .compact-stat-chip {
   border-radius: 9999px;
-  border: 1px solid #fecaca;
-  padding: 0.34rem 0.62rem;
+  border: 1px solid rgba(254, 202, 202, 0.9);
+  padding: 0.34rem 0.64rem;
   font-size: 0.72rem;
   line-height: 1rem;
+  box-shadow: none;
+}
+
+.idil-badge {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(254, 202, 202, 0.85);
+  background: rgba(255, 241, 242, 0.92);
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #b91c1c;
 }

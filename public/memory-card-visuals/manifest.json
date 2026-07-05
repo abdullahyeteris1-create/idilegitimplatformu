@@ -1,0 +1,14 @@
+[
+  { "id": "apple", "title": "Elma", "src": "/memory-card-visuals/apple.svg" },
+  { "id": "banana", "title": "Muz", "src": "/memory-card-visuals/banana.svg" },
+  { "id": "strawberry", "title": "Cilek", "src": "/memory-card-visuals/strawberry.svg" },
+  { "id": "watermelon", "title": "Karpuz", "src": "/memory-card-visuals/watermelon.svg" },
+  { "id": "car", "title": "Araba", "src": "/memory-card-visuals/car.svg" },
+  { "id": "rocket", "title": "Roket", "src": "/memory-card-visuals/rocket.svg" },
+  { "id": "train", "title": "Tren", "src": "/memory-card-visuals/train.svg" },
+  { "id": "plane", "title": "Ucak", "src": "/memory-card-visuals/plane.svg" },
+  { "id": "cat", "title": "Kedi", "src": "/memory-card-visuals/cat.svg" },
+  { "id": "dog", "title": "Kopek", "src": "/memory-card-visuals/dog.svg" },
+  { "id": "sun", "title": "Gunes", "src": "/memory-card-visuals/sun.svg" },
+  { "id": "star", "title": "Yildiz", "src": "/memory-card-visuals/star.svg" }
+]

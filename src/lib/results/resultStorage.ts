@@ -1,6 +1,9 @@
 import type { ExerciseResult, ExerciseResultInput, ExerciseType } from "@/lib/results/types";
+import { getCurrentUser } from "@/lib/auth/auth";
+import { supabase } from "@/lib/supabase/client";
 
 const STORAGE_KEY = "idil-exercise-results";
+const RESULTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_RESULTS_TABLE ?? "exercise_results";
 
 function hasWindow(): boolean {
   return typeof window !== "undefined";
@@ -40,15 +43,129 @@ function writeResults(results: ExerciseResult[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
 }
 
+function isUuid(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function getResultIdentityDefaults(): { studentId?: string; studentName?: string; username?: string } {
+  const currentUser = getCurrentUser();
+
+  if (currentUser?.role !== "student") {
+    return {};
+  }
+
+  return {
+    studentId: currentUser.studentId,
+    studentName: currentUser.studentName,
+    username: currentUser.username,
+  };
+}
+
+function mapResultToSupabaseRow(result: ExerciseResult): Record<string, unknown> {
+  const completedAt = result.date;
+  const safeStudentId = isUuid(result.studentId) ? result.studentId : null;
+
+  return {
+    student_id: safeStudentId,
+    student_name: result.studentName,
+    username: result.username ?? null,
+    exercise_type: result.exerciseType,
+    exercise_title: result.exerciseTitle,
+    correct_count: result.correctCount,
+    wrong_count: result.wrongCount,
+    score: result.score,
+    success_rate: result.successRate,
+    details: result.details ?? null,
+    completed_at: completedAt,
+  };
+}
+
+function mapSupabaseRowToResult(row: Record<string, unknown>): ExerciseResult {
+  return {
+    id: String(row.id ?? generateId()),
+    studentId: String(row.student_id ?? row.studentId ?? "no-student"),
+    studentName: String(row.student_name ?? row.studentName ?? "Bilinmeyen Ogrenci"),
+    username: typeof row.username === "string" ? row.username : undefined,
+    exerciseType: String(row.exercise_type ?? row.exerciseType ?? "tachistoscope") as ExerciseType,
+    exerciseTitle: String(row.exercise_title ?? row.exerciseTitle ?? "Egzersiz"),
+    date: String(row.completed_at ?? row.date ?? new Date().toISOString()),
+    durationSeconds: Number(row.duration_seconds ?? row.durationSeconds ?? 0),
+    correctCount: Number(row.correct_count ?? row.correctCount ?? 0),
+    wrongCount: Number(row.wrong_count ?? row.wrongCount ?? 0),
+    score: Number(row.score ?? 0),
+    successRate: Number(row.success_rate ?? row.successRate ?? 0),
+    details: typeof row.details === "object" && row.details !== null ? (row.details as Record<string, unknown>) : undefined,
+  };
+}
+
+async function insertResultToSupabase(result: ExerciseResult): Promise<void> {
+  const payload = mapResultToSupabaseRow(result);
+
+  console.log("Supabase client exists", Boolean(supabase));
+  console.log("Supabase insert payload", payload);
+
+  if (!supabase) {
+    return;
+  }
+
+  const { data, error } = await supabase.from(RESULTS_TABLE).insert(payload);
+
+  if (!error) {
+    console.log("Exercise result saved to Supabase", data);
+    return;
+  }
+
+  console.error("Supabase exercise_results insert failed", {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
+  console.warn("Exercise result Supabase save failed");
+}
+
+async function fetchResultsFromSupabase(): Promise<ExerciseResult[] | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase.from(RESULTS_TABLE).select("*").order("completed_at", { ascending: false });
+
+  if (error || !Array.isArray(data)) {
+    return null;
+  }
+
+  return data.map((row) => mapSupabaseRowToResult(row as Record<string, unknown>));
+}
+
 export function saveExerciseResult(result: ExerciseResultInput): ExerciseResult {
+  console.log("saveExerciseResult called", result);
+
+  const identityDefaults = getResultIdentityDefaults();
   const nextResult: ExerciseResult = {
     ...result,
+    studentId: identityDefaults.studentId ?? result.studentId,
+    studentName: identityDefaults.studentName ?? result.studentName,
+    username: identityDefaults.username ?? result.username,
     id: result.id ?? generateId(),
     date: result.date ?? new Date().toISOString(),
   };
 
+  console.log("[Exercise Complete] saving result", {
+    exerciseType: nextResult.exerciseType,
+    exerciseTitle: nextResult.exerciseTitle,
+    score: nextResult.score,
+    successRate: nextResult.successRate,
+  });
+
   const current = readResults();
   writeResults([nextResult, ...current]);
+  console.log("Exercise result saved locally");
+  void insertResultToSupabase(nextResult);
 
   return nextResult;
 }
@@ -57,8 +174,28 @@ export function getExerciseResults(): ExerciseResult[] {
   return readResults();
 }
 
-export function getResultsByStudent(studentId: string): ExerciseResult[] {
-  return readResults().filter((result) => result.studentId === studentId);
+export async function getExerciseResultsWithRemote(): Promise<ExerciseResult[]> {
+  const remoteResults = await fetchResultsFromSupabase();
+
+  if (remoteResults && remoteResults.length > 0) {
+    writeResults(remoteResults);
+    return remoteResults;
+  }
+
+  return getExerciseResults();
+}
+
+export function getResultsByStudent(studentId: string, studentName?: string): ExerciseResult[] {
+  const normalizedStudentName = studentName?.trim().toLocaleLowerCase("tr-TR") ?? "";
+  const byStudentId = readResults().filter((result) => result.studentId === studentId);
+
+  if (byStudentId.length > 0 || !normalizedStudentName) {
+    return byStudentId;
+  }
+
+  return readResults().filter(
+    (result) => result.studentName?.trim().toLocaleLowerCase("tr-TR") === normalizedStudentName,
+  );
 }
 
 export function getResultsByExercise(exerciseType: ExerciseType): ExerciseResult[] {
@@ -73,8 +210,9 @@ export function getLatestResultByExercise(exerciseType: ExerciseType): ExerciseR
 export function getLatestResultByStudentAndExercise(
   studentId: string,
   exerciseType: ExerciseType,
+  studentName?: string,
 ): ExerciseResult | null {
-  const results = getResultsByStudent(studentId).filter((result) => result.exerciseType === exerciseType);
+  const results = getResultsByStudent(studentId, studentName).filter((result) => result.exerciseType === exerciseType);
   return results[0] ?? null;
 }
 

@@ -4,83 +4,92 @@ import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { TeacherRecentResultsClient } from "@/components/results/TeacherRecentResultsClient";
 import { TeacherStudentOverviewClient } from "@/components/results/TeacherStudentOverviewClient";
 import Link from "next/link";
+import { TeacherOnly } from "@/components/auth/TeacherOnly";
 
 const draftCards = [
   {
     title: "Sinif Yonetimi",
-    text: "Ogrenci ekleme, gruplama ve sinif bazli atama islemleri icin taslak alan.",
+    text: "Ogrenci gruplari ve atamalar.",
+    tone: "from-red-500 to-rose-600",
   },
   {
     title: "Raporlama",
-    text: "Dogru oranlari, sure trendleri ve egzersiz bazli gelisim raporlari burada olacak.",
+    text: "Kisa gelisim ozeti ve trendler.",
+    tone: "from-indigo-500 to-sky-600",
   },
   {
     title: "Egzersiz Atama",
-    text: "Takistoskop ve gelecek egzersizleri ogrencilere toplu veya bireysel atama akisi.",
+    text: "Egzersizleri ogrencilere ata.",
+    tone: "from-emerald-500 to-teal-600",
   },
 ];
 
 export default function TeacherPage() {
   return (
     <AppShell
-      title="Ogretmen Paneli (Taslak)"
-      subtitle="Bu ekran, gelecekteki ogretmen yetkileri ve raporlama altyapisina temel olur."
+      title="Ogretmen Paneli"
+      subtitle="Ogrenci yonetimi, sonuclar ve icerik alani."
       navItems={TEACHER_NAV_ITEMS}
     >
-      <PanelCard title="Panel Durumu" subtitle="Ilk asama taslak gorunumu">
-        <div className="grid gap-3 md:grid-cols-3">
-          {draftCards.map((card) => (
-            <article key={card.title} className="rounded-2xl bg-slate-50 p-4">
-              <h3 className="text-base font-bold">{card.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{card.text}</p>
-            </article>
-          ))}
-        </div>
-      </PanelCard>
-
-      <PanelCard
-        title="Icerik Yonetimi"
-        subtitle="Metin, soru, kelime, simge ve egzersiz ayarlari icin yonetim merkezi"
-      >
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <p className="text-sm leading-6 text-[var(--muted)]">
-              Platformdaki egzersiz icerikleri ileride buradan yonetilecek. Ilk asamada Metin Kutuphanesi aktif olarak hazirlandi.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Metin Kutuphanesi", "Soru Kutuphanesi", "Kelime Havuzu", "Egzersiz Ayarlari"].map((item) => (
-                <span key={item} className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-                  {item}
+      <TeacherOnly>
+        <PanelCard title="Panel Durumu" subtitle="Kisa yonetim ozeti">
+          <div className="grid gap-3 md:grid-cols-3">
+            {draftCards.map((card, index) => (
+              <article key={card.title} className="rounded-2xl border border-slate-200 bg-white p-4 md:p-[18px]">
+                <span className={`inline-flex h-8 min-w-8 items-center justify-center rounded-xl bg-gradient-to-br ${card.tone} text-[11px] font-semibold text-white`}>
+                  {index + 1}
                 </span>
-              ))}
-            </div>
+                <h3 className="mt-2.5 text-[18px] font-semibold text-slate-950">{card.title}</h3>
+                <p className="mt-1 text-sm leading-5 text-[var(--muted)]">{card.text}</p>
+              </article>
+            ))}
           </div>
-          <Link
-            href="/ogretmen/icerik-yonetimi"
-            className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-3 text-sm font-black text-white shadow-md shadow-red-200 transition hover:bg-[var(--brand-strong)]"
+        </PanelCard>
+
+        <PanelCard
+          title="Icerik Yonetimi"
+          subtitle="Metin, soru, kelime ve gorsel ayarlari."
+        >
+          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="text-sm leading-5 text-[var(--muted)]">
+                Icerik yonetimini buradan ac ve gerekli modulleri duzenle.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {["Metin Kutuphanesi", "Soru Kutuphanesi", "Kelime Havuzu", "Egzersiz Ayarlari"].map((item) => (
+                  <span key={item} className="idil-badge">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Link
+              href="/ogretmen/icerik-yonetimi"
+              className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#dc2626_48%,#991b1b_100%)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:brightness-110"
+            >
+              Icerik Yonetimini Ac
+            </Link>
+          </div>
+        </PanelCard>
+
+        <div id="ogrenciler">
+          <PanelCard
+            title="Ogrenci Yonetimi"
+            subtitle="Ogrenci listesi ve duzenleme islemleri"
           >
-            Icerik Yonetimini Ac
-          </Link>
+            <TeacherStudentOverviewClient />
+          </PanelCard>
         </div>
-      </PanelCard>
 
-      <div id="ogrenciler">
-        <PanelCard
-          title="Ogrenci Yonetimi"
-          subtitle="Ogrenci listesi, duzenleme ve yeni ogrenci olusturma islemleri"
-        >
-          <TeacherStudentOverviewClient />
-        </PanelCard>
-      </div>
-
-      <div id="sonuclar">
-        <PanelCard
-          title="Son Egzersiz Sonuclari"
-          subtitle="Tum ogrencilerden gelen son sonuclar. Veri kaynagi su an localStorage/mock katmanidir."
-        >
-          <TeacherRecentResultsClient />
-        </PanelCard>
-      </div>
+        <div id="sonuclar">
+          <PanelCard
+            title="Son Egzersiz Sonuclari"
+            subtitle="Son egzersiz ozetleri"
+          >
+            <TeacherRecentResultsClient />
+          </PanelCard>
+        </div>
+      </TeacherOnly>
     </AppShell>
   );
 }

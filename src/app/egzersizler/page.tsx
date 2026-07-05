@@ -2,10 +2,9 @@ import { AppShell } from "@/components/layout/AppShell";
 import { ExercisesCenterClient } from "./ExercisesCenterClient";
 
 const EXERCISES_NAV_ITEMS = [
-  { href: "/ogrenci", label: "Ogrenci" },
-  { href: "/ogretmen", label: "Ogretmen" },
+  { href: "/", label: "Ana Sayfa" },
   { href: "/egzersizler", label: "Egzersizler" },
-  { href: "/sonuc", label: "Sonuc" },
+  { href: "/sonuc", label: "Sonuclarim" },
 ];
 
 export default function ExercisesPage() {

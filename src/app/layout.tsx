@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Idil Hizli Okuma",
-  description: "Ogrenci girisli online hizli okuma egzersiz platformu",
+  description: "Ogrenci ve ogretmenler icin hizli okuma egzersiz platformu",
 };
 
 export default function RootLayout({

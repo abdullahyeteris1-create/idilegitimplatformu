@@ -7,6 +7,7 @@ import {
   generateStudentPassword,
   generateUsernameFromName,
   getStudentById,
+  isStudentUsernameAvailable,
   updateStudent,
 } from "@/lib/students/studentStorage";
 import type { EducationStatus, StudentStatus } from "@/lib/students/types";
@@ -37,6 +38,11 @@ export function EditStudentFormClient() {
       return;
     }
 
+    if (!isStudentUsernameAvailable(username, studentId)) {
+      setError("Bu kullanici adi baska bir ogrenci tarafindan kullaniliyor.");
+      return;
+    }
+
     const updated = updateStudent(studentId, {
       name,
       username,
@@ -52,7 +58,7 @@ export function EditStudentFormClient() {
     });
 
     if (!updated) {
-      setError("Ogrenci bulunamadi.");
+      setError("Ogrenci guncellenemedi. Kullanici adi veya kayit kontrol et.");
       return;
     }
 

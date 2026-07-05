@@ -1,6 +1,22 @@
 import type { Student } from "@/lib/students/types";
 
+export const DEMO_STUDENT: Student = {
+  id: "demo-student",
+  name: "Demo Öğrenci",
+  username: "ogrenci",
+  password: "1234",
+  className: "Demo",
+  classLevel: "Demo",
+  parentName: "",
+  phone: "",
+  parentPhone: "",
+  status: "active",
+  isActive: true,
+  createdAt: "2026-07-05T00:00:00.000Z",
+};
+
 export const MOCK_STUDENTS: Student[] = [
+  DEMO_STUDENT,
   {
     id: "std-ceren-bora",
     name: "Ceren Bora",

@@ -31,6 +31,9 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
   "eye-muscle": "Goz Kaslarini Gelistirme Sonuclari",
   "reading-comprehension": "Anlama Testi Sonuclari",
   "letter-number-counting-focus": "Harf / Rakam Sayma Odak Sonuclari",
+  "card-matching": "Kart Eslestirme Sonuclari",
+  "visual-puzzle": "Gorsel Puzzle Sonuclari",
+  "eye-brain": "Göz Beyin Çalışması Sonuçları",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
@@ -45,6 +48,9 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "eye-muscle": "/egzersizler/goz-kaslari",
   "reading-comprehension": "/egzersizler/anlama-testi",
   "letter-number-counting-focus": "/egzersizler/harf-rakam-sayma",
+  "card-matching": "/egzersizler/kart-eslestirme",
+  "visual-puzzle": "/egzersizler/gorsel-puzzle",
+  "eye-brain": "/egzersizler/goz-beyin",
 };
 
 export function ResultSummaryClient({
@@ -67,9 +73,9 @@ export function ResultSummaryClient({
       setStudent(currentStudent);
 
       if (currentStudent) {
-        setStudentResults(getResultsByStudent(currentStudent.id));
+        setStudentResults(getResultsByStudent(currentStudent.id, currentStudent.name));
         setLatestRelevantResult(
-          getLatestResultByStudentAndExercise(currentStudent.id, resolvedExerciseType),
+          getLatestResultByStudentAndExercise(currentStudent.id, resolvedExerciseType, currentStudent.name),
         );
       } else {
         setStudentResults([]);
@@ -120,6 +126,11 @@ export function ResultSummaryClient({
     return studentResults.filter((result) => result.exerciseType === resolvedExerciseType);
   }, [resolvedExerciseType, studentResults]);
 
+  const eyeBrainDetails =
+    resolvedExerciseType === "eye-brain" && latestRelevantResult?.details && typeof latestRelevantResult.details === "object"
+      ? (latestRelevantResult.details as Record<string, unknown>)
+      : null;
+
   const stats = [
     { label: "Dogru", value: summary.correct, color: "text-[var(--ok)]" },
     { label: "Yanlis", value: summary.wrong, color: "text-[var(--bad)]" },
@@ -162,12 +173,40 @@ export function ResultSummaryClient({
           Yeniden Baslat
         </Link>
         <Link
-          href="/ogrenci"
+          href={student ? "/ogrenci" : "/"}
           className="w-full min-h-[56px] rounded-2xl border border-red-200 bg-white px-4 py-4 text-center text-base font-bold text-red-800 transition hover:bg-red-50"
         >
           Ogrenci Paneline Don
         </Link>
       </div>
+
+      {resolvedExerciseType === "eye-brain" ? (
+        <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4">
+          <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-red-700">Calisma Ozeti</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article className="rounded-xl border border-white bg-white p-3">
+              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Gecen Sure</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">{formatSeconds(summary.score)}</p>
+            </article>
+            <article className="rounded-xl border border-white bg-white p-3">
+              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Hiz</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {typeof eyeBrainDetails?.speedMs === "number" ? `${eyeBrainDetails.speedMs} ms` : "-"}
+              </p>
+            </article>
+            <article className="rounded-xl border border-white bg-white p-3">
+              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Simge Sayisi</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {typeof eyeBrainDetails?.symbolCount === "number" ? eyeBrainDetails.symbolCount : "-"}
+              </p>
+            </article>
+            <article className="rounded-xl border border-white bg-white p-3">
+              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Kural</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">Sure odakli takip calismasi</p>
+            </article>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-7">
         <h3 className="text-lg font-bold">Gecmis Sonuclarim</h3>
@@ -207,4 +246,12 @@ export function ResultSummaryClient({
       </div>
     </PanelCard>
   );
+}
+
+function formatSeconds(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }

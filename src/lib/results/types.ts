@@ -9,12 +9,16 @@ export type ExerciseType =
   | "word-finding"
   | "eye-muscle"
   | "reading-comprehension"
-  | "letter-number-counting-focus";
+  | "letter-number-counting-focus"
+  | "card-matching"
+  | "visual-puzzle"
+  | "eye-brain";
 
 export type ExerciseResult = {
   id: string;
   studentId: string;
   studentName: string;
+  username?: string;
   exerciseType: ExerciseType;
   exerciseTitle: string;
   date: string;

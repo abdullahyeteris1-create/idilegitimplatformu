@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { ContentManagementClient } from "./ContentManagementClient";
+import { TeacherOnly } from "@/components/auth/TeacherOnly";
 
 export default function ContentManagementPage() {
   return (
@@ -11,7 +12,9 @@ export default function ContentManagementPage() {
       compactHeader
       wide
     >
-      <ContentManagementClient />
+      <TeacherOnly>
+        <ContentManagementClient />
+      </TeacherOnly>
     </AppShell>
   );
 }

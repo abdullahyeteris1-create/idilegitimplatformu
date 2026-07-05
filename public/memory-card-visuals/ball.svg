@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Top">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ecfdf5"/><stop offset="100%" stop-color="#bbf7d0"/></linearGradient>
+<filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".18"/></filter>
+<style>
+.float{animation:float 3s ease-in-out infinite;transform-origin:center}
+.pulse{animation:pulse 2s ease-in-out infinite;transform-origin:center}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+</style>
+</defs>
+<rect x="8" y="8" width="224" height="224" rx="34" fill="url(#g)"/>
+<circle cx="200" cy="42" r="30" fill="#fff" opacity=".20"/>
+<circle cx="42" cy="200" r="38" fill="#fff" opacity=".16"/>
+<g filter="url(#s)">
+<circle class="pulse" cx="120" cy="120" r="72" fill="#fff" opacity=".92"/>
+<text class="float" x="120" y="146" text-anchor="middle" font-size="86" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">⚽</text>
+</g>
+</svg>

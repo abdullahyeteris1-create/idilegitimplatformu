@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getExerciseResults } from "@/lib/results/resultStorage";
+import { getExerciseResults, getExerciseResultsWithRemote } from "@/lib/results/resultStorage";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import type { ExerciseResult } from "@/lib/results/types";
 
@@ -11,8 +11,11 @@ export function TeacherRecentResultsClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setResults(getExerciseResults());
-      setIsMounted(true);
+      void (async () => {
+        const nextResults = await getExerciseResultsWithRemote();
+        setResults(nextResults.length > 0 ? nextResults : getExerciseResults());
+        setIsMounted(true);
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);

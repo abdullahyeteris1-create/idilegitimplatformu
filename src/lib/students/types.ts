@@ -7,12 +7,15 @@ export type Student = {
   name: string;
   username: string;
   password: string;
+  className?: string;
   classLevel?: string;
   parentName?: string;
+  phone?: string;
   parentPhone?: string;
   email?: string;
   birthDate?: string;
   profileImageUrl?: string;
+  isActive?: boolean;
   status: StudentStatus;
   educationStatus?: EducationStatus;
   createdAt: string;

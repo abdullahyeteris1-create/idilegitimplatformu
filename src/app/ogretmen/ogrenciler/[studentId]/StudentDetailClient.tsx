@@ -82,6 +82,18 @@ function getExerciseTitle(type: ExerciseType): string {
     return "Harf / Rakam Sayma Odak Calismasi";
   }
 
+  if (type === "card-matching") {
+    return "Kart Eslestirme Calismasi";
+  }
+
+  if (type === "visual-puzzle") {
+    return "Gorsel Puzzle Calismasi";
+  }
+
+  if (type === "eye-brain") {
+    return "Göz Beyin Çalışması";
+  }
+
   return "Blok Okuma";
 }
 
@@ -96,9 +108,10 @@ export function StudentDetailClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setStudent(getStudentById(studentId));
-      setResults(getResultsByStudent(studentId));
-      setReadingTests(getReadingTestsByStudent(studentId));
+      const currentStudent = getStudentById(studentId);
+      setStudent(currentStudent);
+      setResults(currentStudent ? getResultsByStudent(studentId, currentStudent.name) : getResultsByStudent(studentId));
+      setReadingTests(currentStudent ? getReadingTestsByStudent(studentId, currentStudent.name) : getReadingTestsByStudent(studentId));
       setIsMounted(true);
     }, 0);
 
@@ -136,6 +149,9 @@ export function StudentDetailClient() {
       "eye-muscle",
       "reading-comprehension",
       "letter-number-counting-focus",
+      "card-matching",
+      "visual-puzzle",
+      "eye-brain",
     ];
 
     return types.map((type) => {

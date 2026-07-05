@@ -7,6 +7,7 @@ import {
   createStudent,
   generateStudentPassword,
   generateUsernameFromName,
+  isStudentUsernameAvailable,
 } from "@/lib/students/studentStorage";
 import type { EducationStatus, StudentStatus } from "@/lib/students/types";
 
@@ -31,7 +32,12 @@ export function NewStudentFormClient() {
       return;
     }
 
-    createStudent({
+    if (!isStudentUsernameAvailable(username)) {
+      setError("Bu kullanici adi zaten kullaniliyor.");
+      return;
+    }
+
+    const created = createStudent({
       name,
       username,
       password,
@@ -44,6 +50,11 @@ export function NewStudentFormClient() {
       educationStatus,
       notes,
     });
+
+    if (!created) {
+      setError("Ogrenci olusturulamadi. Kullanici adi kontrol et.");
+      return;
+    }
 
     router.push("/ogretmen");
   };

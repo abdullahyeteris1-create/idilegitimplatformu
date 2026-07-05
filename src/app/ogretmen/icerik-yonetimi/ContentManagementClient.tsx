@@ -44,46 +44,50 @@ export function ContentManagementClient() {
 
   return (
     <>
-      <section className="fx-fade-in overflow-hidden rounded-2xl border border-red-100 bg-[radial-gradient(circle_at_top_left,#ffe4e8_0%,#ffffff_48%,#fff7f4_100%)] p-4 shadow-[0_12px_38px_rgba(185,28,28,0.08)] md:p-5">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-red-700">Yonetim Merkezi</p>
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Icerik Yonetimi</h2>
-            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
-              Egzersizlerde kullanilacak metinleri, kelime havuzlarini, soru setlerini ve calisma ayarlarini buradan yonetin.
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-700">Yonetim Merkezi</p>
+            <h2 className="mt-0.5 text-[24px] font-semibold tracking-tight text-slate-950 md:text-[28px]">Icerik Yonetimi</h2>
+            <p className="mt-0.5 max-w-4xl text-sm leading-5 text-slate-600">
+              Metinleri, kelime havuzlarini ve soru setlerini yonetin.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
-            <article className="rounded-2xl border border-white/80 bg-white/88 p-3 text-center shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">Grup</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{CONTENT_GROUPS.length}</p>
+          <Link href="/ogretmen/icerik-yonetimi/puzzle-gorselleri" className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition duration-200 hover:bg-red-50">
+            Puzzle Gorselleri
+          </Link>
+
+          <div className="grid grid-cols-3 gap-2 sm:min-w-[320px]">
+            <article className="rounded-xl border border-slate-200 bg-white p-2.5 text-center">
+              <p className="text-[11px] font-medium text-slate-500">Grup</p>
+              <p className="mt-0.5 text-lg font-semibold text-slate-950">{CONTENT_GROUPS.length}</p>
             </article>
-            <article className="rounded-2xl border border-white/80 bg-white/88 p-3 text-center shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">Modul</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{totalModules}</p>
+            <article className="rounded-xl border border-slate-200 bg-white p-2.5 text-center">
+              <p className="text-[11px] font-medium text-slate-500">Modul</p>
+              <p className="mt-0.5 text-lg font-semibold text-slate-950">{totalModules}</p>
             </article>
-            <article className="rounded-2xl border border-white/80 bg-white/88 p-3 text-center shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">Bagli</p>
-              <p className="mt-1 text-2xl font-black text-green-700">{activeModules}</p>
+            <article className="rounded-xl border border-slate-200 bg-white p-2.5 text-center">
+              <p className="text-[11px] font-medium text-slate-500">Bagli</p>
+              <p className="mt-0.5 text-lg font-semibold text-green-700">{activeModules}</p>
             </article>
           </div>
         </div>
       </section>
 
-      <section className="grid min-h-[calc(100vh-250px)] gap-3 lg:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="fx-slide-up rounded-2xl border border-red-100 bg-white/92 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)] lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:self-start">
-          <div className="flex items-center justify-between gap-3 px-2 py-2">
+      <section className="grid min-h-[calc(100vh-240px)] gap-3 lg:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:self-start">
+          <div className="flex items-center justify-between gap-3 px-1 py-1.5">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Menu</p>
-              <h3 className="text-lg font-black text-slate-950">Egzersiz Gruplari</h3>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-red-700">Menu</p>
+              <h3 className="text-sm font-semibold text-slate-950">Egzersiz Gruplari</h3>
             </div>
-            <span className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+            <span className="rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700">
               {CONTENT_GROUPS.length}
             </span>
           </div>
 
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-2 lg:hidden">
+          <div className="mt-1.5 flex gap-2 overflow-x-auto pb-2 lg:hidden">
             {CONTENT_GROUPS.map((group) => {
               const isActive = group.id === activeGroupId;
 
@@ -92,11 +96,11 @@ export function ContentManagementClient() {
                   key={group.id}
                   type="button"
                   onClick={() => setActiveGroupId(group.id)}
-                  className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-black transition active:scale-[0.98] ${
+                  className={`flex min-h-[40px] shrink-0 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold transition active:scale-[0.98] ${
                     isActive ? `bg-gradient-to-r ${group.tone} text-white shadow-md` : group.softClass
                   }`}
                 >
-                  <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white/90 px-1 text-[11px] font-black text-slate-900">
+                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white/90 px-1 text-[10px] font-semibold text-slate-900">
                     {group.icon}
                   </span>
                   {group.shortTitle}
@@ -105,7 +109,7 @@ export function ContentManagementClient() {
             })}
           </div>
 
-          <div className="hidden gap-2 lg:grid">
+          <div className="hidden gap-1.5 lg:grid">
             {CONTENT_GROUPS.map((group) => {
               const isActive = group.id === activeGroupId;
 
@@ -114,66 +118,66 @@ export function ContentManagementClient() {
                   key={group.id}
                   type="button"
                   onClick={() => setActiveGroupId(group.id)}
-                  className={`group flex min-h-[78px] w-full items-center gap-3 rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 ${
-                    isActive ? group.softClass : "border-slate-100 bg-white text-slate-700 hover:border-red-100 hover:bg-red-50"
+                  className={`group flex min-h-[48px] w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
+                    isActive ? "border-red-200 bg-red-50 text-red-800" : "border-slate-100 bg-white text-slate-700 hover:border-red-100 hover:bg-red-50"
                   }`}
                 >
-                  <span className={`inline-flex h-12 min-w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${group.tone} px-2 text-sm font-black text-white shadow-md`}>
+                  <span className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gradient-to-br ${group.tone} px-2 text-[11px] font-semibold text-white`}>
                     {group.icon}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-black text-slate-950">{group.shortTitle}</span>
-                    <span className="mt-0.5 block text-xs font-semibold text-slate-500">{group.modules.length} yonetim alani</span>
+                    <span className="block text-[13px] font-semibold text-slate-950">{group.shortTitle}</span>
+                    <span className="mt-0.5 block text-[11px] font-medium text-slate-500">{group.modules.length} alan</span>
                   </span>
-                  <span className={`text-sm font-black ${isActive ? "text-current" : "text-slate-300 group-hover:text-red-700"}`}>{">"}</span>
+                  <span className={`text-sm font-semibold ${isActive ? "text-current" : "text-slate-300 group-hover:text-red-700"}`}>{">"}</span>
                 </button>
               );
             })}
           </div>
         </aside>
 
-        <section className={`fx-slide-up min-w-0 rounded-2xl border ${activeGroup.panelClass} p-4 shadow-[0_14px_34px_rgba(15,23,42,0.07)] md:p-5`}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
-              <span className={`inline-flex h-16 min-w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${activeGroup.tone} px-3 text-lg font-black text-white shadow-md`}>
+              <span className={`inline-flex h-10 min-w-10 items-center justify-center rounded-xl bg-gradient-to-br ${activeGroup.tone} px-2 text-[11px] font-semibold text-white`}>
                 {activeGroup.icon}
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Secili grup</p>
-                <h3 className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{activeGroup.title}</h3>
-                <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-600">{activeGroup.description}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Secili grup</p>
+                <h3 className="mt-0.5 text-[18px] font-semibold tracking-tight text-slate-950">{activeGroup.title}</h3>
+                <p className="mt-0.5 max-w-4xl text-sm leading-5 text-slate-600">{activeGroup.description}</p>
               </div>
             </div>
-            <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${activeGroup.softClass}`}>
+            <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${activeGroup.softClass}`}>
               {activeGroup.modules.length} modul
             </span>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {activeGroup.modules.map((module, index) => {
               const canOpen = isActionable(module);
 
               return (
                 <article
                   key={module.id}
-                  className="fx-slide-up group flex min-h-[292px] flex-col rounded-2xl border border-white/90 bg-white/94 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.13)]"
+                  className="group flex min-h-[220px] flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
                   style={{ animationDelay: `${index * 55}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className={`inline-flex h-12 min-w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${module.tone} px-2 text-sm font-black text-white shadow-md`}>
+                    <span className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-gradient-to-br ${module.tone} px-2 text-[11px] font-semibold text-white`}>
                       {module.icon}
                     </span>
-                    <span className={`rounded-full border px-3 py-1 text-xs font-black ${STATUS_CLASSES[module.status]}`}>
+                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${STATUS_CLASSES[module.status]}`}>
                       {STATUS_LABELS[module.status]}
                     </span>
                   </div>
 
-                  <h4 className="mt-4 text-xl font-black tracking-tight text-slate-950">{module.title}</h4>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{module.description}</p>
+                  <h4 className="mt-2.5 text-[18px] font-semibold tracking-tight text-slate-950">{module.title}</h4>
+                  <p className="mt-1.5 flex-1 text-sm leading-5 text-slate-600">{module.description}</p>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {module.tags.map((tag) => (
-                      <span key={tag} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${activeGroup.softClass}`}>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {module.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${activeGroup.softClass}`}>
                         {tag}
                       </span>
                     ))}
@@ -182,7 +186,7 @@ export function ContentManagementClient() {
                   {canOpen ? (
                     <Link
                       href={module.href}
-                      className={`mt-4 inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-gradient-to-r ${module.tone} px-4 py-3 text-sm font-black text-white shadow-md transition duration-200 active:scale-[0.98] group-hover:brightness-110`}
+                      className="mt-3.5 inline-flex min-h-[40px] items-center justify-center rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition duration-200 active:scale-[0.98] hover:bg-[var(--brand-strong)]"
                     >
                       {getActionLabel(module)}
                     </Link>
@@ -190,7 +194,7 @@ export function ContentManagementClient() {
                     <button
                       type="button"
                       disabled
-                      className="mt-4 inline-flex min-h-[48px] cursor-not-allowed items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-black text-slate-500"
+                      className="mt-3.5 inline-flex min-h-[40px] cursor-not-allowed items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500"
                     >
                       {getActionLabel(module)}
                     </button>

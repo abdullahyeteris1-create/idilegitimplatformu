@@ -20,366 +20,312 @@ type ExerciseGroup = {
   description: string;
   icon: string;
   image: string;
-  panelClass: string;
-  accentClass: string;
   softClass: string;
   textClass: string;
   exercises: ExerciseCard[];
 };
 
-const HERO_BADGES = ["Mobil Uyumlu", "Ogrenci Takibi", "Hiz Olcumu", "Anlama Orani", "Raporlama"];
+const DEFAULT_GROUP_ID = "attention";
 
 const EXERCISE_GROUPS: ExerciseGroup[] = [
   {
+    id: "eye",
+    title: "Göz Egzersizleri",
+    shortTitle: "Göz Egzersizleri",
+    description: "Göz takip ve odaklanma çalışmaları.",
+    icon: "👁️",
+    image: "/exercise-visuals/categories/eye.svg",
+    softClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    textClass: "text-emerald-700",
+    exercises: [
+      {
+        title: "Göz Beyin Çalışması",
+        description: "Simgeleri gözlerinle takip ederek göz-beyin koordinasyonunu geliştir.",
+        href: "/egzersizler/goz-beyin",
+        icon: "👁️",
+        image: "/eye-symbols/target.svg",
+        tags: ["Takip", "Odak"],
+      },
+      {
+        title: "Göz Kaslarını Geliştirme",
+        description: "Noktasal takip çalışmalarıyla göz kaslarını ve odak sürekliliğini destekle.",
+        href: "/egzersizler/goz-kaslari",
+        icon: "GK",
+        image: "/exercise-visuals/exercises/eye-muscle.svg",
+        tags: ["Göz", "Takip", "Odak"],
+      },
+    ],
+  },
+  {
     id: "attention",
-    title: "Algi ve Dikkat Calismalari",
-    shortTitle: "Algi ve Dikkat",
-    description: "Hizli algilama, dikkat, gorsel ayirt etme ve kelime farkindaligini gelistiren calismalar.",
-    icon: "AD",
+    title: "Göz Algılama Çalışmaları",
+    shortTitle: "Göz Algılama",
+    description: "Görsel algı, hızlı fark etme ve dikkat becerilerini geliştiren çalışmalar.",
+    icon: "🎯",
     image: "/exercise-visuals/categories/attention.svg",
-    panelClass: "border-rose-200 bg-[linear-gradient(135deg,#fff1f2_0%,#ffffff_48%,#fdf2f8_100%)]",
-    accentClass: "from-rose-500 to-red-600",
     softClass: "border-rose-200 bg-rose-50 text-rose-800",
     textClass: "text-rose-700",
     exercises: [
       {
         title: "Takistoskop",
-        description: "Kisa sureli kelime gosterimiyle algi hizini ve odaklanmayi gelistir.",
+        description: "Kısa süreli kelime gösterimiyle algı hızını geliştir.",
         href: "/egzersizler/takistoskop",
         icon: "TK",
         image: "/exercise-visuals/exercises/tachistoscope.svg",
-        tags: ["Algi", "Dikkat", "Hiz"],
+        tags: ["Algı", "Dikkat"],
       },
       {
         title: "Benzer Kelimeler",
-        description: "Benzer kelimeleri karsilastir, farklari hizli ve dogru yakala.",
+        description: "Benzer kelimeleri karşılaştır ve farkları hızlı yakala.",
         href: "/egzersizler/benzer-kelimeler",
         icon: "BK",
         image: "/exercise-visuals/exercises/similar-words.svg",
-        tags: ["Gorsel", "Ayirt Etme", "Odak"],
+        tags: ["Ayırt Etme", "Dikkat"],
       },
+    ],
+  },
+  {
+    id: "focus",
+    title: "Odaklanma Çalışmaları",
+    shortTitle: "Odaklanma",
+    description: "Odaklanma, hızlı karar verme ve dikkat sürekliliğini güçlendiren çalışmalar.",
+    icon: "🧠",
+    image: "/exercise-visuals/categories/attention.svg",
+    softClass: "border-amber-200 bg-amber-50 text-amber-900",
+    textClass: "text-amber-700",
+    exercises: [
       {
-        title: "Cift Tarafli Odak",
-        description: "Iki tarafi ayni anda takip ederek karar verme hizini guclendir.",
+        title: "Çift Taraflı Odak",
+        description: "İki tarafı aynı anda takip ederek karar verme hızını güçlendir.",
         href: "/egzersizler/cift-tarafli-odak",
         icon: "CO",
         image: "/exercise-visuals/exercises/two-side-focus.svg",
-        tags: ["Odak", "Karsilastirma", "Hiz"],
+        tags: ["Odak", "Hız"],
       },
       {
-        title: "Kelime Bulma",
-        description: "Metin icindeki hedef kelimeyi bul ve kelime farkindaligini artir.",
-        href: "/egzersizler/kelime-bulma",
-        icon: "KB",
-        image: "/exercise-visuals/exercises/word-finding.svg",
-        tags: ["Tarama", "Kelime", "Dikkat"],
-      },
-      {
-        title: "Harf / Rakam Sayma",
-        description: "Daginik karakterler arasindan hedef harf veya rakamin kac tane oldugunu hizlica say.",
+        title: "Harf / Rakam Sayma Odak Çalışması",
+        description: "Dağınık karakterler arasından hedef harf veya rakamı hızla say.",
         href: "/egzersizler/harf-rakam-sayma",
         icon: "HR",
         image: "/exercise-visuals/exercises/letter-number-counting.svg",
-        tags: ["Odak", "Sayma", "Dikkat"],
+        tags: ["Sayma", "Odak"],
       },
     ],
   },
   {
     id: "fluency",
-    title: "Okuma Akiciligi Calismalari",
-    shortTitle: "Okuma Akiciligi",
-    description: "Kelime gruplariyla okuma, ritim, takip ve akici okuma becerilerini gelistirir.",
-    icon: "OA",
+    title: "Metin Çalışmaları",
+    shortTitle: "Metin Çalışmaları",
+    description: "Okuma akıcılığı ve metin takip çalışmaları.",
+    icon: "📚",
     image: "/exercise-visuals/categories/fluency.svg",
-    panelClass: "border-indigo-200 bg-[linear-gradient(135deg,#eef2ff_0%,#ffffff_48%,#eff6ff_100%)]",
-    accentClass: "from-indigo-500 to-sky-600",
     softClass: "border-indigo-200 bg-indigo-50 text-indigo-800",
     textClass: "text-indigo-700",
     exercises: [
       {
         title: "Blok Okuma",
-        description: "Kelimeleri bloklar halinde gorerek okuma alanini genislet.",
+        description: "Kelimeleri bloklar halinde görerek okuma alanını genişlet.",
         href: "/egzersizler/blok-okuma",
         icon: "BO",
         image: "/exercise-visuals/exercises/block-reading.svg",
-        tags: ["Okuma", "Grup", "Ritim"],
+        tags: ["Okuma", "Ritim"],
       },
       {
-        title: "Golgeleme",
-        description: "Aktif kelime gruplarini takip ederek ritimli okuma aliskanligi kazan.",
+        title: "Gölgeleme",
+        description: "Aktif kelime gruplarını takip ederek ritimli okuma alışkanlığı kazan.",
         href: "/egzersizler/golgeleme",
         icon: "GL",
         image: "/exercise-visuals/exercises/shadowing.svg",
-        tags: ["Takip", "Ritim", "Metin"],
+        tags: ["Takip", "Ritim"],
       },
       {
-        title: "Odakli Okuma",
-        description: "Secilen metni odak alaninda kelime gruplari halinde oku.",
+        title: "Odaklı Okuma",
+        description: "Seçilen metni odak alanında kelime grupları halinde oku.",
         href: "/egzersizler/odakli-okuma",
         icon: "OO",
         image: "/exercise-visuals/exercises/focused-reading.svg",
-        tags: ["Odak", "Akicilik", "Metin"],
+        tags: ["Odak", "Metin"],
+      },
+      {
+        title: "Kelime Bulma",
+        description: "Metin içindeki hedef kelimeyi hızla bul.",
+        href: "/egzersizler/kelime-bulma",
+        icon: "KB",
+        image: "/exercise-visuals/exercises/word-finding.svg",
+        tags: ["Tarama", "Kelime"],
       },
     ],
   },
   {
     id: "memory",
-    title: "Hafiza ve Zihinsel Takip",
-    shortTitle: "Hafiza",
-    description: "Kisa sureli gorsel hafiza ve dikkat takibini guclendirir.",
-    icon: "HZ",
+    title: "Hafıza Teknikleri",
+    shortTitle: "Hafıza Teknikleri",
+    description: "Görsel hafıza, eşleştirme ve parça-bütün algısını geliştiren çalışmalar.",
+    icon: "🧠",
     image: "/exercise-visuals/categories/memory.svg",
-    panelClass: "border-amber-200 bg-[linear-gradient(135deg,#fffbeb_0%,#ffffff_48%,#fff7ed_100%)]",
-    accentClass: "from-amber-500 to-orange-600",
     softClass: "border-amber-200 bg-amber-50 text-amber-900",
     textClass: "text-amber-700",
     exercises: [
       {
-        title: "Hafiza Gelistirme",
-        description: "Kisa sure gorunen kutulari aklinda tut ve dogru kutulari sec.",
+        title: "Hafıza Geliştirme",
+        description: "Kısa süre görünen kutuları aklında tut ve doğru kutuları seç.",
         href: "/egzersizler/hafiza-gelistirme",
         icon: "HG",
         image: "/exercise-visuals/exercises/memory.svg",
-        tags: ["Hafiza", "Dikkat", "Takip"],
+        tags: ["Hafıza", "Takip"],
       },
-    ],
-  },
-  {
-    id: "eye",
-    title: "Goz Egzersizleri",
-    shortTitle: "Goz Egzersizleri",
-    description: "Goz kaslarini, takip becerisini ve odaklanmayi destekleyen calismalar.",
-    icon: "GE",
-    image: "/exercise-visuals/categories/eye.svg",
-    panelClass: "border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#ffffff_48%,#f0fdfa_100%)]",
-    accentClass: "from-emerald-500 to-teal-600",
-    softClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    textClass: "text-emerald-700",
-    exercises: [
       {
-        title: "Goz Kaslarini Gelistirme",
-        description: "Noktasal takip calismalariyla goz kaslarini ve odak surekliligini destekle.",
-        href: "/egzersizler/goz-kaslari",
-        icon: "GK",
-        image: "/exercise-visuals/exercises/eye-muscle.svg",
-        tags: ["Goz", "Takip", "Odak"],
+        title: "Kart Eşleştirme Çalışması",
+        description: "Aynı görselleri bul ve görsel hafızayı güçlendir.",
+        href: "/egzersizler/kart-eslestirme",
+        icon: "KE",
+        image: "/exercise-visuals/exercises/card-matching.svg",
+        tags: ["Eşleştirme", "Hafıza"],
+      },
+      {
+        title: "Görsel Puzzle Çalışması",
+        description: "Parçalara ayrılmış görselleri tamamlayarak parça-bütün algını geliştir.",
+        href: "/egzersizler/gorsel-puzzle",
+        icon: "GP",
+        image: "/exercise-visuals/exercises/visual-puzzle.svg",
+        tags: ["Puzzle", "Görsel"],
       },
     ],
   },
   {
     id: "assessment",
-    title: "Olcme ve Degerlendirme",
-    shortTitle: "Olcme",
-    description: "Okuma hizi, anlama orani ve ogrenci gelisimini olcer.",
-    icon: "OD",
+    title: "Okuma ve Anlama Testleri",
+    shortTitle: "Anlama Testleri",
+    description: "Hız ve anlama ölçümleri.",
+    icon: "📝",
     image: "/exercise-visuals/categories/assessment.svg",
-    panelClass: "border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef2ff_100%)]",
-    accentClass: "from-slate-700 to-indigo-700",
     softClass: "border-slate-200 bg-slate-50 text-slate-800",
     textClass: "text-slate-700",
     exercises: [
       {
         title: "Anlama Testi",
-        description: "Metni oku, hizini olc ve sorularla anlama oranini gor.",
+        description: "Metni oku, hızını ölç ve sorularla anlama oranını gör.",
         href: "/egzersizler/anlama-testi",
         icon: "AT",
         image: "/exercise-visuals/exercises/comprehension.svg",
-        tags: ["Olcme", "Anlama", "Hiz"],
+        tags: ["Anlama", "Hiz"],
       },
       {
-        title: "Sonuc",
-        description: "Son calisma performansini ve genel sonuc ozetini incele.",
+        title: "Sonuç",
+        description: "Son çalışma performansını ve genel sonuç özetini incele.",
         href: "/sonuc",
         icon: "SN",
         image: "/exercise-visuals/exercises/results.svg",
-        tags: ["Rapor", "Puan", "Takip"],
+        tags: ["Rapor", "Takip"],
       },
     ],
   },
 ];
 
-function toggleItem(items: string[], item: string): string[] {
-  return items.includes(item) ? items.filter((value) => value !== item) : [...items, item];
-}
-
 export function ExercisesCenterClient() {
-  const [activeGroupId, setActiveGroupId] = useState(EXERCISE_GROUPS[0].id);
-  const [openGroupIds, setOpenGroupIds] = useState<string[]>([EXERCISE_GROUPS[0].id]);
+  const [activeGroupId, setActiveGroupId] = useState(DEFAULT_GROUP_ID);
 
   const activeGroup = useMemo(() => {
     return EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? EXERCISE_GROUPS[0];
   }, [activeGroupId]);
 
-  const handleGroupClick = (groupId: string) => {
-    setActiveGroupId(groupId);
-    setOpenGroupIds((prev) => (prev.includes(groupId) ? prev : [...prev, groupId]));
-  };
-
-  const handleToggleClick = (groupId: string) => {
-    setActiveGroupId(groupId);
-    setOpenGroupIds((prev) => toggleItem(prev, groupId));
-  };
-
   return (
-    <>
-      <section className="fx-fade-in overflow-hidden rounded-2xl border border-red-100 bg-[radial-gradient(circle_at_top_left,#ffe4e8_0%,#ffffff_46%,#fff7f4_100%)] p-3 shadow-[0_12px_38px_rgba(185,28,28,0.08)] md:p-4">
-        <div className="grid gap-3 xl:grid-cols-[1fr_auto] xl:items-center">
+    <section className="grid min-h-[calc(100vh-220px)] gap-4 lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+      <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:self-start lg:overflow-y-auto">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-red-700">Egzersiz Merkezi</p>
-            <h2 className="mt-1 max-w-3xl text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
-              Idil Hizli Okuma Egzersiz Merkezi
-            </h2>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-              Dikkat, algi, okuma akiciligi, hafiza, goz egzersizleri ve anlama testlerini tek merkezden baslat.
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-700">Calisma Kategorileri</p>
+            <h3 className="mt-0.5 text-[20px] font-semibold tracking-tight text-slate-950">Kategoriler</h3>
+            <p className="mt-1 max-w-sm text-sm leading-5 text-slate-600">Bir kategori secerek calismalari goruntule.</p>
           </div>
+          <span className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-[11px] font-semibold text-red-700">
+            {EXERCISE_GROUPS.length} kategori
+          </span>
+        </div>
 
-          <div className="flex flex-wrap gap-2 xl:max-w-xl xl:justify-end">
-            {HERO_BADGES.map((badge) => (
-              <span key={badge} className="rounded-full border border-white/80 bg-white/86 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] text-red-700 shadow-sm shadow-red-100/70 backdrop-blur">
-                {badge}
-              </span>
-            ))}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          {EXERCISE_GROUPS.map((group) => {
+            const isActive = group.id === activeGroupId;
+
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setActiveGroupId(group.id)}
+                className={`group flex min-h-[118px] w-full items-start gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition duration-200 ${
+                  isActive
+                    ? "border-red-200 bg-red-50 ring-2 ring-red-100"
+                    : "border-slate-200 hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
+                }`}
+              >
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${isActive ? "bg-white text-red-600" : "bg-slate-50 text-slate-700"}`}>
+                  {group.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold tracking-tight text-slate-950">{group.title}</span>
+                  <span className="mt-1 block text-sm leading-5 text-slate-600">{group.description}</span>
+                  <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isActive ? "border-red-200 bg-white text-red-700" : group.softClass}`}>
+                    {group.exercises.length} calisma
+                  </span>
+                </span>
+                <span className={`mt-1 text-lg font-semibold ${isActive ? "text-red-600" : "text-slate-300"}`}>{">"}</span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${activeGroup.textClass}`}>{activeGroup.shortTitle}</p>
+            <h3 className="mt-0.5 text-[20px] font-semibold tracking-tight text-slate-950">{activeGroup.title}</h3>
+            <p className="mt-0.5 max-w-3xl text-sm leading-5 text-slate-600">{activeGroup.description}</p>
           </div>
+          <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${activeGroup.softClass}`}>
+            {activeGroup.exercises.length} calisma
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {activeGroup.exercises.map((exercise, index) => (
+            <article
+              key={exercise.href}
+              className="group flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
+              style={{ animationDelay: `${index * 55}ms` }}
+            >
+              <div className="relative h-[88px] border-b border-slate-100 bg-slate-50">
+                <Image src={exercise.image} alt="" fill sizes="(min-width: 1440px) 25vw, (min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-contain p-3.5" />
+              </div>
+
+              <div className="flex flex-1 flex-col p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-red-50 px-2 text-[11px] font-semibold text-red-700">
+                    {exercise.icon}
+                  </span>
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    {exercise.tags.slice(0, 2).map((tag) => (
+                      <span key={tag} className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${activeGroup.softClass}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <h4 className="mt-2.5 text-[18px] font-semibold tracking-tight text-slate-950">{exercise.title}</h4>
+                <p className="mt-1.5 flex-1 text-sm leading-5 text-slate-600">{exercise.description}</p>
+
+                <Link
+                  href={exercise.href}
+                  className="mt-3.5 inline-flex min-h-[40px] w-full items-center justify-center rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition duration-200 active:scale-[0.98] hover:bg-[var(--brand-strong)]"
+                >
+                  Calismaya Basla
+                </Link>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
-
-      <section className="grid min-h-[calc(100vh-245px)] gap-3 lg:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="fx-slide-up rounded-2xl border border-red-100 bg-white/92 p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)] lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:self-start lg:overflow-y-auto">
-          <div className="flex items-center justify-between gap-3 px-2 py-2">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Menu</p>
-              <h3 className="text-lg font-black text-slate-950">Kategoriler</h3>
-            </div>
-            <span className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
-              {EXERCISE_GROUPS.length}
-            </span>
-          </div>
-
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-2 lg:hidden">
-            {EXERCISE_GROUPS.map((group) => {
-              const isActive = group.id === activeGroupId;
-
-              return (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => handleGroupClick(group.id)}
-                  className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-black transition active:scale-[0.98] ${
-                    isActive ? `bg-gradient-to-r ${group.accentClass} text-white shadow-md` : group.softClass
-                  }`}
-                >
-                  <span className="relative h-7 w-7 overflow-hidden rounded-full bg-white/90">
-                    <Image src={group.image} alt="" fill sizes="28px" className="object-contain p-1" />
-                  </span>
-                  {group.shortTitle}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="hidden gap-2 lg:grid">
-            {EXERCISE_GROUPS.map((group) => {
-              const isOpen = openGroupIds.includes(group.id);
-              const isActive = group.id === activeGroupId;
-
-              return (
-                <div key={group.id} className={`rounded-2xl border transition ${isActive ? group.softClass : "border-slate-100 bg-white"}`}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleClick(group.id)}
-                    className="flex min-h-[58px] w-full items-center gap-3 px-3 py-2 text-left"
-                  >
-                    <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
-                      <Image src={group.image} alt="" fill sizes="44px" className="object-contain p-1" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-black text-slate-950">{group.shortTitle}</span>
-                      <span className="block text-xs font-semibold text-slate-500">{group.exercises.length} calisma</span>
-                    </span>
-                    <span className={`text-sm font-black transition ${isOpen ? "rotate-90" : ""}`}>{">"}</span>
-                  </button>
-
-                  <div className={`grid transition-all duration-200 ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
-                    <div className="overflow-hidden">
-                      <div className="grid gap-1 px-3 pb-3">
-                        {group.exercises.map((exercise) => (
-                          <Link
-                            key={exercise.href}
-                            href={exercise.href}
-                            className="rounded-xl border border-transparent px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-red-100 hover:bg-white hover:text-red-700"
-                          >
-                            {exercise.title}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
-
-        <section className={`fx-slide-up min-w-0 rounded-2xl border ${activeGroup.panelClass} p-3 shadow-[0_14px_34px_rgba(15,23,42,0.07)] md:p-4`}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="relative inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/80 bg-white shadow-md">
-                <Image src={activeGroup.image} alt="" fill sizes="64px" className="object-contain p-2" />
-              </span>
-              <div className="min-w-0">
-                <p className={`text-[11px] font-black uppercase tracking-[0.18em] ${activeGroup.textClass}`}>Secili kategori</p>
-                <h3 className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{activeGroup.title}</h3>
-                <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-600">{activeGroup.description}</p>
-              </div>
-            </div>
-            <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.12em] ${activeGroup.softClass}`}>
-              {activeGroup.exercises.length} calisma
-            </span>
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {activeGroup.exercises.map((exercise, index) => (
-              <article
-                key={exercise.href}
-                className="fx-slide-up group flex min-h-[318px] flex-col overflow-hidden rounded-2xl border border-white/90 bg-white/94 shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(15,23,42,0.13)]"
-                style={{ animationDelay: `${index * 55}ms` }}
-              >
-                <div className={`relative h-[118px] border-b border-white/80 bg-gradient-to-br ${activeGroup.accentClass}`}>
-                  <div className="absolute inset-0 bg-white/18" />
-                  <div className="absolute inset-3 rounded-2xl bg-white/88 shadow-inner" />
-                  <Image src={exercise.image} alt="" fill sizes="(min-width: 1536px) 25vw, (min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-contain p-5 transition duration-300 group-hover:scale-105" />
-                </div>
-
-                <div className="flex flex-1 flex-col p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className={`inline-flex h-9 min-w-9 items-center justify-center rounded-xl bg-gradient-to-br ${activeGroup.accentClass} px-2 text-xs font-black text-white shadow-md`}>
-                      {exercise.icon}
-                    </span>
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      {exercise.tags.map((tag) => (
-                        <span key={tag} className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${activeGroup.softClass}`}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <h4 className="mt-3 text-xl font-black tracking-tight text-slate-950">{exercise.title}</h4>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{exercise.description}</p>
-
-                  <Link
-                    href={exercise.href}
-                    className={`mt-4 inline-flex min-h-[46px] w-full items-center justify-center rounded-2xl bg-gradient-to-r ${activeGroup.accentClass} px-4 py-3 text-sm font-black text-white shadow-md shadow-slate-300/70 transition duration-200 active:scale-[0.98] group-hover:brightness-110 group-hover:shadow-lg`}
-                  >
-                    Calismaya Basla
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
-    </>
+    </section>
   );
 }

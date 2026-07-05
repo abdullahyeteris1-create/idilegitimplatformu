@@ -74,6 +74,15 @@ export function getReadingTestResults(): ReadingTestResult[] {
   return readResults();
 }
 
-export function getReadingTestsByStudent(studentId: string): ReadingTestResult[] {
-  return readResults().filter((result) => result.studentId === studentId);
+export function getReadingTestsByStudent(studentId: string, studentName?: string): ReadingTestResult[] {
+  const normalizedStudentName = studentName?.trim().toLocaleLowerCase("tr-TR") ?? "";
+  const byStudentId = readResults().filter((result) => result.studentId === studentId);
+
+  if (byStudentId.length > 0 || !normalizedStudentName) {
+    return byStudentId;
+  }
+
+  return readResults().filter(
+    (result) => result.studentName?.trim().toLocaleLowerCase("tr-TR") === normalizedStudentName,
+  );
 }
