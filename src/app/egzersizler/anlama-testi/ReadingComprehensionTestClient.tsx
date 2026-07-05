@@ -5,9 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useRouter } from "next/navigation";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import {
-  getReadingComprehensionCategories,
-  getReadingTextById,
-  getReadingTextsByCategory,
+  READING_COMPREHENSION_TEXTS,
   type ReadingComprehensionText,
 } from "@/lib/data/readingComprehensionTexts";
 import {
@@ -21,6 +19,7 @@ import {
 } from "@/lib/exercise-engine/readingComprehension";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
+import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -83,10 +82,10 @@ export function ReadingComprehensionTestClient() {
   const pauseTimerRef = useRef<number | null>(null);
   const saveLockRef = useRef(true);
 
-  const categories = useMemo(() => getReadingComprehensionCategories(), []);
   const [phase, setPhase] = useState<TestPhase>("setup");
-  const [selectedCategory, setSelectedCategory] = useState(categories[0] ?? "");
-  const [selectedTextId, setSelectedTextId] = useState(() => getReadingTextsByCategory(categories[0] ?? "")[0]?.id ?? "");
+  const [libraryTexts, setLibraryTexts] = useState<ReadingComprehensionText[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState(READING_COMPREHENSION_TEXTS[0]?.category ?? "");
+  const [selectedTextId, setSelectedTextId] = useState(READING_COMPREHENSION_TEXTS[0]?.id ?? "");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [readingDurationSeconds, setReadingDurationSeconds] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizePx>(18);
@@ -95,8 +94,45 @@ export function ReadingComprehensionTestClient() {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number | undefined>>({});
   const [result, setResult] = useState<ReadingResult | null>(null);
 
-  const availableTexts = useMemo(() => getReadingTextsByCategory(selectedCategory), [selectedCategory]);
-  const selectedText = useMemo<ReadingComprehensionText>(() => getReadingTextById(selectedTextId), [selectedTextId]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const activeTexts = getActiveTextLibraryItems().map((item) => ({
+        id: item.id,
+        category: item.category,
+        title: item.title,
+        text: item.content,
+        questions: [],
+      }));
+
+      setLibraryTexts(activeTexts);
+      if (activeTexts.length > 0) {
+        setSelectedCategory(activeTexts[0].category);
+        setSelectedTextId(activeTexts[0].id);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  const allTexts = useMemo(() => {
+    return libraryTexts.length > 0 ? libraryTexts : READING_COMPREHENSION_TEXTS;
+  }, [libraryTexts]);
+
+  const categories = useMemo(() => {
+    return Array.from(new Set(allTexts.map((item) => item.category)));
+  }, [allTexts]);
+
+  const resolvedCategory = useMemo(() => {
+    return categories.includes(selectedCategory) ? selectedCategory : categories[0] ?? "";
+  }, [categories, selectedCategory]);
+
+  const availableTexts = useMemo(() => {
+    return allTexts.filter((text) => text.category === resolvedCategory);
+  }, [allTexts, resolvedCategory]);
+
+  const selectedText = useMemo<ReadingComprehensionText>(() => {
+    return allTexts.find((text) => text.id === selectedTextId) ?? availableTexts[0] ?? READING_COMPREHENSION_TEXTS[0];
+  }, [allTexts, availableTexts, selectedTextId]);
   const totalWords = useMemo(() => countWords(selectedText.text), [selectedText.text]);
   const totalCharacters = useMemo(() => countCharacters(selectedText.text), [selectedText.text]);
   const liveReadingSpeed = calculateReadingSpeed(totalWords, elapsedSeconds);
@@ -167,7 +203,7 @@ export function ReadingComprehensionTestClient() {
   };
 
   const handleCategoryChange = (category: string) => {
-    const firstText = getReadingTextsByCategory(category)[0];
+    const firstText = allTexts.find((text) => text.category === category);
     setSelectedCategory(category);
     setSelectedTextId(firstText?.id ?? "");
     resetToReady();
@@ -228,7 +264,7 @@ export function ReadingComprehensionTestClient() {
   };
 
   const handleFinishTest = () => {
-    if (saveLockRef.current) {
+    if (saveLockRef.current || selectedText.questions.length === 0) {
       return;
     }
 
@@ -326,7 +362,7 @@ export function ReadingComprehensionTestClient() {
     <div className="grid gap-2 md:grid-cols-[1fr_1fr_140px_180px]">
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
-        <select value={selectedCategory} onChange={(event) => handleCategoryChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
+        <select value={resolvedCategory} onChange={(event) => handleCategoryChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
@@ -484,36 +520,51 @@ export function ReadingComprehensionTestClient() {
             <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
               Yeniden Baslat
             </button>
-            <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleFinishTest}>
+            <button
+              type="button"
+              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              style={FULLSCREEN_TOUCH_STYLE}
+              onClick={handleFinishTest}
+              disabled={selectedText.questions.length === 0}
+            >
               Testi Bitir
             </button>
           </div>
         }
       >
         <div className="max-h-[66vh] w-full overflow-y-auto pr-1">
-          <div className="grid gap-4">
-            {selectedText.questions.map((question, questionIndex) => (
-              <article key={question.id} className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
-                <h3 className="font-extrabold text-slate-900" style={{ fontSize: `${Math.min(fontSize, 22)}px`, lineHeight: 1.45 }}>
-                  {questionIndex + 1}. {question.question}
-                </h3>
-                <div className="mt-3 grid gap-2">
-                  {question.options.map((option, optionIndex) => (
-                    <label key={option} className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800" style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
-                      <input
-                        type="radio"
-                        name={question.id}
-                        checked={selectedAnswers[question.id] === optionIndex}
-                        onChange={() => handleAnswerSelect(question.id, optionIndex)}
-                        className="h-4 w-4 accent-red-600"
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
+          {selectedText.questions.length === 0 ? (
+            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
+              <p className="text-lg font-black text-amber-900">Bu metin icin henuz soru eklenmemis.</p>
+              <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-amber-800">
+                Lutfen ogretmen panelinden soru ekleyin. Okuma suresi ve hiz olcumu tamamlandi, ancak soru olmadigi icin test sonucu olusturulmaz.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {selectedText.questions.map((question, questionIndex) => (
+                <article key={question.id} className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
+                  <h3 className="font-extrabold text-slate-900" style={{ fontSize: `${Math.min(fontSize, 22)}px`, lineHeight: 1.45 }}>
+                    {questionIndex + 1}. {question.question}
+                  </h3>
+                  <div className="mt-3 grid gap-2">
+                    {question.options.map((option, optionIndex) => (
+                      <label key={option} className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800" style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
+                        <input
+                          type="radio"
+                          name={question.id}
+                          checked={selectedAnswers[question.id] === optionIndex}
+                          onChange={() => handleAnswerSelect(question.id, optionIndex)}
+                          className="h-4 w-4 accent-red-600"
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </FullscreenExerciseShell>
     );

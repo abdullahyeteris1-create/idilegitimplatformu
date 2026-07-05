@@ -78,6 +78,10 @@ function getExerciseTitle(type: ExerciseType): string {
     return "Anlama Testi";
   }
 
+  if (type === "letter-number-counting-focus") {
+    return "Harf / Rakam Sayma Odak Calismasi";
+  }
+
   return "Blok Okuma";
 }
 
@@ -131,6 +135,7 @@ export function StudentDetailClient() {
       "word-finding",
       "eye-muscle",
       "reading-comprehension",
+      "letter-number-counting-focus",
     ];
 
     return types.map((type) => {

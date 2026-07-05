@@ -30,6 +30,7 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
   "word-finding": "Kelime Bulma Calismasi Sonuclari",
   "eye-muscle": "Goz Kaslarini Gelistirme Sonuclari",
   "reading-comprehension": "Anlama Testi Sonuclari",
+  "letter-number-counting-focus": "Harf / Rakam Sayma Odak Sonuclari",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
@@ -43,6 +44,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "word-finding": "/egzersizler/kelime-bulma",
   "eye-muscle": "/egzersizler/goz-kaslari",
   "reading-comprehension": "/egzersizler/anlama-testi",
+  "letter-number-counting-focus": "/egzersizler/harf-rakam-sayma",
 };
 
 export function ResultSummaryClient({

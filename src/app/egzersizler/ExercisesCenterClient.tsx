@@ -74,6 +74,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/word-finding.svg",
         tags: ["Tarama", "Kelime", "Dikkat"],
       },
+      {
+        title: "Harf / Rakam Sayma",
+        description: "Daginik karakterler arasindan hedef harf veya rakamin kac tane oldugunu hizlica say.",
+        href: "/egzersizler/harf-rakam-sayma",
+        icon: "HR",
+        image: "/exercise-visuals/exercises/letter-number-counting.svg",
+        tags: ["Odak", "Sayma", "Dikkat"],
+      },
     ],
   },
   {

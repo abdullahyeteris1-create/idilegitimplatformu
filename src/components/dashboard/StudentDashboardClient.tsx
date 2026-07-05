@@ -144,6 +144,12 @@ export function StudentDashboardClient() {
         >
           Anlama Testi Baslat
         </Link>
+        <Link
+          href="/egzersizler/harf-rakam-sayma"
+          className="w-full min-h-[56px] rounded-2xl border border-red-200 bg-white px-4 py-4 text-center text-base font-bold text-red-800 transition hover:bg-red-50"
+        >
+          Harf / Rakam Sayma Baslat
+        </Link>
       </div>
       <div className="mt-4 md:mt-6">
         <Button variant="secondary" onClick={handleLogout} className="md:w-auto">

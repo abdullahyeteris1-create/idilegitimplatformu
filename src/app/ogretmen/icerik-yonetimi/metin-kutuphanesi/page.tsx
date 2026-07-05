@@ -7,7 +7,7 @@ export default function TextLibraryPage() {
   return (
     <AppShell
       title="Metin Kutuphanesi"
-      subtitle="Okuma metinlerini ekle, duzenle, filtrele ve aktif kullanim alanlarini yonet."
+      subtitle="Tum okuma calismalarinda ortak kullanilacak metinleri ekle, duzenle ve filtrele."
       navItems={TEACHER_NAV_ITEMS}
       wide
     >

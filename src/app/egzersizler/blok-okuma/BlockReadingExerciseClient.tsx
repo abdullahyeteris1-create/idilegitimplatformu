@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BLOCK_READING_CATEGORIES,
-  BLOCK_READING_TEXTS,
-  type BlockReadingCategory,
-} from "@/lib/data/blockReadingTexts";
+import { BLOCK_READING_TEXTS } from "@/lib/data/blockReadingTexts";
 import {
   calculateIntervalMs,
   createWordBlocks,
@@ -16,6 +12,7 @@ import {
 } from "@/lib/exercise-engine/blockReading";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -28,6 +25,12 @@ import {
 type ExercisePhase = "setup" | "ready" | "running" | "result";
 type BlockSize = 1 | 2 | 3 | 4 | 5;
 type FontSizePx = 24 | 32 | 40 | 48 | 56;
+type ReadableText = {
+  id: string;
+  title: string;
+  category: string;
+  text: string;
+};
 type BlockReadingResult = {
   completed: boolean;
   completedBlocks: number;
@@ -77,7 +80,8 @@ export function BlockReadingExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
-  const [category, setCategory] = useState<BlockReadingCategory>("Genel");
+  const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
+  const [category, setCategory] = useState("Genel");
   const [textId, setTextId] = useState<string>("");
   const [blockSize, setBlockSize] = useState<BlockSize>(3);
   const [speedMode, setSpeedMode] = useState<BlockReadingSpeedMode>("interval");
@@ -90,9 +94,49 @@ export function BlockReadingExerciseClient() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [result, setResult] = useState<BlockReadingResult | null>(null);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const activeTexts = getActiveTextLibraryItems().map((item) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        text: item.content,
+      }));
+
+      setLibraryTexts(activeTexts);
+      if (activeTexts.length > 0) {
+        setCategory(activeTexts[0].category);
+        setTextId(activeTexts[0].id);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  const availableTexts = useMemo<ReadableText[]>(() => {
+    if (libraryTexts.length > 0) {
+      return libraryTexts;
+    }
+
+    return BLOCK_READING_TEXTS.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      text: item.text,
+    }));
+  }, [libraryTexts]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(availableTexts.map((item) => item.category)));
+  }, [availableTexts]);
+
+  const resolvedCategory = useMemo(() => {
+    return availableCategories.includes(category) ? category : availableCategories[0] ?? "";
+  }, [availableCategories, category]);
+
   const textsByCategory = useMemo(() => {
-    return BLOCK_READING_TEXTS.filter((item) => item.category === category);
-  }, [category]);
+    return availableTexts.filter((item) => item.category === resolvedCategory);
+  }, [availableTexts, resolvedCategory]);
 
   const resolvedTextId = useMemo(() => {
     if (textsByCategory.length === 0) {
@@ -104,8 +148,8 @@ export function BlockReadingExerciseClient() {
   }, [textId, textsByCategory]);
 
   const selectedText = useMemo(() => {
-    return BLOCK_READING_TEXTS.find((item) => item.id === resolvedTextId) ?? null;
-  }, [resolvedTextId]);
+    return availableTexts.find((item) => item.id === resolvedTextId) ?? null;
+  }, [availableTexts, resolvedTextId]);
 
   const words = useMemo(() => {
     if (!selectedText) {
@@ -287,11 +331,12 @@ export function BlockReadingExerciseClient() {
     <div className="grid gap-3 lg:grid-cols-7">
       <label className="flex min-w-0 flex-col gap-1 lg:col-span-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
-        <select value={category} onChange={(event) => {
-          setCategory(event.target.value as BlockReadingCategory);
+        <select value={resolvedCategory} onChange={(event) => {
+          setCategory(event.target.value);
+          setTextId("");
           resetFlowToReady();
         }} className={FULLSCREEN_SELECT_CLASS}>
-          {BLOCK_READING_CATEGORIES.map((item) => (
+          {availableCategories.map((item) => (
             <option key={item} value={item}>
               {item}
             </option>

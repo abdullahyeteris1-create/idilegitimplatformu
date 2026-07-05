@@ -34,7 +34,8 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "memory-game" ||
     value === "word-finding" ||
     value === "eye-muscle" ||
-    value === "reading-comprehension"
+    value === "reading-comprehension" ||
+    value === "letter-number-counting-focus"
   ) {
     return value;
   }

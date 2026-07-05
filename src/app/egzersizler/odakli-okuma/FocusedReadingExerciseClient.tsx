@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FOCUSED_READING_CATEGORIES,
-  FOCUSED_READING_TEXTS,
-  type FocusedReadingCategory,
-} from "@/lib/data/focusedReadingTexts";
+import { FOCUSED_READING_TEXTS } from "@/lib/data/focusedReadingTexts";
 import {
   calculateCharacterCount,
   calculateIntervalMs,
@@ -19,6 +15,7 @@ import {
 } from "@/lib/exercise-engine/focusedReading";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -33,6 +30,12 @@ type GroupSize = 1 | 2 | 3 | 4 | 5;
 type JumpSpeedMs = number;
 type WordsPerMinute = number;
 type FontSizePx = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 26 | 28;
+type ReadableText = {
+  id: string;
+  title: string;
+  category: string;
+  text: string;
+};
 
 type FocusedReadingResult = {
   completed: boolean;
@@ -81,7 +84,8 @@ export function FocusedReadingExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
-  const [category, setCategory] = useState<FocusedReadingCategory>("Bilim");
+  const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
+  const [category, setCategory] = useState("Bilim");
   const [textId, setTextId] = useState("");
   const [groupSize, setGroupSize] = useState<GroupSize>(2);
   const [speedMode, setSpeedMode] = useState<FocusedReadingSpeedMode>("interval");
@@ -93,9 +97,49 @@ export function FocusedReadingExerciseClient() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [result, setResult] = useState<FocusedReadingResult | null>(null);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const activeTexts = getActiveTextLibraryItems().map((item) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        text: item.content,
+      }));
+
+      setLibraryTexts(activeTexts);
+      if (activeTexts.length > 0) {
+        setCategory(activeTexts[0].category);
+        setTextId(activeTexts[0].id);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  const availableTexts = useMemo<ReadableText[]>(() => {
+    if (libraryTexts.length > 0) {
+      return libraryTexts;
+    }
+
+    return FOCUSED_READING_TEXTS.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      text: item.text,
+    }));
+  }, [libraryTexts]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(availableTexts.map((item) => item.category)));
+  }, [availableTexts]);
+
+  const resolvedCategory = useMemo(() => {
+    return availableCategories.includes(category) ? category : availableCategories[0] ?? "";
+  }, [availableCategories, category]);
+
   const textsByCategory = useMemo(() => {
-    return FOCUSED_READING_TEXTS.filter((item) => item.category === category);
-  }, [category]);
+    return availableTexts.filter((item) => item.category === resolvedCategory);
+  }, [availableTexts, resolvedCategory]);
 
   const resolvedTextId = useMemo(() => {
     if (textsByCategory.length === 0) {
@@ -107,8 +151,8 @@ export function FocusedReadingExerciseClient() {
   }, [textId, textsByCategory]);
 
   const selectedText = useMemo(() => {
-    return FOCUSED_READING_TEXTS.find((item) => item.id === resolvedTextId) ?? null;
-  }, [resolvedTextId]);
+    return availableTexts.find((item) => item.id === resolvedTextId) ?? null;
+  }, [availableTexts, resolvedTextId]);
 
   const words = useMemo(() => {
     return selectedText ? splitTextIntoWords(selectedText.text) : [];
@@ -315,11 +359,12 @@ export function FocusedReadingExerciseClient() {
     <div className="grid gap-2 lg:grid-cols-8">
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
-        <select value={category} onChange={(event) => {
-          setCategory(event.target.value as FocusedReadingCategory);
+        <select value={resolvedCategory} onChange={(event) => {
+          setCategory(event.target.value);
+          setTextId("");
           resetFlowToReady();
         }} className={FULLSCREEN_SELECT_CLASS}>
-          {FOCUSED_READING_CATEGORIES.map((item) => (
+          {availableCategories.map((item) => (
             <option key={item} value={item}>
               {item}
             </option>

@@ -8,7 +8,8 @@ export type ExerciseType =
   | "memory-game"
   | "word-finding"
   | "eye-muscle"
-  | "reading-comprehension";
+  | "reading-comprehension"
+  | "letter-number-counting-focus";
 
 export type ExerciseResult = {
   id: string;
