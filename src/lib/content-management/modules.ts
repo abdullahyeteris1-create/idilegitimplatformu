@@ -108,7 +108,7 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         icon: "BO",
         tone: "from-indigo-500 to-sky-600",
         tags: ["Metin", "Blok Okuma", "Aktif"],
-        actionLabel: "Metin Kutuphanesine Git",
+        actionLabel: "Metinleri Yonet",
       },
       {
         id: "shadowing-texts",
@@ -119,7 +119,7 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         icon: "GL",
         tone: "from-blue-500 to-cyan-600",
         tags: ["Metin", "Golgeleme"],
-        actionLabel: "Metin Kutuphanesine Git",
+        actionLabel: "Metinleri Yonet",
       },
       {
         id: "focused-reading-texts",
@@ -130,7 +130,7 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         icon: "OO",
         tone: "from-violet-500 to-indigo-600",
         tags: ["Metin", "Odakli Okuma"],
-        actionLabel: "Metin Kutuphanesine Git",
+        actionLabel: "Metinleri Yonet",
       },
     ],
   },
@@ -237,7 +237,7 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         icon: "AT",
         tone: "from-slate-700 to-indigo-700",
         tags: ["Metin", "Anlama", "Aktif"],
-        actionLabel: "Metin Kutuphanesine Git",
+        actionLabel: "Metinleri Yonet",
       },
       {
         id: "comprehension-questions",

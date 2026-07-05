@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentStudent } from "@/lib/auth/auth";
+import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import {
-  READING_COMPREHENSION_TEXTS,
   type ReadingComprehensionText,
 } from "@/lib/data/readingComprehensionTexts";
 import {
@@ -60,6 +59,14 @@ const TOUCH_STYLE: CSSProperties = {
 
 const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
 
+const EMPTY_TEXT: ReadingComprehensionText = {
+  id: "",
+  category: "Genel",
+  title: "",
+  text: "",
+  questions: [],
+};
+
 function getOptionClass(evaluation: AnswerEvaluation | undefined, optionIndex: number): string {
   if (!evaluation) {
     return "border-red-100 bg-white text-slate-800";
@@ -83,9 +90,10 @@ export function ReadingComprehensionTestClient() {
   const saveLockRef = useRef(true);
 
   const [phase, setPhase] = useState<TestPhase>("setup");
+  const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadingComprehensionText[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState(READING_COMPREHENSION_TEXTS[0]?.category ?? "");
-  const [selectedTextId, setSelectedTextId] = useState(READING_COMPREHENSION_TEXTS[0]?.id ?? "");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedTextId, setSelectedTextId] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [readingDurationSeconds, setReadingDurationSeconds] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizePx>(18);
@@ -96,6 +104,8 @@ export function ReadingComprehensionTestClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+
       const activeTexts = getActiveTextLibraryItems().map((item) => ({
         id: item.id,
         category: item.category,
@@ -115,8 +125,10 @@ export function ReadingComprehensionTestClient() {
   }, []);
 
   const allTexts = useMemo(() => {
-    return libraryTexts.length > 0 ? libraryTexts : READING_COMPREHENSION_TEXTS;
+    return libraryTexts;
   }, [libraryTexts]);
+
+  const hasActiveTexts = allTexts.length > 0;
 
   const categories = useMemo(() => {
     return Array.from(new Set(allTexts.map((item) => item.category)));
@@ -131,7 +143,7 @@ export function ReadingComprehensionTestClient() {
   }, [allTexts, resolvedCategory]);
 
   const selectedText = useMemo<ReadingComprehensionText>(() => {
-    return allTexts.find((text) => text.id === selectedTextId) ?? availableTexts[0] ?? READING_COMPREHENSION_TEXTS[0];
+    return allTexts.find((text) => text.id === selectedTextId) ?? availableTexts[0] ?? EMPTY_TEXT;
   }, [allTexts, availableTexts, selectedTextId]);
   const totalWords = useMemo(() => countWords(selectedText.text), [selectedText.text]);
   const totalCharacters = useMemo(() => countCharacters(selectedText.text), [selectedText.text]);
@@ -391,7 +403,7 @@ export function ReadingComprehensionTestClient() {
           ))}
         </select>
       </label>
-      <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading}>
+      <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading} disabled={!hasActiveTexts}>
         Baslat
       </button>
     </div>
@@ -458,22 +470,43 @@ export function ReadingComprehensionTestClient() {
         stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[58vh]"
         footer={readyFooter}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-        <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-        <div className="mt-5 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-            <p className="text-xs text-slate-500">Kategori</p>
-            <p className="mt-1 font-bold text-slate-900">{selectedText.category}</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-            <p className="text-xs text-slate-500">Metin</p>
-            <p className="mt-1 font-bold text-slate-900">{selectedText.title}</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-            <p className="text-xs text-slate-500">Soru</p>
-            <p className="mt-1 font-bold text-slate-900">{selectedText.questions.length}</p>
-          </article>
-        </div>
+        {hasActiveTexts ? (
+          <>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+            <div className="mt-5 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
+              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <p className="text-xs text-slate-500">Kategori</p>
+                <p className="mt-1 font-bold text-slate-900">{selectedText.category}</p>
+              </article>
+              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <p className="text-xs text-slate-500">Metin</p>
+                <p className="mt-1 font-bold text-slate-900">{selectedText.title}</p>
+              </article>
+              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <p className="text-xs text-slate-500">Soru</p>
+                <p className="mt-1 font-bold text-slate-900">{selectedText.questions.length}</p>
+              </article>
+            </div>
+          </>
+        ) : (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+            <p className="text-sm font-bold text-amber-900">Bu çalışma için henüz aktif metin bulunmuyor.</p>
+            <p className="text-sm text-amber-800">
+              {isTeacher
+                ? "Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin."
+                : "Bu çalışma için henüz öğretmeniniz tarafından metin eklenmemiş."}
+            </p>
+            {isTeacher ? (
+              <Link
+                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-900/25 bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--brand-strong)]"
+              >
+                Metin Ekle
+              </Link>
+            ) : null}
+          </div>
+        )}
       </FullscreenExerciseShell>
     );
   }
@@ -538,7 +571,7 @@ export function ReadingComprehensionTestClient() {
             <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
               <p className="text-lg font-black text-amber-900">Bu metin icin henuz soru eklenmemis.</p>
               <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-amber-800">
-                Lutfen ogretmen panelinden soru ekleyin. Okuma suresi ve hiz olcumu tamamlandi, ancak soru olmadigi icin test sonucu olusturulmaz.
+                Okuma suresi ve hiz olcumu tamamlandi, ancak soru olmadigi icin test sonucu olusturulmaz.
               </p>
             </div>
           ) : (

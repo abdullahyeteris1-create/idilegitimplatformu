@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { BLOCK_READING_TEXTS } from "@/lib/data/blockReadingTexts";
 import {
   calculateCharacterCount,
   calculateIntervalMs,
@@ -14,7 +13,7 @@ import {
   splitTextIntoWords,
   type ShadowReadingSpeedMode,
 } from "@/lib/exercise-engine/shadowReading";
-import { getCurrentStudent } from "@/lib/auth/auth";
+import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
@@ -76,6 +75,7 @@ export function ShadowReadingExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
   const [category, setCategory] = useState("Genel");
   const [textId, setTextId] = useState<string>("");
@@ -92,6 +92,8 @@ export function ShadowReadingExerciseClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+
       const activeTexts = getActiveTextLibraryItems().map((item) => ({
         id: item.id,
         title: item.title,
@@ -110,17 +112,10 @@ export function ShadowReadingExerciseClient() {
   }, []);
 
   const availableTexts = useMemo<ReadableText[]>(() => {
-    if (libraryTexts.length > 0) {
-      return libraryTexts;
-    }
-
-    return BLOCK_READING_TEXTS.map((item) => ({
-      id: item.id,
-      title: item.title,
-      category: item.category,
-      text: item.text,
-    }));
+    return libraryTexts;
   }, [libraryTexts]);
+
+  const hasActiveTexts = availableTexts.length > 0;
 
   const availableCategories = useMemo(() => {
     return Array.from(new Set(availableTexts.map((item) => item.category)));
@@ -513,14 +508,35 @@ export function ShadowReadingExerciseClient() {
         stageClassName="fx-slide-up mt-3 flex min-h-[42vh] w-full flex-col items-center justify-center gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[50vh]"
         footer={footerControls}
       >
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
-            Alt bardan kategori, metin, blok sayısı, hız ve font ayarlarını seç. Başlat dediğinde vurgu ritmi tam ekran sahnede ilerler.
-          </p>
-        </div>
-        <div className="w-full max-w-3xl">{textInfo}</div>
+        {hasActiveTexts ? (
+          <>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
+              <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+                Alt bardan kategori, metin, blok sayısı, hız ve font ayarlarını seç. Başlat dediğinde vurgu ritmi tam ekran sahnede ilerler.
+              </p>
+            </div>
+            <div className="w-full max-w-3xl">{textInfo}</div>
+          </>
+        ) : (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+            <p className="text-sm font-bold text-amber-900">Bu çalışma için henüz aktif metin bulunmuyor.</p>
+            <p className="text-sm text-amber-800">
+              {isTeacher
+                ? "Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin."
+                : "Bu çalışma için henüz öğretmeniniz tarafından metin eklenmemiş."}
+            </p>
+            {isTeacher ? (
+              <Link
+                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-900/25 bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--brand-strong)]"
+              >
+                Metin Ekle
+              </Link>
+            ) : null}
+          </div>
+        )}
       </FullscreenExerciseShell>
     );
   }

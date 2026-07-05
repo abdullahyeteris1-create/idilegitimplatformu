@@ -52,11 +52,33 @@ export function ContentManagementClient() {
             <p className="mt-0.5 max-w-4xl text-sm leading-5 text-slate-600">
               Metinleri, kelime havuzlarini ve soru setlerini yonetin.
             </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-900/25 bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[var(--brand-strong)]"
+              >
+                Metin Ekle
+              </Link>
+              <Link
+                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-50"
+              >
+                + Metin Ekle
+              </Link>
+            </div>
           </div>
 
-          <Link href="/ogretmen/icerik-yonetimi/puzzle-gorselleri" className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition duration-200 hover:bg-red-50">
-            Puzzle Gorselleri
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/ogretmen/icerik-yonetimi/puzzle-gorselleri"
+              className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition duration-200 hover:bg-red-50"
+            >
+              Puzzle Gorselleri
+            </Link>
+          </div>
 
           <div className="grid grid-cols-3 gap-2 sm:min-w-[320px]">
             <article className="rounded-xl border border-slate-200 bg-white p-2.5 text-center">

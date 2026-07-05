@@ -191,7 +191,7 @@ export function TextLibraryClient() {
               onClick={openCreateForm}
               className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-700 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98]"
             >
-              Yeni Metin Ekle
+              Metin Ekle
             </button>
             <button
               type="button"
