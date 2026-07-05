@@ -1,0 +1,22 @@
+[
+  { "id": "red-circle", "label": "Kirmizi Daire", "file": "/eye-symbols/red-circle.svg" },
+  { "id": "blue-diamond", "label": "Mavi Elmas", "file": "/eye-symbols/blue-diamond.svg" },
+  { "id": "green-triangle", "label": "Yesil Ucgen", "file": "/eye-symbols/green-triangle.svg" },
+  { "id": "yellow-star", "label": "Sari Yildiz", "file": "/eye-symbols/yellow-star.svg" },
+  { "id": "purple-heart", "label": "Mor Kalp", "file": "/eye-symbols/purple-heart.svg" },
+  { "id": "orange-square", "label": "Turuncu Kare", "file": "/eye-symbols/orange-square.svg" },
+  { "id": "black-dot", "label": "Siyah Nokta", "file": "/eye-symbols/black-dot.svg" },
+  { "id": "teal-hexagon", "label": "Turkuaz Altigen", "file": "/eye-symbols/teal-hexagon.svg" },
+  { "id": "pink-flower", "label": "Pembe Cicek", "file": "/eye-symbols/pink-flower.svg" },
+  { "id": "cyan-plus", "label": "Camgobegi Arti", "file": "/eye-symbols/cyan-plus.svg" },
+  { "id": "target", "label": "Hedef", "file": "/eye-symbols/target.svg" },
+  { "id": "lightning", "label": "Simsek", "file": "/eye-symbols/lightning.svg" },
+  { "id": "eye", "label": "Goz", "file": "/eye-symbols/eye.svg" },
+  { "id": "moon", "label": "Ay", "file": "/eye-symbols/moon.svg" },
+  { "id": "sun", "label": "Gunes", "file": "/eye-symbols/sun.svg" },
+  { "id": "spiral", "label": "Spiral", "file": "/eye-symbols/spiral.svg" },
+  { "id": "clover", "label": "Yonca", "file": "/eye-symbols/clover.svg" },
+  { "id": "arrow", "label": "Ok", "file": "/eye-symbols/arrow.svg" },
+  { "id": "ring", "label": "Halka", "file": "/eye-symbols/ring.svg" },
+  { "id": "check", "label": "Tik", "file": "/eye-symbols/check.svg" }
+]

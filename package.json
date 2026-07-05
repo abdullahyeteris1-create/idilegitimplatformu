@@ -4,14 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mobile": "next dev --hostname 0.0.0.0",
+    "dev:webpack": "next dev --webpack --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
+    "start:mobile": "next start -H 0.0.0.0",
+    "clean": "rmdir /s /q .next",
+    "stop-node": "taskkill /IM node.exe /F || exit /b 0",
+    "mobile:prod": "npm run build && npm run start:mobile",
+    "test:mobile": "taskkill /IM node.exe /F || echo node.exe not running && rmdir /s /q .next && npm run build && npm run start:mobile",
     "lint": "eslint"
   },
   "dependencies": {
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

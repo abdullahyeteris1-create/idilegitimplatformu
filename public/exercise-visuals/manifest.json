@@ -1,0 +1,86 @@
+{
+  "categories": [
+    {
+      "id": "attention",
+      "title": "Algı ve Dikkat",
+      "file": "/exercise-visuals/categories/attention.svg"
+    },
+    {
+      "id": "fluency",
+      "title": "Okuma Akıcılığı",
+      "file": "/exercise-visuals/categories/fluency.svg"
+    },
+    {
+      "id": "memory",
+      "title": "Hafıza",
+      "file": "/exercise-visuals/categories/memory.svg"
+    },
+    {
+      "id": "eye",
+      "title": "Göz Egzersizleri",
+      "file": "/exercise-visuals/categories/eye.svg"
+    },
+    {
+      "id": "assessment",
+      "title": "Ölçme ve Değerlendirme",
+      "file": "/exercise-visuals/categories/assessment.svg"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "tachistoscope",
+      "title": "Takistoskop",
+      "file": "/exercise-visuals/exercises/tachistoscope.svg"
+    },
+    {
+      "id": "similar-words",
+      "title": "Benzer Kelimeler",
+      "file": "/exercise-visuals/exercises/similar-words.svg"
+    },
+    {
+      "id": "block-reading",
+      "title": "Blok Okuma",
+      "file": "/exercise-visuals/exercises/block-reading.svg"
+    },
+    {
+      "id": "shadowing",
+      "title": "Gölgeleme",
+      "file": "/exercise-visuals/exercises/shadowing.svg"
+    },
+    {
+      "id": "focused-reading",
+      "title": "Odaklı Okuma",
+      "file": "/exercise-visuals/exercises/focused-reading.svg"
+    },
+    {
+      "id": "two-side-focus",
+      "title": "Çift Taraflı Odak",
+      "file": "/exercise-visuals/exercises/two-side-focus.svg"
+    },
+    {
+      "id": "memory",
+      "title": "Hafıza Geliştirme",
+      "file": "/exercise-visuals/exercises/memory.svg"
+    },
+    {
+      "id": "word-finding",
+      "title": "Kelime Bulma",
+      "file": "/exercise-visuals/exercises/word-finding.svg"
+    },
+    {
+      "id": "eye-muscle",
+      "title": "Göz Kaslarını Geliştirme",
+      "file": "/exercise-visuals/exercises/eye-muscle.svg"
+    },
+    {
+      "id": "comprehension",
+      "title": "Anlama Testi",
+      "file": "/exercise-visuals/exercises/comprehension.svg"
+    },
+    {
+      "id": "results",
+      "title": "Sonuç",
+      "file": "/exercise-visuals/exercises/results.svg"
+    }
+  ]
+}

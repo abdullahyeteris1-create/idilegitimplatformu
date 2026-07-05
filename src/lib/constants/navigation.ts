@@ -1,0 +1,17 @@
+export const APP_NAV_ITEMS = [
+  { href: "/giris", label: "Giris" },
+  { href: "/ogrenci", label: "Ogrenci" },
+  { href: "/ogretmen", label: "Ogretmen" },
+  { href: "/egzersizler", label: "Egzersizler" },
+  { href: "/egzersizler/takistoskop", label: "Takistoskop" },
+  { href: "/egzersizler/benzer-kelimeler", label: "Benzer Kelimeler" },
+  { href: "/egzersizler/blok-okuma", label: "Blok Okuma" },
+  { href: "/egzersizler/golgeleme", label: "Golgeleme" },
+  { href: "/egzersizler/odakli-okuma", label: "Odaklı Okuma" },
+  { href: "/egzersizler/cift-tarafli-odak", label: "Cift Tarafli Odak" },
+  { href: "/egzersizler/hafiza-gelistirme", label: "Hafıza Geliştirme" },
+  { href: "/egzersizler/kelime-bulma", label: "Kelime Bulma" },
+  { href: "/egzersizler/goz-kaslari", label: "Goz Kaslari" },
+  { href: "/egzersizler/anlama-testi", label: "Anlama Testi" },
+  { href: "/sonuc", label: "Sonuc" },
+];
