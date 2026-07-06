@@ -15,7 +15,7 @@ import {
 } from "@/lib/exercise-engine/shadowReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
-import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -77,7 +77,7 @@ export function ShadowReadingExerciseClient() {
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
-  const [category, setCategory] = useState("Genel");
+  const [category, setCategory] = useState(DEFAULT_TEXT_CATEGORY);
   const [textId, setTextId] = useState<string>("");
   const [blockSize, setBlockSize] = useState<BlockSize>(2);
   const [speedMode, setSpeedMode] = useState<ShadowReadingSpeedMode>("interval");
@@ -117,9 +117,9 @@ export function ShadowReadingExerciseClient() {
 
   const hasActiveTexts = availableTexts.length > 0;
 
-  const availableCategories = useMemo(() => {
-    return Array.from(new Set(availableTexts.map((item) => item.category)));
-  }, [availableTexts]);
+  const availableCategories = useMemo<string[]>(() => {
+    return [...TEXT_LIBRARY_CATEGORIES];
+  }, []);
 
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : availableCategories[0] ?? "";

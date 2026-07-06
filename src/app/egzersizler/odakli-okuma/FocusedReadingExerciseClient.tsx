@@ -14,7 +14,7 @@ import {
 } from "@/lib/exercise-engine/focusedReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
-import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -85,7 +85,7 @@ export function FocusedReadingExerciseClient() {
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
-  const [category, setCategory] = useState("Bilim");
+  const [category, setCategory] = useState(DEFAULT_TEXT_CATEGORY);
   const [textId, setTextId] = useState("");
   const [groupSize, setGroupSize] = useState<GroupSize>(2);
   const [speedMode, setSpeedMode] = useState<FocusedReadingSpeedMode>("interval");
@@ -124,9 +124,9 @@ export function FocusedReadingExerciseClient() {
 
   const hasActiveTexts = availableTexts.length > 0;
 
-  const availableCategories = useMemo(() => {
-    return Array.from(new Set(availableTexts.map((item) => item.category)));
-  }, [availableTexts]);
+  const availableCategories = useMemo<string[]>(() => {
+    return [...TEXT_LIBRARY_CATEGORIES];
+  }, []);
 
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : availableCategories[0] ?? "";

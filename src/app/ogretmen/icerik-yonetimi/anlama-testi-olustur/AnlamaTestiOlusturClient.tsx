@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { countCharacters, countWords, getTextLibraryItems, type TextLibraryItem } from "@/lib/settings/textLibraryStorage";
+import { TEXT_LIBRARY_CATEGORIES, countCharacters, countWords, getTextLibraryItems, type TextLibraryItem } from "@/lib/settings/textLibraryStorage";
 import {
   createQuestion,
   deleteQuestion,
@@ -72,7 +72,10 @@ export function AnlamaTestiOlusturClient() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  const categories = useMemo(() => Array.from(new Set(texts.map((item) => item.category))).sort((left, right) => left.localeCompare(right, "tr")), [texts]);
+  const categories = useMemo(() => {
+    const textCategorySet = new Set(texts.map((item) => item.category));
+    return TEXT_LIBRARY_CATEGORIES.filter((category) => textCategorySet.has(category));
+  }, [texts]);
 
   const filteredTexts = useMemo(() => {
     return texts.filter((item) => categoryFilter === "all" || item.category === categoryFilter);

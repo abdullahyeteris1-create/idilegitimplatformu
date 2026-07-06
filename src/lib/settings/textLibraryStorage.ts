@@ -1,20 +1,26 @@
 export const TEXT_LIBRARY_STORAGE_KEY = "idil_text_library";
 export const TEXT_CATEGORY_STORAGE_KEY = "idil_text_categories";
 
-export const DEFAULT_TEXT_CATEGORIES = [
+export const TEXT_LIBRARY_CATEGORIES = [
+  "Bilim",
+  "Biyografi",
+  "Coğrafya",
+  "Edebiyat",
+  "Genel Kültür",
   "Hikayeler",
-  "Ilkokul Hikayeleri",
+  "Hikayeler (Uzun)",
+  "İlkokul Hikayeleri",
+  "Makaleler",
   "Ortaokul Hikayeleri",
   "Romanlar",
-  "Makaleler",
-  "Bilim",
-  "Tarih",
-  "Cografya",
-  "Biyografi",
   "Spor",
-  "Yasam",
-  "Genel Kultur",
+  "Tarih",
+  "Yaşam",
 ] as const;
+
+export const DEFAULT_TEXT_CATEGORY = "Genel Kültür";
+
+export const DEFAULT_TEXT_CATEGORIES = TEXT_LIBRARY_CATEGORIES;
 
 export const TEXT_LIBRARY_USAGE_TYPES = [
   { id: "block-reading", label: "Blok Okuma" },
@@ -62,8 +68,50 @@ function createTextId(): string {
 }
 
 function uniqueCategories(categories: string[]): string[] {
-  const normalized = categories.map(normalizeCategoryName).filter(Boolean);
-  return Array.from(new Set(normalized)).sort((a, b) => a.localeCompare(b, "tr"));
+  const normalized = categories.map((category) => normalizeCategoryName(category)).filter(Boolean);
+  const normalizedSet = new Set(normalized);
+
+  return TEXT_LIBRARY_CATEGORIES.filter((category) => normalizedSet.has(category));
+}
+
+function normalizeLookup(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/[üu]/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/[ıiİ]/g, "i")
+    .replace(/[öo]/g, "o")
+    .replace(/[çc]/g, "c")
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+const CATEGORY_LOOKUP = new Map<string, string>(
+  TEXT_LIBRARY_CATEGORIES.map((category) => [normalizeLookup(category), category]),
+);
+
+const CATEGORY_ALIASES: Record<string, string> = {
+  genel: "Genel Kültür",
+  genelkultur: "Genel Kültür",
+  kultur: "Genel Kültür",
+  hikaye: "Hikayeler",
+  hikayeleruzun: "Hikayeler (Uzun)",
+  ilkokul: "İlkokul Hikayeleri",
+  ilkokulhikayeleri: "İlkokul Hikayeleri",
+  ortaokul: "Ortaokul Hikayeleri",
+  ortaokulhikayeleri: "Ortaokul Hikayeleri",
+  cografya: "Coğrafya",
+  yasam: "Yaşam",
+};
+
+function isGradeCategoryLookup(lookup: string): boolean {
+  if (lookup.includes("sinif")) {
+    return true;
+  }
+
+  return /^[1-8](sinif)?$/.test(lookup);
 }
 
 function createSeedItem(id: string, title: string, category: string, content: string): TextLibraryItem {
@@ -93,7 +141,7 @@ function getSeedTextLibraryItems(): TextLibraryItem[] {
     createSeedItem(
       "seed-kitap-okuma-aliskanligi",
       "Kitap Okuma Aliskanligi",
-      "Ilkokul Hikayeleri",
+      "İlkokul Hikayeleri",
       "Kitap okumak kelime hazinesini gelistirir ve dusunme becerisini guclendirir. Her gun kisa bir sure kitap okuyan ogrenciler zamanla daha akici okumaya baslar. Okunan hikayeler hayal gucunu besler, yeni bilgiler ogrenmeyi kolaylastirir ve dikkati toplama becerisini artirir. Duzenli okuma aliskanligi kazanmak icin sessiz bir ortam secmek ve her gun ayni saatte okumaya calismak faydalidir.",
     ),
     createSeedItem(
@@ -111,7 +159,7 @@ function getSeedTextLibraryItems(): TextLibraryItem[] {
     createSeedItem(
       "seed-saglikli-yasam",
       "Saglikli Yasam",
-      "Yasam",
+      "Yaşam",
       "Saglikli yasam icin dengeli beslenmek, duzenli hareket etmek ve yeterince uyumak gerekir. Sebze, meyve, tahil ve protein kaynaklarini dengeli tuketmek vucudun ihtiyac duydugu enerjiyi saglar. Spor yapmak kaslari guclendirir, dikkati artirir ve kendimizi daha iyi hissetmemize yardim eder. Gun icinde su icmek ve ekran karsisinda uzun sure hareketsiz kalmamak da saglikli aliskanliklar arasindadir.",
     ),
   ];
@@ -145,24 +193,6 @@ function writeItems(items: TextLibraryItem[]): void {
   localStorage.setItem(TEXT_LIBRARY_STORAGE_KEY, JSON.stringify(items));
 }
 
-function readCategoriesRaw(): string[] {
-  if (!hasWindow()) {
-    return [];
-  }
-
-  const raw = localStorage.getItem(TEXT_CATEGORY_STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as string[];
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
 function writeCategories(categories: string[]): void {
   if (!hasWindow()) {
     return;
@@ -174,6 +204,7 @@ function writeCategories(categories: string[]): void {
 function ensureInitialItems(): TextLibraryItem[] {
   const existing = readItemsRaw();
   if (existing.length > 0) {
+    writeItems(existing);
     return existing;
   }
 
@@ -188,7 +219,7 @@ function normalizeStoredItem(item: TextLibraryItem): TextLibraryItem {
   return {
     ...item,
     title: item.title?.trim() ?? "Basliksiz Metin",
-    category: normalizeCategoryName(item.category || "Genel Kultur"),
+    category: normalizeCategoryName(item.category || DEFAULT_TEXT_CATEGORY),
     content,
     wordCount: countWords(content),
     characterCount: countCharacters(content),
@@ -216,7 +247,31 @@ function normalizeTextItem(input: TextLibraryItemInput): TextLibraryItem {
 }
 
 export function normalizeCategoryName(categoryName: string): string {
-  return categoryName.trim().replace(/\s+/g, " ");
+  const trimmed = categoryName.trim().replace(/\s+/g, " ");
+  if (!trimmed) {
+    return DEFAULT_TEXT_CATEGORY;
+  }
+
+  const lookup = normalizeLookup(trimmed);
+  if (!lookup) {
+    return DEFAULT_TEXT_CATEGORY;
+  }
+
+  const directMatch = CATEGORY_LOOKUP.get(lookup);
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const aliasMatch = CATEGORY_ALIASES[lookup];
+  if (aliasMatch) {
+    return aliasMatch;
+  }
+
+  if (isGradeCategoryLookup(lookup)) {
+    return DEFAULT_TEXT_CATEGORY;
+  }
+
+  return DEFAULT_TEXT_CATEGORY;
 }
 
 export function countWords(text: string): number {
@@ -232,11 +287,9 @@ export function getUsageTypeLabel(usageType: string): string {
 }
 
 export function getTextCategories(): string[] {
-  const storedCategories = readCategoriesRaw();
-  const itemCategories = readItemsRaw().map((item) => item.category);
-  const categories = uniqueCategories([...DEFAULT_TEXT_CATEGORIES, ...storedCategories, ...itemCategories]);
+  const categories = [...TEXT_LIBRARY_CATEGORIES];
 
-  if (hasWindow() && storedCategories.length === 0) {
+  if (hasWindow()) {
     writeCategories(categories);
   }
 

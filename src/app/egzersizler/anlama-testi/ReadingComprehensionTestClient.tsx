@@ -19,7 +19,7 @@ import {
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
-import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -62,7 +62,7 @@ const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
 
 const EMPTY_TEXT: ReadingComprehensionText = {
   id: "",
-  category: "Genel",
+  category: DEFAULT_TEXT_CATEGORY,
   title: "",
   text: "",
   questions: [],
@@ -136,9 +136,9 @@ export function ReadingComprehensionTestClient() {
 
   const hasQuestionTexts = allTexts.length > 0;
 
-  const categories = useMemo(() => {
-    return Array.from(new Set(allTexts.map((item) => item.category)));
-  }, [allTexts]);
+  const categories = useMemo<string[]>(() => {
+    return [...TEXT_LIBRARY_CATEGORIES];
+  }, []);
 
   const resolvedCategory = useMemo(() => {
     return categories.includes(selectedCategory) ? selectedCategory : categories[0] ?? "";

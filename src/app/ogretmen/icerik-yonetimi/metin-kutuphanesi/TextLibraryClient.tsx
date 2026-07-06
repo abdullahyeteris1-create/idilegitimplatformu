@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  DEFAULT_TEXT_CATEGORY,
   countCharacters,
   countWords,
   deleteTextLibraryItem,
   getTextCategories,
   getTextLibraryItems,
-  saveTextCategory,
   saveTextLibraryItem,
   toggleTextLibraryItemActive,
   updateTextLibraryItem,
@@ -21,11 +21,9 @@ type TextFormState = {
   isActive: boolean;
 };
 
-const DEFAULT_CATEGORY = "Genel Kultur";
-
 const EMPTY_FORM: TextFormState = {
   title: "",
-  category: DEFAULT_CATEGORY,
+  category: DEFAULT_TEXT_CATEGORY,
   content: "",
   isActive: true,
 };
@@ -49,8 +47,6 @@ export function TextLibraryClient() {
   const [form, setForm] = useState<TextFormState>(EMPTY_FORM);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -100,13 +96,13 @@ export function TextLibraryClient() {
   }
 
   function resetForm(): void {
-    setForm({ ...EMPTY_FORM, category: categories[0] ?? DEFAULT_CATEGORY });
+    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY });
     setEditingItemId(null);
     setIsFormOpen(false);
   }
 
   function openCreateForm(): void {
-    setForm({ ...EMPTY_FORM, category: categories[0] ?? DEFAULT_CATEGORY });
+    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY });
     setEditingItemId(null);
     setIsFormOpen(true);
   }
@@ -120,18 +116,6 @@ export function TextLibraryClient() {
     });
     setEditingItemId(item.id);
     setIsFormOpen(true);
-  }
-
-  function saveCategory(): void {
-    const savedCategory = saveTextCategory(newCategoryName);
-    if (!savedCategory) {
-      return;
-    }
-
-    setNewCategoryName("");
-    setIsCategoryFormOpen(false);
-    refreshData();
-    setForm((current) => ({ ...current, category: savedCategory }));
   }
 
   function saveForm(): void {
@@ -193,47 +177,8 @@ export function TextLibraryClient() {
             >
               Metin Ekle
             </button>
-            <button
-              type="button"
-              onClick={() => setIsCategoryFormOpen((current) => !current)}
-              className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-50 active:scale-[0.98]"
-            >
-              Yeni Kategori Ekle
-            </button>
           </div>
         </div>
-
-        {isCategoryFormOpen ? (
-          <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
-              Yeni Kategori Adi
-              <input
-                value={newCategoryName}
-                onChange={(event) => setNewCategoryName(event.target.value)}
-                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                placeholder="Orn: Masallar"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={saveCategory}
-              disabled={!newCategoryName.trim()}
-              className="inline-flex min-h-[42px] items-center justify-center rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Kaydet
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsCategoryFormOpen(false);
-                setNewCategoryName("");
-              }}
-              className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Vazgec
-            </button>
-          </div>
-        ) : null}
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl border border-slate-200 bg-white p-3.5">

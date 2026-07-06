@@ -11,7 +11,7 @@ import {
 } from "@/lib/exercise-engine/blockReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
-import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -81,7 +81,7 @@ export function BlockReadingExerciseClient() {
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
-  const [category, setCategory] = useState("Genel");
+  const [category, setCategory] = useState(DEFAULT_TEXT_CATEGORY);
   const [textId, setTextId] = useState<string>("");
   const [blockSize, setBlockSize] = useState<BlockSize>(3);
   const [speedMode, setSpeedMode] = useState<BlockReadingSpeedMode>("interval");
@@ -121,9 +121,9 @@ export function BlockReadingExerciseClient() {
 
   const hasActiveTexts = availableTexts.length > 0;
 
-  const availableCategories = useMemo(() => {
-    return Array.from(new Set(availableTexts.map((item) => item.category)));
-  }, [availableTexts]);
+  const availableCategories = useMemo<string[]>(() => {
+    return [...TEXT_LIBRARY_CATEGORIES];
+  }, []);
 
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : availableCategories[0] ?? "";
