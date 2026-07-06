@@ -18,6 +18,7 @@ import {
 } from "@/lib/exercise-engine/readingComprehension";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
+import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
 import { getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
@@ -104,21 +105,26 @@ export function ReadingComprehensionTestClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+      void (async () => {
+        setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+        await refreshQuestionLibraryCache();
 
-      const activeTexts = getActiveTextLibraryItems().map((item) => ({
-        id: item.id,
-        category: item.category,
-        title: item.title,
-        text: item.content,
-        questions: [],
-      }));
+        const activeTexts = getActiveTextLibraryItems()
+          .map((item) => ({
+            id: item.id,
+            category: item.category,
+            title: item.title,
+            text: item.content,
+            questions: getActiveQuestionsByTextId(item.id).map((question) => mapQuestionToReadingQuestion(question)),
+          }))
+          .filter((item) => item.questions.length > 0);
 
-      setLibraryTexts(activeTexts);
-      if (activeTexts.length > 0) {
-        setSelectedCategory(activeTexts[0].category);
-        setSelectedTextId(activeTexts[0].id);
-      }
+        setLibraryTexts(activeTexts);
+        if (activeTexts.length > 0) {
+          setSelectedCategory(activeTexts[0].category);
+          setSelectedTextId(activeTexts[0].id);
+        }
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -128,7 +134,7 @@ export function ReadingComprehensionTestClient() {
     return libraryTexts;
   }, [libraryTexts]);
 
-  const hasActiveTexts = allTexts.length > 0;
+  const hasQuestionTexts = allTexts.length > 0;
 
   const categories = useMemo(() => {
     return Array.from(new Set(allTexts.map((item) => item.category)));
@@ -403,7 +409,7 @@ export function ReadingComprehensionTestClient() {
           ))}
         </select>
       </label>
-      <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading} disabled={!hasActiveTexts}>
+        <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading} disabled={!hasQuestionTexts}>
         Baslat
       </button>
     </div>
@@ -470,7 +476,7 @@ export function ReadingComprehensionTestClient() {
         stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[58vh]"
         footer={readyFooter}
       >
-        {hasActiveTexts ? (
+        {hasQuestionTexts ? (
           <>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
@@ -491,18 +497,14 @@ export function ReadingComprehensionTestClient() {
           </>
         ) : (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
-            <p className="text-sm font-bold text-amber-900">Bu çalışma için henüz aktif metin bulunmuyor.</p>
-            <p className="text-sm text-amber-800">
-              {isTeacher
-                ? "Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin."
-                : "Bu çalışma için henüz öğretmeniniz tarafından metin eklenmemiş."}
-            </p>
+            <p className="text-sm font-bold text-amber-900">Henüz anlama testi için hazırlanmış metin bulunmuyor.</p>
+            <p className="text-sm text-amber-800">{isTeacher ? "Metin Kütüphanesi'ndeki aktif metinlere soru ekleyin." : "Bu çalışma için şu anda sorulu metin yok."}</p>
             {isTeacher ? (
               <Link
-                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
+                href="/ogretmen/icerik-yonetimi/anlama-testi-olustur"
                 className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-900/25 bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--brand-strong)]"
               >
-                Metin Ekle
+                Anlama Testi Oluştur
               </Link>
             ) : null}
           </div>

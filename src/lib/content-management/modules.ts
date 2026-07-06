@@ -241,13 +241,14 @@ export const CONTENT_GROUPS: ContentGroup[] = [
       },
       {
         id: "comprehension-questions",
-        title: "Anlama Testi Soruları",
-        description: "Metinlere bağlı soruları, seçenekleri ve doğru cevapları yönetin.",
-        href: "#",
-        status: "coming-soon",
+        title: "Anlama Testi Oluştur",
+        description: "Metin Kütüphanesi'ndeki metinlere soru ve cevap seçenekleri ekleyin.",
+        href: "/ogretmen/icerik-yonetimi/anlama-testi-olustur",
+        status: "linked",
         icon: "SR",
         tone: "from-indigo-500 to-violet-600",
         tags: ["Soru", "Cevap", "Olcme"],
+        actionLabel: "Teste Soru Ekle",
       },
       {
         id: "reading-test-records",

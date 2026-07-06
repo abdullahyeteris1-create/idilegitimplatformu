@@ -5,6 +5,7 @@ export type ExerciseType =
   | "shadow-reading"
   | "focused-reading"
   | "two-side-focus"
+  | "attention-maze"
   | "memory-game"
   | "word-finding"
   | "eye-muscle"
@@ -12,7 +13,10 @@ export type ExerciseType =
   | "letter-number-counting-focus"
   | "card-matching"
   | "visual-puzzle"
-  | "eye-brain";
+  | "eye-brain"
+  | "word-guess"
+  | "catch-same"
+  | "hangman";
 
 export type ExerciseResult = {
   id: string;

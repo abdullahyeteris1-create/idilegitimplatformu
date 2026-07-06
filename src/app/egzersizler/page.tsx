@@ -7,7 +7,16 @@ const EXERCISES_NAV_ITEMS = [
   { href: "/sonuc", label: "Sonuclarim" },
 ];
 
-export default function ExercisesPage() {
+type ExercisesPageProps = {
+  searchParams: Promise<{ category?: string | string[] }>;
+};
+
+export default async function ExercisesPage({ searchParams }: ExercisesPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const category = Array.isArray(resolvedSearchParams.category)
+    ? resolvedSearchParams.category[0]
+    : resolvedSearchParams.category;
+
   return (
     <AppShell
       title="Egzersizler"
@@ -16,7 +25,7 @@ export default function ExercisesPage() {
       compactHeader
       wide
     >
-      <ExercisesCenterClient />
+      <ExercisesCenterClient initialCategory={category} />
     </AppShell>
   );
 }

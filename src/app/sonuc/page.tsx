@@ -31,6 +31,7 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "shadow-reading" ||
     value === "focused-reading" ||
     value === "two-side-focus" ||
+    value === "attention-maze" ||
     value === "memory-game" ||
     value === "word-finding" ||
     value === "eye-muscle" ||
@@ -38,7 +39,10 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "letter-number-counting-focus" ||
     value === "card-matching" ||
     value === "visual-puzzle" ||
-    value === "eye-brain"
+    value === "eye-brain" ||
+    value === "word-guess" ||
+    value === "catch-same" ||
+    value === "hangman"
   ) {
     return value;
   }

@@ -62,6 +62,10 @@ function getExerciseTitle(type: ExerciseType): string {
     return "Cift Tarafli Odak";
   }
 
+  if (type === "attention-maze") {
+    return "Dikkat Labirenti";
+  }
+
   if (type === "memory-game") {
     return "Hafıza Geliştirme";
   }
@@ -92,6 +96,18 @@ function getExerciseTitle(type: ExerciseType): string {
 
   if (type === "eye-brain") {
     return "Göz Beyin Çalışması";
+  }
+
+  if (type === "word-guess") {
+    return "Kelime Tahmin";
+  }
+
+  if (type === "catch-same") {
+    return "Ayni Olani Yakala";
+  }
+
+  if (type === "hangman") {
+    return "Adam Asmaca";
   }
 
   return "Blok Okuma";
@@ -152,6 +168,7 @@ export function StudentDetailClient() {
       "shadow-reading",
       "focused-reading",
       "two-side-focus",
+      "attention-maze",
       "memory-game",
       "word-finding",
       "eye-muscle",
@@ -160,6 +177,9 @@ export function StudentDetailClient() {
       "card-matching",
       "visual-puzzle",
       "eye-brain",
+      "word-guess",
+      "catch-same",
+      "hangman",
     ];
 
     return types.map((type) => {

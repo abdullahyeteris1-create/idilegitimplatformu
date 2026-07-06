@@ -68,6 +68,12 @@ export function ContentManagementClient() {
               >
                 + Metin Ekle
               </Link>
+              <Link
+                href="/ogretmen/icerik-yonetimi/anlama-testi-olustur"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                Anlama Testi Oluştur
+              </Link>
             </div>
           </div>
 

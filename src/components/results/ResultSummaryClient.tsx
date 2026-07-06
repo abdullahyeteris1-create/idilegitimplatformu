@@ -27,6 +27,7 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
   "shadow-reading": "Golgeleme Sonuclari",
   "focused-reading": "Odaklı Okuma Çalışması Sonuclari",
   "two-side-focus": "Cift Tarafli Odak Sonuclari",
+  "attention-maze": "Dikkat Labirenti Sonuclari",
   "memory-game": "Hafiza Gelistirme Sonuclari",
   "word-finding": "Kelime Bulma Calismasi Sonuclari",
   "eye-muscle": "Goz Kaslarini Gelistirme Sonuclari",
@@ -35,6 +36,9 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
   "card-matching": "Kart Eslestirme Sonuclari",
   "visual-puzzle": "Gorsel Puzzle Sonuclari",
   "eye-brain": "Göz Beyin Çalışması Sonuçları",
+  "word-guess": "Kelime Tahmin Sonuclari",
+  "catch-same": "Ayni Olani Yakala Sonuclari",
+  hangman: "Adam Asmaca Sonuclari",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
@@ -44,6 +48,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "shadow-reading": "/egzersizler/golgeleme",
   "focused-reading": "/egzersizler/odakli-okuma",
   "two-side-focus": "/egzersizler/cift-tarafli-odak",
+  "attention-maze": "/egzersizler/dikkat-labirenti",
   "memory-game": "/egzersizler/hafiza-gelistirme",
   "word-finding": "/egzersizler/kelime-bulma",
   "eye-muscle": "/egzersizler/goz-kaslari",
@@ -52,6 +57,9 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "card-matching": "/egzersizler/kart-eslestirme",
   "visual-puzzle": "/egzersizler/gorsel-puzzle",
   "eye-brain": "/egzersizler/goz-beyin",
+  "word-guess": "/egzersizler/kelime-tahmin",
+  "catch-same": "/egzersizler/ayni-olani-yakala",
+  hangman: "/egzersizler/adam-asmaca",
 };
 
 export function ResultSummaryClient({

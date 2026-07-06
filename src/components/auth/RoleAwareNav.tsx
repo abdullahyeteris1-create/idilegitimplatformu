@@ -19,6 +19,7 @@ const STUDENT_NAV_ITEMS: NavItem[] = [
   { href: "/ogrenci", label: "Ana Sayfa" },
   { href: "/egzersizler", label: "Egzersizler" },
   { href: "/sonuc", label: "Sonuclarim" },
+  { href: "/egzersizler/anlama-testi", label: "Okuma Testlerim" },
 ];
 
 const TEACHER_NAV_ITEMS: NavItem[] = [

@@ -113,12 +113,54 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Odak", "Hız"],
       },
       {
+        title: "Dikkat Labirenti",
+        description: "Yolu gözlerinle takip et, doğru çıkışı bul ve dikkatini güçlendir.",
+        href: "/egzersizler/dikkat-labirenti",
+        icon: "DL",
+        image: "/exercise-visuals/categories/attention.svg",
+        tags: ["Takip", "Odak"],
+      },
+      {
         title: "Harf / Rakam Sayma Odak Çalışması",
         description: "Dağınık karakterler arasından hedef harf veya rakamı hızla say.",
         href: "/egzersizler/harf-rakam-sayma",
         icon: "HR",
         image: "/exercise-visuals/exercises/letter-number-counting.svg",
         tags: ["Sayma", "Odak"],
+      },
+    ],
+  },
+  {
+    id: "word-games",
+    title: "Kelime Oyunlari",
+    shortTitle: "Kelime Oyunlari",
+    description: "Kelime bilgisi, dikkat, hafiza ve hizli karar verme becerilerini gelistiren oyunlar.",
+    icon: "🔤",
+    image: "/exercise-visuals/categories/attention.svg",
+    exercises: [
+      {
+        title: "Kelime Tahmin",
+        description: "Gizli kelimeyi tahmin et, harflerin yerini bul ve kelime farkindaligini gelistir.",
+        href: "/egzersizler/kelime-tahmin",
+        icon: "KT",
+        image: "/exercise-visuals/exercises/word-finding.svg",
+        tags: ["Kelime", "Tahmin"],
+      },
+      {
+        title: "Ayni Olani Yakala",
+        description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
+        href: "/egzersizler/ayni-olani-yakala",
+        icon: "AO",
+        image: "/exercise-visuals/exercises/similar-words.svg",
+        tags: ["Dikkat", "Hiz"],
+      },
+      {
+        title: "Adam Asmaca",
+        description: "Gizli kelimeyi harf tahminleriyle bul, kelime hafizani gelistir.",
+        href: "/egzersizler/adam-asmaca",
+        icon: "AA",
+        image: "/exercise-visuals/exercises/focused-reading.svg",
+        tags: ["Hafiza", "Kelime"],
       },
     ],
   },
@@ -312,6 +354,23 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     cardButton: "bg-violet-600 hover:bg-violet-700",
     cardAccent: "from-violet-500 to-purple-600",
   },
+  "word-games": {
+    menuActive: "border-lime-200 bg-lime-50 ring-2 ring-lime-100",
+    menuInactiveHover: "hover:border-lime-200 hover:shadow-lime-100/70",
+    menuActiveIcon: "bg-white text-emerald-700",
+    menuInactiveIcon: "bg-emerald-100 text-emerald-700",
+    menuCountBadge: "border-lime-200 bg-white text-emerald-700",
+    menuChevronActive: "text-emerald-700",
+    headerLabel: "text-emerald-700",
+    headerBadge: "border-lime-200 bg-lime-50 text-emerald-700",
+    headerIcon: "bg-lime-100 text-emerald-700",
+    cardHover: "hover:border-lime-200",
+    cardImage: "bg-lime-50 border-lime-100",
+    cardCode: "bg-lime-100 text-emerald-700",
+    cardTag: "border-lime-200 bg-lime-50 text-emerald-700",
+    cardButton: "bg-emerald-600 hover:bg-emerald-700",
+    cardAccent: "from-lime-500 to-cyan-600",
+  },
   assessment: {
     menuActive: "border-indigo-200 bg-indigo-50 ring-2 ring-indigo-100",
     menuInactiveHover: "hover:border-indigo-200 hover:shadow-indigo-100/70",
@@ -333,8 +392,20 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
 
 const FALLBACK_THEME = CATEGORY_THEMES.attention;
 
-export function ExercisesCenterClient() {
-  const [activeGroupId, setActiveGroupId] = useState(DEFAULT_GROUP_ID);
+type ExercisesCenterClientProps = {
+  initialCategory?: string;
+};
+
+function resolveInitialGroupId(category: string | undefined): string {
+  if (!category) {
+    return DEFAULT_GROUP_ID;
+  }
+
+  return EXERCISE_GROUPS.some((group) => group.id === category) ? category : DEFAULT_GROUP_ID;
+}
+
+export function ExercisesCenterClient({ initialCategory }: ExercisesCenterClientProps) {
+  const [activeGroupId, setActiveGroupId] = useState(() => resolveInitialGroupId(initialCategory));
 
   const activeGroup = useMemo(() => {
     return EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? EXERCISE_GROUPS[0];
