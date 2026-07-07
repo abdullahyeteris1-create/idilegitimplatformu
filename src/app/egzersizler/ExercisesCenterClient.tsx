@@ -231,6 +231,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Eşleştirme", "Hafıza"],
       },
       {
+        title: "Kart Hafıza",
+        description: "Gördüğün kartları aklında tut, sonra gelen kartın daha önce gösterilip gösterilmediğini seç.",
+        href: "/egzersizler/kart-hafiza",
+        icon: "🃏",
+        image: "/exercise-visuals/exercises/memory.svg",
+        tags: ["Hafıza", "Odak"],
+      },
+      {
         title: "Görsel Puzzle Çalışması",
         description: "Parçalara ayrılmış görselleri tamamlayarak parça-bütün algını geliştir.",
         href: "/egzersizler/gorsel-puzzle",
@@ -392,23 +400,37 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
 
 const FALLBACK_THEME = CATEGORY_THEMES.attention;
 
-type ExercisesCenterClientProps = {
-  initialCategory?: string;
-};
+function buildDeterministicGroups(groups: ExerciseGroup[]): ExerciseGroup[] {
+  const usedHrefs = new Set<string>();
 
-function resolveInitialGroupId(category: string | undefined): string {
-  if (!category) {
-    return DEFAULT_GROUP_ID;
-  }
+  return groups.map((group) => {
+    const uniqueExercises = group.exercises.filter((exercise) => {
+      if (usedHrefs.has(exercise.href)) {
+        return false;
+      }
 
-  return EXERCISE_GROUPS.some((group) => group.id === category) ? category : DEFAULT_GROUP_ID;
+      usedHrefs.add(exercise.href);
+      return true;
+    });
+
+    return {
+      ...group,
+      exercises: uniqueExercises,
+    };
+  });
 }
 
-export function ExercisesCenterClient({ initialCategory }: ExercisesCenterClientProps) {
-  const [activeGroupId, setActiveGroupId] = useState(() => resolveInitialGroupId(initialCategory));
+const DETERMINISTIC_EXERCISE_GROUPS = buildDeterministicGroups(EXERCISE_GROUPS);
+const EXERCISE_COUNT_BY_GROUP_ID = DETERMINISTIC_EXERCISE_GROUPS.reduce<Record<string, number>>((accumulator, group) => {
+  accumulator[group.id] = group.exercises.length;
+  return accumulator;
+}, {});
+
+export function ExercisesCenterClient() {
+  const [activeGroupId, setActiveGroupId] = useState(DEFAULT_GROUP_ID);
 
   const activeGroup = useMemo(() => {
-    return EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? EXERCISE_GROUPS[0];
+    return DETERMINISTIC_EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? DETERMINISTIC_EXERCISE_GROUPS[0];
   }, [activeGroupId]);
 
   const activeTheme = CATEGORY_THEMES[activeGroup.id] ?? FALLBACK_THEME;
@@ -423,12 +445,12 @@ export function ExercisesCenterClient({ initialCategory }: ExercisesCenterClient
             <p className="mt-1 max-w-sm text-sm leading-5 text-slate-600">Bir kategori secerek calismalari goruntule.</p>
           </div>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-700">
-            {EXERCISE_GROUPS.length} kategori
+            {DETERMINISTIC_EXERCISE_GROUPS.length} kategori
           </span>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {EXERCISE_GROUPS.map((group) => {
+          {DETERMINISTIC_EXERCISE_GROUPS.map((group) => {
             const isActive = group.id === activeGroupId;
             const groupTheme = CATEGORY_THEMES[group.id] ?? FALLBACK_THEME;
 
@@ -458,7 +480,7 @@ export function ExercisesCenterClient({ initialCategory }: ExercisesCenterClient
                       isActive ? groupTheme.menuCountBadge : groupTheme.headerBadge
                     }`}
                   >
-                    {group.exercises.length} calisma
+                    {EXERCISE_COUNT_BY_GROUP_ID[group.id] ?? 0} calisma
                   </span>
                 </span>
                 <span className={`mt-1 text-lg font-semibold ${isActive ? groupTheme.menuChevronActive : "text-slate-300"}`}>{">"}</span>
@@ -481,7 +503,7 @@ export function ExercisesCenterClient({ initialCategory }: ExercisesCenterClient
             </div>
           </div>
           <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${activeTheme.headerBadge}`}>
-            {activeGroup.exercises.length} calisma
+            {EXERCISE_COUNT_BY_GROUP_ID[activeGroup.id] ?? 0} calisma
           </span>
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExerciseFullscreenShell } from "@/components/exercises/ExerciseFullscreenShell";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
@@ -180,7 +180,6 @@ export function TwoSideFocusExerciseClient() {
   const [level, setLevel] = useState<ExerciseLevel>(1);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [isRunning, setIsRunning] = useState(false);
-  const [round, setRound] = useState(1);
   const [roundData, setRoundData] = useState<RoundData>(() => createRound(1));
 
   const [correctCount, setCorrectCount] = useState(0);
@@ -196,7 +195,6 @@ export function TwoSideFocusExerciseClient() {
   const answerLockedRef = useRef(false);
   const timeoutRef = useRef<number | null>(null);
 
-  const wordCount = useMemo(() => getWordCount(level), [level]);
   const netCount = correctCount - wrongCount;
 
   const clearRoundTimeout = useCallback(() => {
@@ -211,7 +209,6 @@ export function TwoSideFocusExerciseClient() {
       clearRoundTimeout();
       answerLockedRef.current = false;
       setRoundData(createRound(nextLevel));
-      setRound((previous) => previous + 1);
     },
     [clearRoundTimeout, level],
   );
@@ -220,9 +217,25 @@ export function TwoSideFocusExerciseClient() {
     clearRoundTimeout();
     setCorrectCount(0);
     setWrongCount(0);
-    setRound(1);
     answerLockedRef.current = false;
   }, [clearRoundTimeout]);
+
+  const prepareLevel = useCallback(
+    (nextLevel: ExerciseLevel, message?: string, type: "success" | "info" = "info") => {
+      clearRoundTimeout();
+      setLevel(nextLevel);
+      setIsRunning(false);
+      resetLevelStats();
+      setRoundData(createRound(nextLevel));
+      setFeedback({
+        type,
+        message:
+          message ??
+          `${nextLevel}. seviye hazır. Başlat'a bas. Aynıysa Sol, farklıysa Sağ.`,
+      });
+    },
+    [clearRoundTimeout, resetLevelStats],
+  );
 
   const advanceLevel = useCallback(() => {
     clearRoundTimeout();
@@ -238,17 +251,8 @@ export function TwoSideFocusExerciseClient() {
 
     const nextLevel = getNextLevel(level);
 
-    setLevel(nextLevel);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setRound(1);
-    setRoundData(createRound(nextLevel));
-    answerLockedRef.current = false;
-    setFeedback({
-      type: "success",
-      message: `${nextLevel}. seviyeye geçtin. Yeni hedef: 10 net.`,
-    });
-  }, [clearRoundTimeout, level]);
+    prepareLevel(nextLevel, `${nextLevel}. seviyeye geçtin. Yeni hedef: 10 net.`, "success");
+  }, [clearRoundTimeout, level, prepareLevel]);
 
   const handleAnswer = useCallback(
     (answer: AnswerType) => {
@@ -354,16 +358,6 @@ export function TwoSideFocusExerciseClient() {
   }, [clearRoundTimeout, handleTimeOut, isRunning, roundData, speed]);
 
   useEffect(() => {
-    setRoundData(createRound(level));
-    resetLevelStats();
-    setIsRunning(false);
-    setFeedback({
-      type: "info",
-      message: `${level}. seviye hazır. Başlat'a bas. Aynıysa Sol, farklıysa Sağ.`,
-    });
-  }, [level, resetLevelStats]);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
         event.preventDefault();
@@ -464,7 +458,7 @@ export function TwoSideFocusExerciseClient() {
                 <button
                   key={levelNumber}
                   type="button"
-                  onClick={() => setLevel(levelNumber)}
+                  onClick={() => prepareLevel(levelNumber)}
                   className={`rounded-2xl border px-3 py-3 text-sm font-black transition ${
                     level === levelNumber
                       ? "border-indigo-300 bg-indigo-600 text-white shadow-lg shadow-indigo-200"
