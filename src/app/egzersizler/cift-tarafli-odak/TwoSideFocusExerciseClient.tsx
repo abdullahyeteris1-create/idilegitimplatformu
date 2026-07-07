@@ -1,797 +1,678 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-import { useRouter } from "next/navigation";
-import {
-  calculateScore,
-  calculateSuccessRate,
-  checkGroupAnswer,
-  generateExerciseGroup,
-  type TwoSideFocusAnswer,
-  type TwoSideFocusGroup,
-} from "@/lib/exercise-engine/twoSideFocus";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
-import {
-  FullscreenExerciseIntro,
-  FullscreenExerciseShell,
-  FULLSCREEN_PRIMARY_BUTTON_CLASS,
-  FULLSCREEN_SECONDARY_BUTTON_CLASS,
-  FULLSCREEN_SELECT_CLASS,
-  FULLSCREEN_TOUCH_STYLE,
-} from "@/components/exercises/FullscreenExerciseShell";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type ExercisePhase = "setup" | "ready" | "play" | "result";
-type ExerciseLevel = 1 | 2 | 3 | 4 | 5 | 6;
-type SpeedMs = 500 | 750 | 850 | 1000 | 1500 | 2000;
-type FontSizePx = 28 | 36 | 44 | 52 | 60;
+type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
+type AnswerType = "same" | "different";
+type WordOffset = "normal" | "up" | "down";
 
-const MAX_TWO_SIDE_FOCUS_DISPLAY_LEVEL = 6;
-
-const ACTION_BUTTON_CLASS =
-  "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
-
-const TOUCH_STYLE: CSSProperties = {
-  touchAction: "manipulation",
-  WebkitTapHighlightColor: "transparent",
+type SimilarWordSet = {
+  base: string;
+  variants: string[];
 };
 
-const STAGGERED_ROW_CLASSES = [
-  "md:pr-24",
-  "md:pl-24",
-  "md:pr-12",
-  "md:pl-12",
-  "md:pr-32",
+type WordItem = {
+  id: string;
+  text: string;
+  offset: WordOffset;
+};
+
+type RoundData = {
+  words: WordItem[];
+  correctAnswer: AnswerType;
+  baseWord: string;
+  differentWord?: string;
+};
+
+const LEVELS: ExerciseLevel[] = [1, 2, 3, 4, 5];
+
+const SPEED_MIN = 500;
+const SPEED_MAX = 5000;
+const DEFAULT_SPEED = 1500;
+const NET_TARGET = 10;
+
+const SIMILAR_WORD_SETS: SimilarWordSet[] = [
+  { base: "kalem", variants: ["kelam", "kalen", "kalım", "kalem"] },
+  { base: "kitap", variants: ["katip", "kıtap", "kitap", "kitapç"] },
+  { base: "masa", variants: ["masal", "musa", "maşa", "masa"] },
+  { base: "deniz", variants: ["denir", "beniz", "deniz", "deniş"] },
+  { base: "çiçek", variants: ["çilek", "çiçem", "çiçek", "çicek"] },
+  { base: "sahil", variants: ["sahip", "sakin", "sahil", "sahir"] },
+  { base: "orman", variants: ["organ", "ortam", "orman", "orhan"] },
+  { base: "güneş", variants: ["güreş", "gümüş", "güneş", "günel"] },
+  { base: "yıldız", variants: ["yalnız", "yıldır", "yıldız", "yıldız"] },
+  { base: "ırmak", variants: ["ırgat", "irmik", "ırmak", "ırmak"] },
+  { base: "bahçe", variants: ["bahçe", "bahane", "bahri", "bahçe"] },
+  { base: "defter", variants: ["defter", "defne", "defter", "defter"] },
+  { base: "renkli", variants: ["renkler", "renki", "renkli", "renkli"] },
+  { base: "oyuncu", variants: ["oyunçu", "oyuncak", "oyuncu", "oyuncu"] },
+  { base: "sevgi", variants: ["sezgi", "sergi", "sevgi", "sevgi"] },
+  { base: "umutlu", variants: ["unuttu", "umuttu", "umutlu", "umutlu"] },
+  { base: "zaman", variants: ["zamanı", "saman", "zaman", "zaman"] },
+  { base: "şehir", variants: ["nehir", "sehir", "şehir", "şehir"] },
+  { base: "köprü", variants: ["köpük", "kömür", "köprü", "köprü"] },
+  { base: "rüzgar", variants: ["rüzgarı", "rüzgâr", "rüzgar", "rüzgar"] },
+  { base: "yağmur", variants: ["yamuk", "yağma", "yağmur", "yağmur"] },
+  { base: "toprak", variants: ["yaprak", "toplam", "toprak", "toprak"] },
+  { base: "dikkat", variants: ["dikat", "dikkât", "dikkat", "dikkat"] },
+  { base: "odaklı", variants: ["odakla", "ocaklı", "odaklı", "odaklı"] },
+  { base: "hedef", variants: ["heves", "heder", "hedef", "hedef"] },
+  { base: "başarı", variants: ["başka", "başarı", "başarı", "başari"] },
+  { base: "anlama", variants: ["anlatma", "anlams", "anlama", "anlama"] },
+  { base: "okuma", variants: ["okumu", "dokuma", "okuma", "okuma"] },
 ];
 
-function formatElapsed(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-
-  return `${minutes}:${seconds}`;
-}
-
-function getFontLabel(fontSize: FontSizePx): string {
-  if (fontSize === 28) {
-    return "Küçük";
-  }
-
-  if (fontSize === 36) {
-    return "Orta";
-  }
-
-  if (fontSize === 44) {
-    return "Büyük";
-  }
-
-  return "Çok Büyük";
-}
-
-function getPairCountForLevel(level: number): number {
-  if (level <= 1) return 2;
+function getWordCount(level: ExerciseLevel) {
+  if (level === 1) return 2;
   if (level === 2) return 3;
   if (level === 3) return 4;
-
+  if (level === 4) return 4;
   return 5;
 }
 
-function getGeneratorLevelForDisplayLevel(level: ExerciseLevel): number {
-  if (level <= 1) return 2;
+function getRandomItem<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function getDifferentVariant(wordSet: SimilarWordSet) {
+  const variants = wordSet.variants.filter(
+    (variant) => variant !== wordSet.base,
+  );
+
+  return getRandomItem(variants.length > 0 ? variants : wordSet.variants);
+}
+
+function shouldCreateSameRound() {
+  return Math.random() >= 0.5;
+}
+
+function getOffsetForIndex(level: ExerciseLevel, index: number): WordOffset {
+  if (level === 4) {
+    if (index % 3 === 0) return "up";
+    if (index % 3 === 1) return "down";
+    return "normal";
+  }
+
+  if (level === 5) {
+    if (index === 1 || index === 4) return "up";
+    if (index === 2) return "down";
+    return "normal";
+  }
+
+  return "normal";
+}
+
+function createRound(level: ExerciseLevel): RoundData {
+  const wordCount = getWordCount(level);
+  const wordSet = getRandomItem(SIMILAR_WORD_SETS);
+  const isSameRound = shouldCreateSameRound();
+
+  const words = Array.from({ length: wordCount }, (_, index) => ({
+    id: `${wordSet.base}-${index}-${Date.now()}-${Math.random()}`,
+    text: wordSet.base,
+    offset: getOffsetForIndex(level, index),
+  }));
+
+  if (isSameRound) {
+    return {
+      words,
+      correctAnswer: "same",
+      baseWord: wordSet.base,
+    };
+  }
+
+  const differentIndex = Math.floor(Math.random() * wordCount);
+  const differentWord = getDifferentVariant(wordSet);
+
+  words[differentIndex] = {
+    ...words[differentIndex],
+    text: differentWord,
+  };
+
+  return {
+    words,
+    correctAnswer: "different",
+    baseWord: wordSet.base,
+    differentWord,
+  };
+}
+
+function getNextLevel(level: ExerciseLevel): ExerciseLevel {
+  if (level === 1) return 2;
   if (level === 2) return 3;
   if (level === 3) return 4;
-
+  if (level === 4) return 5;
   return 5;
 }
 
-function getAnswerLabel(group: TwoSideFocusGroup | null): string {
-  if (!group) {
-    return "-";
+function getLevelDescription(level: ExerciseLevel) {
+  if (level === 1) {
+    return "Ekranda aynı anda 2 kelime görünür. Aynıysa Sol, farklıysa Sağ.";
   }
 
-  return group.isSame ? "Aynı" : "Farklı";
+  if (level === 2) {
+    return "Ekranda aynı anda 3 kelime görünür. Tüm kelimeler aynı mı, yoksa biri farklı mı hızlıca karar ver.";
+  }
+
+  if (level === 3) {
+    return "Ekranda aynı anda 4 kelime görünür. Benzer kelimeler arasındaki küçük farkları yakala.";
+  }
+
+  if (level === 4) {
+    return "Ekranda 4 kelime görünür, kelimelerin yerleri hafif değişir. Dikkat ve çevresel algı zorlaşır.";
+  }
+
+  return "Ekranda aynı anda 5 kelime görünür. Benzer kelimeler arasında hızlı ve doğru karar vermeye çalış.";
+}
+
+function getOffsetClass(offset: WordOffset) {
+  if (offset === "up") return "md:-translate-y-6";
+  if (offset === "down") return "md:translate-y-6";
+  return "";
+}
+
+function clampSpeed(value: number) {
+  return Math.min(SPEED_MAX, Math.max(SPEED_MIN, value));
 }
 
 export function TwoSideFocusExerciseClient() {
-  const router = useRouter();
-  const hasSavedResultRef = useRef(false);
-  const answeredForCurrentGroupRef = useRef(false);
-  const startedAtRef = useRef<number | null>(null);
-  const groupTimerRef = useRef<number | null>(null);
-  const latestLevelRef = useRef<ExerciseLevel>(1);
-
-  const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [level, setLevel] = useState<ExerciseLevel>(1);
-  const [speedMs, setSpeedMs] = useState<SpeedMs>(850);
-  const [fontSize, setFontSize] = useState<FontSizePx>(44);
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const [isRunning, setIsRunning] = useState(false);
+  const [round, setRound] = useState(1);
+  const [roundData, setRoundData] = useState<RoundData>(() => createRound(1));
 
-  const [currentGroup, setCurrentGroup] =
-    useState<TwoSideFocusGroup | null>(null);
-  const [currentCorrect, setCurrentCorrect] = useState(0);
-  const [currentWrong, setCurrentWrong] = useState(0);
-  const [totalCorrect, setTotalCorrect] = useState(0);
-  const [totalWrong, setTotalWrong] = useState(0);
-  const [unansweredCount, setUnansweredCount] = useState(0);
-  const [totalShownGroups, setTotalShownGroups] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [canAnswer, setCanAnswer] = useState(false);
-  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(
-    null,
-  );
-  const [statusMessage, setStatusMessage] = useState("Cevabını seç.");
-  const [reachedLevel, setReachedLevel] = useState<ExerciseLevel>(1);
-  const [autoLevelUpCount, setAutoLevelUpCount] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  }>({
+    type: "info",
+    message: "Başlat'a bas. Kelimeler aynıysa Sol, farklıysa Sağ seç.",
+  });
 
-  const currentNet = currentCorrect - currentWrong;
-  const totalNet = totalCorrect - totalWrong;
-  const score = calculateScore(totalCorrect, totalWrong);
-  const successRate = calculateSuccessRate(totalCorrect, totalWrong);
-  const currentPairCount = currentGroup?.pairCount ?? getPairCountForLevel(level);
-  const levelProgressCount = Math.max(0, Math.min(10, currentNet));
-  const displayFontSize = Math.max(
-    22,
-    fontSize - Math.max(0, currentPairCount - 1) * 4,
-  );
+  const answerLockedRef = useRef(false);
+  const timeoutRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    latestLevelRef.current = level;
-  }, [level]);
+  const wordCount = useMemo(() => getWordCount(level), [level]);
+  const netCount = correctCount - wrongCount;
 
-  const clearGroupTimer = () => {
-    if (groupTimerRef.current) {
-      window.clearTimeout(groupTimerRef.current);
-      groupTimerRef.current = null;
+  const clearRoundTimeout = useCallback(() => {
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
-  };
-
-  useEffect(() => {
-    return () => {
-      clearGroupTimer();
-    };
   }, []);
 
-  const startNextGroup = useCallback((overrideLevel?: ExerciseLevel) => {
-    const nextLevel = overrideLevel ?? latestLevelRef.current;
-    const generatorLevel = getGeneratorLevelForDisplayLevel(nextLevel);
-
-    const nextGroup = generateExerciseGroup({
-      level: generatorLevel,
-    });
-
-    setCurrentGroup(nextGroup);
-    setCanAnswer(true);
-    setLastAnswerCorrect(null);
-    setStatusMessage("Cevabını seç.");
-    answeredForCurrentGroupRef.current = false;
-    setTotalShownGroups((prev) => prev + 1);
-  }, []);
-
-  const applyRoundResult = useCallback(
-    (group: TwoSideFocusGroup, isCorrect: boolean, isUnanswered: boolean) => {
-      const nextCurrentCorrect = currentCorrect + (isCorrect ? 1 : 0);
-      const nextCurrentWrong = currentWrong + (isCorrect ? 0 : 1);
-      const nextCurrentNet = nextCurrentCorrect - nextCurrentWrong;
-      const correctAnswerLabel = getAnswerLabel(group);
-
-      setTotalCorrect((prev) => prev + (isCorrect ? 1 : 0));
-      setTotalWrong((prev) => prev + (isCorrect ? 0 : 1));
-      setCurrentCorrect(nextCurrentCorrect);
-      setCurrentWrong(nextCurrentWrong);
-      setLastAnswerCorrect(isCorrect && !isUnanswered);
-      setCanAnswer(false);
-
-      if (isUnanswered) {
-        setUnansweredCount((prev) => prev + 1);
-      }
-
-      const shouldLevelUp =
-        nextCurrentNet >= 10 && level < MAX_TWO_SIDE_FOCUS_DISPLAY_LEVEL;
-      const isMaxLevel =
-        nextCurrentNet >= 10 && level >= MAX_TWO_SIDE_FOCUS_DISPLAY_LEVEL;
-
-      if (shouldLevelUp) {
-        const nextLevel = (level + 1) as ExerciseLevel;
-        latestLevelRef.current = nextLevel;
-        setLevel(nextLevel);
-        setReachedLevel((prev) => (prev > nextLevel ? prev : nextLevel));
-        setAutoLevelUpCount((prev) => prev + 1);
-        setCurrentCorrect(0);
-        setCurrentWrong(0);
-        setStatusMessage(`Tebrikler! Seviye ${nextLevel}'ye geçtin.`);
-        return;
-      }
-
-      if (isMaxLevel) {
-        setStatusMessage("En yüksek seviyedesin.");
-        return;
-      }
-
-      if (isCorrect) {
-        setStatusMessage(`Doğru cevap. Doğru yön: ${correctAnswerLabel}`);
-        return;
-      }
-
-      if (isUnanswered) {
-        setStatusMessage(`Süre doldu. Doğru cevap: ${correctAnswerLabel}`);
-        return;
-      }
-
-      setStatusMessage(`Yanlış cevap. Doğru cevap: ${correctAnswerLabel}`);
+  const createNextRound = useCallback(
+    (nextLevel = level) => {
+      clearRoundTimeout();
+      answerLockedRef.current = false;
+      setRoundData(createRound(nextLevel));
+      setRound((previous) => previous + 1);
     },
-    [currentCorrect, currentWrong, level],
+    [clearRoundTimeout, level],
   );
 
-  const finishExercise = useCallback(() => {
-    if (hasSavedResultRef.current) {
+  const resetLevelStats = useCallback(() => {
+    clearRoundTimeout();
+    setCorrectCount(0);
+    setWrongCount(0);
+    setRound(1);
+    answerLockedRef.current = false;
+  }, [clearRoundTimeout]);
+
+  const advanceLevel = useCallback(() => {
+    clearRoundTimeout();
+
+    if (level >= 5) {
+      setIsRunning(false);
+      setFeedback({
+        type: "success",
+        message: "Tebrikler! 5. seviyeyi de tamamladın.",
+      });
       return;
     }
 
-    hasSavedResultRef.current = true;
-    clearGroupTimer();
+    const nextLevel = getNextLevel(level);
 
-    const startedAt = startedAtRef.current;
-    const durationSeconds = Math.max(
-      1,
-      startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
-    );
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Seçilmemiş Öğrenci",
-      exerciseType: "two-side-focus",
-      exerciseTitle: "Çift Taraflı Odak",
-      durationSeconds,
-      correctCount: totalCorrect,
-      wrongCount: totalWrong,
-      score,
-      successRate,
-      details: {
-        level,
-        reachedLevel,
-        speedMs,
-        fontSize,
-        net: totalNet,
-        maxPairCount: getPairCountForLevel(reachedLevel),
-        totalShownGroups,
-        unansweredCount,
-        autoLevelUpCount,
-      },
+    setLevel(nextLevel);
+    setCorrectCount(0);
+    setWrongCount(0);
+    setRound(1);
+    setRoundData(createRound(nextLevel));
+    answerLockedRef.current = false;
+    setFeedback({
+      type: "success",
+      message: `${nextLevel}. seviyeye geçtin. Yeni hedef: 10 net.`,
     });
-
-    setPhase("result");
-    answeredForCurrentGroupRef.current = false;
-    setCanAnswer(false);
-  }, [
-    autoLevelUpCount,
-    elapsedSeconds,
-    fontSize,
-    level,
-    reachedLevel,
-    score,
-    speedMs,
-    successRate,
-    totalCorrect,
-    totalNet,
-    totalShownGroups,
-    totalWrong,
-    unansweredCount,
-  ]);
+  }, [clearRoundTimeout, level]);
 
   const handleAnswer = useCallback(
-    (answer: TwoSideFocusAnswer) => {
-      if (
-        phase !== "play" ||
-        !currentGroup ||
-        answeredForCurrentGroupRef.current ||
-        !canAnswer
-      ) {
+    (answer: AnswerType) => {
+      if (!isRunning) {
+        setFeedback({
+          type: "info",
+          message: "Önce Başlat'a basmalısın.",
+        });
         return;
       }
 
-      answeredForCurrentGroupRef.current = true;
-      const isCorrect = checkGroupAnswer(currentGroup, answer);
-      applyRoundResult(currentGroup, isCorrect, false);
+      if (answerLockedRef.current) return;
+
+      answerLockedRef.current = true;
+      clearRoundTimeout();
+
+      const isCorrect = answer === roundData.correctAnswer;
+
+      if (isCorrect) {
+        const nextCorrect = correctCount + 1;
+        const nextNet = nextCorrect - wrongCount;
+
+        setCorrectCount(nextCorrect);
+
+        if (nextNet >= NET_TARGET) {
+          setFeedback({
+            type: "success",
+            message: "10 net tamamlandı. Seviye atlanıyor.",
+          });
+
+          window.setTimeout(() => {
+            advanceLevel();
+          }, 450);
+
+          return;
+        }
+
+        setFeedback({
+          type: "success",
+          message: `Doğru! Net: ${nextNet}/${NET_TARGET}`,
+        });
+      } else {
+        const nextWrong = wrongCount + 1;
+        const nextNet = correctCount - nextWrong;
+
+        setWrongCount(nextWrong);
+        setFeedback({
+          type: "error",
+          message: `Yanlış. Doğru cevap: ${
+            roundData.correctAnswer === "same" ? "Sol / Aynı" : "Sağ / Farklı"
+          }. Net: ${nextNet}/${NET_TARGET}`,
+        });
+      }
+
+      window.setTimeout(() => {
+        createNextRound();
+      }, 300);
     },
-    [applyRoundResult, canAnswer, currentGroup, phase],
+    [
+      advanceLevel,
+      clearRoundTimeout,
+      correctCount,
+      createNextRound,
+      isRunning,
+      roundData.correctAnswer,
+      wrongCount,
+    ],
   );
 
-  const handleStart = () => {
-    clearGroupTimer();
-    hasSavedResultRef.current = false;
-    latestLevelRef.current = level;
-    startedAtRef.current = null;
-    setCurrentGroup(null);
-    setCurrentCorrect(0);
-    setCurrentWrong(0);
-    setTotalCorrect(0);
-    setTotalWrong(0);
-    setUnansweredCount(0);
-    setTotalShownGroups(0);
-    setElapsedSeconds(0);
-    setCanAnswer(false);
-    setLastAnswerCorrect(null);
-    setStatusMessage("Ayarlarını seç, hazır olduğunda başlat.");
-    setReachedLevel(level);
-    setAutoLevelUpCount(0);
-    answeredForCurrentGroupRef.current = false;
-    setPhase("ready");
-  };
+  const handleTimeOut = useCallback(() => {
+    if (!isRunning) return;
+    if (answerLockedRef.current) return;
 
-  const handleBeginPlay = () => {
-    clearGroupTimer();
-    hasSavedResultRef.current = false;
-    latestLevelRef.current = level;
-    startedAtRef.current = Date.now();
-    setCurrentCorrect(0);
-    setCurrentWrong(0);
-    setTotalCorrect(0);
-    setTotalWrong(0);
-    setUnansweredCount(0);
-    setTotalShownGroups(0);
-    setElapsedSeconds(0);
-    setCanAnswer(false);
-    setLastAnswerCorrect(null);
-    setStatusMessage("Cevabını seç.");
-    setReachedLevel(level);
-    setAutoLevelUpCount(0);
-    answeredForCurrentGroupRef.current = false;
-    setPhase("play");
-    startNextGroup(level);
-  };
+    answerLockedRef.current = true;
 
-  const handleRestart = () => {
-    handleStart();
-  };
+    setWrongCount((previous) => previous + 1);
+    setFeedback({
+      type: "error",
+      message: `Süre doldu. Doğru cevap: ${
+        roundData.correctAnswer === "same" ? "Sol / Aynı" : "Sağ / Farklı"
+      }.`,
+    });
 
-  const handleFinishEarly = () => {
-    finishExercise();
-  };
+    window.setTimeout(() => {
+      createNextRound();
+    }, 250);
+  }, [createNextRound, isRunning, roundData.correctAnswer]);
 
   useEffect(() => {
-    if (phase !== "play") {
-      return;
-    }
+    clearRoundTimeout();
 
-    const timerId = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
+    if (!isRunning) return;
+
+    answerLockedRef.current = false;
+
+    timeoutRef.current = window.setTimeout(() => {
+      handleTimeOut();
+    }, speed);
 
     return () => {
-      window.clearInterval(timerId);
+      clearRoundTimeout();
     };
-  }, [phase]);
+  }, [clearRoundTimeout, handleTimeOut, isRunning, roundData, speed]);
 
   useEffect(() => {
-    if (phase !== "play" || !currentGroup) {
-      return;
-    }
-
-    clearGroupTimer();
-
-    groupTimerRef.current = window.setTimeout(() => {
-      if (!answeredForCurrentGroupRef.current) {
-        answeredForCurrentGroupRef.current = true;
-        applyRoundResult(currentGroup, false, true);
-      }
-
-      startNextGroup();
-      groupTimerRef.current = null;
-    }, speedMs);
-
-    return () => {
-      clearGroupTimer();
-    };
-  }, [applyRoundResult, currentGroup, phase, speedMs, startNextGroup]);
+    setRoundData(createRound(level));
+    resetLevelStats();
+    setIsRunning(false);
+    setFeedback({
+      type: "info",
+      message: `${level}. seviye hazır. Başlat'a bas. Aynıysa Sol, farklıysa Sağ.`,
+    });
+  }, [level, resetLevelStats]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (
-        phase !== "play" ||
-        answeredForCurrentGroupRef.current ||
-        !canAnswer
-      ) {
-        return;
-      }
-
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        handleAnswer("different");
+        handleAnswer("same");
       }
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        handleAnswer("same");
+        handleAnswer("different");
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [canAnswer, handleAnswer, phase]);
+  }, [handleAnswer]);
 
-  const questionStatusClass =
-    lastAnswerCorrect === null
-      ? "text-slate-500"
-      : lastAnswerCorrect
-        ? "text-[var(--ok)]"
-        : "text-[var(--bad)]";
+  const handleStartStop = () => {
+    const nextRunning = !isRunning;
 
-  const footerControls = (
-    <div className="grid gap-3 lg:grid-cols-5">
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Seviye
-        </span>
-        <select
-          value={level}
-          onChange={(event) =>
-            setLevel(Number(event.target.value) as ExerciseLevel)
-          }
-          className={FULLSCREEN_SELECT_CLASS}
-        >
-          {Array.from(
-            { length: MAX_TWO_SIDE_FOCUS_DISPLAY_LEVEL },
-            (_, index) => index + 1,
-          ).map((value) => (
-            <option key={value} value={value}>
-              {value}. Seviye - {getPairCountForLevel(value)} kelime çifti
-            </option>
-          ))}
-        </select>
-      </label>
+    setIsRunning(nextRunning);
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Hız
-        </span>
-        <select
-          value={speedMs}
-          onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}
-          className={FULLSCREEN_SELECT_CLASS}
-        >
-          {[500, 750, 850, 1000, 1500, 2000].map((value) => (
-            <option key={value} value={value}>
-              {value} ms
-            </option>
-          ))}
-        </select>
-      </label>
+    if (nextRunning) {
+      setFeedback({
+        type: "info",
+        message: "Çalışma başladı. Aynıysa Sol, farklıysa Sağ.",
+      });
+    } else {
+      clearRoundTimeout();
+      setFeedback({
+        type: "info",
+        message: "Çalışma durduruldu.",
+      });
+    }
+  };
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Font
-        </span>
-        <select
-          value={fontSize}
-          onChange={(event) =>
-            setFontSize(Number(event.target.value) as FontSizePx)
-          }
-          className={FULLSCREEN_SELECT_CLASS}
-        >
-          {[28, 36, 44, 52, 60].map((value) => (
-            <option key={value} value={value}>
-              {getFontLabel(value as FontSizePx)}
-            </option>
-          ))}
-        </select>
-      </label>
+  const handleRefresh = () => {
+    createNextRound();
+    setFeedback({
+      type: "info",
+      message: "Yeni kelimeler hazır. Aynıysa Sol, farklıysa Sağ.",
+    });
+  };
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-3">
-        {phase === "ready" ? (
-          <button
-            type="button"
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
-            style={FULLSCREEN_TOUCH_STYLE}
-            onClick={handleBeginPlay}
-          >
-            Başlat
-          </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
-              style={FULLSCREEN_TOUCH_STYLE}
-              onClick={handleRestart}
-            >
-              Yeniden Başlat
-            </button>
+  const handleReset = () => {
+    setIsRunning(false);
+    resetLevelStats();
+    setRoundData(createRound(level));
+    setFeedback({
+      type: "info",
+      message: "Çalışma sıfırlandı. Başlat'a basarak yeniden başla.",
+    });
+  };
 
-            <button
-              type="button"
-              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
-              style={FULLSCREEN_TOUCH_STYLE}
-              onClick={handleFinishEarly}
-            >
-              Bitir
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-
-  if (phase === "setup") {
-    return (
-      <FullscreenExerciseIntro
-        title="Çift Taraflı Odak"
-        description="Birden fazla kelime çiftini aynı anda karşılaştır. Ekrandaki tüm çiftler aynıysa sağ, en az bir farklı çift varsa sol yönde cevap ver."
-        buttonLabel="Eğitime Başla"
-        onStart={handleStart}
-      />
-    );
-  }
-
-  if (phase === "ready") {
-    return (
-      <FullscreenExerciseShell
-        title="Çift Taraflı Odak"
-        subtitle="Hazırlık modu"
-        stats={[
-          { label: "Seviye", value: level },
-          { label: "Hız", value: `${speedMs} ms`, tone: "brand" },
-          { label: "Font", value: `${fontSize}px` },
-          { label: "Çift", value: getPairCountForLevel(level) },
-        ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[32vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[38vh]"
-        footer={footerControls}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
-          Hazırlık
-        </p>
-
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
-          Ayarlarını seç, hazır olduğunda başlat.
-        </h2>
-
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
-          Seviye arttıkça aynı anda karşılaştıracağın kelime çifti sayısı artar.
-          6. seviyede 5 çift farklı satır konumlarına dağıtılır.
-        </p>
-      </FullscreenExerciseShell>
-    );
-  }
-
-  if (phase === "result") {
-    return (
-      <section className="idil-card p-5 md:p-7">
-        <h2 className="text-2xl font-bold">Çift Taraflı Odak Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Çalışma Bitir ile sonlandırıldı. Sonuç özeti aşağıda.
-        </p>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Gösterilen Grup
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {totalShownGroups}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Doğru
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">
-              {totalCorrect}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Yanlış
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">
-              {totalWrong}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Başarı
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {successRate}%
-            </p>
-          </article>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm">
-          <p>
-            <strong>Egzersiz:</strong> Çift Taraflı Odak
-          </p>
-          <p className="mt-1">
-            <strong>Net:</strong> {totalNet}
-          </p>
-          <p className="mt-1">
-            <strong>Skor:</strong> {score}
-          </p>
-          <p className="mt-1">
-            <strong>Ulaşılan Seviye:</strong> {reachedLevel}
-          </p>
-          <p className="mt-1">
-            <strong>Otomatik Seviye Atlama:</strong> {autoLevelUpCount}
-          </p>
-          <p className="mt-1">
-            <strong>Cevapsız:</strong> {unansweredCount}
-          </p>
-          <p className="mt-1">
-            <strong>Maksimum Çift:</strong> {getPairCountForLevel(reachedLevel)}
-          </p>
-          <p className="mt-1">
-            <strong>Hız:</strong> {speedMs} ms
-          </p>
-          <p className="mt-1">
-            <strong>Font Boyutu:</strong> {fontSize}px
-          </p>
-          <p className="mt-1">
-            <strong>Toplam Süre:</strong> {formatElapsed(elapsedSeconds)}
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={handleRestart}
-          >
-            Yeniden Başlat
-          </button>
-
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={() =>
-              router.push(
-                `/sonuc?exerciseType=two-side-focus&correct=${totalCorrect}&wrong=${totalWrong}&successRate=${successRate}&score=${score}`,
-              )
-            }
-          >
-            Ortak Sonuç Ekranı
-          </button>
-        </div>
-
-        <div className="mt-3">
-          <Link
-            href="/egzersizler"
-            className="relative z-50 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-4 text-base font-bold text-red-800 transition hover:bg-red-50"
-            style={TOUCH_STYLE}
-          >
-            Egzersizlere Dön
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  const handleSpeedChange = (value: number) => {
+    setSpeed(clampSpeed(value));
+  };
 
   return (
-    <FullscreenExerciseShell
-      title="Çift Taraflı Odak"
-      subtitle="Tam ekran çalışma modu"
-      stats={[
-        { label: "Doğru", value: totalCorrect, tone: "ok" },
-        { label: "Yanlış", value: totalWrong, tone: "bad" },
-        {
-          label: "Net",
-          value: currentNet,
-          tone: currentNet >= 0 ? "brand" : "bad",
-        },
-        { label: "Skor", value: score, tone: "brand" },
-        { label: "Seviye", value: level },
-        { label: "Hız", value: `${speedMs} ms`, tone: "brand" },
-      ]}
-      finishButton={
-        <button
-          type="button"
-          onClick={handleFinishEarly}
-          className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md"
-          style={FULLSCREEN_TOUCH_STYLE}
-        >
-          Bitir
-        </button>
-      }
-      footer={
-        <div className="space-y-3">
-          <div className="grid gap-2 md:grid-cols-2">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 text-slate-900">
+      <section className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 shadow-2xl shadow-slate-300/50 backdrop-blur">
+        <header className="border-b border-slate-200 bg-white/85 px-5 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <Link
+                href="/egzersizler"
+                className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-black text-slate-600 transition hover:bg-slate-50"
+              >
+                ← Egzersizlere Dön
+              </Link>
+
+              <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-indigo-600">
+                Odaklanma Çalışması
+              </p>
+
+              <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
+                Çift Taraflı Odak
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm font-medium text-slate-600">
+                Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver. Farklı
+                kelimeler özellikle birbirine çok benzer seçilir.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-black uppercase text-slate-500">
+                  Seviye
+                </p>
+                <p className="mt-1 text-2xl font-black text-indigo-700">
+                  {level}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-black uppercase text-emerald-700">
+                  Doğru
+                </p>
+                <p className="mt-1 text-2xl font-black text-emerald-700">
+                  {correctCount}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-black uppercase text-rose-700">
+                  Yanlış
+                </p>
+                <p className="mt-1 text-2xl font-black text-rose-700">
+                  {wrongCount}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-black uppercase text-blue-700">
+                  Net
+                </p>
+                <p className="mt-1 text-2xl font-black text-blue-700">
+                  {netCount}/{NET_TARGET}
+                </p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="grid gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 lg:grid-cols-[1fr_1fr]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-black text-slate-800">Seviye Seç</p>
+
+            <div className="mt-3 grid grid-cols-5 gap-2">
+              {LEVELS.map((levelNumber) => (
+                <button
+                  key={levelNumber}
+                  type="button"
+                  onClick={() => setLevel(levelNumber)}
+                  className={`rounded-2xl border px-3 py-3 text-sm font-black transition ${
+                    level === levelNumber
+                      ? "border-indigo-300 bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-indigo-50"
+                  }`}
+                >
+                  {levelNumber}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-800">
+              {getLevelDescription(level)}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-800">Hız Ayarı</p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  Kelimeler bu süre boyunca görünür. Cevap verilmezse yanlış
+                  sayılır.
+                </p>
+              </div>
+
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-black text-rose-700">
+                {speed}ms
+              </span>
+            </div>
+
+            <input
+              type="range"
+              min={SPEED_MIN}
+              max={SPEED_MAX}
+              step={100}
+              value={speed}
+              onChange={(event) => handleSpeedChange(Number(event.target.value))}
+              className="mt-4 w-full accent-indigo-600"
+            />
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleSpeedChange(500)}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                500ms
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSpeedChange(1500)}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                1500ms
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSpeedChange(5000)}
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                5000ms
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <section className="flex flex-1 flex-col px-5 py-6">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-black text-slate-950">
+                Aynı mı, Farklı mı?
+              </h2>
+              <p className="mt-1 text-sm font-medium text-slate-600">
+                Tüm kelimeler aynıysa Sol. Kelimelerden biri farklıysa Sağ.
+                10 net yapınca seviye atlar.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleStartStop}
+                className={`rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
+                  isRunning
+                    ? "bg-rose-600 hover:bg-rose-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+              >
+                {isRunning ? "Durdur" : "Başlat"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                Yeni Kelimeler
+              </button>
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                Sıfırla
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={`mb-4 rounded-2xl border px-4 py-3 text-center text-sm font-black ${
+              feedback.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : feedback.type === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-blue-200 bg-blue-50 text-blue-700"
+            }`}
+          >
+            {feedback.message}
+          </div>
+
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-6 shadow-inner">
+            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-5 py-10">
+              {roundData.words.map((item) => (
+                <div
+                  key={item.id}
+                  className={`transition-all duration-300 ${getOffsetClass(
+                    item.offset,
+                  )}`}
+                >
+                  <span className="flex min-h-[86px] min-w-[150px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-8 py-4 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-w-[190px] sm:text-3xl">
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              className="fx-pop-in relative z-50 min-h-[50px] w-full rounded-2xl border border-red-900/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_50%,#b91c1c_100%)] px-4 py-3 text-sm font-black text-white shadow-md shadow-red-200/70 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-              style={FULLSCREEN_TOUCH_STYLE}
-              onClick={() => handleAnswer("different")}
-              disabled={!canAnswer}
+              onClick={() => handleAnswer("same")}
+              className="rounded-3xl border-2 border-blue-200 bg-blue-50 px-6 py-6 text-2xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95"
             >
-              ← Farklı
+              ← SOL / AYNI
             </button>
 
             <button
               type="button"
-              className="fx-pop-in relative z-50 min-h-[50px] w-full rounded-2xl border border-red-900/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_50%,#b91c1c_100%)] px-4 py-3 text-sm font-black text-white shadow-md shadow-red-200/70 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-              style={FULLSCREEN_TOUCH_STYLE}
-              onClick={() => handleAnswer("same")}
-              disabled={!canAnswer}
+              onClick={() => handleAnswer("different")}
+              className="rounded-3xl border-2 border-rose-200 bg-rose-50 px-6 py-6 text-2xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95"
             >
-              Aynı →
+              SAĞ / FARKLI →
             </button>
           </div>
 
-          {footerControls}
-        </div>
-      }
-    >
-      <div className="fx-fade-in flex w-full flex-col items-center justify-center">
-        <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-red-100/80 bg-white/80 px-3 py-2 shadow-sm">
-          {Array.from({ length: 10 }, (_, index) => {
-            const filled = index < levelProgressCount;
-
-            return (
-              <span
-                key={`net-box-${index + 1}`}
-                className={`h-2.5 w-6 rounded-full border transition ${
-                  filled
-                    ? "fx-pulse-soft border-red-500 bg-red-500"
-                    : "border-red-100 bg-white"
-                }`}
-              />
-            );
-          })}
-        </div>
-
-        <p
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${questionStatusClass} ${
-            lastAnswerCorrect === false ? "fx-shake" : ""
-          }`}
-        >
-          {statusMessage}
-        </p>
-
-        <div
-          className={`mt-4 w-full space-y-3 ${
-            level === 6 ? "max-w-6xl" : "max-w-4xl"
-          }`}
-        >
-          {currentGroup?.pairs
-            .slice(0, getPairCountForLevel(level))
-            .map((pair, index) => {
-              const staggerClass =
-                level === 6
-                  ? STAGGERED_ROW_CLASSES[
-                      index % STAGGERED_ROW_CLASSES.length
-                    ]
-                  : "";
-
-              return (
-                <div
-                  key={pair.id}
-                  className={`grid gap-3 md:grid-cols-2 ${staggerClass}`}
-                  style={{ fontSize: `${displayFontSize}px` }}
-                >
-                  <p className="fx-slide-up rounded-2xl border border-red-100/85 bg-[linear-gradient(180deg,#fffefe_0%,#fff6f5_100%)] px-4 py-4 text-center font-extrabold text-slate-900 break-words shadow-sm shadow-red-100/70">
-                    {pair.leftWord}
-                  </p>
-
-                  <p className="fx-slide-up rounded-2xl border border-red-100/85 bg-[linear-gradient(180deg,#fffefe_0%,#fff6f5_100%)] px-4 py-4 text-center font-extrabold text-slate-900 break-words shadow-sm shadow-red-100/70">
-                    {pair.rightWord}
-                  </p>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-    </FullscreenExerciseShell>
+          <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-black text-slate-800">Kullanım</p>
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+              Bilgisayarda klavyedeki sol ve sağ yön tuşlarını kullanabilirsin.
+              Dokunmatik ekranda alttaki SOL / AYNI ve SAĞ / FARKLI
+              butonlarına bas. Kelimeler verilen süre içinde yanıp söner; cevap
+              verilmezse yanlış sayılır.
+            </p>
+          </div>
+        </section>
+      </section>
+    </main>
   );
 }
+
+export default TwoSideFocusExerciseClient;

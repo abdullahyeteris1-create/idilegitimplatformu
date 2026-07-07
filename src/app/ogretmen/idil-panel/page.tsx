@@ -55,7 +55,8 @@ const MODULE_CARDS: ModuleCard[] = [
   {
     title: "Ders Kayitlari",
     description: "Yapilan dersleri ve olcumleri takip et.",
-    status: "Sonraki adim",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/ders-kayitlari",
   },
   {
     title: "Gelisim Raporu",

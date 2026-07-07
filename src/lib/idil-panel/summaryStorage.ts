@@ -22,6 +22,52 @@ export type ScheduleItem = {
   updatedAt: string;
 };
 
+export type LessonRecordStatus = "Tamamlandi" | "Eksik" | "Iptal";
+
+export type LessonRecordStudent = {
+  id: string;
+  name: string;
+};
+
+export type LessonRecord = {
+  id: string;
+  scheduleId: string | null;
+  courseId: string | null;
+  studentId: string;
+  lessonNo: number;
+  lessonDate: string;
+  textTitle: string;
+  wordCount: number;
+  durationSeconds: number;
+  wordsPerMinute: number;
+  comprehensionScore: number;
+  focusScore: number | null;
+  completedLessonCount: number;
+  status: LessonRecordStatus;
+  teacherNote: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateLessonPayload = {
+  scheduleId?: string | null;
+  courseId?: string | null;
+  studentId: string;
+  lessonNo: number;
+  lessonDate: string;
+  textTitle: string;
+  wordCount: number;
+  durationSeconds: number;
+  wordsPerMinute: number;
+  comprehensionScore: number;
+  focusScore?: number | null;
+  completedLessonCount: number;
+  status?: LessonRecordStatus;
+  teacherNote?: string;
+};
+
+export type UpdateLessonPayload = Partial<CreateLessonPayload>;
+
 export type CreateSchedulePayload = {
   studentId: string;
   courseId?: string | null;
@@ -83,6 +129,34 @@ function normalizeScheduleStatus(value: unknown): ScheduleStatus {
   }
 
   return "Planlandi";
+}
+
+function normalizeLessonStatus(value: unknown): LessonRecordStatus {
+  const normalized = normalizeText(value);
+
+  if (["eksik", "incomplete", "missing", "yarim kaldi", "planlandi", "gelmedi", "telafi bekliyor"].includes(normalized)) {
+    return "Eksik";
+  }
+
+  if (["iptal", "cancelled", "canceled", "void"].includes(normalized)) {
+    return "Iptal";
+  }
+
+  return "Tamamlandi";
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === "number" ? value : Number(String(value ?? "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
+  }
+
+  const parsed = typeof value === "number" ? value : Number(String(value).replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function readString(row: SupabaseRow, keys: string[]): string | undefined {
@@ -276,6 +350,28 @@ function toScheduleItem(row: SupabaseRow): ScheduleItem {
   };
 }
 
+function toLessonRecord(row: SupabaseRow): LessonRecord {
+  return {
+    id: String(row.id ?? ""),
+    scheduleId: row.schedule_id ? String(row.schedule_id) : null,
+    courseId: row.course_id ? String(row.course_id) : null,
+    studentId: String(row.student_id ?? ""),
+    lessonNo: Math.max(1, Math.round(toNumber(row.lesson_no, 1))),
+    lessonDate: String(row.lesson_date ?? ""),
+    textTitle: String(row.text_title ?? ""),
+    wordCount: Math.max(0, Math.round(toNumber(row.word_count, 0))),
+    durationSeconds: Math.max(0, Math.round(toNumber(row.duration_seconds, 0))),
+    wordsPerMinute: Math.max(0, Math.round(toNumber(row.words_per_minute, 0))),
+    comprehensionScore: Math.max(0, Math.round(toNumber(row.comprehension_score, 0))),
+    focusScore: toNullableNumber(row.focus_score),
+    completedLessonCount: Math.max(0, Math.round(toNumber(row.completed_lesson_count, 0))),
+    status: normalizeLessonStatus(row.status),
+    teacherNote: String(row.teacher_note ?? ""),
+    createdAt: String(row.created_at ?? new Date().toISOString()),
+    updatedAt: String(row.updated_at ?? new Date().toISOString()),
+  };
+}
+
 function assertSupabaseForWrite(): void {
   if (!supabase) {
     throw new Error("Supabase baglantisi hazir degil.");
@@ -337,8 +433,36 @@ export async function listSchedulesByDateRange(startDate: string, endDate: strin
   }
 }
 
-export async function listLessons(): Promise<SupabaseRow[]> {
-  return listTable(LESSONS_TABLE);
+export async function listLessons(): Promise<LessonRecord[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(LESSONS_TABLE)
+      .select("*")
+      .order("lesson_date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.error("Supabase lessons list failed", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+      }
+
+      return [];
+    }
+
+    return data.map((row) => toLessonRecord(row as SupabaseRow));
+  } catch (error) {
+    console.error("Supabase lessons list threw", error);
+    return [];
+  }
 }
 
 export async function listMeasurements(): Promise<SupabaseRow[]> {
@@ -389,6 +513,145 @@ export async function listStudentsForSchedule(): Promise<ScheduleStudent[]> {
   } catch (error) {
     console.error("Supabase students for schedule select threw", error);
     return [];
+  }
+}
+
+export async function listStudentsForLessonRecords(): Promise<LessonRecordStudent[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(STUDENTS_TABLE)
+      .select("*");
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.error("Supabase students for lessons select failed", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+      }
+
+      return [];
+    }
+
+    return data
+      .map((row) => {
+        const record = row as SupabaseRow;
+        const id = String(record.id ?? "").trim();
+        const name = String(record.name ?? record.ad_soyad ?? "").trim();
+
+        if (!id || !name) {
+          return null;
+        }
+
+        return { id, name };
+      })
+      .filter((item): item is LessonRecordStudent => item !== null)
+      .sort((a, b) => a.name.localeCompare(b.name, "tr"));
+  } catch (error) {
+    console.error("Supabase students for lessons select threw", error);
+    return [];
+  }
+}
+
+export async function createLesson(payload: CreateLessonPayload): Promise<LessonRecord> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const insertPayload = {
+    schedule_id: payload.scheduleId ?? null,
+    course_id: payload.courseId ?? null,
+    student_id: payload.studentId,
+    lesson_no: payload.lessonNo,
+    lesson_date: payload.lessonDate,
+    text_title: payload.textTitle,
+    word_count: payload.wordCount,
+    duration_seconds: payload.durationSeconds,
+    words_per_minute: payload.wordsPerMinute,
+    comprehension_score: payload.comprehensionScore,
+    focus_score: payload.focusScore ?? null,
+    completed_lesson_count: payload.completedLessonCount,
+    status: payload.status ?? "Tamamlandi",
+    teacher_note: payload.teacherNote?.trim() ? payload.teacherNote.trim() : null,
+  };
+
+  const { data, error } = await client
+    .from(LESSONS_TABLE)
+    .insert(insertPayload)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Ders kaydi olusturulamadi.");
+  }
+
+  return toLessonRecord(data as SupabaseRow);
+}
+
+export async function updateLesson(id: string, payload: UpdateLessonPayload): Promise<LessonRecord> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const updatePayload: SupabaseRow = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.scheduleId !== undefined) updatePayload.schedule_id = payload.scheduleId;
+  if (payload.courseId !== undefined) updatePayload.course_id = payload.courseId;
+  if (payload.studentId !== undefined) updatePayload.student_id = payload.studentId;
+  if (payload.lessonNo !== undefined) updatePayload.lesson_no = payload.lessonNo;
+  if (payload.lessonDate !== undefined) updatePayload.lesson_date = payload.lessonDate;
+  if (payload.textTitle !== undefined) updatePayload.text_title = payload.textTitle;
+  if (payload.wordCount !== undefined) updatePayload.word_count = payload.wordCount;
+  if (payload.durationSeconds !== undefined) updatePayload.duration_seconds = payload.durationSeconds;
+  if (payload.wordsPerMinute !== undefined) updatePayload.words_per_minute = payload.wordsPerMinute;
+  if (payload.comprehensionScore !== undefined) updatePayload.comprehension_score = payload.comprehensionScore;
+  if (payload.focusScore !== undefined) updatePayload.focus_score = payload.focusScore;
+  if (payload.completedLessonCount !== undefined) updatePayload.completed_lesson_count = payload.completedLessonCount;
+  if (payload.status !== undefined) updatePayload.status = payload.status;
+  if (payload.teacherNote !== undefined) {
+    updatePayload.teacher_note = payload.teacherNote.trim() ? payload.teacherNote.trim() : null;
+  }
+
+  const { data, error } = await client
+    .from(LESSONS_TABLE)
+    .update(updatePayload)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Ders kaydi guncellenemedi.");
+  }
+
+  return toLessonRecord(data as SupabaseRow);
+}
+
+export async function deleteLesson(id: string): Promise<void> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const { error } = await client.from(LESSONS_TABLE).delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message || "Ders kaydi silinemedi.");
   }
 }
 
