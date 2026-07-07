@@ -2,6 +2,36 @@ import { supabase } from "@/lib/supabase/client";
 
 type SupabaseRow = Record<string, unknown>;
 
+export type ScheduleStatus = "Planlandi" | "Tamamlandi" | "Iptal" | "Gelmedi";
+
+export type ScheduleStudent = {
+  id: string;
+  name: string;
+};
+
+export type ScheduleItem = {
+  id: string;
+  studentId: string;
+  courseId: string | null;
+  lessonDate: string;
+  startTime: string;
+  endTime: string;
+  status: ScheduleStatus;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateSchedulePayload = {
+  studentId: string;
+  courseId?: string | null;
+  lessonDate: string;
+  startTime: string;
+  endTime: string;
+  status?: ScheduleStatus;
+  notes?: string;
+};
+
 export type IdilPanelSummary = {
   totalStudents: number;
   activeStudents: number;
@@ -35,6 +65,24 @@ function normalizeText(value: unknown): string {
   }
 
   return value.trim().toLocaleLowerCase("tr-TR");
+}
+
+function normalizeScheduleStatus(value: unknown): ScheduleStatus {
+  const normalized = normalizeText(value);
+
+  if (["tamamlandi", "completed", "complete", "done", "finished"].includes(normalized)) {
+    return "Tamamlandi";
+  }
+
+  if (["iptal", "cancelled", "canceled", "void"].includes(normalized)) {
+    return "Iptal";
+  }
+
+  if (["gelmedi", "no-show", "noshow", "absent"].includes(normalized)) {
+    return "Gelmedi";
+  }
+
+  return "Planlandi";
 }
 
 function readString(row: SupabaseRow, keys: string[]): string | undefined {
@@ -213,12 +261,80 @@ async function listTable(tableName: string): Promise<SupabaseRow[]> {
   }
 }
 
+function toScheduleItem(row: SupabaseRow): ScheduleItem {
+  return {
+    id: String(row.id ?? ""),
+    studentId: String(row.student_id ?? row.studentId ?? ""),
+    courseId: typeof row.course_id === "string" ? row.course_id : typeof row.courseId === "string" ? row.courseId : null,
+    lessonDate: String(row.lesson_date ?? row.lessonDate ?? ""),
+    startTime: String(row.start_time ?? row.startTime ?? ""),
+    endTime: String(row.end_time ?? row.endTime ?? ""),
+    status: normalizeScheduleStatus(row.status),
+    notes: typeof row.notes === "string" ? row.notes : "",
+    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? new Date().toISOString()),
+  };
+}
+
+function assertSupabaseForWrite(): void {
+  if (!supabase) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+}
+
+function buildDateRangeFilter(startDate: string, endDate: string): { start: string; end: string } {
+  const start = startDate.trim();
+  const end = endDate.trim();
+
+  if (!start || !end) {
+    throw new Error("Tarih araligi gecersiz.");
+  }
+
+  return { start, end };
+}
+
 export async function listCourses(): Promise<SupabaseRow[]> {
   return listTable(COURSES_TABLE);
 }
 
 export async function listSchedules(): Promise<SupabaseRow[]> {
   return listTable(SCHEDULES_TABLE);
+}
+
+export async function listSchedulesByDateRange(startDate: string, endDate: string): Promise<ScheduleItem[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  const { start, end } = buildDateRangeFilter(startDate, endDate);
+
+  try {
+    const { data, error } = await supabase
+      .from(SCHEDULES_TABLE)
+      .select("*")
+      .gte("lesson_date", start)
+      .lte("lesson_date", end)
+      .order("lesson_date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.error("Supabase schedules date range select failed", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+      }
+
+      return [];
+    }
+
+    return data.map((row) => toScheduleItem(row as SupabaseRow));
+  } catch (error) {
+    console.error("Supabase schedules date range select threw", error);
+    return [];
+  }
 }
 
 export async function listLessons(): Promise<SupabaseRow[]> {
@@ -231,6 +347,113 @@ export async function listMeasurements(): Promise<SupabaseRow[]> {
 
 export async function listReports(): Promise<SupabaseRow[]> {
   return listTable(REPORTS_TABLE);
+}
+
+export async function listStudentsForSchedule(): Promise<ScheduleStudent[]> {
+  if (!supabase) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(STUDENTS_TABLE)
+      .select("id, name")
+      .order("name", { ascending: true });
+
+    if (error || !Array.isArray(data)) {
+      if (error) {
+        console.error("Supabase students for schedule select failed", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+      }
+
+      return [];
+    }
+
+    return data
+      .map((row) => {
+        const record = row as SupabaseRow;
+        const id = String(record.id ?? "").trim();
+        const name = String(record.name ?? "").trim();
+
+        if (!id || !name) {
+          return null;
+        }
+
+        return { id, name };
+      })
+      .filter((item): item is ScheduleStudent => item !== null);
+  } catch (error) {
+    console.error("Supabase students for schedule select threw", error);
+    return [];
+  }
+}
+
+export async function createSchedule(payload: CreateSchedulePayload): Promise<ScheduleItem> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const insertPayload = {
+    student_id: payload.studentId,
+    course_id: payload.courseId ?? null,
+    lesson_date: payload.lessonDate,
+    start_time: payload.startTime,
+    end_time: payload.endTime,
+    status: payload.status ?? "Planlandi",
+    notes: payload.notes?.trim() ? payload.notes.trim() : null,
+  };
+
+  const { data, error } = await client
+    .from(SCHEDULES_TABLE)
+    .insert(insertPayload)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Program kaydi olusturulamadi.");
+  }
+
+  return toScheduleItem(data as SupabaseRow);
+}
+
+export async function updateScheduleStatus(id: string, status: ScheduleStatus): Promise<void> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const { error } = await client
+    .from(SCHEDULES_TABLE)
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message || "Program durumu guncellenemedi.");
+  }
+}
+
+export async function deleteSchedule(id: string): Promise<void> {
+  assertSupabaseForWrite();
+  const client = supabase;
+
+  if (!client) {
+    throw new Error("Supabase baglantisi hazir degil.");
+  }
+
+  const { error } = await client.from(SCHEDULES_TABLE).delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message || "Program kaydi silinemedi.");
+  }
 }
 
 export async function getIdilPanelSummary(): Promise<IdilPanelSummary> {

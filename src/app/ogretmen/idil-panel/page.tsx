@@ -43,7 +43,14 @@ const MODULE_CARDS: ModuleCard[] = [
   {
     title: "Haftalik Ders Programi",
     description: "Gunluk ve haftalik dersleri planla.",
-    status: "Sonraki adim",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/haftalik-program",
+  },
+  {
+    title: "Toplu Ogrenci Aktar",
+    description: "CSV dosyasiyla ogrenci listesini toplu olarak sisteme ekle.",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/toplu-ogrenci-aktar",
   },
   {
     title: "Ders Kayitlari",
