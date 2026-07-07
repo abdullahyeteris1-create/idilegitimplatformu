@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ExerciseFullscreenShell } from "@/components/exercises/ExerciseFullscreenShell";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
 type AnswerType = "same" | "different";
@@ -425,73 +425,37 @@ export function TwoSideFocusExerciseClient() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 text-slate-900">
-      <section className="mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 shadow-2xl shadow-slate-300/50 backdrop-blur">
-        <header className="border-b border-slate-200 bg-white/85 px-5 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <Link
-                href="/egzersizler"
-                className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-black text-slate-600 transition hover:bg-slate-50"
-              >
-                ← Egzersizlere Dön
-              </Link>
-
-              <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-indigo-600">
-                Odaklanma Çalışması
-              </p>
-
-              <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
-                Çift Taraflı Odak
-              </h1>
-
-              <p className="mt-2 max-w-2xl text-sm font-medium text-slate-600">
-                Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver. Farklı
-                kelimeler özellikle birbirine çok benzer seçilir.
-              </p>
+    <ExerciseFullscreenShell
+      title="Çift Taraflı Odak"
+      description="Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver."
+      backHref="/egzersizler"
+    >
+      <section className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
+        <header className="border-b border-slate-200 bg-white/90 px-3 py-3 md:px-5 md:py-4">
+          <div className="grid grid-cols-2 gap-2 text-center md:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
+              <p className="text-[10px] font-black uppercase text-slate-500">Seviye</p>
+              <p className="mt-1 text-xl font-black text-indigo-700 md:text-2xl">{level}</p>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-black uppercase text-slate-500">
-                  Seviye
-                </p>
-                <p className="mt-1 text-2xl font-black text-indigo-700">
-                  {level}
-                </p>
-              </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-2 shadow-sm">
+              <p className="text-[10px] font-black uppercase text-emerald-700">Doğru</p>
+              <p className="mt-1 text-xl font-black text-emerald-700 md:text-2xl">{correctCount}</p>
+            </div>
 
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-black uppercase text-emerald-700">
-                  Doğru
-                </p>
-                <p className="mt-1 text-2xl font-black text-emerald-700">
-                  {correctCount}
-                </p>
-              </div>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-2 py-2 shadow-sm">
+              <p className="text-[10px] font-black uppercase text-rose-700">Yanlış</p>
+              <p className="mt-1 text-xl font-black text-rose-700 md:text-2xl">{wrongCount}</p>
+            </div>
 
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-black uppercase text-rose-700">
-                  Yanlış
-                </p>
-                <p className="mt-1 text-2xl font-black text-rose-700">
-                  {wrongCount}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
-                <p className="text-[11px] font-black uppercase text-blue-700">
-                  Net
-                </p>
-                <p className="mt-1 text-2xl font-black text-blue-700">
-                  {netCount}/{NET_TARGET}
-                </p>
-              </div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-2 py-2 shadow-sm">
+              <p className="text-[10px] font-black uppercase text-blue-700">Net</p>
+              <p className="mt-1 text-xl font-black text-blue-700 md:text-2xl">{netCount}/{NET_TARGET}</p>
             </div>
           </div>
         </header>
 
-        <div className="grid gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 lg:grid-cols-[1fr_1fr]">
+        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/70 px-3 py-3 md:px-5 md:py-4 lg:grid-cols-[1fr_1fr]">
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm font-black text-slate-800">Seviye Seç</p>
 
@@ -570,13 +534,13 @@ export function TwoSideFocusExerciseClient() {
           </div>
         </div>
 
-        <section className="flex flex-1 flex-col px-5 py-6">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-1 flex-col px-3 py-3 md:px-5 md:py-5">
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-black text-slate-950">
+              <h2 className="text-lg font-black text-slate-950 md:text-xl">
                 Aynı mı, Farklı mı?
               </h2>
-              <p className="mt-1 text-sm font-medium text-slate-600">
+              <p className="mt-1 text-xs font-medium text-slate-600 md:text-sm">
                 Tüm kelimeler aynıysa Sol. Kelimelerden biri farklıysa Sağ.
                 10 net yapınca seviye atlar.
               </p>
@@ -586,7 +550,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleStartStop}
-                className={`rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
+                className={`min-h-[46px] rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
                   isRunning
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-emerald-600 hover:bg-emerald-700"
@@ -598,7 +562,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="min-h-[46px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Yeni Kelimeler
               </button>
@@ -606,7 +570,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="min-h-[46px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Sıfırla
               </button>
@@ -625,8 +589,8 @@ export function TwoSideFocusExerciseClient() {
             {feedback.message}
           </div>
 
-          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-6 shadow-inner">
-            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-5 py-10">
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-3 shadow-inner md:p-6">
+            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-3 py-6 md:gap-5 md:py-10">
               {roundData.words.map((item) => (
                 <div
                   key={item.id}
@@ -634,7 +598,7 @@ export function TwoSideFocusExerciseClient() {
                     item.offset,
                   )}`}
                 >
-                  <span className="flex min-h-[86px] min-w-[150px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-8 py-4 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-w-[190px] sm:text-3xl">
+                  <span className="flex min-h-[70px] min-w-[110px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-4 py-3 text-center text-xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-w-[150px] sm:text-2xl md:min-h-[86px] md:min-w-[180px] md:px-8 md:py-4 md:text-3xl">
                     {item.text}
                   </span>
                 </div>
@@ -642,11 +606,11 @@ export function TwoSideFocusExerciseClient() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleAnswer("same")}
-              className="rounded-3xl border-2 border-blue-200 bg-blue-50 px-6 py-6 text-2xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95"
+              className="min-h-[76px] rounded-3xl border-2 border-blue-200 bg-blue-50 px-4 py-5 text-xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[90px] md:px-6 md:py-6 md:text-2xl"
             >
               ← SOL / AYNI
             </button>
@@ -654,7 +618,7 @@ export function TwoSideFocusExerciseClient() {
             <button
               type="button"
               onClick={() => handleAnswer("different")}
-              className="rounded-3xl border-2 border-rose-200 bg-rose-50 px-6 py-6 text-2xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95"
+              className="min-h-[76px] rounded-3xl border-2 border-rose-200 bg-rose-50 px-4 py-5 text-xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[90px] md:px-6 md:py-6 md:text-2xl"
             >
               SAĞ / FARKLI →
             </button>
@@ -671,7 +635,7 @@ export function TwoSideFocusExerciseClient() {
           </div>
         </section>
       </section>
-    </main>
+    </ExerciseFullscreenShell>
   );
 }
 
