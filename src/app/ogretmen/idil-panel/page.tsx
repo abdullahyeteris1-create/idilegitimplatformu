@@ -37,8 +37,8 @@ const MODULE_CARDS: ModuleCard[] = [
   {
     title: "Ogrenci Takip",
     description: "Ogrenci bilgileri, durum ve gelisim takibi.",
-    status: "Hazirlaniyor",
-    href: "/ogretmen/ogrenciler",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/ogrenci-takip",
   },
   {
     title: "Haftalik Ders Programi",

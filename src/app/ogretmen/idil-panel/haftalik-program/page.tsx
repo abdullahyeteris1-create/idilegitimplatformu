@@ -30,11 +30,6 @@ type ScheduleRow = {
   } | null;
 };
 
-type ScheduleTimeRange = Pick<
-  ScheduleRow,
-  "id" | "start_time" | "end_time"
->;
-
 type ScheduleFormState = {
   student_id: string;
   lesson_date: string;
@@ -42,6 +37,7 @@ type ScheduleFormState = {
   end_time: string;
   status: ScheduleStatus;
   lesson_day: string;
+  slotIndex: number;
   notes: string;
 };
 
@@ -72,58 +68,23 @@ const LESSON_DAY_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 const SLOT_COUNT_PER_DAY = 9;
 
 const LESSON_DAY_PREFIX = "__IDIL_LESSON_DAY__:";
+const SLOT_INDEX_PREFIX = "__IDIL_SLOT_INDEX__:";
 
-const DAY_COLORS: Array<DayColumn["color"]> = [
-  {
-    header: "bg-blue-100",
-    border: "border-blue-300",
-    bg: "bg-blue-50/70",
-    text: "text-blue-800",
-    soft: "bg-blue-50",
-  },
-  {
-    header: "bg-emerald-100",
-    border: "border-emerald-300",
-    bg: "bg-emerald-50/70",
-    text: "text-emerald-800",
-    soft: "bg-emerald-50",
-  },
-  {
-    header: "bg-amber-100",
-    border: "border-amber-300",
-    bg: "bg-amber-50/70",
-    text: "text-amber-800",
-    soft: "bg-amber-50",
-  },
-  {
-    header: "bg-violet-100",
-    border: "border-violet-300",
-    bg: "bg-violet-50/70",
-    text: "text-violet-800",
-    soft: "bg-violet-50",
-  },
-  {
-    header: "bg-teal-100",
-    border: "border-teal-300",
-    bg: "bg-teal-50/70",
-    text: "text-teal-800",
-    soft: "bg-teal-50",
-  },
-  {
-    header: "bg-orange-100",
-    border: "border-orange-300",
-    bg: "bg-orange-50/70",
-    text: "text-orange-800",
-    soft: "bg-orange-50",
-  },
-  {
-    header: "bg-pink-100",
-    border: "border-pink-300",
-    bg: "bg-pink-50/70",
-    text: "text-pink-800",
-    soft: "bg-pink-50",
-  },
-];
+const WEEKDAY_COLOR: DayColumn["color"] = {
+  header: "bg-red-100",
+  border: "border-red-300",
+  bg: "bg-red-50/70",
+  text: "text-blue-900",
+  soft: "bg-red-50",
+};
+
+const WEEKEND_COLOR: DayColumn["color"] = {
+  header: "bg-orange-100",
+  border: "border-orange-300",
+  bg: "bg-orange-50/80",
+  text: "text-orange-900",
+  soft: "bg-orange-50",
+};
 
 const STUDENT_COLOR_PALETTE = [
   { card: "bg-blue-50 border-blue-300", name: "text-blue-950" },
@@ -150,9 +111,10 @@ const DEFAULT_FORM: ScheduleFormState = {
   student_id: "",
   lesson_date: "",
   start_time: "10:30",
-  end_time: "11:30",
+  end_time: "11:50",
   status: "Planlandı",
   lesson_day: "1",
+  slotIndex: 0,
   notes: "",
 };
 
@@ -232,40 +194,69 @@ function parseNotes(rawNotes: string | null | undefined) {
   if (!rawNotes) {
     return {
       lessonDay: "1",
+      slotIndex: null as number | null,
       visibleNotes: "",
     };
   }
 
   const lines = rawNotes.split("\n");
-  const firstLine = lines[0] ?? "";
+  let lessonDay = "1";
+  let slotIndex: number | null = null;
+  const visibleLines: string[] = [];
 
-  if (firstLine.startsWith(LESSON_DAY_PREFIX)) {
-    const lessonDay = firstLine.replace(LESSON_DAY_PREFIX, "").trim();
+  lines.forEach((line) => {
+    if (line.startsWith(LESSON_DAY_PREFIX)) {
+      const parsedLessonDay = line.replace(LESSON_DAY_PREFIX, "").trim();
+      lessonDay = LESSON_DAY_OPTIONS.includes(parsedLessonDay)
+        ? parsedLessonDay
+        : "1";
+      return;
+    }
 
-    return {
-      lessonDay: LESSON_DAY_OPTIONS.includes(lessonDay) ? lessonDay : "1",
-      visibleNotes: lines.slice(1).join("\n").trim(),
-    };
-  }
+    if (line.startsWith(SLOT_INDEX_PREFIX)) {
+      const parsedSlotIndex = Number(
+        line.replace(SLOT_INDEX_PREFIX, "").trim(),
+      );
+      slotIndex =
+        Number.isInteger(parsedSlotIndex) &&
+        parsedSlotIndex >= 0 &&
+        parsedSlotIndex < SLOT_COUNT_PER_DAY
+          ? parsedSlotIndex
+          : null;
+      return;
+    }
+
+    visibleLines.push(line);
+  });
 
   return {
-    lessonDay: "1",
-    visibleNotes: rawNotes,
+    lessonDay,
+    slotIndex,
+    visibleNotes: visibleLines.join("\n").trim(),
   };
 }
 
-function buildNotes(lessonDay: string, visibleNotes: string) {
+function buildNotes(
+  lessonDay: string,
+  slotIndex: number,
+  visibleNotes: string,
+) {
   const safeLessonDay = LESSON_DAY_OPTIONS.includes(lessonDay)
     ? lessonDay
     : "1";
+  const safeSlotIndex =
+    Number.isInteger(slotIndex) && slotIndex >= 0 && slotIndex < SLOT_COUNT_PER_DAY
+      ? slotIndex
+      : 0;
 
   const cleanNotes = visibleNotes.trim();
+  const metadata = `${LESSON_DAY_PREFIX}${safeLessonDay}\n${SLOT_INDEX_PREFIX}${safeSlotIndex}`;
 
   if (!cleanNotes) {
-    return `${LESSON_DAY_PREFIX}${safeLessonDay}`;
+    return metadata;
   }
 
-  return `${LESSON_DAY_PREFIX}${safeLessonDay}\n${cleanNotes}`;
+  return `${metadata}\n${cleanNotes}`;
 }
 
 function getLessonDay(schedule: ScheduleRow) {
@@ -274,6 +265,10 @@ function getLessonDay(schedule: ScheduleRow) {
 
 function getVisibleNotes(schedule: ScheduleRow) {
   return parseNotes(schedule.notes).visibleNotes;
+}
+
+function getSlotIndex(schedule: ScheduleRow) {
+  return parseNotes(schedule.notes).slotIndex;
 }
 
 function statusBadgeClass(status: ScheduleStatus) {
@@ -311,16 +306,6 @@ function getStudentName(schedule: ScheduleRow, students: Student[]) {
   return foundStudent?.name ?? "Öğrenci";
 }
 
-function sortSchedules(a: ScheduleRow, b: ScheduleRow) {
-  const dateCompare = a.lesson_date.localeCompare(b.lesson_date);
-
-  if (dateCompare !== 0) {
-    return dateCompare;
-  }
-
-  return a.start_time.localeCompare(b.start_time);
-}
-
 function getDefaultTimeForSlot(slotIndex: number) {
   const baseHour = 10;
   const hour = baseHour + slotIndex;
@@ -338,27 +323,38 @@ function getEndTime(startTime: string) {
   const minute = Number(minuteText);
 
   if (Number.isNaN(hour) || Number.isNaN(minute)) {
-    return "11:30";
+    return "11:50";
   }
 
-  const nextHour = Math.min(hour + 1, 23);
+  const totalMinutes = hour * 60 + minute + 80;
+  const nextHour = Math.floor(totalMinutes / 60) % 24;
+  const nextMinute = totalMinutes % 60;
 
-  return `${String(nextHour).padStart(2, "0")}:${String(minute).padStart(
+  return `${String(nextHour).padStart(2, "0")}:${String(nextMinute).padStart(
     2,
     "0",
   )}`;
 }
 
-function hasTimeOverlap(
-  startTime: string,
-  endTime: string,
-  existingStartTime: string,
-  existingEndTime: string,
-) {
-  return (
-    startTime < formatTime(existingEndTime) &&
-    endTime > formatTime(existingStartTime)
-  );
+function placeSchedulesInSlots(daySchedules: ScheduleRow[]) {
+  const slots = Array<ScheduleRow | null>(SLOT_COUNT_PER_DAY).fill(null);
+
+  daySchedules.forEach((schedule) => {
+    const slotIndex = getSlotIndex(schedule);
+
+    if (slotIndex !== null && !slots[slotIndex]) {
+      slots[slotIndex] = schedule;
+      return;
+    }
+
+    const firstEmptySlot = slots.findIndex((slot) => slot === null);
+
+    if (firstEmptySlot >= 0) {
+      slots[firstEmptySlot] = schedule;
+    }
+  });
+
+  return slots;
 }
 
 export default function WeeklyProgramPage() {
@@ -386,7 +382,7 @@ export default function WeeklyProgramPage() {
         ...day,
         date,
         dateIso: toDateInputValue(date),
-        color: DAY_COLORS[index],
+        color: index < 5 ? WEEKDAY_COLOR : WEEKEND_COLOR,
       };
     });
   }, [weekStart]);
@@ -400,10 +396,6 @@ export default function WeeklyProgramPage() {
       const existing = grouped.get(schedule.lesson_date) ?? [];
       existing.push(schedule);
       grouped.set(schedule.lesson_date, existing);
-    });
-
-    grouped.forEach((items, key) => {
-      grouped.set(key, [...items].sort(sortSchedules));
     });
 
     return grouped;
@@ -497,14 +489,16 @@ export default function WeeklyProgramPage() {
       start_time: startTime,
       end_time: getEndTime(startTime),
       lesson_day: "1",
+      slotIndex,
     });
     setIsModalOpen(true);
   }
 
-  function openEditModal(schedule: ScheduleRow) {
+  function openEditModal(schedule: ScheduleRow, fallbackSlotIndex = 0) {
     clearMessages();
 
     const parsed = parseNotes(schedule.notes);
+    const slotIndex = parsed.slotIndex ?? fallbackSlotIndex;
 
     setEditingSchedule(schedule);
     setForm({
@@ -514,6 +508,7 @@ export default function WeeklyProgramPage() {
       end_time: formatTime(schedule.end_time),
       status: schedule.status,
       lesson_day: parsed.lessonDay,
+      slotIndex,
       notes: parsed.visibleNotes,
     });
     setIsModalOpen(true);
@@ -528,27 +523,21 @@ export default function WeeklyProgramPage() {
   async function hasScheduleConflict() {
     const { data, error } = await supabase
       .from("schedules")
-      .select("id,start_time,end_time")
+      .select("id,student_id,course_id,lesson_date,start_time,end_time,status,notes")
       .eq("lesson_date", form.lesson_date);
 
     if (error) {
       console.error("schedule conflict check error", error);
-      setErrorMessage("Ders saatleri kontrol edilemedi.");
+      setErrorMessage("Ders satırı kontrol edilemedi.");
       return null;
     }
 
-    return ((data ?? []) as ScheduleTimeRange[]).some((schedule) => {
-      if (editingSchedule?.id === schedule.id) {
-        return false;
-      }
+    const sameDaySchedules = ((data ?? []) as ScheduleRow[]).filter(
+      (schedule) => schedule.id !== editingSchedule?.id,
+    );
+    const slots = placeSchedulesInSlots(sameDaySchedules);
 
-      return hasTimeOverlap(
-        form.start_time,
-        form.end_time,
-        schedule.start_time,
-        schedule.end_time,
-      );
-    });
+    return slots[form.slotIndex] !== null;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -580,7 +569,7 @@ export default function WeeklyProgramPage() {
     }
 
     if (hasConflict) {
-      setErrorMessage("Bu gün ve saat aralığında başka bir ders var.");
+      setErrorMessage("Bu satirda zaten bir ders var.");
       setIsSaving(false);
       return;
     }
@@ -592,7 +581,7 @@ export default function WeeklyProgramPage() {
       start_time: form.start_time,
       end_time: form.end_time,
       status: form.status,
-      notes: buildNotes(form.lesson_day, form.notes),
+      notes: buildNotes(form.lesson_day, form.slotIndex, form.notes),
       updated_at: new Date().toISOString(),
     };
 
@@ -655,11 +644,16 @@ export default function WeeklyProgramPage() {
     setSuccessMessage("Ders durumu güncellendi.");
   }
 
-  async function handleLessonDayChange(schedule: ScheduleRow, lessonDay: string) {
+  async function handleLessonDayChange(
+    schedule: ScheduleRow,
+    lessonDay: string,
+    fallbackSlotIndex = 0,
+  ) {
     clearMessages();
 
     const visibleNotes = getVisibleNotes(schedule);
-    const newNotes = buildNotes(lessonDay, visibleNotes);
+    const slotIndex = getSlotIndex(schedule) ?? fallbackSlotIndex;
+    const newNotes = buildNotes(lessonDay, slotIndex, visibleNotes);
 
     setSchedules((previous) =>
       previous.map((item) =>
@@ -845,7 +839,7 @@ export default function WeeklyProgramPage() {
           <div className="grid min-w-[1540px] grid-cols-7 gap-2">
             {days.map((day) => {
               const daySchedules = schedulesByDate.get(day.dateIso) ?? [];
-              const slots = Array.from({ length: SLOT_COUNT_PER_DAY });
+              const slots = placeSchedulesInSlots(daySchedules);
 
               return (
                 <section
@@ -874,9 +868,7 @@ export default function WeeklyProgramPage() {
                   </header>
 
                   <div className="space-y-1.5 p-2">
-                    {slots.map((_, slotIndex) => {
-                      const schedule = daySchedules[slotIndex];
-
+                    {slots.map((schedule, slotIndex) => {
                       if (isLoading) {
                         return (
                           <div
@@ -943,7 +935,7 @@ export default function WeeklyProgramPage() {
 
                               <button
                                 type="button"
-                                onClick={() => openEditModal(schedule)}
+                                onClick={() => openEditModal(schedule, slotIndex)}
                                 className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/80 text-[12px] text-slate-700 transition hover:bg-slate-100"
                                 title="Düzenle"
                               >
@@ -965,7 +957,11 @@ export default function WeeklyProgramPage() {
                             <select
                               value={lessonDay}
                               onChange={(event) =>
-                                handleLessonDayChange(schedule, event.target.value)
+                                handleLessonDayChange(
+                                  schedule,
+                                  event.target.value,
+                                  slotIndex,
+                                )
                               }
                               className="h-7 w-[72px] min-w-0 truncate rounded-full border border-slate-200 bg-white/90 px-1.5 text-[10px] font-black text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
                               title="Kaçıncı ders günü?"
@@ -1215,3 +1211,4 @@ export default function WeeklyProgramPage() {
     </main>
   );
 }
+

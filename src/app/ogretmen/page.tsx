@@ -2,7 +2,6 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { TeacherRecentResultsClient } from "@/components/results/TeacherRecentResultsClient";
-import { TeacherStudentOverviewClient } from "@/components/results/TeacherStudentOverviewClient";
 import Link from "next/link";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
 
@@ -95,9 +94,28 @@ export default function TeacherPage() {
         <div id="ogrenciler">
           <PanelCard
             title="Ogrenci Yonetimi"
-            subtitle="Ogrenci listesi ve duzenleme islemleri"
+            subtitle="Ogrenci listesi, ekleme, duzenleme ve toplu aktarim merkezi"
           >
-            <TeacherStudentOverviewClient />
+            <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="text-sm leading-5 text-[var(--muted)]">
+                  Ogrenci yonetiminin ana adresi artik Idil Yonetim Paneli icindeki Ogrenci Takip alanidir.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {["Liste", "Yeni Ogrenci", "Duzenleme", "Toplu Aktarim"].map((item) => (
+                    <span key={item} className="idil-badge">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <Link
+                href="/ogretmen/idil-panel/ogrenci-takip"
+                className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 shadow-sm transition duration-200 hover:bg-red-100"
+              >
+                Ogrenci Takibi Ac
+              </Link>
+            </div>
           </PanelCard>
         </div>
 
