@@ -1,5 +1,5 @@
 import { TachistoscopeExerciseClient } from "@/components/exercises/TachistoscopeExerciseClient";
 
-export default function TachistoscopePage() {
+export default function TakistoskopPage() {
   return <TachistoscopeExerciseClient />;
 }

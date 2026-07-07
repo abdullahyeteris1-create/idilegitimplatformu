@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { clearCurrentUser, getResolvedCurrentUser, type CurrentUser } from "@/lib/auth/auth";
 
 type NavItem = {
@@ -25,6 +25,7 @@ const STUDENT_NAV_ITEMS: NavItem[] = [
 const TEACHER_NAV_ITEMS: NavItem[] = [
   { href: "/ogretmen", label: "Ana Sayfa" },
   { href: "/ogretmen", label: "Ogretmen" },
+  { href: "/ogretmen/idil-panel", label: "Idil Panel" },
   { href: "/ogretmen#ogrenciler", label: "Ogrenciler" },
   { href: "/egzersizler", label: "Egzersizler" },
   { href: "/sonuc", label: "Sonuclar" },
@@ -33,6 +34,7 @@ const TEACHER_NAV_ITEMS: NavItem[] = [
 
 export function RoleAwareNav({ fallbackItems, compactHeader = false }: RoleAwareNavProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -51,7 +53,15 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false }: RoleAware
       ? TEACHER_NAV_ITEMS
       : fallbackItems;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (user?.role === "teacher" || pathname.startsWith("/ogretmen")) {
+      await fetch("/api/admin-logout", { method: "POST" });
+      clearCurrentUser();
+      setUser(null);
+      router.replace("/giris");
+      return;
+    }
+
     clearCurrentUser();
     setUser(null);
     router.replace("/");

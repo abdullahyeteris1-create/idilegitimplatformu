@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { getResolvedCurrentUser, type CurrentUser } from "@/lib/auth/auth";
 import { LoginForm } from "@/components/auth/LoginForm";
 
@@ -85,7 +85,7 @@ export function PortalLoginPage() {
               <article className="rounded-2xl border border-white/10 bg-white/10 p-4 sm:col-span-2">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-100">Kisa not</p>
                 <p className="mt-2 text-sm leading-6 text-red-50">
-                  Gecici test hesabi ile giris yapabilir, rol bazli arayuzu hemen deneyebilirsin.
+                  Yonetici girisi guvenli oturum ile korunur, ogrenci girisi mevcut sistemle devam eder.
                 </p>
               </article>
             </div>
@@ -95,7 +95,15 @@ export function PortalLoginPage() {
 
       <section className="relative z-10 -mt-20 px-4 pb-12 md:px-6">
         <div className="mx-auto flex max-w-[520px] justify-center">
-          <LoginForm />
+          <Suspense
+            fallback={
+              <section className="mx-auto w-full max-w-[520px] rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-[0_24px_60px_rgba(15,23,42,0.14)] md:p-6">
+                Giris formu yukleniyor...
+              </section>
+            }
+          >
+            <LoginForm />
+          </Suspense>
         </div>
       </section>
     </main>

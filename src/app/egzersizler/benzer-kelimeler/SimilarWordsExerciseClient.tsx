@@ -40,6 +40,39 @@ const TOUCH_STYLE: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
+const cardThemes = [
+  {
+    base: "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50 hover:border-rose-300 hover:shadow-rose-100",
+    dot: "bg-rose-400",
+    line: "bg-rose-200/80",
+  },
+  {
+    base: "border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 hover:border-sky-300 hover:shadow-sky-100",
+    dot: "bg-sky-400",
+    line: "bg-sky-200/80",
+  },
+  {
+    base: "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-lime-50 hover:border-emerald-300 hover:shadow-emerald-100",
+    dot: "bg-emerald-400",
+    line: "bg-emerald-200/80",
+  },
+  {
+    base: "border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 hover:border-violet-300 hover:shadow-violet-100",
+    dot: "bg-violet-400",
+    line: "bg-violet-200/80",
+  },
+  {
+    base: "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-yellow-50 hover:border-amber-300 hover:shadow-amber-100",
+    dot: "bg-amber-400",
+    line: "bg-amber-200/80",
+  },
+  {
+    base: "border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-blue-50 hover:border-indigo-300 hover:shadow-indigo-100",
+    dot: "bg-indigo-400",
+    line: "bg-indigo-200/80",
+  },
+];
+
 const DIFFERENT_PAIRS: Array<[string, string]> = [
   ["yanik", "yanki"],
   ["dari", "dara"],
@@ -627,26 +660,36 @@ export function SimilarWordsExerciseClient() {
       <div className="fx-fade-in w-full">
         <p className="mb-4 text-sm font-semibold text-slate-500">{stageInfoText}</p>
         <div className={`grid gap-2 sm:gap-3 ${getGridClass(boxCount)}`}>
-          {boxes.map((box) => {
+          {boxes.map((box, index) => {
+            const theme = cardThemes[index % cardThemes.length];
             const boxStateClass =
               box.state === "correct"
                 ? "border-green-400 bg-green-100 text-green-900 fx-glow-green"
                 : box.state === "wrong"
                   ? "border-red-400 bg-red-100 text-red-900 fx-blink-red fx-shake"
-                  : "border-red-100 bg-white/95 text-slate-800 hover:-translate-y-0.5 hover:bg-red-50/80 hover:shadow-md";
+                  : `${theme.base} text-slate-900 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl`;
 
             return (
               <button
                 key={box.id}
                 type="button"
-                className={`relative z-50 w-full ${getBoxHeightClass(boxCount)} cursor-pointer select-none touch-manipulation pointer-events-auto rounded-xl border px-2.5 py-2.5 text-center shadow-sm transition duration-200 active:scale-[0.97] ${boxStateClass}`}
+                className={`relative isolate z-50 w-full ${getBoxHeightClass(boxCount)} cursor-pointer select-none touch-manipulation pointer-events-auto overflow-hidden rounded-3xl border p-5 text-center shadow-md transition-all duration-300 active:scale-95 ${boxStateClass}`}
                 style={TOUCH_STYLE}
                 onClick={() => handleSelectBox(box.id)}
                 disabled={phase !== "play" || box.state !== "idle" || remainingSeconds <= 0}
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Kelime Cifti</p>
-                <p className="mt-2 text-base font-extrabold leading-6 break-words sm:text-lg">{box.pair.leftWord}</p>
-                <p className="text-base font-extrabold leading-6 break-words sm:text-lg">{box.pair.rightWord}</p>
+                {box.state === "idle" ? (
+                  <>
+                    <span className={`pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full ${theme.dot}`} />
+                    <span className="pointer-events-none absolute -left-6 -top-6 h-14 w-14 rounded-full bg-white/65 blur-xl" />
+                  </>
+                ) : null}
+
+                <div className="relative flex min-h-[112px] flex-col items-center justify-center gap-2 text-center">
+                  <p className="text-2xl font-extrabold tracking-wide text-slate-900 break-words sm:text-3xl">{box.pair.leftWord}</p>
+                  <div className={`h-1 w-14 rounded-full ${box.state === "idle" ? theme.line : "bg-slate-300/70"}`} />
+                  <p className="text-2xl font-extrabold tracking-wide text-slate-900 break-words sm:text-3xl">{box.pair.rightWord}</p>
+                </div>
               </button>
             );
           })}

@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
 import { getStudentByUsername, getStudentByUsernameWithRemote, getStudents } from "@/lib/students/studentStorage";
 
@@ -9,6 +9,7 @@ type LoginMode = "student" | "teacher";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<LoginMode>("student");
   const [username, setUsername] = useState("");
@@ -67,16 +68,26 @@ export function LoginForm() {
     }
 
     if (mode === "teacher") {
-      if (
-        (cleanUsername === "ogretmen" || cleanUsername === "admin" || cleanUsername === "ogretmen@idilhizliokuma.com") &&
-        cleanPassword === "1234"
-      ) {
+      const response = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: cleanUsername,
+          password: cleanPassword,
+        }),
+      });
+
+      if (response.ok) {
+        const nextParam = searchParams.get("next");
+        const nextPath = nextParam?.startsWith("/") ? nextParam : "/ogretmen";
         setCurrentUser({ role: "teacher", username: cleanUsername });
-        router.replace("/ogretmen");
+        router.replace(nextPath);
         return;
       }
 
-      setMessage("Ogretmen bilgileri hatali. Test hesabi: ogretmen / 1234");
+      setMessage("Kullanıcı adı veya şifre hatalı.");
       return;
     }
 
@@ -194,7 +205,7 @@ export function LoginForm() {
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               className="min-h-[50px] w-full rounded-xl border border-slate-200 bg-white px-3 pl-11 text-sm outline-none transition placeholder:text-slate-400 focus:border-red-300 focus:ring-4 focus:ring-red-100"
-              placeholder={mode === "student" ? "ogrenci veya kayitli kullanici adi" : "ogretmen"}
+              placeholder={mode === "student" ? "ogrenci veya kayitli kullanici adi" : "yonetici kullanici adi"}
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
@@ -212,7 +223,7 @@ export function LoginForm() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="min-h-[50px] w-full rounded-xl border border-slate-200 bg-white px-3 pl-11 text-sm outline-none transition placeholder:text-slate-400 focus:border-red-300 focus:ring-4 focus:ring-red-100"
-              placeholder="1234"
+              placeholder="********"
               type="password"
               autoComplete="current-password"
             />
@@ -254,7 +265,7 @@ export function LoginForm() {
         </button>
 
         <p className="text-center text-xs text-slate-500">
-          Test hesaplari: <span className="font-semibold">ogrenci / 1234</span> ve <span className="font-semibold">ogretmen / 1234</span>
+          Ogrenci test hesabi: <span className="font-semibold">ogrenci / 1234</span>
         </p>
       </form>
     </section>

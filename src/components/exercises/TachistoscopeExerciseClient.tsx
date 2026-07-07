@@ -3,12 +3,13 @@
 import { useEffect, useEffectEvent, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentStudent } from "@/lib/auth/auth";
+import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
 type ExercisePhase = "start" | "ready" | "play";
 type ResponsePhase = "show" | "answer" | "feedback";
 type SpeedMs = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
-type Level = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+type Level = TachistoscopeLevel;
 type WorkMode = "automatic" | "manual";
 type ContentType = "letter" | "number" | "mixed";
 
@@ -40,8 +41,6 @@ const TOUCH_STYLE: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
-const LETTERS = "ABCDEFGHJKLMNPRSTUVYZ";
-const DIGITS = "0123456789";
 const SPEED_OPTIONS: SpeedMs[] = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const LEVEL_OPTIONS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
@@ -49,24 +48,9 @@ function normalizeInput(value: string): string {
   return value.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
 }
 
-function randomPick(source: string): string {
-  return source[Math.floor(Math.random() * source.length)] ?? source[0] ?? "A";
-}
-
-function generateContent(length: number, contentType: ContentType): string {
-  const safeLength = Math.max(1, Math.min(15, Math.floor(length)));
-
-  return Array.from({ length: safeLength }, () => {
-    if (contentType === "letter") {
-      return randomPick(LETTERS);
-    }
-
-    if (contentType === "number") {
-      return randomPick(DIGITS);
-    }
-
-    return Math.random() < 0.5 ? randomPick(LETTERS) : randomPick(DIGITS);
-  }).join("");
+function generateContent(level: Level, previousWord?: string): string {
+  const normalizedLevel = normalizeTachistoscopeLevel(level);
+  return getRandomTachistoscopeWord(normalizedLevel, previousWord).toLocaleUpperCase("tr-TR");
 }
 
 export function TachistoscopeExerciseClient() {
@@ -164,11 +148,12 @@ export function TachistoscopeExerciseClient() {
 
   const startNextRound = (overrideSettings?: Partial<RoundSettings>) => {
     const settings = { ...latestSettingsRef.current, ...overrideSettings };
+    const normalizedLevel = normalizeTachistoscopeLevel(settings.level);
 
     const nextRound: TachistoscopeRound = {
-      expected: generateContent(settings.level, settings.contentType),
+      expected: generateContent(normalizedLevel, currentRound?.expected),
       content: "",
-      level: settings.level,
+      level: normalizedLevel,
       speedMs: settings.speedMs,
       contentType: settings.contentType,
     };
@@ -285,6 +270,7 @@ export function TachistoscopeExerciseClient() {
     setCurrentFeedback(isCorrect ? "Doğru cevap." : `Yanlış cevap.\nDoğru cevap: ${currentRound.expected}`);
     setCurrentFeedbackTone(isCorrect ? "ok" : "bad");
     setResponsePhase("feedback");
+    setCurrentRound((prev) => (prev ? { ...prev, content: "" } : prev));
     setAnswerLocked(true);
 
     const shouldLevelUp = nextCurrentNet >= 10 && level < 15;
@@ -410,7 +396,7 @@ export function TachistoscopeExerciseClient() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Takistoskop</p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Takistoskop</h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-              Kisa sureli harf, rakam veya karisik icerikleri takip et. Egitime basla ile tam ekran calisma moduna gecersin.
+              Kisa sureli anlamli kelimeleri takip et. Egitime basla ile tam ekran calisma moduna gecersin.
             </p>
             <button
               type="button"
@@ -527,25 +513,29 @@ export function TachistoscopeExerciseClient() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
 
             <div className="fx-slide-up mt-3 flex min-h-[37vh] w-full items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-6 shadow-[0_20px_62px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[44vh] md:px-6 md:py-7">
-              <div
-                className={`font-black tracking-[0.18em] text-slate-950 transition-all duration-300 ease-out ${responsePhase === "show" ? "fx-pop-in" : ""}`}
-                style={{
-                  fontSize: `${Math.max(3.0, 5.6 - (level - 1) * 0.16)}rem`,
-                  lineHeight: 1,
-                  wordBreak: "break-all",
-                  opacity: responsePhase === "show" || responsePhase === "feedback" ? 1 : 0.2,
-                  transform: responsePhase === "show" ? "scale(1)" : responsePhase === "feedback" ? "scale(0.98)" : "scale(0.94)",
-                  textShadow: responsePhase === "show" ? "0 12px 32px rgba(185, 28, 28, 0.16)" : "0 8px 24px rgba(15, 23, 42, 0.08)",
-                }}
-              >
-                {responsePhase === "show" && currentRound ? currentRound.content : responsePhase === "feedback" ? currentRound?.content : ""}
-              </div>
+              {responsePhase === "show" && currentRound ? (
+                <div
+                  className="font-black tracking-[0.18em] text-slate-950 transition-all duration-300 ease-out fx-pop-in"
+                  style={{
+                    fontSize: `${Math.max(3.0, 5.6 - (level - 1) * 0.16)}rem`,
+                    lineHeight: 1,
+                    wordBreak: "break-all",
+                    opacity: 1,
+                    transform: "scale(1)",
+                    textShadow: "0 12px 32px rgba(185, 28, 28, 0.16)",
+                  }}
+                >
+                  {currentRound.content}
+                </div>
+              ) : (
+                <div className="text-lg font-semibold text-slate-300">Sonraki kelime icin Sonraki butonuna bas.</div>
+              )}
             </div>
 
             {responsePhase !== "show" ? (
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
                 {responsePhase === "answer"
-                  ? "Gordugun icerigi yaz. Buyuk kucuk harf fark etmez, bosluklar temizlenir."
+                  ? "Gordugun kelimeyi yaz. Buyuk kucuk harf fark etmez, bosluklar temizlenir."
                   : "Kontrol edildi. Manuel modda Sonraki ile bir sonraki icerige gecebilirsin."}
               </p>
             ) : null}
@@ -558,8 +548,8 @@ export function TachistoscopeExerciseClient() {
                   onChange={(event) => setCurrentInput(event.target.value)}
                   onKeyDown={handleInputKeyDown}
                   className="min-h-[50px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
-                  placeholder={contentType === "number" ? "Gordugun rakamlari yaz" : "Gordugun icerigi yaz"}
-                  inputMode={contentType === "number" ? "numeric" : "text"}
+                  placeholder="Gordugun kelimeyi yaz"
+                  inputMode="text"
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
