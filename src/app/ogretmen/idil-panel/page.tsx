@@ -6,10 +6,7 @@ import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
-import { getExerciseResults } from "@/lib/results/resultStorage";
-import { getReadingTestResults } from "@/lib/results/readingTestStorage";
-import { getTextLibraryItems } from "@/lib/settings/textLibraryStorage";
-import { getStudents } from "@/lib/students/studentStorage";
+import { getIdilPanelSummary } from "@/lib/idil-panel/summaryStorage";
 
 type SummaryStat = {
   key: string;
@@ -25,11 +22,15 @@ type ModuleCard = {
 };
 
 const INITIAL_STATS: SummaryStat[] = [
-  { key: "students-total", label: "Toplam Ogrenci", value: 0 },
-  { key: "students-active", label: "Aktif Ogrenci", value: 0 },
-  { key: "text-count", label: "Metin Sayisi", value: 0 },
-  { key: "exercise-results", label: "Kaydedilen Egzersiz Sonucu", value: 0 },
-  { key: "reading-tests", label: "Okuma Testi Sonucu", value: 0 },
+  { key: "students-total", label: "Toplam Ogrenci", value: "Hazirlaniyor" },
+  { key: "students-active", label: "Aktif Ogrenci", value: "Hazirlaniyor" },
+  { key: "active-courses", label: "Aktif Kur", value: "Hazirlaniyor" },
+  { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: "Hazirlaniyor" },
+  { key: "completed-lessons", label: "Tamamlanan Ders", value: "Hazirlaniyor" },
+  { key: "report-count", label: "Rapor Sayisi", value: "Hazirlaniyor" },
+  { key: "text-count", label: "Metin Sayisi", value: "Hazirlaniyor" },
+  { key: "exercise-results", label: "Egzersiz Sonucu", value: "Hazirlaniyor" },
+  { key: "reading-tests", label: "Okuma Testi Sonucu", value: "Hazirlaniyor" },
 ];
 
 const MODULE_CARDS: ModuleCard[] = [
@@ -67,34 +68,58 @@ const MODULE_CARDS: ModuleCard[] = [
   },
 ];
 
-function getActiveStudentCount(): number {
-  const students = getStudents();
-  return students.filter((student) => {
-    if (student.status) {
-      return student.status === "active";
-    }
-
-    return student.isActive !== false;
-  }).length;
-}
-
 export default function IdilPanelPage() {
   const [stats, setStats] = useState<SummaryStat[]>(INITIAL_STATS);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const nextStats: SummaryStat[] = [
-        { key: "students-total", label: "Toplam Ogrenci", value: getStudents().length },
-        { key: "students-active", label: "Aktif Ogrenci", value: getActiveStudentCount() },
-        { key: "text-count", label: "Metin Sayisi", value: getTextLibraryItems().length },
-        { key: "exercise-results", label: "Kaydedilen Egzersiz Sonucu", value: getExerciseResults().length },
-        { key: "reading-tests", label: "Okuma Testi Sonucu", value: getReadingTestResults().length },
-      ];
+    let isMounted = true;
 
-      setStats(nextStats);
-    }, 0);
+    const loadSummary = async () => {
+      try {
+        const summary = await getIdilPanelSummary();
+        if (!isMounted) {
+          return;
+        }
 
-    return () => window.clearTimeout(timeoutId);
+        const nextStats: SummaryStat[] = [
+          { key: "students-total", label: "Toplam Ogrenci", value: summary.totalStudents },
+          { key: "students-active", label: "Aktif Ogrenci", value: summary.activeStudents },
+          { key: "active-courses", label: "Aktif Kur", value: summary.activeCourses },
+          { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: summary.plannedLessonsThisWeek },
+          { key: "completed-lessons", label: "Tamamlanan Ders", value: summary.completedLessons },
+          { key: "report-count", label: "Rapor Sayisi", value: summary.reportCount },
+          { key: "text-count", label: "Metin Sayisi", value: summary.textCount },
+          { key: "exercise-results", label: "Egzersiz Sonucu", value: summary.exerciseResultCount },
+          { key: "reading-tests", label: "Okuma Testi Sonucu", value: summary.readingTestCount },
+        ];
+
+        setStats(nextStats);
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+
+        const fallbackStats: SummaryStat[] = [
+          { key: "students-total", label: "Toplam Ogrenci", value: 0 },
+          { key: "students-active", label: "Aktif Ogrenci", value: 0 },
+          { key: "active-courses", label: "Aktif Kur", value: 0 },
+          { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: 0 },
+          { key: "completed-lessons", label: "Tamamlanan Ders", value: 0 },
+          { key: "report-count", label: "Rapor Sayisi", value: 0 },
+          { key: "text-count", label: "Metin Sayisi", value: 0 },
+          { key: "exercise-results", label: "Egzersiz Sonucu", value: 0 },
+          { key: "reading-tests", label: "Okuma Testi Sonucu", value: 0 },
+        ];
+
+        setStats(fallbackStats);
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
