@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { useRouter } from "next/navigation";
 import {
-  createMemoryGameSession,
-  generateRoundTargets,
-  type MemoryGameSession,
-  type MemoryGridLayout,
-  type MemoryLevel,
-} from "@/lib/exercise-engine/memoryGame";
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { useRouter } from "next/navigation";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import {
@@ -23,10 +23,23 @@ import {
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
 type RoundPhase = "prepare" | "show" | "select" | "feedback";
+type MemoryGridLayout = "5x5" | "5x10" | "10x10";
 type DisplayMs = 500 | 750 | 1000 | 1500 | 2000;
-type TotalRounds = 5 | 10 | 15 | 20;
 type FontSizePx = 12 | 16 | 20 | 24;
-type FeedbackType = "correct" | "wrong";
+type FeedbackType = "correct" | "wrong" | "level-up" | "info";
+
+type GridInfo = {
+  rows: number;
+  cols: number;
+  totalBoxes: number;
+  label: string;
+};
+
+const LEVEL_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+const DISPLAY_OPTIONS: DisplayMs[] = [500, 750, 1000, 1500, 2000];
+const FONT_OPTIONS: FontSizePx[] = [12, 16, 20, 24];
+const NET_TARGET = 10;
+const MAX_LEVEL = 10;
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -36,227 +49,289 @@ const TOUCH_STYLE: CSSProperties = {
   WebkitTapHighlightColor: "transparent",
 };
 
+function getGridInfo(layout: MemoryGridLayout): GridInfo {
+  if (layout === "5x10") {
+    return {
+      rows: 5,
+      cols: 10,
+      totalBoxes: 50,
+      label: "5 x 10",
+    };
+  }
+
+  if (layout === "10x10") {
+    return {
+      rows: 10,
+      cols: 10,
+      totalBoxes: 100,
+      label: "10 x 10",
+    };
+  }
+
+  return {
+    rows: 5,
+    cols: 5,
+    totalBoxes: 25,
+    label: "5 x 5",
+  };
+}
+
 function getFontLabel(value: FontSizePx): string {
-  if (value === 12) {
-    return "Kucuk";
-  }
-
-  if (value === 16) {
-    return "Orta";
-  }
-
-  if (value === 20) {
-    return "Buyuk";
-  }
-
-  return "Cok Buyuk";
+  if (value === 12) return "Küçük";
+  if (value === 16) return "Orta";
+  if (value === 20) return "Büyük";
+  return "Çok Büyük";
 }
 
 function getBoxSizeClass(cols: number): string {
   if (cols <= 5) {
-    return "min-h-[56px]";
+    return "min-h-[58px] md:min-h-[68px]";
   }
 
   if (cols <= 10) {
-    return "min-h-[40px]";
+    return "min-h-[38px] md:min-h-[48px]";
   }
 
-  return "min-h-[30px]";
+  return "min-h-[30px] md:min-h-[38px]";
+}
+
+function generateTargets(totalBoxes: number, targetCount: number): Set<number> {
+  const indexes = Array.from({ length: totalBoxes }, (_, index) => index);
+
+  for (let index = indexes.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [indexes[index], indexes[randomIndex]] = [
+      indexes[randomIndex],
+      indexes[index],
+    ];
+  }
+
+  return new Set(indexes.slice(0, targetCount));
+}
+
+function formatElapsed(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function calculateScore(totalCorrect: number, totalWrong: number): number {
+  return Math.max(0, totalCorrect * 10 - totalWrong * 5);
+}
+
+function calculateSuccessRate(totalCorrect: number, totalWrong: number): number {
+  const total = totalCorrect + totalWrong;
+
+  if (total === 0) return 0;
+
+  return Math.round((totalCorrect / total) * 100);
+}
+
+function getFeedbackClass(type: FeedbackType): string {
+  if (type === "correct") {
+    return "fx-glow-green border-green-200 bg-green-50 text-green-700";
+  }
+
+  if (type === "level-up") {
+    return "border-blue-200 bg-blue-50 text-blue-800";
+  }
+
+  if (type === "wrong") {
+    return "fx-shake border-red-200 bg-red-50 text-red-700";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function getRoundPhaseLabel(roundPhase: RoundPhase): string {
+  if (roundPhase === "prepare") return "Hazırlanıyor";
+  if (roundPhase === "show") return "Kutular yanıyor";
+  if (roundPhase === "select") return "Kutuları seç";
+  return "Sonuç";
 }
 
 export function MemoryGameExerciseClient() {
   const router = useRouter();
+
   const hasSavedResultRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const prepareTimerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const nextRoundTimerRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [roundPhase, setRoundPhase] = useState<RoundPhase>("prepare");
 
   const [gridLayout, setGridLayout] = useState<MemoryGridLayout>("5x5");
-  const [level, setLevel] = useState<MemoryLevel>(2);
+  const [level, setLevel] = useState(2);
   const [displayMs, setDisplayMs] = useState<DisplayMs>(1000);
-  const [totalRounds, setTotalRounds] = useState<TotalRounds>(10);
   const [fontSize, setFontSize] = useState<FontSizePx>(16);
 
-  const [session, setSession] = useState<MemoryGameSession | null>(null);
-  const [currentRound, setCurrentRound] = useState(1);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [wrongCount, setWrongCount] = useState(0);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [levelCorrectCount, setLevelCorrectCount] = useState(0);
+  const [levelWrongCount, setLevelWrongCount] = useState(0);
+  const [totalCorrectCount, setTotalCorrectCount] = useState(0);
+  const [totalWrongCount, setTotalWrongCount] = useState(0);
+  const [levelUpCount, setLevelUpCount] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const [activeTargets, setActiveTargets] = useState<Set<number>>(new Set());
+  const [selectedCorrect, setSelectedCorrect] = useState<Set<number>>(
+    new Set(),
+  );
+  const [selectedWrong, setSelectedWrong] = useState<number | null>(null);
+
   const [feedbackType, setFeedbackType] = useState<FeedbackType | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
-  const [activeTargets, setActiveTargets] = useState<Set<number>>(new Set());
-  const [selectedCorrect, setSelectedCorrect] = useState<Set<number>>(new Set());
-  const [selectedWrong, setSelectedWrong] = useState<number | null>(null);
+  const gridInfo = useMemo(() => getGridInfo(gridLayout), [gridLayout]);
+  const net = levelCorrectCount - levelWrongCount;
+  const score = calculateScore(totalCorrectCount, totalWrongCount);
+  const successRate = calculateSuccessRate(totalCorrectCount, totalWrongCount);
+  const boxSizeClass = getBoxSizeClass(gridInfo.cols);
 
-  const score = correctCount * 10 - wrongCount * 5;
-  const successRate = Math.round((correctCount / (session?.config.totalRounds ?? 1)) * 100);
-
-  useEffect(() => {
-    if (phase !== "play") {
-      return;
-    }
-
-    const timerId = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => {
-      window.clearInterval(timerId);
-    };
-  }, [phase]);
-
-  useEffect(() => {
-    return () => {
-      if (prepareTimerRef.current) {
-        window.clearTimeout(prepareTimerRef.current);
-      }
-
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
-      }
-    };
-  }, []);
-
-  const clearRoundTimers = () => {
-    if (prepareTimerRef.current) {
+  const clearRoundTimers = useCallback(() => {
+    if (prepareTimerRef.current !== null) {
       window.clearTimeout(prepareTimerRef.current);
       prepareTimerRef.current = null;
     }
 
-    if (hideTimerRef.current) {
+    if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-  };
 
-  const beginRound = useCallback((roundNumber: number, activeSession: MemoryGameSession) => {
-    clearRoundTimers();
-    const targets = generateRoundTargets(activeSession.grid.totalBoxes, activeSession.targetCountPerRound);
-
-    setCurrentRound(roundNumber);
-    setRoundPhase("prepare");
-    setFeedbackType(null);
-    setFeedbackMessage("");
-    setActiveTargets(targets);
-    setSelectedCorrect(new Set());
-    setSelectedWrong(null);
-
-    // Short prepare beat so the player sees round state before highlighted boxes appear.
-    prepareTimerRef.current = window.setTimeout(() => {
-      setRoundPhase("show");
-
-      hideTimerRef.current = window.setTimeout(() => {
-        setRoundPhase("select");
-      }, activeSession.config.displayMs);
-    }, 250);
+    if (nextRoundTimerRef.current !== null) {
+      window.clearTimeout(nextRoundTimerRef.current);
+      nextRoundTimerRef.current = null;
+    }
   }, []);
 
-  const finishExercise = useCallback(() => {
-    if (!session || hasSavedResultRef.current) {
-      return;
-    }
+  const beginRound = useCallback(
+    (nextRoundNumber: number, activeLevel = level) => {
+      clearRoundTimers();
 
-    clearRoundTimers();
-    hasSavedResultRef.current = true;
+      const nextTargets = generateTargets(gridInfo.totalBoxes, activeLevel);
 
-    const startedAt = startedAtRef.current;
-    const durationSeconds = Math.max(
-      1,
-      startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
-    );
+      setRoundNumber(nextRoundNumber);
+      setRoundPhase("prepare");
+      setFeedbackType("info");
+      setFeedbackMessage(
+        `${activeLevel}. seviye: ${activeLevel} kutu yanıp sönecek.`,
+      );
+      setActiveTargets(nextTargets);
+      setSelectedCorrect(new Set());
+      setSelectedWrong(null);
 
-    const student = getCurrentStudent();
+      prepareTimerRef.current = window.setTimeout(() => {
+        setRoundPhase("show");
+        setFeedbackType("info");
+        setFeedbackMessage("Yanan kutulara dikkatlice bak.");
 
-    console.log("[Exercise Complete] saving result", {
-      exerciseType: "memory-game",
-      exerciseTitle: "Hafıza Geliştirme",
-      score,
-      successRate,
-    });
+        hideTimerRef.current = window.setTimeout(() => {
+          setRoundPhase("select");
+          setFeedbackType("info");
+          setFeedbackMessage("Şimdi aklında kalan kutuları seç.");
+        }, displayMs);
+      }, 350);
+    },
+    [clearRoundTimers, displayMs, gridInfo.totalBoxes, level],
+  );
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
-      exerciseType: "memory-game",
-      exerciseTitle: "Hafıza Geliştirme",
-      durationSeconds,
-      correctCount,
-      wrongCount,
-      score,
-      successRate,
-      details: {
-        gridRows: session.grid.rows,
-        gridCols: session.grid.cols,
-        totalBoxes: session.grid.totalBoxes,
-        gridLabel: session.grid.gridLabel,
-        level: session.config.level,
-        targetCountPerRound: session.targetCountPerRound,
-        displayMs: session.config.displayMs,
-        totalRounds: session.config.totalRounds,
-      },
-    });
-
-    setPhase("result");
-  }, [correctCount, elapsedSeconds, score, session, successRate, wrongCount]);
-
-  const handleStart = () => {
+  const resetToReady = useCallback(() => {
     clearRoundTimers();
     hasSavedResultRef.current = false;
     startedAtRef.current = null;
-    setSession(null);
-    setCurrentRound(1);
-    setCorrectCount(0);
-    setWrongCount(0);
+
+    setPhase("ready");
+    setRoundPhase("prepare");
+    setRoundNumber(1);
+    setLevelCorrectCount(0);
+    setLevelWrongCount(0);
+    setTotalCorrectCount(0);
+    setTotalWrongCount(0);
+    setLevelUpCount(0);
     setElapsedSeconds(0);
-    setFeedbackType(null);
-    setFeedbackMessage("");
     setActiveTargets(new Set());
     setSelectedCorrect(new Set());
     setSelectedWrong(null);
-    setRoundPhase("prepare");
-    setPhase("ready");
+    setFeedbackType(null);
+    setFeedbackMessage("");
+  }, [clearRoundTimers]);
+
+  const handleIntroStart = () => {
+    resetToReady();
   };
 
   const handleBeginPlay = () => {
-    const nextSession = createMemoryGameSession({
-      gridLayout,
-      level,
-      displayMs,
-      totalRounds,
-    });
+    clearRoundTimers();
 
     hasSavedResultRef.current = false;
     startedAtRef.current = Date.now();
 
-    setSession(nextSession);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setElapsedSeconds(0);
     setPhase("play");
+    setRoundNumber(1);
+    setLevelCorrectCount(0);
+    setLevelWrongCount(0);
+    setTotalCorrectCount(0);
+    setTotalWrongCount(0);
+    setLevelUpCount(0);
+    setElapsedSeconds(0);
 
-    beginRound(1, nextSession);
+    beginRound(1, level);
   };
 
   const handleRestart = () => {
-    handleStart();
+    resetToReady();
   };
 
-  const handleContinue = () => {
-    if (!session) {
-      return;
-    }
+  const scheduleNextRound = useCallback(
+    (nextLevel: number, resetLevelStats: boolean) => {
+      nextRoundTimerRef.current = window.setTimeout(() => {
+        if (resetLevelStats) {
+          setLevelCorrectCount(0);
+          setLevelWrongCount(0);
+        }
 
-    if (currentRound >= session.config.totalRounds) {
-      finishExercise();
-      return;
-    }
+        beginRound(roundNumber + 1, nextLevel);
+      }, 850);
+    },
+    [beginRound, roundNumber],
+  );
 
-    beginRound(currentRound + 1, session);
-  };
+  const handleLevelUp = useCallback(
+    (nextLevelCorrect: number, nextLevelWrong: number) => {
+      const nextNet = nextLevelCorrect - nextLevelWrong;
+
+      if (nextNet < NET_TARGET) {
+        scheduleNextRound(level, false);
+        return;
+      }
+
+      if (level >= MAX_LEVEL) {
+        setFeedbackType("level-up");
+        setFeedbackMessage(
+          "10 net tamamlandı. 10. seviyedesin, aynı seviyede yeni tur başlıyor.",
+        );
+
+        scheduleNextRound(MAX_LEVEL, true);
+        return;
+      }
+
+      const upgradedLevel = level + 1;
+
+      setLevel(upgradedLevel);
+      setLevelUpCount((previous) => previous + 1);
+      setFeedbackType("level-up");
+      setFeedbackMessage(
+        `10 net tamamlandı. Otomatik olarak ${upgradedLevel}. seviyeye geçtin.`,
+      );
+
+      scheduleNextRound(upgradedLevel, true);
+    },
+    [level, scheduleNextRound],
+  );
 
   const handleSelectBox = (boxIndex: number) => {
     if (phase !== "play" || roundPhase !== "select") {
@@ -268,100 +343,219 @@ export function MemoryGameExerciseClient() {
     }
 
     if (!activeTargets.has(boxIndex)) {
+      const nextWrong = levelWrongCount + 1;
+
       setSelectedWrong(boxIndex);
-      setWrongCount((prev) => prev + 1);
+      setLevelWrongCount(nextWrong);
+      setTotalWrongCount((previous) => previous + 1);
       setFeedbackType("wrong");
-      setFeedbackMessage("Yanlis secim yaptin.");
+      setFeedbackMessage("Yanlış seçim yaptın. Yeni tur başlıyor.");
       setRoundPhase("feedback");
+
+      scheduleNextRound(level, false);
       return;
     }
 
-    const nextCorrect = new Set(selectedCorrect);
-    nextCorrect.add(boxIndex);
-    setSelectedCorrect(nextCorrect);
+    const nextSelectedCorrect = new Set(selectedCorrect);
+    nextSelectedCorrect.add(boxIndex);
+    setSelectedCorrect(nextSelectedCorrect);
 
-    if (nextCorrect.size >= activeTargets.size) {
-      setCorrectCount((prev) => prev + 1);
+    if (nextSelectedCorrect.size >= activeTargets.size) {
+      const nextCorrect = levelCorrectCount + 1;
+
+      setLevelCorrectCount(nextCorrect);
+      setTotalCorrectCount((previous) => previous + 1);
       setFeedbackType("correct");
-      setFeedbackMessage("Dogru! Tum hedef kutulari buldun.");
+      setFeedbackMessage("Doğru! Tüm hedef kutuları buldun.");
       setRoundPhase("feedback");
+
+      handleLevelUp(nextCorrect, levelWrongCount);
     }
   };
 
-  const boxCount = session?.grid.totalBoxes ?? 25;
-  const cols = session?.grid.cols ?? 5;
-  const boxSizeClass = getBoxSizeClass(cols);
+  const finishExercise = useCallback(() => {
+    if (hasSavedResultRef.current) return;
+
+    hasSavedResultRef.current = true;
+    clearRoundTimers();
+
+    const startedAt = startedAtRef.current;
+    const durationSeconds = Math.max(
+      1,
+      startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
+    );
+
+    const finalScore = calculateScore(totalCorrectCount, totalWrongCount);
+    const finalSuccessRate = calculateSuccessRate(
+      totalCorrectCount,
+      totalWrongCount,
+    );
+    const student = getCurrentStudent();
+
+    saveExerciseResult({
+      studentId: student?.id ?? "no-student",
+      studentName: student?.name ?? "Seçilmemiş Öğrenci",
+      exerciseType: "memory-game",
+      exerciseTitle: "Hafıza Geliştirme",
+      durationSeconds,
+      correctCount: totalCorrectCount,
+      wrongCount: totalWrongCount,
+      score: finalScore,
+      successRate: finalSuccessRate,
+      details: {
+        gridRows: gridInfo.rows,
+        gridCols: gridInfo.cols,
+        totalBoxes: gridInfo.totalBoxes,
+        gridLabel: gridInfo.label,
+        reachedLevel: level,
+        levelCorrectCount,
+        levelWrongCount,
+        net,
+        displayMs,
+        levelUpCount,
+        roundNumber,
+        rule: "Seviye 2-10. Seviye sayısı kadar kutu yanar. 10 net olunca otomatik seviye artar.",
+      },
+    });
+
+    setPhase("result");
+  }, [
+    clearRoundTimers,
+    displayMs,
+    elapsedSeconds,
+    gridInfo.cols,
+    gridInfo.label,
+    gridInfo.rows,
+    gridInfo.totalBoxes,
+    level,
+    levelCorrectCount,
+    levelUpCount,
+    levelWrongCount,
+    net,
+    roundNumber,
+    totalCorrectCount,
+    totalWrongCount,
+  ]);
+
+  useEffect(() => {
+    if (phase !== "play") return;
+
+    const timerId = window.setInterval(() => {
+      setElapsedSeconds((previous) => previous + 1);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [phase]);
+
+  useEffect(() => {
+    return () => {
+      clearRoundTimers();
+    };
+  }, [clearRoundTimers]);
 
   const footerControls = (
-    <div className="grid gap-3 xl:grid-cols-7">
+    <div className="grid gap-3 xl:grid-cols-6">
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kutu Düzeni</span>
-        <select value={gridLayout} onChange={(event) => setGridLayout(event.target.value as MemoryGridLayout)} className={FULLSCREEN_SELECT_CLASS}>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Kutu Düzeni
+        </span>
+        <select
+          value={gridLayout}
+          onChange={(event) =>
+            setGridLayout(event.target.value as MemoryGridLayout)
+          }
+          className={FULLSCREEN_SELECT_CLASS}
+          disabled={phase === "play"}
+        >
           <option value="5x5">5 x 5</option>
           <option value="5x10">5 x 10</option>
           <option value="10x10">10 x 10</option>
         </select>
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seviye</span>
-        <select value={level} onChange={(event) => setLevel(Number(event.target.value) as MemoryLevel)} className={FULLSCREEN_SELECT_CLASS}>
-          {[1, 2, 3, 4, 5].map((value) => (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Seviye
+        </span>
+        <select
+          value={level}
+          onChange={(event) => setLevel(Number(event.target.value))}
+          className={FULLSCREEN_SELECT_CLASS}
+          disabled={phase === "play"}
+        >
+          {LEVEL_OPTIONS.map((value) => (
             <option key={value} value={value}>
               {value}
             </option>
           ))}
         </select>
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Gösterim</span>
-        <select value={displayMs} onChange={(event) => setDisplayMs(Number(event.target.value) as DisplayMs)} className={FULLSCREEN_SELECT_CLASS}>
-          {[500, 750, 1000, 1500, 2000].map((value) => (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Gösterim
+        </span>
+        <select
+          value={displayMs}
+          onChange={(event) => setDisplayMs(Number(event.target.value) as DisplayMs)}
+          className={FULLSCREEN_SELECT_CLASS}
+          disabled={phase === "play"}
+        >
+          {DISPLAY_OPTIONS.map((value) => (
             <option key={value} value={value}>
               {value} ms
             </option>
           ))}
         </select>
       </label>
+
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Tur Sayısı</span>
-        <select value={totalRounds} onChange={(event) => setTotalRounds(Number(event.target.value) as TotalRounds)} className={FULLSCREEN_SELECT_CLASS}>
-          {[5, 10, 15, 20].map((value) => (
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Görünüm
+        </span>
+        <select
+          value={fontSize}
+          onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)}
+          className={FULLSCREEN_SELECT_CLASS}
+          disabled={phase === "play"}
+        >
+          {FONT_OPTIONS.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {getFontLabel(value)}
             </option>
           ))}
         </select>
       </label>
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Görünüm</span>
-        <select value={fontSize} onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)} className={FULLSCREEN_SELECT_CLASS}>
-          {[12, 16, 20, 24].map((value) => (
-            <option key={value} value={value}>
-              {getFontLabel(value as FontSizePx)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="grid gap-2 sm:grid-cols-2 xl:col-span-2 xl:grid-cols-3">
+
+      <div className="grid gap-2 sm:grid-cols-2 xl:col-span-2">
         {phase === "ready" ? (
-          <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay}>
+          <button
+            type="button"
+            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            style={FULLSCREEN_TOUCH_STYLE}
+            onClick={handleBeginPlay}
+          >
             Başlat
           </button>
         ) : (
           <>
             <button
               type="button"
-              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
               style={FULLSCREEN_TOUCH_STYLE}
-              onClick={handleContinue}
-              disabled={roundPhase !== "feedback"}
+              onClick={handleRestart}
             >
-              {currentRound >= (session?.config.totalRounds ?? totalRounds) ? "Tamam" : "Devam Et"}
-            </button>
-            <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleRestart}>
               Yeniden Başlat
             </button>
-            <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+
+            <button
+              type="button"
+              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              style={FULLSCREEN_TOUCH_STYLE}
+              onClick={finishExercise}
+            >
               Bitir
             </button>
           </>
@@ -374,9 +568,9 @@ export function MemoryGameExerciseClient() {
     return (
       <FullscreenExerciseIntro
         title="Hafıza Geliştirme"
-        description="Kısa süre yanan kutuları aklında tut ve doğru kutuları seç. Eğitime başla ile tam ekran çalışma moduna geçersin."
+        description="Seviye kadar kutu kısa süre yanar. Kutular kapandıktan sonra aklında kalanları bulmaya çalışırsın."
         buttonLabel="Eğitime Başla"
-        onStart={handleStart}
+        onStart={handleIntroStart}
       />
     );
   }
@@ -387,70 +581,117 @@ export function MemoryGameExerciseClient() {
         title="Hafıza Geliştirme"
         subtitle="Hazırlık modu"
         stats={[
-          { label: "Düzen", value: gridLayout },
+          { label: "Düzen", value: gridInfo.label },
           { label: "Seviye", value: level },
-          { label: "Gösterim", value: `${displayMs} ms`, tone: "brand" },
-          { label: "Tur", value: totalRounds },
+          { label: "Yanan Kutu", value: level, tone: "brand" },
+          { label: "Hedef Net", value: NET_TARGET },
         ]}
         stageClassName="fx-slide-up mt-3 flex min-h-[32vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[38vh]"
         footer={footerControls}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
+          Hazırlık
+        </p>
+
+        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+          Seviye kadar kutu yanar.
+        </h2>
+
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
-          Kutu düzeni, seviye, gösterim süresi ve tur sayısını alt bardan belirle. Başlat dediğinde ilk tur başlar.
+          Seviye 2’de 2 kutu, seviye 3’te 3 kutu, seviye 10’da 10 kutu
+          yanıp söner. Kutular kapandıktan sonra aklında kalanları seç.
+          10 net yapınca seviye otomatik artar.
         </p>
       </FullscreenExerciseShell>
     );
   }
 
-  if (phase === "result" && session) {
+  if (phase === "result") {
     return (
       <section className="idil-card p-5 md:p-7">
         <h2 className="text-2xl font-bold">Hafıza Geliştirme Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Tur bazli calisma tamamlandi.</p>
+
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Çalışma sonucu kaydedildi.
+        </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Dogru Tur</p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">{correctCount}</p>
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
+              Doğru
+            </p>
+            <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">
+              {totalCorrectCount}
+            </p>
           </article>
+
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Yanlis Tur</p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">{wrongCount}</p>
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
+              Yanlış
+            </p>
+            <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">
+              {totalWrongCount}
+            </p>
           </article>
+
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Skor</p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">{score}</p>
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
+              Skor
+            </p>
+            <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">
+              {score}
+            </p>
           </article>
+
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Basari</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{successRate}%</p>
+            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
+              Başarı
+            </p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">
+              {successRate}%
+            </p>
           </article>
         </div>
 
         <div className="mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm">
-          <p><strong>Düzen:</strong> {session.grid.gridLabel}</p>
-          <p className="mt-1"><strong>Seviye:</strong> {session.config.level}</p>
-          <p className="mt-1"><strong>Tur Sayisi:</strong> {session.config.totalRounds}</p>
-          <p className="mt-1"><strong>Gosterim:</strong> {session.config.displayMs} ms</p>
+          <p>
+            <strong>Ulaşılan Seviye:</strong> {level}
+          </p>
+          <p className="mt-1">
+            <strong>Seviye Atlama:</strong> {levelUpCount}
+          </p>
+          <p className="mt-1">
+            <strong>Son Net:</strong> {net}
+          </p>
+          <p className="mt-1">
+            <strong>Düzen:</strong> {gridInfo.label}
+          </p>
+          <p className="mt-1">
+            <strong>Gösterim:</strong> {displayMs} ms
+          </p>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
-            Yeniden Baslat
+          <button
+            type="button"
+            className={ACTION_BUTTON_CLASS}
+            style={TOUCH_STYLE}
+            onClick={handleRestart}
+          >
+            Yeniden Başlat
           </button>
+
           <button
             type="button"
             className={ACTION_BUTTON_CLASS}
             style={TOUCH_STYLE}
             onClick={() =>
               router.push(
-                `/sonuc?exerciseType=memory-game&correct=${correctCount}&wrong=${wrongCount}&successRate=${successRate}&score=${score}`,
+                `/sonuc?exerciseType=memory-game&correct=${totalCorrectCount}&wrong=${totalWrongCount}&successRate=${successRate}&score=${score}`,
               )
             }
           >
-            Sonuc Ekranina Git
+            Sonuç Ekranına Git
           </button>
         </div>
 
@@ -460,7 +701,7 @@ export function MemoryGameExerciseClient() {
             className="relative z-50 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white px-5 py-4 text-base font-bold text-red-800 transition hover:bg-red-50"
             style={TOUCH_STYLE}
           >
-            Egzersizlere Don
+            Egzersizlere Dön
           </Link>
         </div>
       </section>
@@ -472,14 +713,19 @@ export function MemoryGameExerciseClient() {
       title="Hafıza Geliştirme"
       subtitle="Tam ekran çalışma modu"
       stats={[
-        { label: "Tur", value: `${currentRound}/${session?.config.totalRounds ?? totalRounds}` },
-        { label: "Seviye", value: session?.config.level ?? level },
-        { label: "Doğru Tur", value: correctCount, tone: "ok" },
-        { label: "Yanlış Tur", value: wrongCount, tone: "bad" },
-        { label: "Skor", value: score, tone: "brand" },
+        { label: "Seviye", value: level },
+        { label: "Yanan Kutu", value: level, tone: "brand" },
+        { label: "Doğru", value: levelCorrectCount, tone: "ok" },
+        { label: "Yanlış", value: levelWrongCount, tone: "bad" },
+        { label: "Net", value: net, tone: "brand" },
       ]}
       finishButton={
-        <button type="button" onClick={finishExercise} className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md" style={FULLSCREEN_TOUCH_STYLE}>
+        <button
+          type="button"
+          onClick={finishExercise}
+          className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md"
+          style={FULLSCREEN_TOUCH_STYLE}
+        >
           Bitir
         </button>
       }
@@ -488,36 +734,44 @@ export function MemoryGameExerciseClient() {
       <div className="fx-fade-in w-full">
         {feedbackType ? (
           <div
-            className={`mx-auto mb-4 max-w-2xl rounded-2xl border p-3 text-sm font-bold ${
-              feedbackType === "correct"
-                ? "fx-glow-green border-green-200 bg-green-50 text-green-700"
-                : "fx-shake border-red-200 bg-red-50 text-red-700"
-            }`}
+            className={`mx-auto mb-4 max-w-2xl rounded-2xl border p-3 text-center text-sm font-bold ${getFeedbackClass(
+              feedbackType,
+            )}`}
           >
             {feedbackMessage}
           </div>
         ) : null}
 
+        <div className="mb-3 text-center text-sm font-black text-slate-600">
+          Durum: {getRoundPhaseLabel(roundPhase)}
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-red-100/85 bg-red-50/40 p-2 md:p-3">
           <div
             className="grid gap-1.5 md:gap-2"
             style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${gridInfo.cols}, minmax(0, 1fr))`,
             }}
           >
-            {Array.from({ length: boxCount }, (_, index) => {
-              const isShowingTarget = roundPhase === "show" && activeTargets.has(index);
+            {Array.from({ length: gridInfo.totalBoxes }, (_, index) => {
+              const isShowingTarget =
+                roundPhase === "show" && activeTargets.has(index);
+              const isFeedbackTarget =
+                roundPhase === "feedback" && activeTargets.has(index);
               const isSelectedCorrect = selectedCorrect.has(index);
               const isSelectedWrong = selectedWrong === index;
 
               let boxClass = "border-red-200 bg-white";
 
               if (isShowingTarget) {
-                boxClass = "fx-pulse-soft border-red-500 bg-red-500 shadow-[0_0_0_1px_rgba(220,38,38,0.35)]";
+                boxClass =
+                  "fx-pulse-soft border-red-500 bg-red-500 shadow-[0_0_0_1px_rgba(220,38,38,0.35)]";
               } else if (isSelectedCorrect) {
                 boxClass = "fx-glow-green border-green-400 bg-green-400";
               } else if (isSelectedWrong) {
                 boxClass = "fx-blink-red fx-shake border-red-400 bg-red-300";
+              } else if (isFeedbackTarget && feedbackType === "wrong") {
+                boxClass = "border-green-300 bg-green-100";
               }
 
               return (
@@ -539,8 +793,13 @@ export function MemoryGameExerciseClient() {
           </div>
         </div>
 
-        <p className="mt-4 text-sm font-semibold text-slate-600 text-center">Tur Durumu: {roundPhase}</p>
+        <p className="mt-4 text-center text-sm font-semibold text-slate-600">
+          {level}. seviyede {level} kutu yanar. Tümünü doğru seçersen doğru
+          sayılır; yanlış kutuya basarsan yanlış sayılır.
+        </p>
       </div>
     </FullscreenExerciseShell>
   );
 }
+
+export default MemoryGameExerciseClient;
