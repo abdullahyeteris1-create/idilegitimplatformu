@@ -446,7 +446,7 @@ export function TwoSideFocusExerciseClient() {
       description="Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver."
       backHref="/egzersizler"
     >
-      <section className="mx-auto flex h-full min-h-[calc(100vh-120px)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
+      <section className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
         <header className="border-b border-slate-200 bg-white/90 px-3 py-2 md:px-4">
           <div className="grid grid-cols-4 gap-2">
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-center shadow-sm">
@@ -570,7 +570,7 @@ export function TwoSideFocusExerciseClient() {
           </div>
         </div>
 
-        <section className="flex min-h-0 flex-1 flex-col px-3 py-3 md:px-4 md:py-4">
+        <section className="flex min-h-0 flex-col px-3 py-3 md:px-4">
           <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-950 md:text-xl">
@@ -624,8 +624,8 @@ export function TwoSideFocusExerciseClient() {
             {feedback.message}
           </div>
 
-          <div className="relative flex min-h-[330px] flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-4 shadow-inner sm:min-h-[380px] md:min-h-[430px] md:p-6">
-            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-4 py-8 md:gap-5 md:py-10">
+          <div className="relative flex min-h-[280px] items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-3 shadow-inner sm:min-h-[320px] md:min-h-[360px] md:p-5">
+            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-3 py-5 md:gap-4 md:py-7">
               {roundData.words.map((item) => (
                 <div
                   key={item.id}
@@ -633,7 +633,7 @@ export function TwoSideFocusExerciseClient() {
                     item.offset,
                   )}`}
                 >
-                  <span className="flex min-h-[76px] min-w-[140px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-5 py-3 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-h-[84px] sm:min-w-[175px] sm:text-3xl md:min-h-[92px] md:min-w-[210px] md:px-8 md:py-4 md:text-4xl">
+                  <span className="flex min-h-[68px] min-w-[130px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-4 py-3 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-h-[76px] sm:min-w-[160px] sm:text-3xl md:min-h-[82px] md:min-w-[190px] md:px-7 md:py-3 md:text-4xl">
                     {item.text}
                   </span>
                 </div>
@@ -641,11 +641,11 @@ export function TwoSideFocusExerciseClient() {
             </div>
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleAnswer("same")}
-              className="min-h-[72px] rounded-3xl border-2 border-blue-200 bg-blue-50 px-4 py-4 text-xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[84px] md:text-2xl"
+              className="min-h-[58px] rounded-2xl border-2 border-blue-200 bg-blue-50 px-4 py-3 text-lg font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[68px] md:text-xl"
             >
               ← SOL / AYNI
             </button>
@@ -653,13 +653,13 @@ export function TwoSideFocusExerciseClient() {
             <button
               type="button"
               onClick={() => handleAnswer("different")}
-              className="min-h-[72px] rounded-3xl border-2 border-rose-200 bg-rose-50 px-4 py-4 text-xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[84px] md:text-2xl"
+              className="min-h-[58px] rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-lg font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[68px] md:text-xl"
             >
               SAĞ / FARKLI →
             </button>
           </div>
 
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
             <p className="text-xs font-black text-slate-800">Kullanım</p>
             <p className="mt-1 text-xs font-medium leading-5 text-slate-600 md:text-sm">
               Bilgisayarda sol ve sağ yön tuşlarını kullanabilirsin. Dokunmatik

@@ -655,23 +655,23 @@ export function CardMatchingExerciseClient() {
         title="Kart Eşleştirme Çalışması"
         subtitle="Hazırlık modu"
         stats={stats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[46vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[54vh]"
+        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[380px]"
         footer={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
           Hazırlık
         </p>
 
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">
           Önce kartlara bak, sonra eşleri bul.
         </h2>
 
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
           Başlat dediğinde tüm kartlar önce açık görünecek. Süre bitince kartlar
           kapanacak ve aklında kalan eşleri bulmaya çalışacaksın.
         </p>
 
-        <div className="mt-6 grid w-full max-w-xl grid-cols-3 gap-3">
+        <div className="mt-4 grid w-full max-w-xl grid-cols-3 gap-2">
           <article className="rounded-2xl border border-red-100 bg-red-50 p-3">
             <p className="text-xs font-bold text-slate-500">Çift</p>
             <p className="mt-1 text-2xl font-black text-red-700">
@@ -699,7 +699,7 @@ export function CardMatchingExerciseClient() {
 
   if (phase === "completed" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Kart Eşleştirme Sonucu</h2>
 
         <p className="mt-1 text-sm text-[var(--muted)]">
@@ -827,26 +827,26 @@ export function CardMatchingExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[64vh] w-full flex-col rounded-[28px] border border-white/80 bg-white/94 p-3 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[70vh] md:p-5"
+      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-2.5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
       footer={footerControls}
     >
       <div className="flex w-full flex-1 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-left">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
               {phase === "preview" ? "Bakma Süresi" : "Hedef"}
             </p>
 
-            <p className="mt-1 text-xl font-black text-slate-950 md:text-2xl">
+            <p className="mt-1 text-lg font-black text-slate-950 md:text-xl">
               {phase === "preview"
                 ? "Kartları aklında tut. Birazdan kapanacak."
                 : "Net 10 yap, otomatik seviye atla."}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/80 bg-white px-4 py-2 text-center shadow-sm">
+          <div className="rounded-2xl border border-white/80 bg-white px-3 py-1.5 text-center shadow-sm">
             <p className="text-xs font-bold text-slate-500">Süre</p>
-            <p className="text-3xl font-black text-red-700">
+            <p className="text-2xl font-black text-red-700">
               {formatElapsed(elapsedSeconds)}
             </p>
           </div>
@@ -868,7 +868,7 @@ export function CardMatchingExerciseClient() {
           }`}
         >
           <div
-            className={`grid h-full min-h-[44vh] content-center gap-2 md:gap-3 ${getGridClass(
+            className={`grid h-full min-h-[300px] content-center gap-2 md:min-h-[360px] md:gap-3 ${getGridClass(
               cards.length,
             )}`}
           >

@@ -436,7 +436,7 @@ export function EyeMuscleExerciseClient() {
         title="Goz Kaslarini Gelistirme Calismasi"
         subtitle="Hazirlik modu"
         stats={stats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center gap-5 border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[58vh]"
+        stageClassName="fx-slide-up flex min-h-[340px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[420px]"
         footer={footerControls}
       >
         <div className="flex flex-col items-center">
@@ -450,7 +450,7 @@ export function EyeMuscleExerciseClient() {
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Goz Kaslarini Gelistirme Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Calisma kaydedildi.</p>
 
@@ -524,7 +524,7 @@ export function EyeMuscleExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[62vh] w-full flex-col items-center justify-center border border-white/80 bg-white/94 px-2 py-3 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[68vh] md:px-4"
+      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/94 px-2 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:px-4 lg:min-h-[540px]"
       footer={footerControls}
     >
       <div className="relative h-[58vh] w-full max-w-5xl overflow-hidden border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffafa_100%)] shadow-inner shadow-red-100/70 md:h-[62vh]">

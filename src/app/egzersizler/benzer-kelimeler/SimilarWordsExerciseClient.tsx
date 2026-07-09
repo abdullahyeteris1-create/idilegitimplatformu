@@ -190,14 +190,14 @@ function getGridClass(boxCount: BoxCount): string {
 
 function getBoxHeightClass(boxCount: BoxCount): string {
   if (boxCount <= 16) {
-    return "min-h-[110px] sm:min-h-[120px]";
+    return "min-h-[82px] sm:min-h-[94px]";
   }
 
   if (boxCount === 20) {
-    return "min-h-[95px] sm:min-h-[106px]";
+    return "min-h-[74px] sm:min-h-[84px]";
   }
 
-  return "min-h-[82px] sm:min-h-[94px]";
+  return "min-h-[66px] sm:min-h-[76px]";
 }
 
 function formatDuration(seconds: number): string {
@@ -447,9 +447,9 @@ export function SimilarWordsExerciseClient() {
           { label: "Dogru", value: 0, tone: "ok" },
           { label: "Yanlis", value: 0, tone: "bad" },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[32vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[38vh]"
+        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
         footer={
-          <div className="grid gap-3 lg:grid-cols-5">
+          <div className="grid gap-2 lg:grid-cols-5">
             <label className="flex min-w-0 flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sure</span>
               <select
@@ -516,8 +516,8 @@ export function SimilarWordsExerciseClient() {
         }
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
           Sure, kutu sayisi ve hedef kelime ayarlarini yaptiktan sonra Baslat ile tura gec.
         </p>
       </FullscreenExerciseShell>
@@ -526,7 +526,7 @@ export function SimilarWordsExerciseClient() {
 
   if (phase === "result") {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Benzer Kelimeler Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Sure tamamlandi veya calisma Bitir ile sonlandirildi.</p>
 
@@ -617,9 +617,9 @@ export function SimilarWordsExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="mt-4 w-full rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,248,246,0.86)_100%)] px-4 py-6 shadow-[0_24px_80px_rgba(185,28,28,0.10)] backdrop-blur md:px-6 md:py-8"
+      stageClassName="w-full rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,248,246,0.86)_100%)] px-3 py-4 shadow-[0_20px_60px_rgba(185,28,28,0.10)] backdrop-blur md:px-5 md:py-5"
       footer={
-        <div className="grid gap-3 lg:grid-cols-5">
+        <div className="grid gap-2 lg:grid-cols-5">
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sure</span>
             <select value={durationSeconds} className={FULLSCREEN_SELECT_CLASS} disabled>
@@ -673,7 +673,7 @@ export function SimilarWordsExerciseClient() {
               <button
                 key={box.id}
                 type="button"
-                className={`relative isolate z-50 w-full ${getBoxHeightClass(boxCount)} cursor-pointer select-none touch-manipulation pointer-events-auto overflow-hidden rounded-3xl border p-5 text-center shadow-md transition-all duration-300 active:scale-95 ${boxStateClass}`}
+                className={`relative isolate z-50 w-full ${getBoxHeightClass(boxCount)} cursor-pointer select-none touch-manipulation pointer-events-auto overflow-hidden rounded-3xl border p-3 text-center shadow-md transition-all duration-300 active:scale-95 md:p-4 ${boxStateClass}`}
                 style={TOUCH_STYLE}
                 onClick={() => handleSelectBox(box.id)}
                 disabled={phase !== "play" || box.state !== "idle" || remainingSeconds <= 0}
@@ -685,10 +685,10 @@ export function SimilarWordsExerciseClient() {
                   </>
                 ) : null}
 
-                <div className="relative flex min-h-[112px] flex-col items-center justify-center gap-2 text-center">
-                  <p className="text-2xl font-extrabold tracking-wide text-slate-900 break-words sm:text-3xl">{box.pair.leftWord}</p>
+                <div className="relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-center">
+                  <p className="text-xl font-extrabold tracking-wide text-slate-900 break-words sm:text-2xl">{box.pair.leftWord}</p>
                   <div className={`h-1 w-14 rounded-full ${box.state === "idle" ? theme.line : "bg-slate-300/70"}`} />
-                  <p className="text-2xl font-extrabold tracking-wide text-slate-900 break-words sm:text-3xl">{box.pair.rightWord}</p>
+                  <p className="text-xl font-extrabold tracking-wide text-slate-900 break-words sm:text-2xl">{box.pair.rightWord}</p>
                 </div>
               </button>
             );

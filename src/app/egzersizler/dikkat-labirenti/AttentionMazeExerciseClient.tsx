@@ -535,12 +535,12 @@ export function AttentionMazeExerciseClient() {
           { label: "Sure", value: `${selectedDuration} sn` },
           { label: "Yol", value: currentConfig.turnCountLabel },
         ]}
-        backgroundClassName="min-h-screen bg-[radial-gradient(circle_at_top,#ddd6fe_0%,#f8f7ff_42%,#f8fafc_100%)] text-slate-900"
-        stageClassName="fx-slide-up mt-3 flex min-h-[34vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/90 px-5 py-6 text-center shadow-[0_18px_56px_rgba(109,40,217,0.11)] backdrop-blur md:min-h-[40vh]"
+        backgroundClassName="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ddd6fe_0%,#f8f7ff_42%,#f8fafc_100%)] text-slate-900"
+        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/90 px-4 py-5 text-center shadow-[0_18px_56px_rgba(109,40,217,0.11)] backdrop-blur md:min-h-[350px]"
         footer={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">Hazirlik</p>
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">
           Yolu gozlerinle takip et.
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
@@ -552,7 +552,7 @@ export function AttentionMazeExerciseClient() {
 
   if (phase === "completed") {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Dikkat Labirenti Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Calisma tamamlandi ve sonuc kaydi olusturuldu.</p>
 
@@ -619,7 +619,7 @@ export function AttentionMazeExerciseClient() {
     <FullscreenExerciseShell
       title="Dikkat Labirenti"
       subtitle={phase === "paused" ? "Duraklatildi" : phase === "feedback" ? "Geri bildirim" : "Tam ekran calisma modu"}
-      backgroundClassName="min-h-screen bg-[radial-gradient(circle_at_top,#ddd6fe_0%,#f8f7ff_42%,#f8fafc_100%)] text-slate-900"
+      backgroundClassName="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ddd6fe_0%,#f8f7ff_42%,#f8fafc_100%)] text-slate-900"
       stats={[
         { label: "Seviye", value: level, tone: "brand" },
         { label: "Dogru", value: levelCorrect, tone: "ok" },
@@ -639,7 +639,7 @@ export function AttentionMazeExerciseClient() {
         </button>
       }
       footer={footerControls}
-      stageClassName="fx-slide-up mt-3 flex min-h-[48vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/90 px-3 py-3 text-center shadow-[0_18px_56px_rgba(109,40,217,0.11)] backdrop-blur md:px-5 md:py-5"
+      stageClassName="fx-slide-up flex min-h-[380px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/90 px-3 py-3 text-center shadow-[0_18px_56px_rgba(109,40,217,0.11)] backdrop-blur md:min-h-[460px] md:px-5 md:py-5"
     >
       <div className="w-full">
         <div className={`mx-auto mb-3 max-w-2xl rounded-2xl border px-4 py-3 text-sm font-bold ${getFeedbackClass(feedbackTone)} ${feedbackTone === "wrong" ? "fx-shake" : ""}`}>

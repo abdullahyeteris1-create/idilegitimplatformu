@@ -285,13 +285,13 @@ export function EyeBrainExerciseClient() {
       subtitle="Simgeleri takip et, hız ayarını seç ve çalışmayı başlat."
       stats={headerStats}
       footer={footerControls}
-      backgroundClassName="min-h-screen bg-[radial-gradient(circle_at_top,#fff0b8_0%,#fff9ec_38%,#f8f0ea_100%)] text-slate-900"
-      stageClassName="relative min-h-[56vh] w-full overflow-hidden rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,244,0.96)_100%)] px-4 py-5 shadow-[0_18px_56px_rgba(185,28,28,0.11)] md:min-h-[60vh] md:px-6 md:py-6"
+      backgroundClassName="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#fff0b8_0%,#fff9ec_38%,#f8f0ea_100%)] text-slate-900"
+      stageClassName="relative min-h-[430px] w-full overflow-hidden rounded-3xl border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,244,0.96)_100%)] px-3 py-4 shadow-[0_14px_42px_rgba(185,28,28,0.10)] md:min-h-[500px] md:px-5 md:py-5 lg:min-h-[540px]"
       mainClassName="flex flex-1 items-start justify-center px-3 py-4 md:px-5 md:py-5"
     >
       {phase === "ready" ? (
-        <div className="flex min-h-[46vh] w-full items-center justify-center">
-          <div className="max-w-2xl rounded-[28px] border border-red-100 bg-white/95 px-5 py-8 text-center shadow-[0_18px_48px_rgba(185,28,28,0.08)]">
+        <div className="flex min-h-[320px] w-full items-center justify-center md:min-h-[380px]">
+          <div className="max-w-2xl rounded-[28px] border border-red-100 bg-white/95 px-4 py-6 text-center shadow-[0_18px_48px_rgba(185,28,28,0.08)] md:px-5">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Hazır</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Ayarını seç, hazır olduğunda başlat.</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">

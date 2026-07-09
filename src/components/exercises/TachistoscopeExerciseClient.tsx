@@ -390,12 +390,12 @@ export function TachistoscopeExerciseClient() {
 
   if (phase === "start") {
     return (
-      <section className="min-h-screen bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff8f6_42%,#f7efe9_100%)] px-3 py-5 text-slate-900">
-        <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-4xl items-center justify-center">
+      <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff8f6_42%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl items-center justify-center overflow-hidden rounded-[28px] border border-white/80 bg-white/76 px-4 py-6 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)] md:px-6 md:py-8">
           <div className="w-full max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Takistoskop</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Takistoskop</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">Takistoskop</h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Kisa sureli anlamli kelimeleri takip et. Egitime basla ile tam ekran calisma moduna gecersin.
             </p>
             <button
@@ -413,13 +413,13 @@ export function TachistoscopeExerciseClient() {
 
   if (phase === "ready") {
     return (
-      <section className="min-h-screen bg-[radial-gradient(circle_at_top,#ffd8de_0%,#fff7f4_46%,#f7efe9_100%)] text-slate-900">
-        <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col">
+      <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd8de_0%,#fff7f4_46%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/76 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)]">
           <main className="flex flex-1 items-center justify-center px-3 py-4 md:px-5 md:py-5">
-            <div className="fx-slide-up flex w-full max-w-3xl flex-col items-center rounded-[28px] border border-white/70 bg-white/75 px-5 py-8 text-center shadow-[0_20px_70px_rgba(153,27,27,0.12)] backdrop-blur md:px-8 md:py-10">
+            <div className="fx-slide-up flex w-full max-w-3xl flex-col items-center rounded-[28px] border border-white/70 bg-white/75 px-4 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.12)] backdrop-blur md:px-6 md:py-7">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
                 Hiz, seviye, calisma sekli ve icerik turunu alt bolumden sec. Hazir oldugunda ilk icerik baslayacak.
               </p>
 
@@ -478,8 +478,8 @@ export function TachistoscopeExerciseClient() {
   }
 
   return (
-    <section className="min-h-screen bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col">
+    <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+      <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/76 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)]">
         <header className="sticky top-0 z-30 border-b border-red-100/80 bg-white/84 shadow-[0_8px_28px_rgba(185,28,28,0.08)] backdrop-blur">
           <div className="flex flex-wrap items-center gap-1.5 px-3 py-2.5 md:px-5 md:py-2.5">
             <div className="mr-auto min-w-0">
@@ -512,7 +512,7 @@ export function TachistoscopeExerciseClient() {
           <div className="flex w-full max-w-5xl flex-col items-center justify-center text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
 
-            <div className="fx-slide-up mt-3 flex min-h-[37vh] w-full items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-6 shadow-[0_20px_62px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[44vh] md:px-6 md:py-7">
+            <div className="fx-slide-up mt-3 flex min-h-[340px] w-full items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 shadow-[0_18px_54px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[420px] md:px-6 lg:min-h-[480px]">
               {responsePhase === "show" && currentRound ? (
                 <div
                   className="font-black tracking-[0.18em] text-slate-950 transition-all duration-300 ease-out fx-pop-in"

@@ -469,7 +469,7 @@ export function BlockReadingExerciseClient() {
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[32vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[38vh]"
+        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
         footer={footerControls}
       >
         {isLoadingTexts ? (
@@ -483,7 +483,7 @@ export function BlockReadingExerciseClient() {
         ) : hasActiveTexts ? (
           <>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
+            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
               Kategori, metin, blok boyutu, hız ve font ayarlarını alt bardan yap. Başlat dediğinde bloklar tam ekran sahnede akmaya başlar.
             </p>
@@ -518,7 +518,7 @@ export function BlockReadingExerciseClient() {
 
   if (phase === "result" && selectedText && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Blok Okuma Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}

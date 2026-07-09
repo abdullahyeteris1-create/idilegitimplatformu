@@ -109,13 +109,6 @@ function generateTargets(totalBoxes: number, targetCount: number): Set<number> {
   return new Set(indexes.slice(0, targetCount));
 }
 
-function formatElapsed(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
-}
-
 function calculateScore(totalCorrect: number, totalWrong: number): number {
   return Math.max(0, totalCorrect * 10 - totalWrong * 5);
 }
@@ -456,7 +449,7 @@ export function MemoryGameExerciseClient() {
   }, [clearRoundTimers]);
 
   const footerControls = (
-    <div className="grid gap-3 xl:grid-cols-6">
+    <div className="grid gap-2 xl:grid-cols-6">
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Kutu Düzeni
@@ -586,18 +579,18 @@ export function MemoryGameExerciseClient() {
           { label: "Yanan Kutu", value: level, tone: "brand" },
           { label: "Hedef Net", value: NET_TARGET },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[32vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[38vh]"
+        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[350px]"
         footer={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
           Hazırlık
         </p>
 
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">
           Seviye kadar kutu yanar.
         </h2>
 
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
           Seviye 2’de 2 kutu, seviye 3’te 3 kutu, seviye 10’da 10 kutu
           yanıp söner. Kutular kapandıktan sonra aklında kalanları seç.
           10 net yapınca seviye otomatik artar.
@@ -608,7 +601,7 @@ export function MemoryGameExerciseClient() {
 
   if (phase === "result") {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Hafıza Geliştirme Sonucu</h2>
 
         <p className="mt-1 text-sm text-[var(--muted)]">

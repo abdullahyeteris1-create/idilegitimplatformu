@@ -551,7 +551,7 @@ export function ShadowReadingExerciseClient() {
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[42vh] w-full flex-col items-center justify-center gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[50vh]"
+        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[380px]"
         footer={footerControls}
       >
         {isLoadingTexts ? (
@@ -566,7 +566,7 @@ export function ShadowReadingExerciseClient() {
           <>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
               <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
                 Alt bardan kategori, metin, blok sayısı, hız ve font ayarlarını seç. Başlat dediğinde vurgu ritmi tam ekran sahnede ilerler.
               </p>
@@ -603,7 +603,7 @@ export function ShadowReadingExerciseClient() {
 
   if (phase === "result" && selectedText && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Golgeleme Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
@@ -689,13 +689,13 @@ export function ShadowReadingExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[54vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-4 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[62vh] md:px-6 md:py-6"
+      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[500px] md:px-5 md:py-4"
       footer={footerControls}
     >
       <div className="fx-fade-in flex w-full max-w-6xl flex-col gap-4 text-left">
         <div className="w-full max-w-3xl self-center">{textInfo}</div>
 
-        <div className="flex min-h-[46vh] w-full flex-col rounded-[26px] border border-red-100 bg-white px-4 py-4 shadow-[0_22px_60px_rgba(185,28,28,0.12)] md:min-h-[52vh] md:px-7 md:py-6">
+        <div className="flex min-h-[320px] w-full flex-col rounded-[26px] border border-red-100 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(185,28,28,0.10)] md:min-h-[380px] md:px-6 md:py-4">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Gölgeleme metni</p>
           <div
             ref={readingAreaRef}

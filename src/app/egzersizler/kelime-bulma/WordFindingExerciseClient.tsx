@@ -388,12 +388,12 @@ export function WordFindingExerciseClient() {
           { label: "Sure", value: `${durationMinutes} dk`, tone: "brand" },
           { label: "Hedef", value: targetWordsPerText },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[38vh] w-full flex-col items-center justify-center gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[44vh]"
+        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center gap-4 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[380px]"
         footer={footerControls}
       >
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
             Sureyi ve bir paragrafta bulunacak hedef kelime sayisini sec. Baslat dediginde sure islemeye baslar.
           </p>
@@ -404,7 +404,7 @@ export function WordFindingExerciseClient() {
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Kelime Bulma Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Calisma tamamlandi.</p>
 
@@ -475,7 +475,7 @@ export function WordFindingExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center gap-4 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[58vh] md:px-6"
+      stageClassName="fx-slide-up flex min-h-[380px] w-full flex-col items-center justify-center gap-3 rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[460px] md:px-5"
       footer={footerControls}
     >
       <div className="w-full max-w-4xl">

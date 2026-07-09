@@ -428,12 +428,12 @@ export function LetterNumberCountingFocusClient() {
         title="Harf / Rakam Sayma Odak Calismasi"
         subtitle="Hazirlik modu"
         stats={stats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[46vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[54vh]"
+        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[380px]"
         footer={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
           Mod, seviye, zorluk ve cevap suresini belirle. Baslat dediginde her turda hedef karakteri sayacaksin.
         </p>
       </FullscreenExerciseShell>
@@ -442,7 +442,7 @@ export function LetterNumberCountingFocusClient() {
 
   if (phase === "completed" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Harf / Rakam Sayma Odak Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Calisma sonucu kaydedildi.</p>
 
@@ -507,22 +507,22 @@ export function LetterNumberCountingFocusClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[64vh] w-full flex-col rounded-[28px] border border-white/80 bg-white/94 p-3 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[70vh] md:p-5"
+      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-2.5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
       footer={footerControls}
     >
       <div className="flex w-full flex-1 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-left">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">Hedef</p>
-            <p className="mt-1 text-2xl font-black text-slate-950">Kac tane <span className="text-red-700">{round?.target ?? "?"}</span> var?</p>
+            <p className="mt-1 text-xl font-black text-slate-950 md:text-2xl">Kac tane <span className="text-red-700">{round?.target ?? "?"}</span> var?</p>
           </div>
-          <div className="rounded-2xl border border-white/80 bg-white px-4 py-2 text-center shadow-sm">
+          <div className="rounded-2xl border border-white/80 bg-white px-3 py-1.5 text-center shadow-sm">
             <p className="text-xs font-bold text-slate-500">Sure</p>
-            <p className="text-3xl font-black text-red-700">{remainingSeconds}</p>
+            <p className="text-2xl font-black text-red-700">{remainingSeconds}</p>
           </div>
         </div>
 
-        <div className={`relative min-h-[36vh] flex-1 overflow-hidden rounded-[26px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner md:min-h-[42vh] ${phase === "paused" ? "blur-sm" : ""}`}>
+        <div className={`relative min-h-[220px] flex-1 overflow-hidden rounded-[26px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner md:min-h-[280px] ${phase === "paused" ? "blur-sm" : ""}`}>
           {round?.characters.map((character) => (
             <span
               key={character.id}

@@ -508,11 +508,11 @@ export function VisualPuzzleExerciseClient() {
         title="Gorsel Puzzle Calismasi"
         subtitle="Hazirlik modu"
         stats={stats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[50vh] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[58vh]"
+        stageClassName="fx-slide-up flex min-h-[340px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[420px]"
         footer={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-        <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">Resmi incele, hazir olunca baslat.</h2>
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Resmi incele, hazir olunca baslat.</h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
           Baslat dediginde bu gorsel {startGrid.cols}x{startGrid.rows} kareye ayrilip karistirilacak. Iki kare secerek yerlerini degistireceksin.
         </p>
@@ -557,7 +557,7 @@ export function VisualPuzzleExerciseClient() {
 
   if (phase === "completed" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Gorsel Puzzle Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Calisma sonucu kaydedildi.</p>
 
@@ -619,7 +619,7 @@ export function VisualPuzzleExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up mt-3 flex min-h-[66vh] w-full flex-col rounded-[28px] border border-white/80 bg-white/94 p-3 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[72vh] md:p-4"
+      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
       footer={footerControls}
     >
       <div className="flex w-full flex-1 flex-col gap-3">

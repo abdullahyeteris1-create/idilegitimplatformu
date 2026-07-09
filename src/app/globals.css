@@ -317,9 +317,9 @@ textarea {
 .compact-stat-chip {
   border-radius: 9999px;
   border: 1px solid rgba(254, 202, 202, 0.9);
-  padding: 0.34rem 0.64rem;
-  font-size: 0.72rem;
-  line-height: 1rem;
+  padding: 0.24rem 0.56rem;
+  font-size: 0.68rem;
+  line-height: 0.95rem;
   box-shadow: none;
 }
 

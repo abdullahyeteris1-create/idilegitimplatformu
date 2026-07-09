@@ -483,7 +483,7 @@ export function ReadingComprehensionTestClient() {
           { label: "Soru", value: selectedText.questions.length, tone: "brand" },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[58vh]"
+        stageClassName="fx-slide-up flex min-h-[340px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[420px]"
         footer={readyFooter}
       >
         {isLoadingTexts ? (
@@ -537,7 +537,7 @@ export function ReadingComprehensionTestClient() {
         title="Anlama Testi"
         subtitle={phase === "paused" ? "Calisma duraklatildi" : `${selectedText.category} - ${selectedText.title}`}
         stats={readingStats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[68vh] w-full flex-col border border-white/80 bg-white/92 p-3 text-left shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[72vh] md:p-5"
+        stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/92 p-3 text-left shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
         footer={readingFooter}
       >
         <div className="relative w-full">
@@ -568,7 +568,7 @@ export function ReadingComprehensionTestClient() {
         title="Anlama Testi"
         subtitle="Sorular"
         stats={finalReadingStats}
-        stageClassName="fx-slide-up mt-3 flex min-h-[68vh] w-full flex-col border border-white/80 bg-white/92 p-3 text-left shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[72vh] md:p-5"
+        stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/92 p-3 text-left shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
         footer={
           <div className="grid gap-2 sm:grid-cols-2">
             <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
@@ -626,7 +626,7 @@ export function ReadingComprehensionTestClient() {
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
+      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Anlama Testi Sonucu</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">Okuma hizi ve anlama orani kaydedildi.</p>
 

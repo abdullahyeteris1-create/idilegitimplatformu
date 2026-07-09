@@ -126,15 +126,15 @@ export function ExerciseFullscreenShell({
       className={
         immersiveMode
           ? "fixed inset-0 z-50 bg-slate-100 text-slate-900"
-          : "min-h-screen bg-gradient-to-br from-slate-100 via-rose-50 to-slate-100 text-slate-900"
+          : "min-h-[100dvh] bg-gradient-to-br from-slate-100 via-rose-50 to-slate-100 px-2 py-2 text-slate-900 md:px-4 md:py-4"
       }
     >
-      <div className={immersiveMode ? "flex h-full flex-col" : "mx-auto flex min-h-screen w-full max-w-6xl flex-col px-3 py-4 md:px-5 md:py-6"}>
+      <div className={immersiveMode ? "flex h-full flex-col" : "mx-auto flex w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/82 shadow-[0_18px_58px_rgba(15,23,42,0.12)] backdrop-blur"}>
         <header
           className={
             immersiveMode
-              ? "sticky top-0 z-20 flex min-h-[62px] items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2 shadow-sm md:px-5"
-              : "flex min-h-[62px] items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm md:px-5"
+              ? "sticky top-0 z-20 flex min-h-[54px] items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2 shadow-sm md:px-5"
+              : "flex min-h-[54px] items-center justify-between gap-3 border-b border-slate-200 bg-white/92 px-3 py-2 shadow-sm md:px-4"
           }
         >
           <div className="min-w-0">
@@ -146,21 +146,21 @@ export function ExerciseFullscreenShell({
             <button
               type="button"
               onClick={() => void handleToggleFullscreen()}
-              className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 md:min-h-[40px] md:text-sm"
+              className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 md:text-sm"
             >
               {isFullscreenActive || isFocusMode ? "Tam Ekran Kapat" : "Tam Ekran Ac"}
             </button>
 
             <Link
               href={backHref}
-              className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 shadow-sm transition hover:bg-rose-100 md:min-h-[40px] md:text-sm"
+              className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 shadow-sm transition hover:bg-rose-100 md:text-sm"
             >
               Egzersizlere Don
             </Link>
           </div>
         </header>
 
-        <main className={immersiveMode ? "flex-1 overflow-auto px-2 py-2 md:px-4 md:py-4" : "flex-1 py-3"}>
+        <main className={immersiveMode ? "flex-1 overflow-auto px-2 py-2 md:px-4 md:py-4" : "px-2 py-3 md:px-4 md:py-4"}>
           <div className={immersiveMode ? "h-full" : "h-full"}>{children}</div>
         </main>
       </div>
