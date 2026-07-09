@@ -73,6 +73,13 @@ export type TextLibraryItemInput = {
 export type TextLibraryLoadResult = {
   items: TextLibraryItem[];
   error: string | null;
+  diagnostics?: {
+    source: "supabase" | "localStorage" | "none";
+    supabaseCount: number;
+    localStorageCount: number;
+    activeFilter: string;
+    error: string | null;
+  };
 };
 
 export type TextLibraryWriteResult = {
@@ -84,7 +91,7 @@ type TextLibraryMutationOptions = {
   syncSupabase?: boolean;
 };
 
-const TEXT_LIBRARY_WRITE_ERROR = "Metin Supabase'e kaydedilemedi. İnternet/izin ayarlarını kontrol edin.";
+const TEXT_LIBRARY_WRITE_ERROR = "Metin Supabase'e kaydedilemedi. Öğrenci tarafında görünmeyebilir. İnternet/izin ayarlarını kontrol edin.";
 
 function hasWindow(): boolean {
   return typeof window !== "undefined";
@@ -440,9 +447,8 @@ function mapSupabaseRowToTextItem(row: Record<string, unknown>): TextLibraryItem
   });
 }
 
-function mapTextItemToSupabaseRow(item: TextLibraryItem): Record<string, unknown> {
-  return {
-    id: item.id,
+function mapTextItemToSupabaseRow(item: TextLibraryItem, includeId = true): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
     title: item.title,
     category: item.category,
     content: item.content,
@@ -450,6 +456,21 @@ function mapTextItemToSupabaseRow(item: TextLibraryItem): Record<string, unknown
     created_at: item.createdAt,
     updated_at: item.updatedAt,
   };
+
+  if (includeId) {
+    payload.id = item.id;
+  }
+
+  return payload;
+}
+
+function isInvalidSupabaseIdError(error: { message?: string; details?: string; code?: string }): boolean {
+  const combined = `${error.message ?? ""} ${error.details ?? ""} ${error.code ?? ""}`.toLocaleLowerCase("tr-TR");
+  return combined.includes("uuid") || combined.includes("invalid input syntax") || combined.includes("22p02");
+}
+
+async function upsertTextPayload(payload: Record<string, unknown>) {
+  return supabase?.from(TEXT_LIBRARY_TABLE).upsert(payload, { onConflict: "id" }).select("*").single();
 }
 
 function logTextLibrarySupabaseError(action: string, error: { message?: string; details?: string; hint?: string; code?: string }, extra?: Record<string, unknown>): void {
@@ -503,7 +524,14 @@ async function upsertTextToSupabase(item: TextLibraryItem): Promise<TextLibraryW
   }
 
   const payload = mapTextItemToSupabaseRow(item);
-  const { data, error } = await supabase.from(TEXT_LIBRARY_TABLE).upsert(payload, { onConflict: "id" }).select("*").single();
+  let result = await upsertTextPayload(payload);
+
+  if (result?.error && isInvalidSupabaseIdError(result.error)) {
+    result = await upsertTextPayload(mapTextItemToSupabaseRow(item, false));
+  }
+
+  const data = result?.data;
+  const error = result?.error;
 
   if (error || !data) {
     if (error) {
@@ -657,28 +685,56 @@ export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResul
   const remoteResult = await fetchTextLibraryFromSupabase(true);
 
   if (remoteResult) {
+    const diagnosticsBase = {
+      supabaseCount: remoteResult.items.length,
+      localStorageCount: localActiveItems.length,
+      activeFilter: "is_active=true",
+      error: remoteResult.error,
+    };
+
     if (!remoteResult.error && remoteResult.items.length > 0) {
       const currentItems = readItemsRaw().filter((item) => !item.isActive);
       writeItems([...remoteResult.items, ...currentItems]);
-      return remoteResult;
+      return {
+        ...remoteResult,
+        diagnostics: {
+          ...diagnosticsBase,
+          source: "supabase",
+        },
+      };
     }
 
     if (localActiveItems.length > 0) {
       return {
         items: localActiveItems,
         error: null,
+        diagnostics: {
+          ...diagnosticsBase,
+          source: "localStorage",
+        },
       };
     }
 
     return {
       items: [],
       error: remoteResult.error,
+      diagnostics: {
+        ...diagnosticsBase,
+        source: "none",
+      },
     };
   }
 
   return {
     items: localActiveItems,
     error: null,
+    diagnostics: {
+      source: localActiveItems.length > 0 ? "localStorage" : "none",
+      supabaseCount: 0,
+      localStorageCount: localActiveItems.length,
+      activeFilter: "is_active=true",
+      error: "Supabase client yok",
+    },
   };
 }
 
@@ -694,7 +750,17 @@ export function saveTextLibraryItem(item: TextLibraryItemInput, options: TextLib
 }
 
 export async function saveTextLibraryItemAndSync(item: TextLibraryItemInput): Promise<TextLibraryWriteResult> {
-  const nextItem = saveTextLibraryItem(item, { syncSupabase: false });
+  if (!item.title.trim() || !item.content.trim()) {
+    return {
+      item: null,
+      error: "Başlık ve içerik boş olamaz.",
+    };
+  }
+
+  const nextItem = normalizeTextItem({
+    ...item,
+    isActive: item.isActive !== false,
+  });
   return upsertTextToSupabase(nextItem);
 }
 
@@ -735,7 +801,17 @@ export async function updateTextLibraryItemAndSync(
   id: string,
   updates: Partial<Omit<TextLibraryItemInput, "id" | "createdAt">>,
 ): Promise<TextLibraryWriteResult> {
-  const updatedItem = updateTextLibraryItem(id, updates, { syncSupabase: false });
+  const items = ensureInitialItems();
+  const existingItem = items.find((item) => item.id === id);
+  const updatedItem = existingItem
+    ? normalizeTextItem({
+        ...existingItem,
+        ...updates,
+        id: existingItem.id,
+        createdAt: existingItem.createdAt,
+        updatedAt: new Date().toISOString(),
+      })
+    : null;
   if (!updatedItem) {
     return {
       item: null,

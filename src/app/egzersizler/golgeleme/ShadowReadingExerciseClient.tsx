@@ -15,7 +15,7 @@ import {
 } from "@/lib/exercise-engine/shadowReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
-import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -82,6 +82,7 @@ export function ShadowReadingExerciseClient() {
   const [textId, setTextId] = useState<string>("");
   const [isLoadingTexts, setIsLoadingTexts] = useState(true);
   const [textLoadError, setTextLoadError] = useState<string | null>(null);
+  const [textDiagnostics, setTextDiagnostics] = useState<TextLibraryLoadResult["diagnostics"] | null>(null);
   const [blockSize, setBlockSize] = useState<BlockSize>(2);
   const [speedMode, setSpeedMode] = useState<ShadowReadingSpeedMode>("interval");
   const [intervalInputMs, setIntervalInputMs] = useState<JumpSpeedMs>(500);
@@ -110,6 +111,7 @@ export function ShadowReadingExerciseClient() {
 
         setLibraryTexts(activeTexts);
         setTextLoadError(result.error);
+        setTextDiagnostics(result.diagnostics ?? null);
         setTextId(activeTexts[0]?.id ?? "");
         setCategory(ALL_CATEGORIES);
         setIsLoadingTexts(false);
@@ -542,6 +544,12 @@ export function ShadowReadingExerciseClient() {
         ) : (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
             <p className="text-sm font-bold text-amber-900">Metin Kütüphanesinde aktif metin bulunamadı.</p>
+            {process.env.NODE_ENV !== "production" && textDiagnostics ? (
+              <p className="text-xs text-amber-800">
+                Teşhis: Supabase {textDiagnostics.supabaseCount}, localStorage {textDiagnostics.localStorageCount}, filtre {textDiagnostics.activeFilter}, kaynak {textDiagnostics.source}
+                {textDiagnostics.error ? `, hata: ${textDiagnostics.error}` : ""}
+              </p>
+            ) : null}
             <p className="text-sm text-amber-800">
               {isTeacher
                 ? "Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin."

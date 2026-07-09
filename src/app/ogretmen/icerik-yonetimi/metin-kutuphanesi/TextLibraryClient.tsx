@@ -274,11 +274,6 @@ export function TextLibraryClient() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  function refreshData(): void {
-    setItems(getTextLibraryItems());
-    setCategories(getTextCategories());
-  }
-
   function resetForm(): void {
     setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY });
     setEditingItemId(null);
@@ -349,7 +344,7 @@ export function TextLibraryClient() {
       }
     }
 
-    refreshData();
+    await loadData();
     resetForm();
     setIsSaving(false);
   }
@@ -368,7 +363,7 @@ export function TextLibraryClient() {
     } else {
       setStatusMessage({ tone: "success", text: "Metin Supabase'den silindi." });
     }
-    refreshData();
+    await loadData();
     setIsSaving(false);
   }
 
@@ -381,7 +376,7 @@ export function TextLibraryClient() {
     } else {
       setStatusMessage({ tone: "success", text: "Metin durumu Supabase'e kaydedildi." });
     }
-    refreshData();
+    await loadData();
     setIsSaving(false);
   }
 
@@ -426,7 +421,7 @@ export function TextLibraryClient() {
     const skippedCount = bulkPreviewItems.length - importableItems.length;
     setBulkResultMessage(`${importableItems.length - failedCount} metin Supabase'e aktarildi. ${failedCount} metin Supabase'e kaydedilemedi. ${skippedCount} metin atlandi.`);
     if (failedCount > 0) {
-      setStatusMessage({ tone: "error", text: "Metin Supabase'e kaydedilemedi. İnternet/izin ayarlarını kontrol edin." });
+      setStatusMessage({ tone: "error", text: "Metin Supabase'e kaydedilemedi. Öğrenci tarafında görünmeyebilir. İnternet/izin ayarlarını kontrol edin." });
     } else {
       setStatusMessage({ tone: "success", text: "Metinler Supabase'e kaydedildi." });
     }
@@ -441,7 +436,7 @@ export function TextLibraryClient() {
           : item,
       ),
     );
-    refreshData();
+    await loadData();
     setIsSaving(false);
   }
 
