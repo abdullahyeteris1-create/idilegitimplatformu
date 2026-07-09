@@ -234,7 +234,6 @@ export function TwoSideFocusExerciseClient() {
       setIsRunning(false);
       setCorrectCount(0);
       setWrongCount(0);
-      setRound(1);
       setRoundData(createRound(nextLevel));
       answerLockedRef.current = false;
       setFeedback({
@@ -264,7 +263,6 @@ export function TwoSideFocusExerciseClient() {
   setLevel(nextLevel);
   setCorrectCount(0);
   setWrongCount(0);
-  setRound(1);
   setRoundData(createRound(nextLevel));
   answerLockedRef.current = false;
 
