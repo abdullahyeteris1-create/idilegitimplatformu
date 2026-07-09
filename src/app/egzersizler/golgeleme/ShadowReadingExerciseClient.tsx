@@ -403,7 +403,7 @@ export function ShadowReadingExerciseClient() {
   );
 
   const footerControls = (
-    <div className="grid gap-2 lg:grid-cols-8">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-[1.1fr_1.4fr_0.75fr_0.85fr_0.8fr_0.7fr_1.6fr] lg:items-end [&_button]:min-h-10 [&_input]:h-10 [&_select]:h-10">
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
         <select value={resolvedCategory} onChange={(event) => {
@@ -505,7 +505,7 @@ export function ShadowReadingExerciseClient() {
           ))}
         </select>
       </label>
-      <div className="grid gap-2 sm:grid-cols-3 lg:col-span-2">
+      <div className="col-span-2 grid gap-2 sm:col-span-3 sm:grid-cols-3 lg:col-span-1 lg:grid-cols-1">
         {phase === "ready" ? (
           <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay} disabled={!selectedText || totalBlocks === 0}>
             Başlat
@@ -545,13 +545,15 @@ export function ShadowReadingExerciseClient() {
       <FullscreenExerciseShell
         title="Gölgeleme"
         subtitle="Hazırlık modu"
+        backgroundClassName="flex min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900 [&>div]:min-h-0 [&>div]:flex-1 [&>div>footer]:shrink-0 [&>div>header]:shrink-0"
+        mainClassName="flex flex-1 min-h-0 overflow-hidden items-stretch justify-center px-2 py-2 md:px-4 md:py-3 [&>div]:min-h-0 [&>div]:flex-1"
         stats={[
           { label: "Hız", value: speedLabel, tone: "brand" },
           { label: "Kelime", value: totalWords },
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[380px]"
+        stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 overflow-y-auto rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur"
         footer={footerControls}
       >
         {isLoadingTexts ? (
@@ -689,13 +691,15 @@ export function ShadowReadingExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[500px] md:px-5 md:py-4"
+      backgroundClassName="flex min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900 [&>div]:min-h-0 [&>div]:flex-1 [&>div>footer]:shrink-0 [&>div>header]:shrink-0"
+      mainClassName="flex flex-1 min-h-0 overflow-hidden items-stretch justify-center px-2 py-2 md:px-4 md:py-3 [&>div]:min-h-0 [&>div]:flex-1"
+      stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:px-5"
       footer={footerControls}
     >
-      <div className="fx-fade-in flex w-full max-w-6xl flex-col gap-4 text-left">
-        <div className="w-full max-w-3xl self-center">{textInfo}</div>
+      <div className="fx-fade-in flex h-full min-h-0 w-full max-w-6xl flex-col gap-3 text-left">
+        <div className="w-full max-w-3xl shrink-0 self-center">{textInfo}</div>
 
-        <div className="flex min-h-[320px] w-full flex-col rounded-[26px] border border-red-100 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(185,28,28,0.10)] md:min-h-[380px] md:px-6 md:py-4">
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-[26px] border border-red-100 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(185,28,28,0.10)] md:px-6">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Gölgeleme metni</p>
           <div
             ref={readingAreaRef}
@@ -722,7 +726,7 @@ export function ShadowReadingExerciseClient() {
             })}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-3 shrink-0">
             <div className="mb-2 flex items-center justify-between gap-3 text-sm font-bold text-slate-700">
               <span>{progressPercent}% tamamlandi</span>
               <span>{completedBlocks}/{totalBlocks}</span>
