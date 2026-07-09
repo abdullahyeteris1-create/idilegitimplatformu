@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ExerciseFullscreenShell } from "@/components/exercises/ExerciseFullscreenShell";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
 type AnswerType = "same" | "different";
@@ -33,34 +33,34 @@ const DEFAULT_SPEED = 1500;
 const NET_TARGET = 10;
 
 const SIMILAR_WORD_SETS: SimilarWordSet[] = [
-  { base: "kalem", variants: ["kelam", "kalen", "kalım", "kalem"] },
-  { base: "kitap", variants: ["katip", "kıtap", "kitap", "kitapç"] },
-  { base: "masa", variants: ["masal", "musa", "maşa", "masa"] },
-  { base: "deniz", variants: ["denir", "beniz", "deniz", "deniş"] },
-  { base: "çiçek", variants: ["çilek", "çiçem", "çiçek", "çicek"] },
-  { base: "sahil", variants: ["sahip", "sakin", "sahil", "sahir"] },
-  { base: "orman", variants: ["organ", "ortam", "orman", "orhan"] },
-  { base: "güneş", variants: ["güreş", "gümüş", "güneş", "günel"] },
-  { base: "yıldız", variants: ["yalnız", "yıldır", "yıldız", "yıldız"] },
-  { base: "ırmak", variants: ["ırgat", "irmik", "ırmak", "ırmak"] },
-  { base: "bahçe", variants: ["bahçe", "bahane", "bahri", "bahçe"] },
-  { base: "defter", variants: ["defter", "defne", "defter", "defter"] },
-  { base: "renkli", variants: ["renkler", "renki", "renkli", "renkli"] },
-  { base: "oyuncu", variants: ["oyunçu", "oyuncak", "oyuncu", "oyuncu"] },
-  { base: "sevgi", variants: ["sezgi", "sergi", "sevgi", "sevgi"] },
-  { base: "umutlu", variants: ["unuttu", "umuttu", "umutlu", "umutlu"] },
-  { base: "zaman", variants: ["zamanı", "saman", "zaman", "zaman"] },
-  { base: "şehir", variants: ["nehir", "sehir", "şehir", "şehir"] },
-  { base: "köprü", variants: ["köpük", "kömür", "köprü", "köprü"] },
-  { base: "rüzgar", variants: ["rüzgarı", "rüzgâr", "rüzgar", "rüzgar"] },
-  { base: "yağmur", variants: ["yamuk", "yağma", "yağmur", "yağmur"] },
-  { base: "toprak", variants: ["yaprak", "toplam", "toprak", "toprak"] },
-  { base: "dikkat", variants: ["dikat", "dikkât", "dikkat", "dikkat"] },
-  { base: "odaklı", variants: ["odakla", "ocaklı", "odaklı", "odaklı"] },
-  { base: "hedef", variants: ["heves", "heder", "hedef", "hedef"] },
-  { base: "başarı", variants: ["başka", "başarı", "başarı", "başari"] },
-  { base: "anlama", variants: ["anlatma", "anlams", "anlama", "anlama"] },
-  { base: "okuma", variants: ["okumu", "dokuma", "okuma", "okuma"] },
+  { base: "kalem", variants: ["kelam", "kalen", "kalım"] },
+  { base: "kitap", variants: ["katip", "kıtap", "kitapç"] },
+  { base: "masa", variants: ["masal", "musa", "maşa"] },
+  { base: "deniz", variants: ["denir", "beniz", "deniş"] },
+  { base: "çiçek", variants: ["çilek", "çiçem", "çicek"] },
+  { base: "sahil", variants: ["sahip", "sakin", "sahir"] },
+  { base: "orman", variants: ["organ", "ortam", "orhan"] },
+  { base: "güneş", variants: ["güreş", "gümüş", "günel"] },
+  { base: "yıldız", variants: ["yalnız", "yıldır", "yıldızlı"] },
+  { base: "ırmak", variants: ["ırgat", "irmik", "ırmaklı"] },
+  { base: "bahçe", variants: ["bahane", "bahri", "bahçem"] },
+  { base: "defter", variants: ["defne", "defterim", "defterci"] },
+  { base: "renkli", variants: ["renkler", "renki", "renkçe"] },
+  { base: "oyuncu", variants: ["oyunçu", "oyuncak", "oyunlu"] },
+  { base: "sevgi", variants: ["sezgi", "sergi", "sevim"] },
+  { base: "umutlu", variants: ["unuttu", "umuttu", "umutla"] },
+  { base: "zaman", variants: ["saman", "zamanı", "zamans"] },
+  { base: "şehir", variants: ["nehir", "sehir", "şehirli"] },
+  { base: "köprü", variants: ["köpük", "kömür", "köprüm"] },
+  { base: "rüzgar", variants: ["rüzgâr", "rüzgarı", "rüzgarlı"] },
+  { base: "yağmur", variants: ["yamuk", "yağma", "yağmurlu"] },
+  { base: "toprak", variants: ["yaprak", "toplam", "topraklı"] },
+  { base: "dikkat", variants: ["dikat", "dikkât", "dikkatli"] },
+  { base: "odaklı", variants: ["odakla", "ocaklı", "odakçı"] },
+  { base: "hedef", variants: ["heves", "heder", "hedefli"] },
+  { base: "başarı", variants: ["başka", "başari", "başarılı"] },
+  { base: "anlama", variants: ["anlatma", "anlams", "anlayan"] },
+  { base: "okuma", variants: ["okumu", "dokuma", "okuyan"] },
 ];
 
 function getWordCount(level: ExerciseLevel) {
@@ -148,27 +148,27 @@ function getNextLevel(level: ExerciseLevel): ExerciseLevel {
 
 function getLevelDescription(level: ExerciseLevel) {
   if (level === 1) {
-    return "Ekranda aynı anda 2 kelime görünür. Aynıysa Sol, farklıysa Sağ.";
+    return "2 kelime görünür. Aynıysa Sol, farklıysa Sağ.";
   }
 
   if (level === 2) {
-    return "Ekranda aynı anda 3 kelime görünür. Tüm kelimeler aynı mı, yoksa biri farklı mı hızlıca karar ver.";
+    return "3 kelime görünür. Tüm kelimeler aynı mı, biri farklı mı karar ver.";
   }
 
   if (level === 3) {
-    return "Ekranda aynı anda 4 kelime görünür. Benzer kelimeler arasındaki küçük farkları yakala.";
+    return "4 kelime görünür. Benzer kelimelerde küçük farkları yakala.";
   }
 
   if (level === 4) {
-    return "Ekranda 4 kelime görünür, kelimelerin yerleri hafif değişir. Dikkat ve çevresel algı zorlaşır.";
+    return "4 kelime görünür. Kelimelerin yerleri hafif değişir.";
   }
 
-  return "Ekranda aynı anda 5 kelime görünür. Benzer kelimeler arasında hızlı ve doğru karar vermeye çalış.";
+  return "5 kelime görünür. Hızlı ve doğru karar vermeye çalış.";
 }
 
 function getOffsetClass(offset: WordOffset) {
-  if (offset === "up") return "md:-translate-y-6";
-  if (offset === "down") return "md:translate-y-6";
+  if (offset === "up") return "md:-translate-y-5";
+  if (offset === "down") return "md:translate-y-5";
   return "";
 }
 
@@ -196,6 +196,7 @@ export function TwoSideFocusExerciseClient() {
   const timeoutRef = useRef<number | null>(null);
 
   const netCount = correctCount - wrongCount;
+  const wordCount = useMemo(() => getWordCount(level), [level]);
 
   const clearRoundTimeout = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -209,6 +210,7 @@ export function TwoSideFocusExerciseClient() {
       clearRoundTimeout();
       answerLockedRef.current = false;
       setRoundData(createRound(nextLevel));
+     
     },
     [clearRoundTimeout, level],
   );
@@ -217,16 +219,24 @@ export function TwoSideFocusExerciseClient() {
     clearRoundTimeout();
     setCorrectCount(0);
     setWrongCount(0);
+    
     answerLockedRef.current = false;
   }, [clearRoundTimeout]);
 
   const prepareLevel = useCallback(
-    (nextLevel: ExerciseLevel, message?: string, type: "success" | "info" = "info") => {
+    (
+      nextLevel: ExerciseLevel,
+      message?: string,
+      type: "success" | "info" = "info",
+    ) => {
       clearRoundTimeout();
       setLevel(nextLevel);
       setIsRunning(false);
-      resetLevelStats();
+      setCorrectCount(0);
+      setWrongCount(0);
+      setRound(1);
       setRoundData(createRound(nextLevel));
+      answerLockedRef.current = false;
       setFeedback({
         type,
         message:
@@ -234,25 +244,39 @@ export function TwoSideFocusExerciseClient() {
           `${nextLevel}. seviye hazır. Başlat'a bas. Aynıysa Sol, farklıysa Sağ.`,
       });
     },
-    [clearRoundTimeout, resetLevelStats],
+    [clearRoundTimeout],
   );
 
   const advanceLevel = useCallback(() => {
-    clearRoundTimeout();
+  clearRoundTimeout();
 
-    if (level >= 5) {
-      setIsRunning(false);
-      setFeedback({
-        type: "success",
-        message: "Tebrikler! 5. seviyeyi de tamamladın.",
-      });
-      return;
-    }
+  if (level >= 5) {
+    setIsRunning(false);
+    setFeedback({
+      type: "success",
+      message: "Tebrikler! 5. seviyeyi de tamamladın.",
+    });
+    return;
+  }
 
-    const nextLevel = getNextLevel(level);
+  const nextLevel = getNextLevel(level);
 
-    prepareLevel(nextLevel, `${nextLevel}. seviyeye geçtin. Yeni hedef: 10 net.`, "success");
-  }, [clearRoundTimeout, level, prepareLevel]);
+  setLevel(nextLevel);
+  setCorrectCount(0);
+  setWrongCount(0);
+  setRound(1);
+  setRoundData(createRound(nextLevel));
+  answerLockedRef.current = false;
+
+  // ÖNEMLİ:
+  // Seviye geçince çalışma durmasın, otomatik devam etsin.
+  setIsRunning(true);
+
+  setFeedback({
+    type: "success",
+    message: `${nextLevel}. seviyeye otomatik geçildi. Devam et!`,
+  });
+}, [clearRoundTimeout, level]);
 
   const handleAnswer = useCallback(
     (answer: AnswerType) => {
@@ -424,44 +448,65 @@ export function TwoSideFocusExerciseClient() {
       description="Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver."
       backHref="/egzersizler"
     >
-      <section className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
-        <header className="border-b border-slate-200 bg-white/90 px-3 py-3 md:px-5 md:py-4">
-          <div className="grid grid-cols-2 gap-2 text-center md:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 shadow-sm">
-              <p className="text-[10px] font-black uppercase text-slate-500">Seviye</p>
-              <p className="mt-1 text-xl font-black text-indigo-700 md:text-2xl">{level}</p>
+      <section className="mx-auto flex h-full min-h-[calc(100vh-120px)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
+        <header className="border-b border-slate-200 bg-white/90 px-3 py-2 md:px-4">
+          <div className="grid grid-cols-4 gap-2">
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-center shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+                Seviye
+              </p>
+              <p className="text-lg font-black text-indigo-700 md:text-xl">
+                {level}
+              </p>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-2 shadow-sm">
-              <p className="text-[10px] font-black uppercase text-emerald-700">Doğru</p>
-              <p className="mt-1 text-xl font-black text-emerald-700 md:text-2xl">{correctCount}</p>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-2 text-center shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
+                Doğru
+              </p>
+              <p className="text-lg font-black text-emerald-700 md:text-xl">
+                {correctCount}
+              </p>
             </div>
 
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-2 py-2 shadow-sm">
-              <p className="text-[10px] font-black uppercase text-rose-700">Yanlış</p>
-              <p className="mt-1 text-xl font-black text-rose-700 md:text-2xl">{wrongCount}</p>
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-2 py-2 text-center shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-wide text-rose-700">
+                Yanlış
+              </p>
+              <p className="text-lg font-black text-rose-700 md:text-xl">
+                {wrongCount}
+              </p>
             </div>
 
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-2 py-2 shadow-sm">
-              <p className="text-[10px] font-black uppercase text-blue-700">Net</p>
-              <p className="mt-1 text-xl font-black text-blue-700 md:text-2xl">{netCount}/{NET_TARGET}</p>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-2 py-2 text-center shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-wide text-blue-700">
+                Net
+              </p>
+              <p className="text-lg font-black text-blue-700 md:text-xl">
+                {netCount}/{NET_TARGET}
+              </p>
             </div>
           </div>
         </header>
 
-        <div className="grid gap-3 border-b border-slate-200 bg-slate-50/70 px-3 py-3 md:px-5 md:py-4 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-black text-slate-800">Seviye Seç</p>
+        <div className="grid gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-black text-slate-800">Seviye Seç</p>
+              <span className="rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-black text-indigo-700">
+                {wordCount} kelime
+              </span>
+            </div>
 
-            <div className="mt-3 grid grid-cols-5 gap-2">
+            <div className="mt-2 grid grid-cols-5 gap-2">
               {LEVELS.map((levelNumber) => (
                 <button
                   key={levelNumber}
                   type="button"
                   onClick={() => prepareLevel(levelNumber)}
-                  className={`rounded-2xl border px-3 py-3 text-sm font-black transition ${
+                  className={`min-h-[38px] rounded-xl border px-2 py-2 text-sm font-black transition ${
                     level === levelNumber
-                      ? "border-indigo-300 bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                      ? "border-indigo-300 bg-indigo-600 text-white shadow-md shadow-indigo-200"
                       : "border-slate-200 bg-white text-slate-700 hover:bg-indigo-50"
                   }`}
                 >
@@ -470,22 +515,21 @@ export function TwoSideFocusExerciseClient() {
               ))}
             </div>
 
-            <p className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-800">
+            <p className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold leading-5 text-indigo-800">
               {getLevelDescription(level)}
             </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-slate-800">Hız Ayarı</p>
-                <p className="mt-1 text-xs font-bold text-slate-500">
-                  Kelimeler bu süre boyunca görünür. Cevap verilmezse yanlış
-                  sayılır.
+                <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                  Cevap verilmezse yanlış sayılır.
                 </p>
               </div>
 
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-black text-rose-700">
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-black text-rose-700">
                 {speed}ms
               </span>
             </div>
@@ -497,14 +541,14 @@ export function TwoSideFocusExerciseClient() {
               step={100}
               value={speed}
               onChange={(event) => handleSpeedChange(Number(event.target.value))}
-              className="mt-4 w-full accent-indigo-600"
+              className="mt-3 w-full accent-indigo-600"
             />
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-2 grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleSpeedChange(500)}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
               >
                 500ms
               </button>
@@ -512,7 +556,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={() => handleSpeedChange(1500)}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
               >
                 1500ms
               </button>
@@ -520,7 +564,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={() => handleSpeedChange(5000)}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
               >
                 5000ms
               </button>
@@ -528,15 +572,14 @@ export function TwoSideFocusExerciseClient() {
           </div>
         </div>
 
-        <section className="flex flex-1 flex-col px-3 py-3 md:px-5 md:py-5">
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex min-h-0 flex-1 flex-col px-3 py-3 md:px-4 md:py-4">
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-950 md:text-xl">
                 Aynı mı, Farklı mı?
               </h2>
-              <p className="mt-1 text-xs font-medium text-slate-600 md:text-sm">
-                Tüm kelimeler aynıysa Sol. Kelimelerden biri farklıysa Sağ.
-                10 net yapınca seviye atlar.
+              <p className="text-xs font-semibold text-slate-600 md:text-sm">
+                Tüm kelimeler aynıysa Sol. Bir kelime farklıysa Sağ.
               </p>
             </div>
 
@@ -544,7 +587,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleStartStop}
-                className={`min-h-[46px] rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
+                className={`min-h-[42px] rounded-xl px-4 py-2 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
                   isRunning
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-emerald-600 hover:bg-emerald-700"
@@ -556,7 +599,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="min-h-[46px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Yeni Kelimeler
               </button>
@@ -564,7 +607,7 @@ export function TwoSideFocusExerciseClient() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="min-h-[46px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Sıfırla
               </button>
@@ -572,7 +615,7 @@ export function TwoSideFocusExerciseClient() {
           </div>
 
           <div
-            className={`mb-4 rounded-2xl border px-4 py-3 text-center text-sm font-black ${
+            className={`mb-3 rounded-xl border px-3 py-2 text-center text-xs font-black md:text-sm ${
               feedback.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : feedback.type === "error"
@@ -583,8 +626,8 @@ export function TwoSideFocusExerciseClient() {
             {feedback.message}
           </div>
 
-          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-3 shadow-inner md:p-6">
-            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-3 py-6 md:gap-5 md:py-10">
+          <div className="relative flex min-h-[330px] flex-1 items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-4 shadow-inner sm:min-h-[380px] md:min-h-[430px] md:p-6">
+            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-4 py-8 md:gap-5 md:py-10">
               {roundData.words.map((item) => (
                 <div
                   key={item.id}
@@ -592,7 +635,7 @@ export function TwoSideFocusExerciseClient() {
                     item.offset,
                   )}`}
                 >
-                  <span className="flex min-h-[70px] min-w-[110px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-4 py-3 text-center text-xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-w-[150px] sm:text-2xl md:min-h-[86px] md:min-w-[180px] md:px-8 md:py-4 md:text-3xl">
+                  <span className="flex min-h-[76px] min-w-[140px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-5 py-3 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-h-[84px] sm:min-w-[175px] sm:text-3xl md:min-h-[92px] md:min-w-[210px] md:px-8 md:py-4 md:text-4xl">
                     {item.text}
                   </span>
                 </div>
@@ -600,11 +643,11 @@ export function TwoSideFocusExerciseClient() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleAnswer("same")}
-              className="min-h-[76px] rounded-3xl border-2 border-blue-200 bg-blue-50 px-4 py-5 text-xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[90px] md:px-6 md:py-6 md:text-2xl"
+              className="min-h-[72px] rounded-3xl border-2 border-blue-200 bg-blue-50 px-4 py-4 text-xl font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[84px] md:text-2xl"
             >
               ← SOL / AYNI
             </button>
@@ -612,19 +655,17 @@ export function TwoSideFocusExerciseClient() {
             <button
               type="button"
               onClick={() => handleAnswer("different")}
-              className="min-h-[76px] rounded-3xl border-2 border-rose-200 bg-rose-50 px-4 py-5 text-xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[90px] md:px-6 md:py-6 md:text-2xl"
+              className="min-h-[72px] rounded-3xl border-2 border-rose-200 bg-rose-50 px-4 py-4 text-xl font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[84px] md:text-2xl"
             >
               SAĞ / FARKLI →
             </button>
           </div>
 
-          <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-black text-slate-800">Kullanım</p>
-            <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
-              Bilgisayarda klavyedeki sol ve sağ yön tuşlarını kullanabilirsin.
-              Dokunmatik ekranda alttaki SOL / AYNI ve SAĞ / FARKLI
-              butonlarına bas. Kelimeler verilen süre içinde yanıp söner; cevap
-              verilmezse yanlış sayılır.
+          <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs font-black text-slate-800">Kullanım</p>
+            <p className="mt-1 text-xs font-medium leading-5 text-slate-600 md:text-sm">
+              Bilgisayarda sol ve sağ yön tuşlarını kullanabilirsin. Dokunmatik
+              ekranda alttaki SOL / AYNI ve SAĞ / FARKLI butonlarına bas.
             </p>
           </div>
         </section>

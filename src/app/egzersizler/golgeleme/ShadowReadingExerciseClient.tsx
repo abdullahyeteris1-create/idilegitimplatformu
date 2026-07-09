@@ -74,6 +74,8 @@ export function ShadowReadingExerciseClient() {
   const router = useRouter();
   const saveLockRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
+  const readingAreaRef = useRef<HTMLDivElement | null>(null);
+  const activeWordRef = useRef<HTMLSpanElement | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
@@ -204,6 +206,13 @@ export function ShadowReadingExerciseClient() {
   const completedBlocks = phase === "running" ? Math.min(currentBlockIndex + 1, totalBlocks) : 0;
   const progressPercent = totalBlocks === 0 ? 0 : Math.round((completedBlocks / totalBlocks) * 100);
 
+  const scrollReadingAreaToTop = useCallback((behavior: ScrollBehavior = "smooth") => {
+    readingAreaRef.current?.scrollTo({
+      top: 0,
+      behavior,
+    });
+  }, []);
+
   const finalizeExercise = useCallback((completed: boolean) => {
     if (!selectedText || totalBlocks === 0 || saveLockRef.current) {
       return;
@@ -287,6 +296,7 @@ export function ShadowReadingExerciseClient() {
     setResult(null);
     setIsPaused(false);
     setPhase("ready");
+    scrollReadingAreaToTop();
   };
 
   const handleBeginPlay = () => {
@@ -301,6 +311,7 @@ export function ShadowReadingExerciseClient() {
     setResult(null);
     setIsPaused(false);
     setPhase("running");
+    scrollReadingAreaToTop();
   };
 
   const resetFlowToReady = () => {
@@ -311,6 +322,7 @@ export function ShadowReadingExerciseClient() {
     setResult(null);
     setIsPaused(false);
     setPhase("ready");
+    scrollReadingAreaToTop();
   };
 
   const handleRestart = () => {
@@ -355,6 +367,26 @@ export function ShadowReadingExerciseClient() {
       window.clearInterval(timerId);
     };
   }, [isPaused, phase]);
+
+  useEffect(() => {
+    if (phase !== "running" || isPaused || !activeWordRef.current || !readingAreaRef.current) {
+      return;
+    }
+
+    activeWordRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, [currentBlockIndex, isPaused, phase]);
+
+  useEffect(() => {
+    if (phase === "running") {
+      return;
+    }
+
+    scrollReadingAreaToTop();
+  }, [resolvedTextId, blockSize, phase, scrollReadingAreaToTop]);
 
   const textInfo = (
     <div className="grid w-full gap-2 text-xs font-bold text-slate-700 sm:grid-cols-3">
@@ -666,15 +698,18 @@ export function ShadowReadingExerciseClient() {
         <div className="flex min-h-[46vh] w-full flex-col rounded-[26px] border border-red-100 bg-white px-4 py-4 shadow-[0_22px_60px_rgba(185,28,28,0.12)] md:min-h-[52vh] md:px-7 md:py-6">
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Gölgeleme metni</p>
           <div
-            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden whitespace-normal break-words text-slate-900 [overflow-wrap:anywhere] [word-break:break-word]"
+            ref={readingAreaRef}
+            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth whitespace-normal break-words text-slate-900 [overflow-wrap:anywhere] [word-break:break-word]"
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}
           >
             {words.map((word, index) => {
               const isActive = index >= activeRange.startIndex && index <= activeRange.endIndex;
+              const isActiveStart = index === activeRange.startIndex;
 
               return (
                 <span
                   key={`${word}-${index}`}
+                  ref={isActiveStart ? activeWordRef : null}
                   className={`mr-1.5 inline rounded-md px-1 py-0.5 transition duration-200 md:mr-2 ${
                     isActive
                       ? "fx-pulse-soft bg-red-200/95 text-red-900 shadow-[0_0_0_1px_rgba(220,38,38,0.24)]"
