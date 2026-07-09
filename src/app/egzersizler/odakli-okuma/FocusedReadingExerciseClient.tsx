@@ -14,7 +14,7 @@ import {
 } from "@/lib/exercise-engine/focusedReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
-import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -55,6 +55,7 @@ const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
+const ALL_CATEGORIES = "all";
 
 const TOUCH_STYLE: CSSProperties = {
   touchAction: "manipulation",
@@ -85,8 +86,10 @@ export function FocusedReadingExerciseClient() {
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
-  const [category, setCategory] = useState(DEFAULT_TEXT_CATEGORY);
+  const [category, setCategory] = useState(ALL_CATEGORIES);
   const [textId, setTextId] = useState("");
+  const [isLoadingTexts, setIsLoadingTexts] = useState(true);
+  const [textLoadError, setTextLoadError] = useState<string | null>(null);
   const [groupSize, setGroupSize] = useState<GroupSize>(2);
   const [speedMode, setSpeedMode] = useState<FocusedReadingSpeedMode>("interval");
   const [jumpSpeedMs, setJumpSpeedMs] = useState<JumpSpeedMs>(500);
@@ -99,20 +102,25 @@ export function FocusedReadingExerciseClient() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+      void (async () => {
+        setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+        setIsLoadingTexts(true);
+        setTextLoadError(null);
 
-      const activeTexts = getActiveTextLibraryItems().map((item) => ({
-        id: item.id,
-        title: item.title,
-        category: item.category,
-        text: item.content,
-      }));
+        const result = await loadActiveTextLibraryItems();
+        const activeTexts = result.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          text: item.content,
+        }));
 
-      setLibraryTexts(activeTexts);
-      if (activeTexts.length > 0) {
-        setCategory(activeTexts[0].category);
-        setTextId(activeTexts[0].id);
-      }
+        setLibraryTexts(activeTexts);
+        setTextLoadError(result.error);
+        setTextId(activeTexts[0]?.id ?? "");
+        setCategory(ALL_CATEGORIES);
+        setIsLoadingTexts(false);
+      })();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -125,14 +133,18 @@ export function FocusedReadingExerciseClient() {
   const hasActiveTexts = availableTexts.length > 0;
 
   const availableCategories = useMemo<string[]>(() => {
-    return [...TEXT_LIBRARY_CATEGORIES];
+    return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
   const resolvedCategory = useMemo(() => {
-    return availableCategories.includes(category) ? category : availableCategories[0] ?? "";
+    return availableCategories.includes(category) ? category : ALL_CATEGORIES;
   }, [availableCategories, category]);
 
   const textsByCategory = useMemo(() => {
+    if (resolvedCategory === ALL_CATEGORIES) {
+      return availableTexts;
+    }
+
     return availableTexts.filter((item) => item.category === resolvedCategory);
   }, [availableTexts, resolvedCategory]);
 
@@ -361,7 +373,7 @@ export function FocusedReadingExerciseClient() {
         }} className={FULLSCREEN_SELECT_CLASS}>
           {availableCategories.map((item) => (
             <option key={item} value={item}>
-              {item}
+              {item === ALL_CATEGORIES ? "Tümü" : item}
             </option>
           ))}
         </select>
@@ -508,7 +520,15 @@ export function FocusedReadingExerciseClient() {
         stageClassName="fx-slide-up mt-3 flex min-h-[38vh] w-full flex-col items-center justify-center gap-5 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[44vh]"
         footer={footerControls}
       >
-        {hasActiveTexts ? (
+        {isLoadingTexts ? (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
+            <p className="text-sm font-bold text-slate-900">Metinler yükleniyor...</p>
+          </div>
+        ) : textLoadError ? (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
+            <p className="text-sm font-bold text-red-900">{textLoadError}</p>
+          </div>
+        ) : hasActiveTexts ? (
           <>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
@@ -521,7 +541,7 @@ export function FocusedReadingExerciseClient() {
           </>
         ) : (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
-            <p className="text-sm font-bold text-amber-900">Bu çalışma için henüz aktif metin bulunmuyor.</p>
+            <p className="text-sm font-bold text-amber-900">Metin Kütüphanesinde aktif metin bulunamadı.</p>
             <p className="text-sm text-amber-800">
               {isTeacher
                 ? "Blok Okuma, Golgeleme, Odakli Okuma ve Anlama Testi icin metin ekleyin."

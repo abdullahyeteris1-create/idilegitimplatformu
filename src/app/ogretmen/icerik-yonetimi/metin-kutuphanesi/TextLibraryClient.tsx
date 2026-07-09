@@ -6,13 +6,14 @@ import {
   TEXT_LIBRARY_CATEGORIES,
   countCharacters,
   countWords,
-  deleteTextLibraryItem,
+  deleteTextLibraryItemAndSync,
   getTextCategories,
   getTextLibraryItems,
   normalizeCategoryName,
-  saveTextLibraryItem,
-  toggleTextLibraryItemActive,
-  updateTextLibraryItem,
+  refreshTextLibraryCache,
+  saveTextLibraryItemAndSync,
+  toggleTextLibraryItemActiveAndSync,
+  updateTextLibraryItemAndSync,
   type TextLibraryItem,
 } from "@/lib/settings/textLibraryStorage";
 
@@ -197,16 +198,9 @@ export function TextLibraryClient() {
   const [bulkInput, setBulkInput] = useState("");
   const [bulkPreviewItems, setBulkPreviewItems] = useState<BulkPreviewItem[]>([]);
   const [bulkResultMessage, setBulkResultMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const bulkTextareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setItems(getTextLibraryItems());
-      setCategories(getTextCategories());
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, []);
 
   const stats = useMemo(() => {
     const activeCount = items.filter((item) => item.isActive).length;
@@ -263,6 +257,23 @@ export function TextLibraryClient() {
     return () => window.clearTimeout(timeoutId);
   }, [isBulkImportOpen]);
 
+  async function loadData(): Promise<void> {
+    const result = await refreshTextLibraryCache();
+    setItems(result.items.length > 0 ? result.items : getTextLibraryItems());
+    setCategories(getTextCategories());
+    if (result.error) {
+      setStatusMessage({ tone: "error", text: result.error });
+    }
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   function refreshData(): void {
     setItems(getTextLibraryItems());
     setCategories(getTextCategories());
@@ -304,44 +315,74 @@ export function TextLibraryClient() {
     setIsFormOpen(true);
   }
 
-  function saveForm(): void {
+  async function saveForm(): Promise<void> {
     if (!form.title.trim() || !form.content.trim()) {
       return;
     }
 
+    setIsSaving(true);
+    setStatusMessage(null);
+
     if (editingItemId) {
-      updateTextLibraryItem(editingItemId, {
+      const result = await updateTextLibraryItemAndSync(editingItemId, {
         title: form.title,
         category: form.category,
         content: form.content,
         isActive: form.isActive,
       });
+      if (result.error) {
+        setStatusMessage({ tone: "error", text: result.error });
+      } else {
+        setStatusMessage({ tone: "success", text: "Metin Supabase'e kaydedildi." });
+      }
     } else {
-      saveTextLibraryItem({
+      const result = await saveTextLibraryItemAndSync({
         title: form.title,
         category: form.category,
         content: form.content,
         isActive: form.isActive,
       });
+      if (result.error) {
+        setStatusMessage({ tone: "error", text: result.error });
+      } else {
+        setStatusMessage({ tone: "success", text: "Metin Supabase'e kaydedildi." });
+      }
     }
 
     refreshData();
     resetForm();
+    setIsSaving(false);
   }
 
-  function handleDelete(item: TextLibraryItem): void {
+  async function handleDelete(item: TextLibraryItem): Promise<void> {
     const isConfirmed = window.confirm("Bu metni silmek istediginize emin misiniz?");
     if (!isConfirmed) {
       return;
     }
 
-    deleteTextLibraryItem(item.id);
+    setIsSaving(true);
+    setStatusMessage(null);
+    const result = await deleteTextLibraryItemAndSync(item.id);
+    if (result.error) {
+      setStatusMessage({ tone: "error", text: result.error });
+    } else {
+      setStatusMessage({ tone: "success", text: "Metin Supabase'den silindi." });
+    }
     refreshData();
+    setIsSaving(false);
   }
 
-  function handleToggleActive(item: TextLibraryItem): void {
-    toggleTextLibraryItemActive(item.id);
+  async function handleToggleActive(item: TextLibraryItem): Promise<void> {
+    setIsSaving(true);
+    setStatusMessage(null);
+    const result = await toggleTextLibraryItemActiveAndSync(item.id);
+    if (result.error) {
+      setStatusMessage({ tone: "error", text: result.error });
+    } else {
+      setStatusMessage({ tone: "success", text: "Metin durumu Supabase'e kaydedildi." });
+    }
     refreshData();
+    setIsSaving(false);
   }
 
   function handleBulkPreview(): void {
@@ -362,20 +403,33 @@ export function TextLibraryClient() {
     setBulkResultMessage("");
   }
 
-  function handleBulkImport(): void {
+  async function handleBulkImport(): Promise<void> {
     const importableItems = bulkPreviewItems.filter((item) => item.canImport);
+    let failedCount = 0;
 
-    importableItems.forEach((item) => {
-      saveTextLibraryItem({
+    setIsSaving(true);
+    setStatusMessage(null);
+
+    for (const item of importableItems) {
+      const result = await saveTextLibraryItemAndSync({
         title: item.title,
         category: item.category,
         content: item.content,
         isActive: true,
       });
-    });
+
+      if (result.error) {
+        failedCount += 1;
+      }
+    }
 
     const skippedCount = bulkPreviewItems.length - importableItems.length;
-    setBulkResultMessage(`${importableItems.length} metin basariyla aktarildi. ${skippedCount} metin atlandi.`);
+    setBulkResultMessage(`${importableItems.length - failedCount} metin Supabase'e aktarildi. ${failedCount} metin Supabase'e kaydedilemedi. ${skippedCount} metin atlandi.`);
+    if (failedCount > 0) {
+      setStatusMessage({ tone: "error", text: "Metin Supabase'e kaydedilemedi. İnternet/izin ayarlarını kontrol edin." });
+    } else {
+      setStatusMessage({ tone: "success", text: "Metinler Supabase'e kaydedildi." });
+    }
     setBulkPreviewItems((current) =>
       current.map((item) =>
         item.canImport
@@ -388,6 +442,7 @@ export function TextLibraryClient() {
       ),
     );
     refreshData();
+    setIsSaving(false);
   }
 
   return (
@@ -405,6 +460,7 @@ export function TextLibraryClient() {
             <button
               type="button"
               onClick={openCreateForm}
+              disabled={isSaving}
               className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-700 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98]"
             >
               Metin Ekle
@@ -412,6 +468,7 @@ export function TextLibraryClient() {
             <button
               type="button"
               onClick={openBulkImportModal}
+              disabled={isSaving}
               className="inline-flex min-h-[42px] items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-50 active:scale-[0.98]"
             >
               Toplu Metin Aktar
@@ -437,6 +494,18 @@ export function TextLibraryClient() {
             <p className="mt-1 text-2xl font-semibold text-indigo-700">{stats.categories}</p>
           </article>
         </div>
+
+        {statusMessage ? (
+          <div
+            className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+              statusMessage.tone === "error"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}
+          >
+            {statusMessage.text}
+          </div>
+        ) : null}
       </section>
 
       {isFormOpen ? (
@@ -520,10 +589,10 @@ export function TextLibraryClient() {
               <button
                 type="button"
                 onClick={saveForm}
-                disabled={!form.title.trim() || !form.content.trim()}
+                disabled={isSaving || !form.title.trim() || !form.content.trim()}
                 className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-gradient-to-r from-red-700 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Kaydet
+                {isSaving ? "Kaydediliyor..." : "Kaydet"}
               </button>
             </div>
           </div>
@@ -572,10 +641,10 @@ export function TextLibraryClient() {
                 <button
                   type="button"
                   onClick={handleBulkImport}
-                  disabled={bulkSummary.importable === 0}
+                  disabled={isSaving || bulkSummary.importable === 0}
                   className="inline-flex min-h-[42px] items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Kutuphaneye Aktar
+                  {isSaving ? "Aktariliyor..." : "Kutuphaneye Aktar"}
                 </button>
                 <button
                   type="button"
@@ -789,6 +858,7 @@ export function TextLibraryClient() {
                     <button
                       type="button"
                       onClick={() => openEditForm(item)}
+                      disabled={isSaving}
                       className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-800 transition hover:bg-red-50"
                     >
                       Duzenle
@@ -796,6 +866,7 @@ export function TextLibraryClient() {
                     <button
                       type="button"
                       onClick={() => handleToggleActive(item)}
+                      disabled={isSaving}
                       className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       {item.isActive ? "Pasif Yap" : "Aktif Yap"}
@@ -803,6 +874,7 @@ export function TextLibraryClient() {
                     <button
                       type="button"
                       onClick={() => handleDelete(item)}
+                      disabled={isSaving}
                       className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50"
                     >
                       Sil

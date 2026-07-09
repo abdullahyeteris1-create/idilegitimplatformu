@@ -19,7 +19,7 @@ import {
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
-import { DEFAULT_TEXT_CATEGORY, TEXT_LIBRARY_CATEGORIES, getActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { DEFAULT_TEXT_CATEGORY, getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -59,6 +59,7 @@ const TOUCH_STYLE: CSSProperties = {
 };
 
 const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
+const ALL_CATEGORIES = "all";
 
 const EMPTY_TEXT: ReadingComprehensionText = {
   id: "",
@@ -93,8 +94,10 @@ export function ReadingComprehensionTestClient() {
   const [phase, setPhase] = useState<TestPhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadingComprehensionText[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
   const [selectedTextId, setSelectedTextId] = useState("");
+  const [isLoadingTexts, setIsLoadingTexts] = useState(true);
+  const [textLoadError, setTextLoadError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [readingDurationSeconds, setReadingDurationSeconds] = useState(0);
   const [fontSize, setFontSize] = useState<FontSizePx>(18);
@@ -107,9 +110,12 @@ export function ReadingComprehensionTestClient() {
     const timeoutId = window.setTimeout(() => {
       void (async () => {
         setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
+        setIsLoadingTexts(true);
+        setTextLoadError(null);
         await refreshQuestionLibraryCache();
 
-        const activeTexts = getActiveTextLibraryItems()
+        const result = await loadActiveTextLibraryItems();
+        const activeTexts = result.items
           .map((item) => ({
             id: item.id,
             category: item.category,
@@ -120,10 +126,10 @@ export function ReadingComprehensionTestClient() {
           .filter((item) => item.questions.length > 0);
 
         setLibraryTexts(activeTexts);
-        if (activeTexts.length > 0) {
-          setSelectedCategory(activeTexts[0].category);
-          setSelectedTextId(activeTexts[0].id);
-        }
+        setTextLoadError(result.error);
+        setSelectedCategory(ALL_CATEGORIES);
+        setSelectedTextId(activeTexts[0]?.id ?? "");
+        setIsLoadingTexts(false);
       })();
     }, 0);
 
@@ -137,14 +143,18 @@ export function ReadingComprehensionTestClient() {
   const hasQuestionTexts = allTexts.length > 0;
 
   const categories = useMemo<string[]>(() => {
-    return [...TEXT_LIBRARY_CATEGORIES];
+    return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
   const resolvedCategory = useMemo(() => {
-    return categories.includes(selectedCategory) ? selectedCategory : categories[0] ?? "";
+    return categories.includes(selectedCategory) ? selectedCategory : ALL_CATEGORIES;
   }, [categories, selectedCategory]);
 
   const availableTexts = useMemo(() => {
+    if (resolvedCategory === ALL_CATEGORIES) {
+      return allTexts;
+    }
+
     return allTexts.filter((text) => text.category === resolvedCategory);
   }, [allTexts, resolvedCategory]);
 
@@ -221,7 +231,7 @@ export function ReadingComprehensionTestClient() {
   };
 
   const handleCategoryChange = (category: string) => {
-    const firstText = allTexts.find((text) => text.category === category);
+    const firstText = category === ALL_CATEGORIES ? allTexts[0] : allTexts.find((text) => text.category === category);
     setSelectedCategory(category);
     setSelectedTextId(firstText?.id ?? "");
     resetToReady();
@@ -384,7 +394,7 @@ export function ReadingComprehensionTestClient() {
         <select value={resolvedCategory} onChange={(event) => handleCategoryChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
           {categories.map((category) => (
             <option key={category} value={category}>
-              {category}
+              {category === ALL_CATEGORIES ? "Tümü" : category}
             </option>
           ))}
         </select>
@@ -476,7 +486,15 @@ export function ReadingComprehensionTestClient() {
         stageClassName="fx-slide-up mt-3 flex min-h-[52vh] w-full flex-col items-center justify-center border border-white/80 bg-white/92 px-5 py-6 text-center shadow-[0_18px_56px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[58vh]"
         footer={readyFooter}
       >
-        {hasQuestionTexts ? (
+        {isLoadingTexts ? (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
+            <p className="text-sm font-bold text-slate-900">Metinler yükleniyor...</p>
+          </div>
+        ) : textLoadError ? (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
+            <p className="text-sm font-bold text-red-900">{textLoadError}</p>
+          </div>
+        ) : hasQuestionTexts ? (
           <>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>

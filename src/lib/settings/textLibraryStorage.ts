@@ -1,5 +1,16 @@
+import { supabase } from "@/lib/supabase/client";
+
 export const TEXT_LIBRARY_STORAGE_KEY = "idil_text_library";
 export const TEXT_CATEGORY_STORAGE_KEY = "idil_text_categories";
+const TEXT_LIBRARY_TABLE = process.env.NEXT_PUBLIC_SUPABASE_TEXT_LIBRARY_TABLE ?? "text_library";
+const LEGACY_TEXT_LIBRARY_STORAGE_KEYS = [
+  TEXT_LIBRARY_STORAGE_KEY,
+  "textLibrary",
+  "text_library",
+  "readingTexts",
+  "customTexts",
+  "settings/textLibrary",
+] as const;
 
 export const TEXT_LIBRARY_CATEGORIES = [
   "Bilim",
@@ -59,6 +70,22 @@ export type TextLibraryItemInput = {
   usageTypes?: string[];
 };
 
+export type TextLibraryLoadResult = {
+  items: TextLibraryItem[];
+  error: string | null;
+};
+
+export type TextLibraryWriteResult = {
+  item: TextLibraryItem | null;
+  error: string | null;
+};
+
+type TextLibraryMutationOptions = {
+  syncSupabase?: boolean;
+};
+
+const TEXT_LIBRARY_WRITE_ERROR = "Metin Supabase'e kaydedilemedi. İnternet/izin ayarlarını kontrol edin.";
+
 function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
@@ -88,8 +115,54 @@ function normalizeLookup(value: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+function fixMojibake(value: string): string {
+  return value
+    .replace(/ÄŸ/g, "\u011f")
+    .replace(/Äž/g, "\u011e")
+    .replace(/Ã¼/g, "\u00fc")
+    .replace(/Ãœ/g, "\u00dc")
+    .replace(/ÅŸ/g, "\u015f")
+    .replace(/Åž/g, "\u015e")
+    .replace(/Ä±/g, "\u0131")
+    .replace(/Ä°/g, "\u0130")
+    .replace(/Ã¶/g, "\u00f6")
+    .replace(/Ã–/g, "\u00d6")
+    .replace(/Ã§/g, "\u00e7")
+    .replace(/Ã‡/g, "\u00c7");
+}
+
+function normalizeCategoryLookup(value: string): string {
+  const normalized = fixMojibake(value)
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0131/g, "i")
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+  return normalized || normalizeLookup(value);
+}
+
+function normalizeDisplayCategory(category: string): string {
+  const lookup = normalizeCategoryLookup(category);
+
+  switch (lookup) {
+    case "cografya":
+      return "Co\u011frafya";
+    case "genelkultur":
+      return "Genel K\u00fclt\u00fcr";
+    case "ilkokulhikayeleri":
+      return "\u0130lkokul Hikayeleri";
+    case "yasam":
+      return "Ya\u015fam";
+    default:
+      return fixMojibake(category);
+  }
+}
+
 const CATEGORY_LOOKUP = new Map<string, string>(
-  TEXT_LIBRARY_CATEGORIES.map((category) => [normalizeLookup(category), category]),
+  TEXT_LIBRARY_CATEGORIES.map((category) => [normalizeCategoryLookup(category), normalizeDisplayCategory(category)]),
 );
 
 const CATEGORY_ALIASES: Record<string, string> = {
@@ -105,6 +178,15 @@ const CATEGORY_ALIASES: Record<string, string> = {
   cografya: "Coğrafya",
   yasam: "Yaşam",
 };
+
+CATEGORY_ALIASES.genel = "Genel K\u00fclt\u00fcr";
+CATEGORY_ALIASES.genelkultur = "Genel K\u00fclt\u00fcr";
+CATEGORY_ALIASES.kultur = "Genel K\u00fclt\u00fcr";
+CATEGORY_ALIASES.ilkokul = "\u0130lkokul Hikayeleri";
+CATEGORY_ALIASES.ilkokulhikayeleri = "\u0130lkokul Hikayeleri";
+CATEGORY_ALIASES.cografya = "Co\u011frafya";
+CATEGORY_ALIASES.yasam = "Ya\u015fam";
+CATEGORY_ALIASES.uzunhikayeler = "Hikayeler (Uzun)";
 
 function isGradeCategoryLookup(lookup: string): boolean {
   if (lookup.includes("sinif")) {
@@ -165,24 +247,120 @@ function getSeedTextLibraryItems(): TextLibraryItem[] {
   ];
 }
 
-function readItemsRaw(): TextLibraryItem[] {
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLocaleLowerCase("tr-TR");
+    if (["true", "1", "evet", "aktif", "active"].includes(normalized)) {
+      return true;
+    }
+
+    if (["false", "0", "hayir", "hayır", "pasif", "inactive"].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return fallback;
+}
+
+function readStringField(row: Record<string, unknown>, fieldNames: string[], fallback = ""): string {
+  for (const fieldName of fieldNames) {
+    const value = row[fieldName];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+
+  return fallback;
+}
+
+function normalizeUnknownItem(rawItem: unknown, index: number, storageKey: string): TextLibraryItem | null {
+  if (!rawItem || typeof rawItem !== "object") {
+    return null;
+  }
+
+  const row = rawItem as Record<string, unknown>;
+  const content = readStringField(row, ["content", "text", "metin"]);
+
+  if (!content.trim()) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+
+  return normalizeStoredItem({
+    id: readStringField(row, ["id"], `legacy-${storageKey.replace(/[^a-z0-9]/gi, "-")}-${index}`),
+    title: readStringField(row, ["title", "name", "baslik", "başlık"], "Basliksiz Metin"),
+    category: readStringField(row, ["category", "kategori"], DEFAULT_TEXT_CATEGORY),
+    content,
+    wordCount: countWords(content),
+    characterCount: countCharacters(content),
+    isActive: readBoolean(row.is_active ?? row.isActive ?? row.active, true),
+    createdAt: readStringField(row, ["created_at", "createdAt"], now),
+    updatedAt: readStringField(row, ["updated_at", "updatedAt"], now),
+  });
+}
+
+function extractStoredItems(parsed: unknown): unknown[] {
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return [];
+  }
+
+  const row = parsed as Record<string, unknown>;
+  const candidates = [row.items, row.texts, row.textLibrary, row.data, row.value];
+  const arrayCandidate = candidates.find((candidate) => Array.isArray(candidate));
+
+  return Array.isArray(arrayCandidate) ? arrayCandidate : [];
+}
+
+function readItemsFromStorageKey(storageKey: string): TextLibraryItem[] {
   if (!hasWindow()) {
     return [];
   }
 
-  const raw = localStorage.getItem(TEXT_LIBRARY_STORAGE_KEY);
+  const raw = localStorage.getItem(storageKey);
   if (!raw) {
     return [];
   }
 
   try {
-    const parsed = JSON.parse(raw) as TextLibraryItem[];
-    return Array.isArray(parsed)
-      ? parsed.filter((item) => item && typeof item.id === "string").map(normalizeStoredItem)
-      : [];
+    const parsed = JSON.parse(raw) as unknown;
+    return extractStoredItems(parsed)
+      .map((item, index) => normalizeUnknownItem(item, index, storageKey))
+      .filter((item): item is TextLibraryItem => item !== null);
   } catch {
     return [];
   }
+}
+
+function dedupeTextLibraryItems(items: TextLibraryItem[]): TextLibraryItem[] {
+  const seenIds = new Set<string>();
+  const seenContentKeys = new Set<string>();
+  const deduped: TextLibraryItem[] = [];
+
+  for (const item of items) {
+    const contentKey = `${item.title.trim().toLocaleLowerCase("tr-TR")}::${item.content.trim().slice(0, 80)}`;
+    if (seenIds.has(item.id) || seenContentKeys.has(contentKey)) {
+      continue;
+    }
+
+    seenIds.add(item.id);
+    seenContentKeys.add(contentKey);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
+
+function readItemsRaw(): TextLibraryItem[] {
+  return dedupeTextLibraryItems(LEGACY_TEXT_LIBRARY_STORAGE_KEYS.flatMap((storageKey) => readItemsFromStorageKey(storageKey)));
 }
 
 function writeItems(items: TextLibraryItem[]): void {
@@ -246,13 +424,131 @@ function normalizeTextItem(input: TextLibraryItemInput): TextLibraryItem {
   };
 }
 
+function mapSupabaseRowToTextItem(row: Record<string, unknown>): TextLibraryItem {
+  const content = typeof row.content === "string" ? row.content : "";
+
+  return normalizeStoredItem({
+    id: String(row.id ?? createTextId()),
+    title: typeof row.title === "string" ? row.title : "Basliksiz Metin",
+    category: typeof row.category === "string" ? row.category : DEFAULT_TEXT_CATEGORY,
+    content,
+    wordCount: countWords(content),
+    characterCount: countCharacters(content),
+    isActive: typeof row.is_active === "boolean" ? row.is_active : typeof row.isActive === "boolean" ? row.isActive : true,
+    createdAt: typeof row.created_at === "string" ? row.created_at : typeof row.createdAt === "string" ? row.createdAt : new Date().toISOString(),
+    updatedAt: typeof row.updated_at === "string" ? row.updated_at : typeof row.updatedAt === "string" ? row.updatedAt : new Date().toISOString(),
+  });
+}
+
+function mapTextItemToSupabaseRow(item: TextLibraryItem): Record<string, unknown> {
+  return {
+    id: item.id,
+    title: item.title,
+    category: item.category,
+    content: item.content,
+    is_active: item.isActive,
+    created_at: item.createdAt,
+    updated_at: item.updatedAt,
+  };
+}
+
+function logTextLibrarySupabaseError(action: string, error: { message?: string; details?: string; hint?: string; code?: string }, extra?: Record<string, unknown>): void {
+  console.error(`Supabase ${TEXT_LIBRARY_TABLE} ${action} failed`, {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+    ...extra,
+  });
+}
+
+async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLibraryLoadResult | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  let query = supabase.from(TEXT_LIBRARY_TABLE).select("id,title,category,content,is_active,created_at,updated_at").order("updated_at", { ascending: false });
+
+  if (onlyActive) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !Array.isArray(data)) {
+    if (error) {
+      logTextLibrarySupabaseError("select", error);
+    }
+
+    return {
+      items: [],
+      error: "Metinler y\u00fcklenemedi. Supabase izinlerini kontrol edin.",
+    };
+  }
+
+  const items = data.map((row) => mapSupabaseRowToTextItem(row as Record<string, unknown>));
+  return {
+    items,
+    error: null,
+  };
+}
+
+async function upsertTextToSupabase(item: TextLibraryItem): Promise<TextLibraryWriteResult> {
+  if (!supabase) {
+    console.error("Supabase text_library upsert skipped: Supabase client is not configured.");
+    return {
+      item,
+      error: TEXT_LIBRARY_WRITE_ERROR,
+    };
+  }
+
+  const payload = mapTextItemToSupabaseRow(item);
+  const { data, error } = await supabase.from(TEXT_LIBRARY_TABLE).upsert(payload, { onConflict: "id" }).select("*").single();
+
+  if (error || !data) {
+    if (error) {
+      logTextLibrarySupabaseError("upsert", error, { payload });
+    }
+
+    return {
+      item,
+      error: TEXT_LIBRARY_WRITE_ERROR,
+    };
+  }
+
+  const remoteItem = mapSupabaseRowToTextItem(data as Record<string, unknown>);
+  const currentItems = readItemsRaw().filter((entry) => entry.id !== remoteItem.id);
+  writeItems([remoteItem, ...currentItems]);
+
+  return {
+    item: remoteItem,
+    error: null,
+  };
+}
+
+async function deleteTextFromSupabase(id: string): Promise<string | null> {
+  if (!supabase) {
+    console.error("Supabase text_library delete skipped: Supabase client is not configured.");
+    return TEXT_LIBRARY_WRITE_ERROR;
+  }
+
+  const { error } = await supabase.from(TEXT_LIBRARY_TABLE).delete().eq("id", id);
+
+  if (error) {
+    logTextLibrarySupabaseError("delete", error, { id });
+    return TEXT_LIBRARY_WRITE_ERROR;
+  }
+
+  return null;
+}
+
 export function normalizeCategoryName(categoryName: string): string {
   const trimmed = categoryName.trim().replace(/\s+/g, " ");
   if (!trimmed) {
     return DEFAULT_TEXT_CATEGORY;
   }
 
-  const lookup = normalizeLookup(trimmed);
+  const lookup = normalizeCategoryLookup(trimmed);
   if (!lookup) {
     return DEFAULT_TEXT_CATEGORY;
   }
@@ -287,7 +583,7 @@ export function getUsageTypeLabel(usageType: string): string {
 }
 
 export function getTextCategories(): string[] {
-  const categories = [...TEXT_LIBRARY_CATEGORIES];
+  const categories = TEXT_LIBRARY_CATEGORIES.map((category) => normalizeDisplayCategory(category));
 
   if (hasWindow()) {
     writeCategories(categories);
@@ -327,17 +623,87 @@ export function getActiveTextLibraryItems(): TextLibraryItem[] {
   return readItemsRaw().filter((item) => item.isActive);
 }
 
-export function saveTextLibraryItem(item: TextLibraryItemInput): TextLibraryItem {
+export async function refreshTextLibraryCache(): Promise<TextLibraryLoadResult> {
+  const localItems = getTextLibraryItems();
+  const remoteResult = await fetchTextLibraryFromSupabase(false);
+
+  if (remoteResult) {
+    if (!remoteResult.error && remoteResult.items.length > 0) {
+      writeItems(remoteResult.items);
+      return remoteResult;
+    }
+
+    if (localItems.length > 0) {
+      return {
+        items: localItems,
+        error: null,
+      };
+    }
+
+    return {
+      items: [],
+      error: remoteResult.error,
+    };
+  }
+
+  return {
+    items: localItems,
+    error: null,
+  };
+}
+
+export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResult> {
+  const localActiveItems = getActiveTextLibraryItems();
+  const remoteResult = await fetchTextLibraryFromSupabase(true);
+
+  if (remoteResult) {
+    if (!remoteResult.error && remoteResult.items.length > 0) {
+      const currentItems = readItemsRaw().filter((item) => !item.isActive);
+      writeItems([...remoteResult.items, ...currentItems]);
+      return remoteResult;
+    }
+
+    if (localActiveItems.length > 0) {
+      return {
+        items: localActiveItems,
+        error: null,
+      };
+    }
+
+    return {
+      items: [],
+      error: remoteResult.error,
+    };
+  }
+
+  return {
+    items: localActiveItems,
+    error: null,
+  };
+}
+
+export function saveTextLibraryItem(item: TextLibraryItemInput, options: TextLibraryMutationOptions = {}): TextLibraryItem {
+  const shouldSyncSupabase = options.syncSupabase !== false;
   const nextItem = normalizeTextItem(item);
   saveTextCategory(nextItem.category);
   writeItems([nextItem, ...ensureInitialItems()]);
+  if (shouldSyncSupabase) {
+    void upsertTextToSupabase(nextItem);
+  }
   return nextItem;
+}
+
+export async function saveTextLibraryItemAndSync(item: TextLibraryItemInput): Promise<TextLibraryWriteResult> {
+  const nextItem = saveTextLibraryItem(item, { syncSupabase: false });
+  return upsertTextToSupabase(nextItem);
 }
 
 export function updateTextLibraryItem(
   id: string,
   updates: Partial<Omit<TextLibraryItemInput, "id" | "createdAt">>,
+  options: TextLibraryMutationOptions = {},
 ): TextLibraryItem | null {
+  const shouldSyncSupabase = options.syncSupabase !== false;
   const items = ensureInitialItems();
   const itemIndex = items.findIndex((item) => item.id === id);
 
@@ -358,11 +724,30 @@ export function updateTextLibraryItem(
   nextItems[itemIndex] = updatedItem;
   saveTextCategory(updatedItem.category);
   writeItems(nextItems);
+  if (shouldSyncSupabase) {
+    void upsertTextToSupabase(updatedItem);
+  }
 
   return updatedItem;
 }
 
-export function deleteTextLibraryItem(id: string): boolean {
+export async function updateTextLibraryItemAndSync(
+  id: string,
+  updates: Partial<Omit<TextLibraryItemInput, "id" | "createdAt">>,
+): Promise<TextLibraryWriteResult> {
+  const updatedItem = updateTextLibraryItem(id, updates, { syncSupabase: false });
+  if (!updatedItem) {
+    return {
+      item: null,
+      error: "Metin bulunamadı.",
+    };
+  }
+
+  return upsertTextToSupabase(updatedItem);
+}
+
+export function deleteTextLibraryItem(id: string, options: TextLibraryMutationOptions = {}): boolean {
+  const shouldSyncSupabase = options.syncSupabase !== false;
   const items = ensureInitialItems();
   const nextItems = items.filter((item) => item.id !== id);
 
@@ -371,16 +756,46 @@ export function deleteTextLibraryItem(id: string): boolean {
   }
 
   writeItems(nextItems);
+  if (shouldSyncSupabase) {
+    void deleteTextFromSupabase(id);
+  }
   return true;
 }
 
-export function toggleTextLibraryItemActive(id: string): TextLibraryItem | null {
+export async function deleteTextLibraryItemAndSync(id: string): Promise<{ deleted: boolean; error: string | null }> {
+  const deleted = deleteTextLibraryItem(id, { syncSupabase: false });
+  if (!deleted) {
+    return {
+      deleted: false,
+      error: "Metin bulunamadı.",
+    };
+  }
+
+  return {
+    deleted: true,
+    error: await deleteTextFromSupabase(id),
+  };
+}
+
+export function toggleTextLibraryItemActive(id: string, options: TextLibraryMutationOptions = {}): TextLibraryItem | null {
   const item = ensureInitialItems().find((entry) => entry.id === id);
   if (!item) {
     return null;
   }
 
-  return updateTextLibraryItem(id, { isActive: !item.isActive });
+  return updateTextLibraryItem(id, { isActive: !item.isActive }, options);
+}
+
+export async function toggleTextLibraryItemActiveAndSync(id: string): Promise<TextLibraryWriteResult> {
+  const item = toggleTextLibraryItemActive(id, { syncSupabase: false });
+  if (!item) {
+    return {
+      item: null,
+      error: "Metin bulunamadı.",
+    };
+  }
+
+  return upsertTextToSupabase(item);
 }
 
 export function getTextsByCategory(category: string): TextLibraryItem[] {
