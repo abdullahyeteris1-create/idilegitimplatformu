@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 export type FullscreenExerciseStat = {
   label: string;
@@ -16,6 +17,7 @@ type FullscreenExerciseShellProps = {
   backgroundClassName?: string;
   stageClassName?: string;
   mainClassName?: string;
+  showNavigation?: boolean;
 };
 
 type FullscreenExerciseIntroProps = {
@@ -24,6 +26,7 @@ type FullscreenExerciseIntroProps = {
   buttonLabel: string;
   onStart: () => void;
   secondary?: ReactNode;
+  showNavigation?: boolean;
 };
 
 export const FULLSCREEN_TOUCH_STYLE: CSSProperties = {
@@ -59,10 +62,22 @@ function getToneClass(tone: FullscreenExerciseStat["tone"]): string {
   return "border-red-100 bg-white/90 text-red-700 shadow-red-100/70";
 }
 
-export function FullscreenExerciseIntro({ title, description, buttonLabel, onStart, secondary }: FullscreenExerciseIntroProps) {
+export function FullscreenExerciseIntro({
+  title,
+  description,
+  buttonLabel,
+  onStart,
+  secondary,
+  showNavigation = true,
+}: FullscreenExerciseIntroProps) {
   return (
     <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff7f4_44%,#f8f0ea_100%)] px-2 py-3 text-slate-900 md:px-4 md:py-5">
       <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col md:min-h-[calc(100dvh-2.5rem)]">
+        {showNavigation ? (
+          <div className="flex justify-end pb-3">
+            <ExerciseNavigationControls compact />
+          </div>
+        ) : null}
         <div className="flex flex-1 items-center justify-center">
           <div className="fx-slide-up flex w-full max-w-2xl flex-col items-center rounded-[28px] border border-white/75 bg-white/85 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] backdrop-blur md:px-7 md:py-8">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Egzersiz</p>
@@ -94,6 +109,7 @@ export function FullscreenExerciseShell({
   backgroundClassName,
   stageClassName,
   mainClassName,
+  showNavigation = true,
 }: FullscreenExerciseShellProps) {
   const shellBackgroundClassName =
     backgroundClassName ??
@@ -120,6 +136,7 @@ export function FullscreenExerciseShell({
               ))}
             </div>
 
+            {showNavigation ? <ExerciseNavigationControls compact /> : null}
             {finishButton}
           </div>
         </header>

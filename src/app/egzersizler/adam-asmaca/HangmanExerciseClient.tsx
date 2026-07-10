@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -119,6 +120,9 @@ export function HangmanExerciseClient() {
   return (
     <main className="min-h-screen bg-lime-50 px-4 py-10 text-slate-900">
       <section className="mx-auto max-w-3xl rounded-3xl border border-lime-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Kelime Oyunlari</p>

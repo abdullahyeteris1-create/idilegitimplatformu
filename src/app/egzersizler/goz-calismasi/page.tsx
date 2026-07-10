@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -8,6 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type ExercisePhase = "idle" | "countdown" | "running" | "paused" | "finished";
 type SymbolId = "target" | "star" | "heart" | "diamond" | "ring" | "eye";
@@ -235,14 +235,6 @@ function SymbolGlyph({ id, className = "h-full w-full" }: { id: SymbolId; classN
       />
       <circle cx="32" cy="32" r="11" fill="currentColor" />
       <circle cx="35" cy="28" r="3.5" fill="white" opacity="0.9" />
-    </svg>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-      <path d="m15 18-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -573,13 +565,6 @@ export default function EyeTrackingExercisePage() {
       <div className="relative mx-auto w-full max-w-[1540px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         <header className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
-            <Link
-              href="/egzersizler"
-              aria-label="Egzersizlere dön"
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-slate-200/90 bg-white text-slate-600 shadow-sm transition hover:-translate-x-0.5 hover:border-teal-200 hover:text-teal-700"
-            >
-              <BackIcon />
-            </Link>
             <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/15">
               <EyeMark />
             </div>
@@ -596,6 +581,7 @@ export default function EyeTrackingExercisePage() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            {!isFullscreen ? <ExerciseNavigationControls compact /> : null}
             <span
               className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-sm ${
                 phase === "running"
@@ -816,6 +802,7 @@ export default function EyeTrackingExercisePage() {
               </div>
 
               <div className="flex items-center gap-2">
+                {isFullscreen ? <ExerciseNavigationControls compact /> : null}
                 {(phase === "running" || phase === "paused") && (
                   <>
                     <button

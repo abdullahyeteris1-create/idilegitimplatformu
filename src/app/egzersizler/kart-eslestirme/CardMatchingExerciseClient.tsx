@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -9,6 +8,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import {
   calculateNet,
   calculateScore,
@@ -794,13 +794,9 @@ export function CardMatchingExerciseClient() {
             Ortak Sonuç Ekranı
           </button>
 
-          <Link
-            href="/egzersizler"
-            className="inline-flex min-h-[56px] items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-4 text-base font-bold text-red-800 transition hover:bg-red-50"
-            style={TOUCH_STYLE}
-          >
-            Egzersizlere Dön
-          </Link>
+          <div className="flex justify-end sm:col-span-3">
+            <ExerciseNavigationControls />
+          </div>
         </div>
       </section>
     );

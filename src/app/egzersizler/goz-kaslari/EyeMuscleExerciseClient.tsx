@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type EmojiOption = {
   label: string;
@@ -217,6 +218,9 @@ export default function GozCalismasiPage() {
   return (
     <main className="min-h-screen bg-white px-3 py-3 text-slate-900 md:px-5 md:py-4">
       <section className="mx-auto flex min-h-[calc(100vh-24px)] w-full max-w-6xl flex-col gap-3">
+        <div className="flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <header className="rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>

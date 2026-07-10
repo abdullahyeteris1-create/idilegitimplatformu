@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type FullscreenTargetElement = HTMLElement & {
   webkitRequestFullscreen?: () => Promise<void> | void;
@@ -16,6 +16,8 @@ type ExerciseFullscreenShellProps = {
   title: string;
   description?: string;
   backHref?: string;
+  exitHref?: string;
+  showNavigation?: boolean;
   children: ReactNode;
 };
 
@@ -29,6 +31,8 @@ export function ExerciseFullscreenShell({
   title,
   description,
   backHref = DEFAULT_BACK_HREF,
+  exitHref = "/ogrenci",
+  showNavigation = true,
   children,
 }: ExerciseFullscreenShellProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -133,16 +137,16 @@ export function ExerciseFullscreenShell({
         <header
           className={
             immersiveMode
-              ? "sticky top-0 z-20 flex min-h-[54px] items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2 shadow-sm md:px-5"
-              : "flex min-h-[54px] items-center justify-between gap-3 border-b border-slate-200 bg-white/92 px-3 py-2 shadow-sm md:px-4"
+              ? "sticky top-0 z-20 flex min-h-[54px] flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2 shadow-sm md:gap-3 md:px-5"
+              : "flex min-h-[54px] flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white/92 px-3 py-2 shadow-sm md:gap-3 md:px-4"
           }
         >
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 basis-[180px]">
             <h1 className="truncate text-base font-semibold text-slate-950 md:text-lg">{title}</h1>
             {description ? <p className="truncate text-xs text-slate-600 md:text-sm">{description}</p> : null}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => void handleToggleFullscreen()}
@@ -151,12 +155,7 @@ export function ExerciseFullscreenShell({
               {isFullscreenActive || isFocusMode ? "Tam Ekran Kapat" : "Tam Ekran Ac"}
             </button>
 
-            <Link
-              href={backHref}
-              className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 shadow-sm transition hover:bg-rose-100 md:text-sm"
-            >
-              Egzersizlere Don
-            </Link>
+            {showNavigation ? <ExerciseNavigationControls backHref={backHref} exitHref={exitHref} compact /> : null}
           </div>
         </header>
 

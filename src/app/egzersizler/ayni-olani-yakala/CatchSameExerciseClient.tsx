@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -310,6 +311,9 @@ export function CatchSameExerciseClient() {
   return (
     <main className="min-h-screen bg-cyan-50 px-4 py-8 text-slate-900">
       <div className="mx-auto max-w-5xl">
+        <div className="mb-3 flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <section className="overflow-hidden rounded-3xl border border-cyan-200 bg-white shadow-sm">
           <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-6 text-white sm:px-8">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-100">Kelime Oyunlari</p>

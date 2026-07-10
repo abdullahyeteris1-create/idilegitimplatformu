@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type SymbolItem = {
   id: number;
@@ -183,6 +184,9 @@ export default function EyeBrainExercisePage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 py-3 sm:px-5 sm:py-4 lg:px-6">
+        <div className="mb-3 flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <div className="mb-3 rounded-2xl border border-white/10 bg-white px-4 py-3 shadow-xl backdrop-blur">
   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
     <div className="min-w-0">

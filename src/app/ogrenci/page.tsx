@@ -5,9 +5,10 @@ import { APP_NAV_ITEMS } from "@/lib/constants/navigation";
 export default function StudentDashboardPage() {
   return (
     <AppShell
-      title="Ogrenci Paneli"
-      subtitle="Egzersizlerini sec, ilerlemeni takip et ve sonucu gor."
+      title="Öğrenci Paneli"
+      subtitle="Egzersizlerini seç, ilerlemeni takip et ve sonuçlarını gör."
       navItems={APP_NAV_ITEMS}
+      headerVariant="student-vibrant"
     >
       <StudentDashboardClient />
     </AppShell>

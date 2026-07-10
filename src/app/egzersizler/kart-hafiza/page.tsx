@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type GamePhase = "intro" | "memorize" | "question" | "result" | "finished";
 
@@ -321,15 +321,10 @@ export default function CardMemoryGamePage() {
     <main className="min-h-screen bg-slate-900 px-4 py-5 text-slate-900">
       <section className="mx-auto min-h-[calc(100vh-40px)] max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
         <div className="relative min-h-[calc(100vh-40px)] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
+          <div className="flex justify-end px-4 pt-4 sm:px-6">
+            <ExerciseNavigationControls compact />
+          </div>
           <header className="flex items-center justify-between px-6 py-5">
-            <Link
-              href="/egzersizler"
-              className="flex h-11 w-11 items-center justify-center rounded-xl border-4 border-white bg-purple-200 text-xl font-black text-purple-800 shadow-md"
-              title="Egzersizlere dön"
-            >
-              ⏸
-            </Link>
-
             <div className="flex flex-1 items-center justify-center gap-2 px-5">
               <span className="text-4xl">❓</span>
               <div className="flex h-5 w-full max-w-sm overflow-hidden rounded-full border-4 border-slate-500 bg-slate-500">

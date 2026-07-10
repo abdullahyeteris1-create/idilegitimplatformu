@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -285,6 +286,9 @@ export function WordGuessExerciseClient() {
   return (
     <main className="min-h-screen bg-emerald-50 px-4 py-8 text-slate-900">
       <div className="mx-auto max-w-4xl">
+        <div className="mb-3 flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <section className="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-8">
           <div className="mb-6 text-center">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-700">Kelime Oyunlari</p>

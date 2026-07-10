@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
@@ -391,6 +392,9 @@ export function TachistoscopeExerciseClient() {
   if (phase === "start") {
     return (
       <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff8f6_42%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto mb-2 flex w-full max-w-7xl justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl items-center justify-center overflow-hidden rounded-[28px] border border-white/80 bg-white/76 px-4 py-6 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)] md:px-6 md:py-8">
           <div className="w-full max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Takistoskop</p>
@@ -414,6 +418,9 @@ export function TachistoscopeExerciseClient() {
   if (phase === "ready") {
     return (
       <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd8de_0%,#fff7f4_46%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto mb-2 flex w-full max-w-7xl justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
         <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/76 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)]">
           <main className="flex flex-1 items-center justify-center px-3 py-4 md:px-5 md:py-5">
             <div className="fx-slide-up flex w-full max-w-3xl flex-col items-center rounded-[28px] border border-white/70 bg-white/75 px-4 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.12)] backdrop-blur md:px-6 md:py-7">
@@ -497,6 +504,7 @@ export function TachistoscopeExerciseClient() {
               <span className="compact-stat-chip border-red-100 bg-white/90 shadow-sm shadow-red-100/70">Hiz: {speedMs} ms</span>
             </div>
 
+            <ExerciseNavigationControls compact />
             <button
               type="button"
               onClick={finishExercise}

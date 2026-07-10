@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -10,6 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import {
@@ -688,14 +688,8 @@ export function MemoryGameExerciseClient() {
           </button>
         </div>
 
-        <div className="mt-3">
-          <Link
-            href="/egzersizler"
-            className="relative z-50 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white px-5 py-4 text-base font-bold text-red-800 transition hover:bg-red-50"
-            style={TOUCH_STYLE}
-          >
-            Egzersizlere Dön
-          </Link>
+        <div className="mt-4 flex justify-end">
+          <ExerciseNavigationControls />
         </div>
       </section>
     );
