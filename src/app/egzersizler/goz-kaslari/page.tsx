@@ -1,4 +1,4 @@
-import { EyeMuscleExerciseClient } from "./EyeMuscleExerciseClient";
+import EyeMuscleExerciseClient from "./EyeMuscleExerciseClient";
 
 export default function EyeMusclePage() {
   return <EyeMuscleExerciseClient />;
