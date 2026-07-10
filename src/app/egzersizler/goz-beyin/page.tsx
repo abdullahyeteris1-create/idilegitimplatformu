@@ -181,49 +181,56 @@ export default function EyeBrainExercisePage() {
   }, [isRunning, speed]);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/10 p-5 shadow-2xl backdrop-blur lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-cyan-300">
-              Göz Egzersizleri
-            </p>
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-3 py-3 sm:px-5 sm:py-4 lg:px-6">
+        <div className="mb-3 rounded-2xl border border-white/10 bg-white px-4 py-3 shadow-xl backdrop-blur">
+  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-xs font-bold text-cyan-300">
+          Göz Egzersizleri
+        </p>
 
-            <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-              Göz Beyin Çalışması
-            </h1>
+        <span className="hidden h-1 w-1 rounded-full bg-slate-500 sm:block" />
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-              Hedef simgeyi seç. Ekran her değiştiğinde bütün simgeler farklı
-              yerlere geçer. Başını hareket ettirmeden sadece gözlerinle hedef
-              simgeyi bul.
-            </p>
-          </div>
+        <h1 className="text-xl font-black tracking-tight text-slate-900 md:text-2xl">
+          Göz Beyin Çalışması
+        </h1>
+      </div>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-cyan-300/30 bg-cyan-400/10 p-4 text-center sm:min-w-[220px]">
-            <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
-              Bulman gereken simge
-            </p>
+      <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300 md:text-sm">
+        Başını hareket ettirmeden hedef simgeyi yalnızca gözlerinle bul ve
+        takip et.
+      </p>
+    </div>
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-5xl shadow-xl">
-              {targetSymbol}
-            </div>
+    <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-cyan-300/30 bg-cyan-400/10 px-3 py-2">
+      <div className="text-right">
+        <p className="text-[10px] font-black uppercase tracking-wide text-cyan-200">
+          Hedef Simge
+        </p>
 
-            <button
-              type="button"
-              onClick={changeTargetSymbol}
-              disabled={isRunning}
-              className="rounded-2xl border border-cyan-300/40 bg-cyan-400/20 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-400/30 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Hedef Simgeyi Değiştir
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={changeTargetSymbol}
+          disabled={isRunning}
+          className="mt-1 rounded-lg border border-cyan-300/30 bg-cyan-400/15 px-2.5 py-1.5 text-[11px] font-bold text-cyan-100 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Değiştir
+        </button>
+      </div>
 
-        <div className="mb-5 grid gap-3 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur md:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-center">
-            <p className="text-xs text-slate-400">Süre</p>
-            <p className="mt-1 text-xl font-bold">{formatTime(elapsedSeconds)}</p>
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-4xl shadow-lg">
+        {targetSymbol}
+      </div>
+    </div>
+  </div>
+</div>
+
+        <div className="mb-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/200 bg-white/10 p-3 backdrop-blur md:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-slate-50 px-3 py-2 text-center">
+            <p className="text-xs text-slate-500">Süre</p>
+            <p className="mt-1 text-lg font-bold">{formatTime(elapsedSeconds)}</p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-center">
@@ -242,7 +249,7 @@ export default function EyeBrainExercisePage() {
           </div>
         </div>
 
-        <div className="mb-5 grid gap-4 rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="mb-3 grid gap-3 rounded-2xl border border-white/10 bg-white/10 p-3 backdrop-blur lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-200">
               Ekran değişim hızı
@@ -255,7 +262,7 @@ export default function EyeBrainExercisePage() {
                   type="button"
                   onClick={() => setSpeed(option.value)}
                   disabled={isRunning}
-                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                  className={`rounded-2xl border min-h-[42px] px-3 py-2 text-sm font-semibold transition ${
                     speed === option.value
                       ? "border-cyan-300 bg-cyan-400 text-slate-950"
                       : "border-white/10 bg-black/20 text-slate-200 hover:bg-white/10"
@@ -272,7 +279,7 @@ export default function EyeBrainExercisePage() {
               <button
                 type="button"
                 onClick={startExercise}
-                className="rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-400"
+                className="rounded-2xl bg-emerald-500 min-h-[42px] px-5 py-2 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-400"
               >
                 Başlat
               </button>
@@ -296,8 +303,8 @@ export default function EyeBrainExercisePage() {
           </div>
         </div>
 
-        <div className="relative flex-1 overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_center,_rgba(56,189,248,0.16),_rgba(15,23,42,0.96)_55%,_rgba(2,6,23,1))] shadow-2xl">
-          <div className="absolute left-4 top-4 z-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-slate-300 backdrop-blur">
+        <div className="relative min-h-[580px] flex-1 overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.10),_rgba(255,255,255,1)_55%,_rgba(248,250,252,1))] shadow-2xl sm:min-h-[620px] lg:min-h-[680px] xl:min-h-[720px]">
+          <div className="absolute left-4 top-4 z-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-slate-600 backdrop-blur">
             Hedef simgeyi bul:{" "}
             <span className="ml-1 text-lg font-bold">{targetSymbol}</span>
           </div>

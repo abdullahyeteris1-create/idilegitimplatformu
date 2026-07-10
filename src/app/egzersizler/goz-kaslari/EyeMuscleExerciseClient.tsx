@@ -1,556 +1,428 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { useRouter } from "next/navigation";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import {
-  EYE_MUSCLE_LEVEL_OPTIONS,
-  EYE_MUSCLE_SPEED_OPTIONS,
-  calculateSymbolPosition,
-  formatDuration,
-  getMovementPatternByLevel,
-  getMovementPatternLabel,
-  getMovementPointsByLevel,
-  getRandomSymbol,
-  getSymbolById,
-  getSymbolOptions,
-  type EyeMuscleLevel,
-  type EyeMuscleSpeedMs,
-  type EyeSymbolOption,
-} from "@/lib/exercise-engine/eyeMuscle";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
-import {
-  FullscreenExerciseIntro,
-  FullscreenExerciseShell,
-  FULLSCREEN_PRIMARY_BUTTON_CLASS,
-  FULLSCREEN_SELECT_CLASS,
-  FULLSCREEN_TOUCH_STYLE,
-} from "@/components/exercises/FullscreenExerciseShell";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type ExercisePhase = "setup" | "ready" | "running" | "result";
-
-type EyeMuscleResult = {
-  completedSeconds: number;
-  startLevel: EyeMuscleLevel;
-  reachedLevel: EyeMuscleLevel;
-  speedMs: EyeMuscleSpeedMs;
-  selectedSymbol: EyeSymbolOption;
-  displayedSymbol: EyeSymbolOption;
-  randomSymbolMode: boolean;
-  movementPattern: string;
-  score: number;
-  successRate: number;
+type EmojiOption = {
+  label: string;
+  value: string;
 };
 
-const ACTION_BUTTON_CLASS =
-  "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
-
-const COMPACT_BUTTON_CLASS =
-  "relative z-50 min-h-[42px] cursor-pointer select-none touch-manipulation rounded-xl border border-red-200 bg-white/95 px-3 py-2 text-xs font-bold text-red-700 shadow-sm shadow-red-100/70 transition active:scale-[0.98] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45";
-
-const TOUCH_STYLE: CSSProperties = {
-  touchAction: "manipulation",
-  WebkitTapHighlightColor: "transparent",
+type Position = {
+  x: number;
+  y: number;
 };
 
-const DEFAULT_SYMBOL_ID = "red-circle";
+const EMOJI_OPTIONS: EmojiOption[] = [
+  { label: "Yıldız", value: "⭐" },
+  { label: "Kalp", value: "❤️" },
+  { label: "Güneş", value: "☀️" },
+  { label: "Ay", value: "🌙" },
+  { label: "Elma", value: "🍎" },
+  { label: "Muz", value: "🍌" },
+  { label: "Kedi", value: "🐱" },
+  { label: "Köpek", value: "🐶" },
+  { label: "Kelebek", value: "🦋" },
+  { label: "Balon", value: "🎈" },
+  { label: "Futbol Topu", value: "⚽" },
+  { label: "Araba", value: "🚗" },
+];
 
-function calculateScore(completedSeconds: number): number {
-  return Math.min(100, Math.floor(completedSeconds / 60) * 20);
+const SPEED_OPTIONS = [100, 200, 300, 400, 500];
+
+const LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
+
+function formatTime(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0",
+  )}`;
 }
 
-export function EyeMuscleExerciseClient() {
-  const router = useRouter();
-  const timerRef = useRef<number | null>(null);
-  const pointRef = useRef<number | null>(null);
-  const symbolRef = useRef<number | null>(null);
-  const hasSavedResultRef = useRef(false);
-  const maxReachedLevelRef = useRef<EyeMuscleLevel>(1);
-  const automaticLevelChangesRef = useRef(0);
+function getLevelArea(level: number) {
+  const safeLevel = Math.min(Math.max(level, 1), 6);
 
-  const [phase, setPhase] = useState<ExercisePhase>("setup");
-  const [selectedSymbolId, setSelectedSymbolId] = useState(DEFAULT_SYMBOL_ID);
-  const [displaySymbolId, setDisplaySymbolId] = useState(DEFAULT_SYMBOL_ID);
-  const [isSymbolPickerOpen, setIsSymbolPickerOpen] = useState(false);
-  const [randomSymbolMode, setRandomSymbolMode] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<EyeMuscleLevel>(1);
-  const [sessionStartLevel, setSessionStartLevel] = useState<EyeMuscleLevel>(1);
-  const [levelAnchorSeconds, setLevelAnchorSeconds] = useState(0);
-  const [speedMs, setSpeedMs] = useState<EyeMuscleSpeedMs>(250);
+  const areas = {
+    1: { minX: 28, maxX: 72, minY: 28, maxY: 72 },
+    2: { minX: 20, maxX: 80, minY: 20, maxY: 80 },
+    3: { minX: 14, maxX: 86, minY: 14, maxY: 86 },
+    4: { minX: 10, maxX: 90, minY: 10, maxY: 90 },
+    5: { minX: 7, maxX: 93, minY: 7, maxY: 93 },
+    6: { minX: 5, maxX: 95, minY: 5, maxY: 95 },
+  };
+
+  return areas[safeLevel as keyof typeof areas];
+}
+
+function getSymbolSize(level: number): string {
+  if (level <= 1) return "text-6xl md:text-7xl";
+  if (level === 2) return "text-5xl md:text-6xl";
+  if (level === 3) return "text-5xl md:text-6xl";
+  if (level === 4) return "text-4xl md:text-5xl";
+  if (level === 5) return "text-4xl md:text-5xl";
+
+  return "text-3xl md:text-4xl";
+}
+
+function getDistance(first: Position, second: Position): number {
+  const deltaX = first.x - second.x;
+  const deltaY = first.y - second.y;
+
+  return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+}
+
+function createRandomPosition(
+  level: number,
+  previousPosition: Position,
+): Position {
+  const area = getLevelArea(level);
+
+  const minimumDistance = level <= 2 ? 24 : level <= 4 ? 30 : 36;
+
+  let candidate: Position = previousPosition;
+
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    candidate = {
+      x:
+        Math.random() * (area.maxX - area.minX) +
+        area.minX,
+      y:
+        Math.random() * (area.maxY - area.minY) +
+        area.minY,
+    };
+
+    if (getDistance(candidate, previousPosition) >= minimumDistance) {
+      return candidate;
+    }
+  }
+
+  return candidate;
+}
+
+export default function GozCalismasiPage() {
+  const flashTimerRef = useRef<number | null>(null);
+  const elapsedTimerRef = useRef<number | null>(null);
+  const positionRef = useRef<Position>({ x: 50, y: 50 });
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [speed, setSpeed] = useState(300);
+  const [selectedEmoji, setSelectedEmoji] = useState("⭐");
+  const [level, setLevel] = useState(1);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [currentPointIndex, setCurrentPointIndex] = useState(0);
-  const [blinkKey, setBlinkKey] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [result, setResult] = useState<EyeMuscleResult | null>(null);
+  const [round, setRound] = useState(0);
+  const [position, setPosition] = useState<Position>({ x: 50, y: 50 });
+  const [isVisible, setIsVisible] = useState(false);
 
-  const selectedSymbol = getSymbolById(selectedSymbolId);
-  const displaySymbol = getSymbolById(displaySymbolId);
-  const currentLevel = Math.min(5, selectedLevel + Math.floor(Math.max(0, elapsedSeconds - levelAnchorSeconds) / 60)) as EyeMuscleLevel;
-  const movementPattern = getMovementPatternByLevel(currentLevel);
-  const movementPatternLabel = getMovementPatternLabel(movementPattern);
-  const symbolPosition = calculateSymbolPosition({
-    level: currentLevel,
-    pointIndex: currentPointIndex,
-  });
+  const selectedEmojiLabel = useMemo(() => {
+    return (
+      EMOJI_OPTIONS.find((item) => item.value === selectedEmoji)?.label ??
+      "Simge"
+    );
+  }, [selectedEmoji]);
 
-  const clearRunTimers = useCallback(() => {
-    if (timerRef.current !== null) {
-      window.clearInterval(timerRef.current);
-      timerRef.current = null;
+  const symbolSizeClass = useMemo(() => getSymbolSize(level), [level]);
+
+  function clearTimers(): void {
+    if (flashTimerRef.current !== null) {
+      window.clearInterval(flashTimerRef.current);
+      flashTimerRef.current = null;
     }
 
-    if (pointRef.current !== null) {
-      window.clearInterval(pointRef.current);
-      pointRef.current = null;
+    if (elapsedTimerRef.current !== null) {
+      window.clearInterval(elapsedTimerRef.current);
+      elapsedTimerRef.current = null;
     }
-  }, []);
+  }
 
-  const clearSymbolTimer = useCallback(() => {
-    if (symbolRef.current !== null) {
-      window.clearInterval(symbolRef.current);
-      symbolRef.current = null;
-    }
-  }, []);
+  function moveToNextPosition(): void {
+    const nextPosition = createRandomPosition(level, positionRef.current);
 
-  const clearTimers = useCallback(() => {
-    clearRunTimers();
-    clearSymbolTimer();
-  }, [clearRunTimers, clearSymbolTimer]);
+    positionRef.current = nextPosition;
+    setPosition(nextPosition);
+    setRound((previousRound) => previousRound + 1);
+  }
+
+  function startExercise(): void {
+    clearTimers();
+
+    setIsRunning(true);
+    setElapsedSeconds(0);
+    setRound(0);
+
+    const startPosition = createRandomPosition(level, {
+      x: 50,
+      y: 50,
+    });
+
+    positionRef.current = startPosition;
+    setPosition(startPosition);
+    setIsVisible(true);
+  }
+
+  function stopExercise(): void {
+    clearTimers();
+    setIsRunning(false);
+    setIsVisible(false);
+  }
+
+  function resetExercise(): void {
+    clearTimers();
+
+    const centerPosition = { x: 50, y: 50 };
+
+    positionRef.current = centerPosition;
+
+    setIsRunning(false);
+    setElapsedSeconds(0);
+    setRound(0);
+    setPosition(centerPosition);
+    setIsVisible(false);
+  }
 
   useEffect(() => {
-    if (phase !== "running" || isPaused) {
-      clearRunTimers();
+    if (!isRunning) {
       return;
     }
 
-    timerRef.current = window.setInterval(() => {
-      setElapsedSeconds((prev) => {
-        const nextElapsed = prev + 1;
-        const nextLevel = Math.min(5, selectedLevel + Math.floor(Math.max(0, nextElapsed - levelAnchorSeconds) / 60)) as EyeMuscleLevel;
-        const previousLevel = Math.min(5, selectedLevel + Math.floor(Math.max(0, prev - levelAnchorSeconds) / 60)) as EyeMuscleLevel;
+    clearTimers();
 
-        if (nextLevel > previousLevel) {
-          automaticLevelChangesRef.current += nextLevel - previousLevel;
-          maxReachedLevelRef.current = Math.max(maxReachedLevelRef.current, nextLevel) as EyeMuscleLevel;
-          setCurrentPointIndex(0);
-          setBlinkKey((key) => key + 1);
+    flashTimerRef.current = window.setInterval(() => {
+      setIsVisible((previousVisibility) => {
+        if (previousVisibility) {
+          return false;
         }
 
-        return nextElapsed;
+        moveToNextPosition();
+        return true;
       });
+    }, speed);
+
+    elapsedTimerRef.current = window.setInterval(() => {
+      setElapsedSeconds((previousSeconds) => previousSeconds + 1);
     }, 1000);
 
-    pointRef.current = window.setInterval(() => {
-      setCurrentPointIndex((prev) => {
-        const points = getMovementPointsByLevel(currentLevel);
-
-        return (prev + 1) % points.length;
-      });
-      setBlinkKey((prev) => prev + 1);
-    }, speedMs);
-
-    return () => clearRunTimers();
-  }, [clearRunTimers, currentLevel, isPaused, levelAnchorSeconds, phase, selectedLevel, speedMs]);
-
-  useEffect(() => {
-    if (phase !== "running" || isPaused || !randomSymbolMode) {
-      clearSymbolTimer();
-      return;
-    }
-
-    symbolRef.current = window.setInterval(() => {
-      setDisplaySymbolId((prev) => getRandomSymbol(prev).id);
-    }, 2200);
-
     return () => {
-      clearSymbolTimer();
+      clearTimers();
     };
-  }, [clearSymbolTimer, isPaused, phase, randomSymbolMode]);
+  }, [isRunning, speed, level]);
 
   useEffect(() => {
-    return () => clearTimers();
-  }, [clearTimers]);
-
-  const resetToReady = useCallback(() => {
-    clearTimers();
-    hasSavedResultRef.current = false;
-    setElapsedSeconds(0);
-    setCurrentPointIndex(0);
-    setBlinkKey((prev) => prev + 1);
-    setLevelAnchorSeconds(0);
-    maxReachedLevelRef.current = selectedLevel;
-    automaticLevelChangesRef.current = 0;
-    setDisplaySymbolId(selectedSymbolId);
-    setIsPaused(false);
-    setResult(null);
-    setIsSymbolPickerOpen(false);
-    setPhase("ready");
-  }, [clearTimers, selectedLevel, selectedSymbolId]);
-
-  const finalizeExercise = useCallback(() => {
-    if (hasSavedResultRef.current) {
-      return;
-    }
-
-    hasSavedResultRef.current = true;
-    clearTimers();
-
-    const completedSeconds = Math.max(0, elapsedSeconds);
-    const reachedLevel = Math.max(maxReachedLevelRef.current, currentLevel) as EyeMuscleLevel;
-    const finalMovementPattern = getMovementPatternByLevel(reachedLevel);
-    const score = calculateScore(completedSeconds);
-    const successRate = completedSeconds > 0 ? 100 : 0;
-    const student = getCurrentStudent();
-    const finalSelectedSymbol = getSymbolById(selectedSymbolId);
-    const finalDisplaySymbol = getSymbolById(displaySymbolId);
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
-      exerciseType: "eye-muscle",
-      exerciseTitle: "Goz Kaslarini Gelistirme Calismasi",
-      durationSeconds: completedSeconds,
-      correctCount: 0,
-      wrongCount: 0,
-      score,
-      successRate,
-      details: {
-        selectedSymbol: finalSelectedSymbol,
-        displayedSymbol: finalDisplaySymbol,
-        startLevel: sessionStartLevel,
-        randomSymbolMode,
-        speedMs,
-        completedSeconds,
-        reachedLevel,
-        movementPattern: finalMovementPattern,
-        levelChanges: automaticLevelChangesRef.current,
-        scoreRule: "Her tamamlanan dakika icin 20 puan, en fazla 100 puan.",
-      },
-    });
-
-    setResult({
-      completedSeconds,
-      startLevel: sessionStartLevel,
-      reachedLevel,
-      speedMs,
-      selectedSymbol: finalSelectedSymbol,
-      displayedSymbol: finalDisplaySymbol,
-      randomSymbolMode,
-      movementPattern: getMovementPatternLabel(finalMovementPattern),
-      score,
-      successRate,
-    });
-    setIsPaused(false);
-    setPhase("result");
-  }, [clearTimers, currentLevel, displaySymbolId, elapsedSeconds, randomSymbolMode, selectedSymbolId, sessionStartLevel, speedMs]);
-
-  const handleIntroStart = () => {
-    resetToReady();
-  };
-
-  const handleBeginPlay = () => {
-    hasSavedResultRef.current = false;
-    clearTimers();
-    setElapsedSeconds(0);
-    setCurrentPointIndex(0);
-    setBlinkKey((prev) => prev + 1);
-    setSessionStartLevel(selectedLevel);
-    setLevelAnchorSeconds(0);
-    maxReachedLevelRef.current = selectedLevel;
-    automaticLevelChangesRef.current = 0;
-    setDisplaySymbolId(randomSymbolMode ? getRandomSymbol(selectedSymbolId).id : selectedSymbolId);
-    setIsPaused(false);
-    setResult(null);
-    setIsSymbolPickerOpen(false);
-    setPhase("running");
-  };
-
-  const handleRestart = () => {
-    resetToReady();
-  };
-
-  const handlePause = () => {
-    if (phase === "running") {
-      setIsPaused(true);
-    }
-  };
-
-  const handleResume = () => {
-    if (phase === "running") {
-      setIsPaused(false);
-    }
-  };
-
-  const handleSymbolSelect = (symbolId: string) => {
-    setSelectedSymbolId(symbolId);
-    setDisplaySymbolId(symbolId);
-    setIsSymbolPickerOpen(false);
-  };
-
-  const handleLevelChange = (level: EyeMuscleLevel) => {
-    setSelectedLevel(level);
-    setCurrentPointIndex(0);
-    setBlinkKey((prev) => prev + 1);
-
-    if (phase === "running") {
-      setLevelAnchorSeconds(elapsedSeconds);
-      maxReachedLevelRef.current = Math.max(maxReachedLevelRef.current, level) as EyeMuscleLevel;
-    }
-  };
-
-  const stats = useMemo(
-    () => [
-      { label: "Gecen Sure", value: formatDuration(elapsedSeconds), tone: "brand" as const },
-      { label: "Seviye", value: currentLevel },
-      { label: "Hiz", value: `${speedMs} ms` },
-      { label: "Simge modu", value: randomSymbolMode ? "Surekli degissin" : "Sabit" },
-    ],
-    [currentLevel, elapsedSeconds, randomSymbolMode, speedMs],
-  );
-
-  const footerControls = (
-    <div className="grid gap-2 lg:grid-cols-[minmax(210px,1.25fr)_minmax(145px,0.75fr)_minmax(92px,0.55fr)_minmax(112px,0.6fr)_minmax(330px,1.6fr)]">
-      <div className="relative min-w-0">
-        <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Simge</span>
-        <button
-          type="button"
-          onClick={() => setIsSymbolPickerOpen((prev) => !prev)}
-          className="flex h-12 w-full items-center gap-3 rounded-xl border border-red-100 bg-white/95 px-3 text-left shadow-sm shadow-red-100/55 transition hover:border-red-300"
-          style={FULLSCREEN_TOUCH_STYLE}
-          aria-expanded={isSymbolPickerOpen}
-        >
-          <Image src={selectedSymbol.file} alt="" width={32} height={32} className="h-8 w-8 shrink-0" draggable={false} />
-          <span className="min-w-0 truncate text-sm font-bold text-slate-800">{selectedSymbol.label}</span>
-        </button>
-
-        {isSymbolPickerOpen ? (
-          <div className="absolute bottom-[calc(100%+8px)] left-0 z-50 grid w-[min(92vw,420px)] grid-cols-5 gap-2 rounded-2xl border border-red-100 bg-white p-3 shadow-2xl shadow-red-200/55">
-            {getSymbolOptions().map((symbol) => (
-              <button
-                key={symbol.id}
-                type="button"
-                onClick={() => handleSymbolSelect(symbol.id)}
-                className={`flex aspect-square items-center justify-center rounded-xl border bg-white p-2 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 ${
-                  symbol.id === selectedSymbolId ? "border-red-400 ring-2 ring-red-200" : "border-slate-200"
-                }`}
-                style={FULLSCREEN_TOUCH_STYLE}
-                title={symbol.label}
-                aria-label={symbol.label}
-              >
-                <Image src={symbol.file} alt="" width={48} height={48} className="h-full w-full object-contain" draggable={false} />
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      <label className="flex min-w-0 items-center gap-2 rounded-xl border border-red-100 bg-white/80 px-3 py-2 shadow-sm shadow-red-100/50">
-        <input
-          type="checkbox"
-          checked={randomSymbolMode}
-          onChange={(event) => {
-            setRandomSymbolMode(event.target.checked);
-            if (event.target.checked && phase === "running") {
-              setDisplaySymbolId(getRandomSymbol(displaySymbolId).id);
-            } else if (!event.target.checked) {
-              setDisplaySymbolId(selectedSymbolId);
-            }
-          }}
-          className="h-4 w-4 accent-red-600"
-        />
-        <span className="text-xs font-bold text-slate-700">Surekli degissin</span>
-      </label>
-
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seviye</span>
-        <select
-          value={selectedLevel}
-          onChange={(event) => handleLevelChange(Number(event.target.value) as EyeMuscleLevel)}
-          className={FULLSCREEN_SELECT_CLASS}
-        >
-          {EYE_MUSCLE_LEVEL_OPTIONS.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz</span>
-        <select
-          value={speedMs}
-          onChange={(event) => setSpeedMs(Number(event.target.value) as EyeMuscleSpeedMs)}
-          className={FULLSCREEN_SELECT_CLASS}
-        >
-          {EYE_MUSCLE_SPEED_OPTIONS.map((value) => (
-            <option key={value} value={value}>
-              {value} ms
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="grid gap-2 sm:grid-cols-5">
-        <button
-          type="button"
-          className={phase === "ready" ? FULLSCREEN_PRIMARY_BUTTON_CLASS : COMPACT_BUTTON_CLASS}
-          style={FULLSCREEN_TOUCH_STYLE}
-          onClick={handleBeginPlay}
-          disabled={phase !== "ready"}
-        >
-          Baslat
-        </button>
-        <button type="button" className={COMPACT_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running" || isPaused}>
-          Duraklat
-        </button>
-        <button type="button" className={COMPACT_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume} disabled={phase !== "running" || !isPaused}>
-          Devam Et
-        </button>
-        <button type="button" className={COMPACT_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleRestart} disabled={phase === "setup"}>
-          Yeniden Baslat
-        </button>
-        <button type="button" className={COMPACT_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finalizeExercise} disabled={phase !== "running"}>
-          Bitir
-        </button>
-      </div>
-    </div>
-  );
-
-  if (phase === "setup") {
-    return (
-      <FullscreenExerciseIntro
-        title="Goz Kaslarini Gelistirme Calismasi"
-        description="Hareket eden simgeyi gozlerinle takip ederek goz kaslarini ve odaklanmani gelistir."
-        buttonLabel="Egitime Basla"
-        onStart={handleIntroStart}
-      />
-    );
-  }
-
-  if (phase === "ready") {
-    return (
-      <FullscreenExerciseShell
-        title="Goz Kaslarini Gelistirme Calismasi"
-        subtitle="Hazirlik modu"
-        stats={stats}
-        stageClassName="fx-slide-up flex min-h-[340px] w-full flex-col items-center justify-center gap-4 rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[420px]"
-        footer={footerControls}
-      >
-        <div className="flex flex-col items-center">
-          <Image src={selectedSymbol.file} alt="" width={96} height={96} className="h-20 w-20 object-contain drop-shadow-xl md:h-24 md:w-24" draggable={false} />
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-          <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-        </div>
-      </FullscreenExerciseShell>
-    );
-  }
-
-  if (phase === "result" && result) {
-    return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
-        <h2 className="text-2xl font-bold">Goz Kaslarini Gelistirme Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Calisma kaydedildi.</p>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Gecen Sure</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{formatDuration(result.completedSeconds)}</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Seviye</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.reachedLevel}</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Hiz</p>
-            <p className="mt-2 text-2xl font-extrabold text-slate-900">{result.speedMs} ms</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Basari</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.successRate}%</p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Puan</p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">{result.score}</p>
-          </article>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm">
-          <div className="flex items-center gap-3">
-            <Image src={result.displayedSymbol.file} alt="" width={40} height={40} className="h-10 w-10 object-contain" draggable={false} />
-            <p><strong>Simge:</strong> {result.selectedSymbol.label}</p>
-          </div>
-          <p className="mt-2"><strong>Baslangic Seviyesi:</strong> {result.startLevel}</p>
-          <p className="mt-2"><strong>Simge Modu:</strong> {result.randomSymbolMode ? "Surekli degisken" : "Sabit"}</p>
-          <p className="mt-1"><strong>Hareket:</strong> {result.movementPattern}</p>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
-            Yeniden Baslat
-          </button>
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={() => router.push(`/sonuc?exerciseType=eye-muscle&correct=0&wrong=0&successRate=${result.successRate}&score=${result.score}`)}
-          >
-            Ortak Sonuc Ekrani
-          </button>
-        </div>
-
-        <div className="mt-3">
-          <Link
-            href="/egzersizler"
-            className="relative z-50 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white px-4 py-4 text-base font-bold text-red-800 transition hover:bg-red-50"
-            style={TOUCH_STYLE}
-          >
-            Egzersizlere Don
-          </Link>
-        </div>
-      </section>
-    );
-  }
+    return () => {
+      clearTimers();
+    };
+  }, []);
 
   return (
-    <FullscreenExerciseShell
-      title="Goz Kaslarini Gelistirme Calismasi"
-      subtitle={`Seviye ${currentLevel} - ${movementPatternLabel}`}
-      stats={stats}
-      finishButton={
-        <button type="button" onClick={finalizeExercise} className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:bg-red-50" style={FULLSCREEN_TOUCH_STYLE}>
-          Bitir
-        </button>
-      }
-      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/94 px-2 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:px-4 lg:min-h-[540px]"
-      footer={footerControls}
-    >
-      <div className="relative h-[58vh] w-full max-w-5xl overflow-hidden border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffafa_100%)] shadow-inner shadow-red-100/70 md:h-[62vh]">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-red-100/50" />
-        <div className="pointer-events-none absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-red-100/50" />
-        <div className="pointer-events-none absolute inset-4 border border-red-100/70" />
-        <div
-          key={`${currentLevel}-${currentPointIndex}-${blinkKey}`}
-          className="eye-symbol-pulse absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/85 p-2 shadow-[0_14px_38px_rgba(185,28,28,0.18)] md:h-20 md:w-20"
-          style={{
-            left: `${symbolPosition.xPercent}%`,
-            top: `${symbolPosition.yPercent}%`,
-            animationDuration: `${Math.max(120, Math.min(speedMs, 500))}ms`,
-          }}
-        >
-          <Image src={displaySymbol.file} alt={displaySymbol.label} width={80} height={80} className="h-full w-full object-contain" draggable={false} />
-        </div>
+    <main className="min-h-screen bg-white px-3 py-3 text-slate-900 md:px-5 md:py-4">
+      <section className="mx-auto flex min-h-[calc(100vh-24px)] w-full max-w-6xl flex-col gap-3">
+        <header className="rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-red-600">
+                Göz Egzersizleri
+              </p>
 
-        {isPaused ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/55 backdrop-blur-[2px]">
-            <p className="rounded-2xl border border-red-100 bg-white/90 px-5 py-3 text-sm font-bold text-red-700 shadow-sm">
-              Duraklatildi
-            </p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
+                Göz Takip Çalışması
+              </h1>
+
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                Seçtiğin simge çalışma alanında sürekli farklı noktalarda yanıp
+                söner. Başını sabit tutarak yalnızca gözlerinle takip et.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+                <p className="text-[11px] font-bold text-slate-500">Süre</p>
+                <p className="text-lg font-black text-slate-950">
+                  {formatTime(elapsedSeconds)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+                <p className="text-[11px] font-bold text-slate-500">Tur</p>
+                <p className="text-lg font-black text-slate-950">{round}</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+                <p className="text-[11px] font-bold text-slate-500">Seviye</p>
+                <p className="text-lg font-black text-red-600">{level}</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
+                <p className="text-[11px] font-bold text-slate-500">Hız</p>
+                <p className="text-lg font-black text-slate-950">
+                  {speed}ms
+                </p>
+              </div>
+            </div>
           </div>
-        ) : null}
-      </div>
-    </FullscreenExerciseShell>
+        </header>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="grid gap-3 xl:grid-cols-[1fr_0.75fr_0.75fr_auto] xl:items-end">
+            <div>
+              <p className="mb-2 text-xs font-black uppercase tracking-wide text-slate-600">
+                Hız Ayarı
+              </p>
+
+              <div className="grid grid-cols-5 gap-2">
+                {SPEED_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setSpeed(option)}
+                    disabled={isRunning}
+                    className={`min-h-[42px] rounded-xl border px-2 py-2 text-sm font-black transition ${
+                      speed === option
+                        ? "border-red-500 bg-red-500 text-white shadow-sm"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                    } disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    {option}ms
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-wide text-slate-600">
+                Simge Seçimi
+              </span>
+
+              <select
+                value={selectedEmoji}
+                onChange={(event) => setSelectedEmoji(event.target.value)}
+                disabled={isRunning}
+                className="h-[42px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 outline-none transition focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {EMOJI_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.value} {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-xs font-black uppercase tracking-wide text-slate-600">
+                Seviye Seçimi
+              </span>
+
+              <select
+                value={level}
+                onChange={(event) => setLevel(Number(event.target.value))}
+                disabled={isRunning}
+                className="h-[42px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 outline-none transition focus:border-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {LEVEL_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}. Seviye
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 xl:min-w-[220px]">
+              {!isRunning ? (
+                <button
+                  type="button"
+                  onClick={startExercise}
+                  className="min-h-[42px] rounded-xl bg-emerald-500 px-4 py-2 text-sm font-black text-white transition hover:bg-emerald-600"
+                >
+                  Başlat
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopExercise}
+                  className="min-h-[42px] rounded-xl bg-red-500 px-4 py-2 text-sm font-black text-white transition hover:bg-red-600"
+                >
+                  Durdur
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={resetExercise}
+                className="min-h-[42px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-700 transition hover:bg-slate-100"
+              >
+                Sıfırla
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="relative min-h-[560px] flex-1 overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_center,_rgba(239,68,68,0.05),_rgba(255,255,255,1)_55%,_rgba(248,250,252,1))] shadow-sm md:min-h-[640px]">
+          <div className="absolute left-4 top-4 z-20 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-xs text-slate-600 shadow-sm backdrop-blur">
+            Seçilen simge:{" "}
+            <span className="ml-1 text-xl">{selectedEmoji}</span>
+            <span className="ml-2 font-black text-slate-900">
+              {selectedEmojiLabel}
+            </span>
+          </div>
+
+          <div className="absolute right-4 top-4 z-20 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-xs font-bold text-slate-600 shadow-sm backdrop-blur">
+            Aktif seviye:{" "}
+            <span className="font-black text-red-600">{level}</span>
+          </div>
+
+          <div className="pointer-events-none absolute inset-0 opacity-20">
+            <div className="absolute left-1/3 top-0 h-full w-px bg-slate-300" />
+            <div className="absolute left-2/3 top-0 h-full w-px bg-slate-300" />
+            <div className="absolute left-0 top-1/3 h-px w-full bg-slate-300" />
+            <div className="absolute left-0 top-2/3 h-px w-full bg-slate-300" />
+          </div>
+
+          <div
+            className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+            style={{
+              left: `${position.x}%`,
+              top: `${position.y}%`,
+            }}
+          >
+            <span
+              className={`select-none ${symbolSizeClass} transition-opacity duration-75 ${
+                isRunning && isVisible ? "opacity-100" : "opacity-0"
+              }`}
+              aria-hidden={!isRunning || !isVisible}
+            >
+              {selectedEmoji}
+            </span>
+          </div>
+
+          {!isRunning && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/55 p-6 text-center backdrop-blur-sm">
+              <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-5xl shadow-sm">
+                  {selectedEmoji}
+                </div>
+
+                <h2 className="text-xl font-black text-slate-950">
+                  Simgeyi gözlerinle takip et
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Başlat düğmesine bastığında seçilen simge her turda farklı
+                  bir noktada görünecek. Seviye yükseldikçe daha geniş alan
+                  kullanılacak.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={startExercise}
+                  className="mt-5 rounded-2xl bg-red-500 px-6 py-3 text-sm font-black text-white transition hover:bg-red-600"
+                >
+                  Çalışmayı Başlat
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      </section>
+    </main>
   );
 }
