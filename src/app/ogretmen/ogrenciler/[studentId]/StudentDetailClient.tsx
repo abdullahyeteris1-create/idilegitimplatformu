@@ -7,7 +7,11 @@ import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getResultsByStudent } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
-import { getStudentById } from "@/lib/students/studentStorage";
+import {
+  getStudentById,
+  updateStudentWelcomeEmailStatus,
+} from "@/lib/students/studentStorage";
+import type { WelcomeEmailStatus } from "@/lib/students/types";
 
 type ExerciseSummary = {
   exerciseType: ExerciseType;
@@ -25,6 +29,30 @@ function toDisplayDate(value: string | null): string {
   }
 
   return new Date(value).toLocaleString("tr-TR");
+}
+
+function getWelcomeEmailStatusLabel(status: WelcomeEmailStatus | undefined): string {
+  if (status === "sent") {
+    return "Gönderildi";
+  }
+
+  if (status === "failed") {
+    return "Gönderilemedi";
+  }
+
+  return "Gönderilmedi";
+}
+
+function getWelcomeEmailStatusClass(status: WelcomeEmailStatus | undefined): string {
+  if (status === "sent") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (status === "failed") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  return "border-slate-200 bg-slate-100 text-slate-600";
 }
 
 function slugify(value: string): string {
@@ -121,6 +149,11 @@ export function StudentDetailClient() {
   const [student, setStudent] = useState<ReturnType<typeof getStudentById>>(null);
   const [results, setResults] = useState<ExerciseResult[]>([]);
   const [readingTests, setReadingTests] = useState<ReadingTestResult[]>([]);
+  const [isSendingWelcomeEmail, setIsSendingWelcomeEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -201,6 +234,72 @@ export function StudentDetailClient() {
     });
   }, [sortedResults]);
 
+  const handleResendWelcomeEmail = async () => {
+    const parentEmail = student?.parentEmail ?? student?.email ?? "";
+
+    if (!student || !parentEmail || isSendingWelcomeEmail) {
+      return;
+    }
+
+    setIsSendingWelcomeEmail(true);
+    setEmailFeedback(null);
+
+    let emailSent = false;
+
+    try {
+      const response = await fetch("/api/admin/send-student-welcome-email", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentName: student.name,
+          parentEmail,
+          username: student.username,
+          temporaryPassword: student.password,
+        }),
+      });
+
+      emailSent = response.ok;
+    } catch {
+      emailSent = false;
+    }
+
+    const sentAt = emailSent ? new Date().toISOString() : undefined;
+    let statusUpdatedStudent: Awaited<ReturnType<typeof updateStudentWelcomeEmailStatus>> = null;
+
+    try {
+      statusUpdatedStudent = await updateStudentWelcomeEmailStatus(
+        student.id,
+        emailSent ? "sent" : "failed",
+        sentAt,
+      );
+    } catch {
+      // Yerel durum aşağıdaki fallback ile güncellenir.
+    }
+
+    setStudent(
+      statusUpdatedStudent ?? {
+        ...student,
+        welcomeEmailSentAt: sentAt,
+        welcomeEmailStatus: emailSent ? "sent" : "failed",
+      },
+    );
+    setEmailFeedback(
+      emailSent
+        ? {
+            tone: "success",
+            text: "Veliye giriş bilgileri yeniden gönderildi.",
+          }
+        : {
+            tone: "error",
+            text: "E-posta gönderilemedi. Öğrenci kaydı korunuyor.",
+          },
+    );
+    setIsSendingWelcomeEmail(false);
+  };
+
   if (!isMounted) {
     return (
       <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
@@ -223,6 +322,8 @@ export function StudentDetailClient() {
     );
   }
 
+  const parentEmail = student.parentEmail ?? student.email;
+
   return (
     <div className="grid gap-5">
       <section className="rounded-2xl border border-red-100 bg-white p-4 md:p-5">
@@ -240,9 +341,21 @@ export function StudentDetailClient() {
           <p>Sinif Duzeyi: <span className="font-semibold">{student.classLevel ?? "-"}</span></p>
           <p>Veli Adi: <span className="font-semibold">{student.parentName ?? "-"}</span></p>
           <p>Veli Telefonu: <span className="font-semibold">{student.parentPhone ?? "-"}</span></p>
-          <p>E-posta: <span className="font-semibold">{student.email ?? "-"}</span></p>
+          <p>Veli E-posta: <span className="font-semibold">{parentEmail ?? "-"}</span></p>
           <p>Kayit Tarihi: <span className="font-semibold">{toDisplayDate(student.createdAt)}</span></p>
           <p>Egitim Durumu: <span className="font-semibold">{student.educationStatus ?? "-"}</span></p>
+          <p className="flex flex-wrap items-center gap-2">
+            E-posta Durumu:
+            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getWelcomeEmailStatusClass(student.welcomeEmailStatus)}`}>
+              {getWelcomeEmailStatusLabel(student.welcomeEmailStatus)}
+            </span>
+          </p>
+          <p>
+            Son E-posta Tarihi:{" "}
+            <span className="font-semibold">
+              {toDisplayDate(student.welcomeEmailSentAt ?? null)}
+            </span>
+          </p>
         </div>
 
         {student.notes ? (
@@ -251,7 +364,7 @@ export function StudentDetailClient() {
           </p>
         ) : null}
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
           <Link
             href={`/ogretmen/ogrenciler/${student.id}/duzenle`}
             className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 transition hover:bg-red-100"
@@ -266,7 +379,33 @@ export function StudentDetailClient() {
           >
             Bu Ogrencinin Sonuclarini Excel Indir
           </button>
+          <button
+            type="button"
+            onClick={() => void handleResendWelcomeEmail()}
+            disabled={!parentEmail || isSendingWelcomeEmail}
+            className="min-h-[48px] rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-800 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ touchAction: "manipulation" }}
+            title={parentEmail ? "Veliye giriş bilgilerini yeniden gönder" : "Önce veli e-posta adresi ekleyin"}
+          >
+            {isSendingWelcomeEmail
+              ? "E-posta Gönderiliyor..."
+              : "Veliye E-postayı Yeniden Gönder"}
+          </button>
         </div>
+
+        {emailFeedback ? (
+          <p
+            role={emailFeedback.tone === "error" ? "alert" : "status"}
+            aria-live="polite"
+            className={
+              emailFeedback.tone === "success"
+                ? "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
+                : "mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800"
+            }
+          >
+            {emailFeedback.text}
+          </p>
+        ) : null}
       </section>
 
       <section className="grid gap-3 md:grid-cols-4">

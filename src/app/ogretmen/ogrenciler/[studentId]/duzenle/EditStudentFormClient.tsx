@@ -12,6 +12,8 @@ import {
 } from "@/lib/students/studentStorage";
 import type { EducationStatus, StudentStatus } from "@/lib/students/types";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function EditStudentFormClient() {
   const router = useRouter();
   const params = useParams<{ studentId: string }>();
@@ -25,7 +27,7 @@ export function EditStudentFormClient() {
   const [classLevel, setClassLevel] = useState(student?.classLevel ?? "");
   const [parentName, setParentName] = useState(student?.parentName ?? "");
   const [parentPhone, setParentPhone] = useState(student?.parentPhone ?? "");
-  const [email, setEmail] = useState(student?.email ?? "");
+  const [parentEmail, setParentEmail] = useState(student?.parentEmail ?? student?.email ?? "");
   const [birthDate, setBirthDate] = useState(student?.birthDate ?? "");
   const [status, setStatus] = useState<StudentStatus>(student?.status ?? "active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>(student?.educationStatus ?? "general");
@@ -35,6 +37,11 @@ export function EditStudentFormClient() {
   const handleUpdate = () => {
     if (!name.trim() || !username.trim() || !password.trim()) {
       setError("Ad soyad, kullanici adi ve sifre zorunludur.");
+      return;
+    }
+
+    if (parentEmail.trim() && !EMAIL_PATTERN.test(parentEmail.trim())) {
+      setError("Geçerli bir veli e-posta adresi girin.");
       return;
     }
 
@@ -50,7 +57,7 @@ export function EditStudentFormClient() {
       classLevel,
       parentName,
       parentPhone,
-      email,
+      parentEmail,
       birthDate,
       status,
       educationStatus,
@@ -152,11 +159,15 @@ export function EditStudentFormClient() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          E-posta (Opsiyonel)
+          Veli E-posta Adresi (Opsiyonel)
           <input
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            name="parentEmail"
+            value={parentEmail}
+            onChange={(event) => setParentEmail(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+            placeholder="veli@example.com"
+            autoComplete="email"
           />
         </label>
 
