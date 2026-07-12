@@ -136,6 +136,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/letter-number-counting.svg",
         tags: ["Sayma", "Odak"],
       },
+      {
+        title: "Ayni Olani Yakala",
+        description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
+        href: "/egzersizler/ayni-olani-yakala",
+        icon: "AO",
+        image: "/exercise-visuals/exercises/similar-words.svg",
+        tags: ["Dikkat", "Hiz"],
+      },
     ],
   },
   {
@@ -153,14 +161,6 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         icon: "KT",
         image: "/exercise-visuals/exercises/word-finding.svg",
         tags: ["Kelime", "Tahmin"],
-      },
-      {
-        title: "Ayni Olani Yakala",
-        description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
-        href: "/egzersizler/ayni-olani-yakala",
-        icon: "AO",
-        image: "/exercise-visuals/exercises/similar-words.svg",
-        tags: ["Dikkat", "Hiz"],
       },
       {
         title: "Adam Asmaca",
