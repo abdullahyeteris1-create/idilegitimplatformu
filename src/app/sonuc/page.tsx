@@ -59,7 +59,12 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const exerciseType = parseExerciseType(params.exerciseType);
 
   return (
-    <AppShell title="Sonuc" subtitle="Performans ozetini incele ve bir sonraki calisma planini yap." navItems={APP_NAV_ITEMS}>
+    <AppShell
+      title="Sonuc"
+      subtitle="Performans ozetini incele ve bir sonraki calisma planini yap."
+      navItems={APP_NAV_ITEMS}
+      headerVariant="student-vibrant"
+    >
       <ResultSummaryClient
         correct={correct}
         wrong={wrong}

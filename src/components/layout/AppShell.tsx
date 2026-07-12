@@ -28,9 +28,12 @@ export function AppShell({
 }: AppShellProps) {
   const hasHomeNav = navItems.some((item) => item.href === "/");
   const hasVibrantStudentHeader = headerVariant === "student-vibrant";
+  const shellClassName = hasVibrantStudentHeader
+    ? "min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(56,189,248,0.16),transparent_34%),radial-gradient(circle_at_86%_16%,rgba(168,85,247,0.16),transparent_32%),var(--idil-page-bg)] pb-8 text-[var(--idil-text)]"
+    : "min-h-screen overflow-x-hidden bg-[var(--background)] pb-8";
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[var(--background)] pb-8">
+    <div className={shellClassName}>
       <div className={wide ? "mx-auto w-full max-w-[1500px] px-3 py-3 md:w-[calc(100%_-_32px)] md:px-4 md:py-4" : "idil-shell"}>
         <header
           data-app-shell-header
