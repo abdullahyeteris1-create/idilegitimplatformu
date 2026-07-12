@@ -33,6 +33,7 @@ export function AppShell({
     <div className="min-h-screen overflow-x-hidden bg-[var(--background)] pb-8">
       <div className={wide ? "mx-auto w-full max-w-[1500px] px-3 py-3 md:w-[calc(100%_-_32px)] md:px-4 md:py-4" : "idil-shell"}>
         <header
+          data-app-shell-header
           className={
             hasVibrantStudentHeader
               ? "relative overflow-hidden rounded-[28px] border border-red-200/40 bg-[linear-gradient(135deg,#7f1d1d_0%,#dc2626_38%,#f43f5e_68%,#f97316_100%)] px-5 py-5 text-white shadow-[0_20px_60px_rgba(185,28,28,0.24)] md:px-7"
