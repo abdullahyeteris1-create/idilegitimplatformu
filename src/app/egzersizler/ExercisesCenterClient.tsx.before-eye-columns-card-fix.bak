@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -108,22 +108,6 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         icon: "KB",
         image: "/exercise-visuals/exercises/word-finding.svg",
         tags: ["Tarama", "Kelime"],
-      },
-      {
-        title: "Göz Egzersizleri: Kolonlar",
-        description: "Farklı kelimeleri kolonlar boyunca ritmik göz hareketleriyle takip et.",
-        href: "/egzersizler/goz-egzersizleri-kolonlar",
-        icon: "GK",
-        image: "/exercise-visuals/exercises/eye-columns.svg",
-        tags: ["Göz Hareketi", "Kolonlar"],
-      },
-      {
-        title: "KAREL: Kare Görme Alanı",
-        description: "Merkez noktaya odaklanırken çevredeki iki harfi gör ve aynı mı farklı mı olduğunu belirle.",
-        href: "/egzersizler/kare-gorme-alani",
-        icon: "KG",
-        image: "/exercise-visuals/exercises/square-vision.svg",
-        tags: ["Görme Alanı", "Odak"],
       },
     ],
   },
@@ -573,5 +557,4 @@ export function ExercisesCenterClient() {
     </section>
   );
 }
-
 

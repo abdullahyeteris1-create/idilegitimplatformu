@@ -94,36 +94,13 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/similar-words.svg",
         tags: ["Ayırt Etme", "Dikkat"],
       },
-            {
-        title: "Gruplama Çalışması",
-        description: "Kelime gruplarını tek bakışta algılama ve okuma alanını geliştirme çalışması.",
-        href: "/egzersizler/gruplama-calismasi",
-        icon: "GR",
-        image: "/exercise-visuals/exercises/grouping.svg",
-        tags: ["Gruplama", "Okuma Alanı"],
-      },{
+      {
         title: "Kelime Bulma",
         description: "Metin içindeki hedef kelimeyi hızla bul.",
         href: "/egzersizler/kelime-bulma",
         icon: "KB",
         image: "/exercise-visuals/exercises/word-finding.svg",
         tags: ["Tarama", "Kelime"],
-      },
-      {
-        title: "Göz Egzersizleri: Kolonlar",
-        description: "Farklı kelimeleri kolonlar boyunca ritmik göz hareketleriyle takip et.",
-        href: "/egzersizler/goz-egzersizleri-kolonlar",
-        icon: "GK",
-        image: "/exercise-visuals/exercises/eye-columns.svg",
-        tags: ["Göz Hareketi", "Kolonlar"],
-      },
-      {
-        title: "KAREL: Kare Görme Alanı",
-        description: "Merkez noktaya odaklanırken çevredeki iki harfi gör ve aynı mı farklı mı olduğunu belirle.",
-        href: "/egzersizler/kare-gorme-alani",
-        icon: "KG",
-        image: "/exercise-visuals/exercises/square-vision.svg",
-        tags: ["Görme Alanı", "Odak"],
       },
     ],
   },
@@ -573,5 +550,3 @@ export function ExercisesCenterClient() {
     </section>
   );
 }
-
-

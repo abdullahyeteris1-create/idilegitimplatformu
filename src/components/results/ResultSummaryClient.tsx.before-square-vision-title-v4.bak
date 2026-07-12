@@ -21,8 +21,6 @@ type ResultSummaryClientProps = {
 };
 
 const RESULT_TITLES: Record<ExerciseType, string> = {
-  "square-vision": "KAREL: Kare Görme Alanı Sonuçları",
-
   tachistoscope: "Takistoskop Sonuclari",
   "similar-words": "Benzer Kelimeler Sonuclari",
   "block-reading": "Blok Okuma Sonuclari",
@@ -46,7 +44,6 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
-  "square-vision": "/egzersizler/kare-gorme-alani",
   tachistoscope: "/egzersizler/takistoskop",
   "similar-words": "/egzersizler/benzer-kelimeler",
   "block-reading": "/egzersizler/blok-okuma",
