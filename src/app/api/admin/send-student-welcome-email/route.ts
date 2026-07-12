@@ -240,28 +240,78 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from =
+  const emailFrom =
     process.env.EMAIL_FROM?.trim() || process.env.RESEND_FROM_EMAIL?.trim();
 
-  if (!apiKey || !from) {
+  if (!apiKey || !emailFrom) {
     return serviceErrorResponse();
   }
 
   try {
     const resend = new Resend(apiKey);
-    const result = await resend.emails.send({
-      from,
-      to: body.parentEmail,
-      subject: SUBJECT,
-      html: createWelcomeEmailHtml(body),
+    const parentEmail = body.parentEmail;
+    const subject = SUBJECT;
+    const html = createWelcomeEmailHtml(body);
+
+    console.log("EMAIL CONFIG:", {
+      hasApiKey: Boolean(process.env.RESEND_API_KEY),
+      hasEmailFrom: Boolean(emailFrom),
+      fromDomain: emailFrom.includes("@")
+        ? emailFrom.split("@").pop()?.replace(">", "")
+        : "invalid",
     });
 
-    if (result.error || !result.data?.id) {
-      return serviceErrorResponse();
+    const resendResult = await resend.emails.send({
+      from: emailFrom,
+      to: [parentEmail],
+      subject,
+      html,
+    });
+
+    if (resendResult.error) {
+      console.error("RESEND SEND ERROR:", {
+        name: resendResult.error.name,
+        message: resendResult.error.message,
+        statusCode:
+          "statusCode" in resendResult.error
+            ? resendResult.error.statusCode
+            : undefined,
+      });
+
+      return Response.json(
+        {
+          success: false,
+          error: resendResult.error.message,
+          errorType: resendResult.error.name,
+        },
+        { status: 502 },
+      );
     }
 
-    return NextResponse.json({ ok: true, id: result.data.id });
-  } catch {
-    return serviceErrorResponse();
+    console.log("RESEND SEND SUCCESS:", {
+      emailId: resendResult.data?.id,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      success: true,
+      id: resendResult.data?.id,
+    });
+  } catch (error) {
+    console.error("WELCOME EMAIL ROUTE ERROR:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    return Response.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "E-posta gönderilirken bilinmeyen bir hata oluştu.",
+      },
+      { status: 500 },
+    );
   }
 }
