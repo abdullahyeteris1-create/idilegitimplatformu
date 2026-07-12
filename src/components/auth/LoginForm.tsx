@@ -6,12 +6,16 @@ import { setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
 import { getStudentByUsername, getStudentByUsernameWithRemote, getStudents } from "@/lib/students/studentStorage";
 
 type LoginMode = "student" | "teacher";
+type TabDirection = "forward" | "backward";
+
+const TAB_ORDER: LoginMode[] = ["student", "teacher"];
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<LoginMode>("student");
+  const [tabDirection, setTabDirection] = useState<TabDirection>("forward");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -26,6 +30,9 @@ export function LoginForm() {
   }, []);
 
   const resetForm = (nextMode: LoginMode) => {
+    const currentIndex = TAB_ORDER.indexOf(mode);
+    const nextIndex = TAB_ORDER.indexOf(nextMode);
+    setTabDirection(nextIndex >= currentIndex ? "forward" : "backward");
     setMode(nextMode);
     setUsername("");
     setPassword("");
@@ -157,13 +164,16 @@ export function LoginForm() {
     router.replace("/ogrenci");
   };
 
+  const tabAnimationClass =
+    tabDirection === "forward" ? "motion-safe:animate-idil-tab-forward" : "motion-safe:animate-idil-tab-backward";
+
   return (
-    <section className="mx-auto w-full max-w-[520px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_60px_rgba(15,23,42,0.14)] md:p-6">
-      <div className="grid grid-cols-2 gap-2 rounded-[1.1rem] bg-slate-100 p-1.5">
+    <section className="mx-auto w-full max-w-[560px] rounded-[20px] border border-slate-700/70 bg-[linear-gradient(160deg,rgba(12,18,34,0.96),rgba(8,13,27,0.96))] p-4 text-slate-100 shadow-[0_26px_60px_rgba(2,6,23,0.55)] backdrop-blur-xl md:p-5">
+      <div className="grid grid-cols-2 gap-2 rounded-[14px] border border-slate-700/80 bg-slate-900/65 p-1.5">
         <button
           type="button"
           onClick={() => resetForm("student")}
-          className={`min-h-[44px] rounded-[0.9rem] px-3 text-sm font-semibold transition ${mode === "student" ? "bg-white text-red-800 shadow-sm" : "text-slate-600 hover:text-red-700"}`}
+          className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold tracking-[-0.01em] transition ${mode === "student" ? "bg-gradient-to-r from-violet-600/85 to-indigo-600/85 text-white shadow-sm" : "text-slate-400 hover:text-slate-100"}`}
           style={{ touchAction: "manipulation" }}
         >
           Ogrenci Girisi
@@ -171,30 +181,30 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => resetForm("teacher")}
-          className={`min-h-[44px] rounded-[0.9rem] px-3 text-sm font-semibold transition ${mode === "teacher" ? "bg-white text-red-800 shadow-sm" : "text-slate-600 hover:text-red-700"}`}
+          className={`min-h-[44px] rounded-xl px-3 text-sm font-semibold tracking-[-0.01em] transition ${mode === "teacher" ? "bg-gradient-to-r from-orange-600/85 to-amber-600/85 text-white shadow-sm" : "text-slate-400 hover:text-slate-100"}`}
           style={{ touchAction: "manipulation" }}
         >
           Kurum / Ogretmen Girisi
         </button>
       </div>
 
-      <div className="mt-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
+      <div key={mode} className={`mt-4 ${tabAnimationClass}`}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-300">
           {mode === "student" ? "Ogrenci oturumu" : "Kurum oturumu"}
         </p>
-        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
+        <h2 className="mt-1 text-[clamp(1.85rem,3.2vw,2.35rem)] font-black leading-[1.1] tracking-[-0.03em] text-slate-100">
           {mode === "student" ? "Kendi calismalarina hizli giris" : "Kurum paneline giris"}
         </h2>
-        <p className="mt-1 text-sm leading-6 text-slate-500">
+        <p className="mt-1 text-[15px] leading-7 tracking-[-0.01em] text-slate-400">
           {mode === "student"
             ? "Kullanici adin ve sifrenle kendi egzersizlerine ve sonuclarina eris."
             : "Ogretmen panelinden ogrencileri, sonuclari ve icerikleri yonet."}
         </p>
       </div>
 
-      <form className="mt-5 grid gap-3" onSubmit={handleSubmit}>
+      <form className={`mt-4 grid gap-3 ${tabAnimationClass}`} onSubmit={handleSubmit}>
         <label className="grid gap-1.5">
-          <span className="text-sm font-semibold text-slate-700">
+          <span className="text-[15px] font-semibold tracking-[-0.01em] text-slate-200">
             {mode === "student" ? "Ogrenci adi / kullanici adi" : "Kullanici adi / e-posta"}
           </span>
           <div className="relative">
@@ -204,7 +214,7 @@ export function LoginForm() {
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              className="min-h-[50px] w-full rounded-xl border border-slate-200 bg-white px-3 pl-11 text-sm outline-none transition placeholder:text-slate-400 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+              className="min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
               placeholder={mode === "student" ? "ogrenci veya kayitli kullanici adi" : "yonetici kullanici adi"}
               autoComplete="username"
               autoCapitalize="none"
@@ -214,7 +224,7 @@ export function LoginForm() {
         </label>
 
         <label className="grid gap-1.5">
-          <span className="text-sm font-semibold text-slate-700">Sifre</span>
+          <span className="text-[15px] font-semibold tracking-[-0.01em] text-slate-200">Sifre</span>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
               <LockIcon />
@@ -222,7 +232,7 @@ export function LoginForm() {
             <input
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="min-h-[50px] w-full rounded-xl border border-slate-200 bg-white px-3 pl-11 text-sm outline-none transition placeholder:text-slate-400 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+              className="min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
               placeholder="********"
               type="password"
               autoComplete="current-password"
@@ -231,42 +241,38 @@ export function LoginForm() {
         </label>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+          <label className="inline-flex items-center gap-2 text-[15px] font-medium tracking-[-0.01em] text-slate-400">
             <input
               type="checkbox"
               checked={rememberMe}
               onChange={(event) => setRememberMe(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-200"
+              className="h-4 w-4 rounded border-slate-600 text-violet-500 focus:ring-violet-500/20"
             />
             Beni hatirla
           </label>
-          <button type="button" onClick={handleForgotPassword} className="text-sm font-semibold text-red-700 hover:text-red-900">
+          <button type="button" onClick={handleForgotPassword} className="text-[15px] font-medium tracking-[-0.01em] text-violet-300 hover:text-violet-200">
             Sifremi Unuttum
           </button>
         </div>
 
         {message ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+          <p className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-200">
             {message}
           </p>
         ) : null}
 
         {!isMounted ? (
-          <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">Giris bilgileri hazirlaniyor...</p>
+          <p className="rounded-xl border border-slate-700/80 bg-slate-900/65 px-3 py-2 text-sm text-slate-400">Giris bilgileri hazirlaniyor...</p>
         ) : null}
 
         <button
           type="submit"
           disabled={!isMounted}
-          className="mt-1 min-h-[50px] rounded-xl border border-red-900/20 bg-[linear-gradient(135deg,#ef4444_0%,#dc2626_42%,#991b1b_100%)] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-200 transition duration-200 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 min-h-[50px] rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-rose-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/20 transition duration-200 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           style={{ touchAction: "manipulation" }}
         >
           Giris Yap
         </button>
-
-        <p className="text-center text-xs text-slate-500">
-          Ogrenci test hesabi: <span className="font-semibold">ogrenci / 1234</span>
-        </p>
       </form>
     </section>
   );
