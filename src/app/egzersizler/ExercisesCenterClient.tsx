@@ -94,6 +94,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/similar-words.svg",
         tags: ["Ayırt Etme", "Dikkat"],
       },
+      {
+        title: "Kelime Bulma",
+        description: "Metin içindeki hedef kelimeyi hızla bul.",
+        href: "/egzersizler/kelime-bulma",
+        icon: "KB",
+        image: "/exercise-visuals/exercises/word-finding.svg",
+        tags: ["Tarama", "Kelime"],
+      },
     ],
   },
   {
@@ -195,14 +203,6 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         icon: "OO",
         image: "/exercise-visuals/exercises/focused-reading.svg",
         tags: ["Odak", "Metin"],
-      },
-      {
-        title: "Kelime Bulma",
-        description: "Metin içindeki hedef kelimeyi hızla bul.",
-        href: "/egzersizler/kelime-bulma",
-        icon: "KB",
-        image: "/exercise-visuals/exercises/word-finding.svg",
-        tags: ["Tarama", "Kelime"],
       },
     ],
   },
@@ -473,7 +473,7 @@ export function ExercisesCenterClient() {
                   {group.icon}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold tracking-tight text-slate-950">{group.title}</span>
+                  <span className="block text-[10px] font-semibold tracking-tight text-slate-950">{group.title}</span>
                   <span className="mt-1 block text-sm leading-5 text-slate-600">{group.description}</span>
                   <span
                     className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
