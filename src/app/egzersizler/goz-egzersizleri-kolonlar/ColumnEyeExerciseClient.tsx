@@ -8,6 +8,7 @@ import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
   FULLSCREEN_PRIMARY_BUTTON_CLASS,
+  FULLSCREEN_SECONDARY_BUTTON_CLASS,
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
@@ -497,40 +498,48 @@ export function ColumnEyeExerciseClient() {
       ]}
       finishButton={
         phase === "running" || phase === "paused" ? (
-          <button
-            type="button"
-            onClick={finishExercise}
-            className="min-h-[44px] rounded-full border border-red-200 bg-white px-4 text-sm font-bold text-red-700"
-            style={FULLSCREEN_TOUCH_STYLE}
-          >
-            Bitir
-          </button>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (phase === "running") {
+                  setPhase("paused");
+                } else {
+                  startedAtRef.current = Date.now() - elapsedSeconds * 1000;
+                  setPhase("running");
+                }
+              }}
+              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+              style={FULLSCREEN_TOUCH_STYLE}
+            >
+              {phase === "running" ? "Duraklat" : "Devam"}
+            </button>
+            <button type="button" onClick={finishExercise} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
+              Bitir
+            </button>
+          </div>
         ) : null
       }
-      stageClassName="mt-3 flex min-h-[58vh] w-full flex-col rounded-[28px] border border-red-100 bg-white px-3 py-4 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:min-h-[64vh] md:px-6 md:py-6"
-      footer={
-        <div className="sticky bottom-0 z-[60] w-full border-t border-red-100 bg-white/95 px-2 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.10)] backdrop-blur">
-          {controls}
-        </div>
-      }
+      stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4"
+      footer={phase === "ready" ? controls : undefined}
     >
-      <div className="flex h-full min-h-[50vh] w-full flex-col">
+      <div className="flex h-full min-h-0 w-full flex-col">
         {phase === "ready" ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">
               Hazırlık
             </p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950 md:text-5xl">
+            <h2 className="mt-2 text-xl font-black text-slate-950 md:text-3xl">
               Kelimelerin tamamı birbirinden farklıdır.
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-5 text-slate-500">
               Akış yönünü seç. Vurgulanan kelimeyi yalnızca gözlerinle takip et
               ve başını mümkün olduğunca sabit tut.
             </p>
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
               <p className="text-sm font-bold text-slate-700">
                 Aktif kelimeyi takip et
               </p>
@@ -540,7 +549,7 @@ export function ColumnEyeExerciseClient() {
             </div>
 
             <div
-              className="grid flex-1 gap-x-3 gap-y-2 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 md:gap-x-5 md:gap-y-3 md:p-5"
+              className="grid min-h-0 flex-1 gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-1.5 md:gap-2 md:p-3"
               style={{
                 gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
                 gridTemplateRows: `repeat(${rowsPerColumn}, minmax(0, 1fr))`,
@@ -552,7 +561,7 @@ export function ColumnEyeExerciseClient() {
                 return (
                   <div
                     key={`${word}-${wordIndex}`}
-                    className={`flex min-h-[38px] items-center justify-center rounded-xl border px-2 py-2 text-center text-sm font-bold transition-all duration-150 md:min-h-[44px] md:text-base ${
+                    className={`flex min-h-0 items-center justify-center overflow-hidden rounded-lg border px-1 py-0.5 text-center text-[clamp(0.65rem,2.5vw,1rem)] font-bold leading-tight transition-all duration-150 ${
                       isActive
                         ? "border-red-500 bg-red-50 text-red-800 shadow-[0_0_0_3px_rgba(239,68,68,0.16)]"
                         : "border-white bg-white text-slate-700 shadow-sm"
@@ -564,8 +573,8 @@ export function ColumnEyeExerciseClient() {
               })}
             </div>
 
-            <div className="mt-4">
-              <div className="mb-2 flex justify-between text-xs font-bold text-slate-600">
+            <div className="mt-1.5">
+              <div className="mb-1 flex justify-between text-[11px] font-bold text-slate-600">
                 <span>{progress}% tamamlandı</span>
                 <span>{completedSteps} geçiş</span>
               </div>

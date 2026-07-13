@@ -94,14 +94,7 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/similar-words.svg",
         tags: ["Ayırt Etme", "Dikkat"],
       },
-            {
-        title: "Gruplama Çalışması",
-        description: "Kelime gruplarını tek bakışta algılama ve okuma alanını geliştirme çalışması.",
-        href: "/egzersizler/gruplama-calismasi",
-        icon: "GR",
-        image: "/exercise-visuals/exercises/grouping.svg",
-        tags: ["Gruplama", "Okuma Alanı"],
-      },{
+      {
         title: "Kelime Bulma",
         description: "Metin içindeki hedef kelimeyi hızla bul.",
         href: "/egzersizler/kelime-bulma",
@@ -197,8 +190,8 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
   },
   {
     id: "fluency",
-    title: "Okuma Akıcılığı",
-    shortTitle: "Okuma Akıcılığı",
+    title: "Metin Çalışmaları",
+    shortTitle: "Metin Çalışmaları",
     description: "Okuma akıcılığı ve metin takip çalışmaları.",
     icon: "📚",
     image: "/exercise-visuals/categories/fluency.svg",
@@ -226,6 +219,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         icon: "OO",
         image: "/exercise-visuals/exercises/focused-reading.svg",
         tags: ["Odak", "Metin"],
+      },
+      {
+        title: "Gruplama Çalışması",
+        description: "Kelime gruplarını tek bakışta algılama ve okuma alanını geliştirme çalışması.",
+        href: "/egzersizler/gruplama-calismasi",
+        icon: "GR",
+        image: "/exercise-visuals/exercises/grouping.svg",
+        tags: ["Gruplama", "Okuma Alanı"],
       },
     ],
   },

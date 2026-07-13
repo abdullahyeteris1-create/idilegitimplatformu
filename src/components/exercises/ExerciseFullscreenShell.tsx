@@ -130,10 +130,10 @@ export function ExerciseFullscreenShell({
       className={
         immersiveMode
           ? "fixed inset-0 z-50 bg-slate-100 text-slate-900"
-          : "min-h-[100dvh] bg-gradient-to-br from-slate-100 via-rose-50 to-slate-100 px-2 py-2 text-slate-900 md:px-4 md:py-4"
+          : "h-[100dvh] overflow-hidden bg-gradient-to-br from-slate-100 via-rose-50 to-slate-100 px-2 py-2 text-slate-900 md:px-4 md:py-4"
       }
     >
-      <div className={immersiveMode ? "flex h-full flex-col" : "mx-auto flex w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/82 shadow-[0_18px_58px_rgba(15,23,42,0.12)] backdrop-blur"}>
+      <div className={immersiveMode ? "flex h-full min-h-0 flex-col" : "mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/82 shadow-[0_18px_58px_rgba(15,23,42,0.12)] backdrop-blur"}>
         <header
           className={
             immersiveMode
@@ -150,7 +150,7 @@ export function ExerciseFullscreenShell({
             <button
               type="button"
               onClick={() => void handleToggleFullscreen()}
-              className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 md:text-sm"
+              className="inline-flex min-h-[36px] items-center justify-center rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 md:min-h-[38px] md:px-3 md:py-2 md:text-sm"
             >
               {isFullscreenActive || isFocusMode ? "Tam Ekran Kapat" : "Tam Ekran Ac"}
             </button>
@@ -159,8 +159,8 @@ export function ExerciseFullscreenShell({
           </div>
         </header>
 
-        <main className={immersiveMode ? "flex-1 overflow-auto px-2 py-2 md:px-4 md:py-4" : "px-2 py-3 md:px-4 md:py-4"}>
-          <div className={immersiveMode ? "h-full" : "h-full"}>{children}</div>
+        <main className={immersiveMode ? "flex-1 min-h-0 overflow-auto px-2 py-2 md:px-4 md:py-4" : "flex-1 min-h-0 overflow-auto px-2 py-2 md:px-4 md:py-4"}>
+          <div className="h-full min-h-0">{children}</div>
         </main>
       </div>
     </section>

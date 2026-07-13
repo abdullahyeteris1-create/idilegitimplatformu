@@ -202,7 +202,7 @@ export function LoginForm() {
         </p>
       </div>
 
-      <form className={`mt-4 grid gap-3 ${tabAnimationClass}`} onSubmit={handleSubmit}>
+      <form className={`idil-login-form mt-4 grid gap-3 ${tabAnimationClass}`} onSubmit={handleSubmit}>
         <label className="grid gap-1.5">
           <span className="text-[15px] font-semibold tracking-[-0.01em] text-slate-200">
             {mode === "student" ? "Ogrenci adi / kullanici adi" : "Kullanici adi / e-posta"}
@@ -214,7 +214,7 @@ export function LoginForm() {
             <input
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              className="min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+              className="idil-login-input min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 caret-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
               placeholder={mode === "student" ? "ogrenci veya kayitli kullanici adi" : "yonetici kullanici adi"}
               autoComplete="username"
               autoCapitalize="none"
@@ -232,7 +232,7 @@ export function LoginForm() {
             <input
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
+              className="idil-login-input min-h-[48px] w-full rounded-xl border border-slate-700/90 bg-slate-950/60 px-3 pl-11 text-sm text-slate-100 caret-slate-100 outline-none transition placeholder:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/20"
               placeholder="********"
               type="password"
               autoComplete="current-password"

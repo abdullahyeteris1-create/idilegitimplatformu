@@ -8,6 +8,7 @@ import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
   FULLSCREEN_PRIMARY_BUTTON_CLASS,
+  FULLSCREEN_SECONDARY_BUTTON_CLASS,
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
@@ -532,45 +533,54 @@ export function SquareVisionExerciseClient() {
       stats={[
         { label: "Süre", value: formatTime(remainingSeconds) },
         { label: "Seviye", value: level, tone: "brand" },
+        { label: "Kare", value: `${gridSize}x${gridSize}` },
         { label: "Doğru", value: correctCount },
         { label: "Yanlış", value: wrongCount },
       ]}
       finishButton={
         phase === "running" || phase === "paused" ? (
-          <button
-            type="button"
-            onClick={finishExercise}
-            className="min-h-[44px] rounded-full border border-red-200 bg-white px-4 text-sm font-bold text-red-700"
-            style={FULLSCREEN_TOUCH_STYLE}
-          >
-            Bitir
-          </button>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (phase === "running") {
+                  setPhase("paused");
+                } else {
+                  startedAtRef.current = Date.now() - elapsedSeconds * 1000;
+                  setPhase("running");
+                }
+              }}
+              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+              style={FULLSCREEN_TOUCH_STYLE}
+            >
+              {phase === "running" ? "Duraklat" : "Devam"}
+            </button>
+            <button type="button" onClick={finishExercise} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
+              Bitir
+            </button>
+          </div>
         ) : null
       }
-      stageClassName="mt-3 flex min-h-[58vh] w-full flex-col rounded-[28px] border border-red-100 bg-white px-3 py-4 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:min-h-[64vh] md:px-6 md:py-6"
-      footer={
-        <div className="sticky bottom-0 z-[60] w-full border-t border-red-100 bg-white/95 px-2 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.10)] backdrop-blur">
-          {controls}
-        </div>
-      }
+      stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4"
+      footer={phase === "ready" ? controls : undefined}
     >
-      <div className="flex h-full min-h-[50vh] w-full flex-col">
+      <div className="flex h-full min-h-0 w-full flex-col">
         {phase === "ready" ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">
               Hazırlık
             </p>
-            <h2 className="mt-3 text-3xl font-black text-slate-950 md:text-5xl">
+            <h2 className="mt-2 text-xl font-black text-slate-950 md:text-3xl">
               Merkez noktadan bakışını ayırma.
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+            <p className="mt-2 max-w-2xl text-sm leading-5 text-slate-500">
               İşaretlenen iki harfi başını hareket ettirmeden görmeye çalış.
               Aynıysa sağdaki, farklıysa soldaki butona bas.
             </p>
           </div>
         ) : (
           <>
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-1 flex items-center justify-between gap-3 text-xs">
               <p className="text-sm font-bold text-slate-700">
                 Sol ok: Farklı · Sağ ok: Aynı
               </p>
@@ -579,7 +589,7 @@ export function SquareVisionExerciseClient() {
               </p>
             </div>
 
-            <div className="mx-auto flex w-full max-w-[min(76vh,760px)] flex-1 items-center justify-center">
+            <div className="mx-auto flex min-h-0 w-[min(80vw,65dvh)] max-w-full flex-1 items-center justify-center">
               <div
                 className={`relative grid aspect-square w-full overflow-hidden rounded-2xl border-2 bg-slate-50 p-1 shadow-inner transition ${
                   lastFeedback === "correct"
@@ -623,12 +633,12 @@ export function SquareVisionExerciseClient() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => answerRound("different")}
                 disabled={phase !== "running"}
-                className="min-h-[58px] rounded-2xl border border-slate-300 bg-slate-900 px-4 py-3 text-base font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50"
+                className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
                 style={FULLSCREEN_TOUCH_STYLE}
               >
                 Farklı Harfler ←
@@ -637,7 +647,7 @@ export function SquareVisionExerciseClient() {
                 type="button"
                 onClick={() => answerRound("same")}
                 disabled={phase !== "running"}
-                className="min-h-[58px] rounded-2xl border border-red-700 bg-red-600 px-4 py-3 text-base font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50"
+                className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
                 style={FULLSCREEN_TOUCH_STYLE}
               >
                 Aynı Harfler →
@@ -650,7 +660,7 @@ export function SquareVisionExerciseClient() {
               </p>
             ) : null}
 
-            <div className="mt-3 text-center text-sm font-bold text-slate-600">
+            <div className="mt-1 text-center text-xs font-bold text-slate-600">
               Puan: {score} · Başarı: %{successRate}
             </div>
           </>

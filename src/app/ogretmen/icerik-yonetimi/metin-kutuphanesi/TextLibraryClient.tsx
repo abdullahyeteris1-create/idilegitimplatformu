@@ -16,6 +16,10 @@ import {
   updateTextLibraryItemAndSync,
   type TextLibraryItem,
 } from "@/lib/settings/textLibraryStorage";
+import {
+  activateQuestionSetIfAllInactiveAndSync,
+  setQuestionsActiveByTextIdAndSync,
+} from "@/lib/settings/questionLibraryStorage";
 
 type TextFormState = {
   title: string;
@@ -370,14 +374,36 @@ export function TextLibraryClient() {
   async function handleToggleActive(item: TextLibraryItem): Promise<void> {
     setIsSaving(true);
     setStatusMessage(null);
-    const result = await toggleTextLibraryItemActiveAndSync(item.id);
-    if (result.error) {
-      setStatusMessage({ tone: "error", text: result.error });
-    } else {
-      setStatusMessage({ tone: "success", text: "Metin durumu Supabase'e kaydedildi." });
+    let activatedQuestionSet = false;
+
+    try {
+      if (!item.isActive) {
+        const questionResult = await activateQuestionSetIfAllInactiveAndSync(item.id);
+        if (questionResult.error) {
+          setStatusMessage({ tone: "error", text: questionResult.error });
+          return;
+        }
+        activatedQuestionSet = questionResult.activated;
+      }
+
+      const result = await toggleTextLibraryItemActiveAndSync(item.id);
+      if (result.error) {
+        if (activatedQuestionSet) {
+          await setQuestionsActiveByTextIdAndSync(item.id, false);
+        }
+        setStatusMessage({ tone: "error", text: result.error });
+      } else {
+        setStatusMessage({
+          tone: "success",
+          text: activatedQuestionSet
+            ? "Metin ve bağlı sorular öğrencilere açıldı."
+            : "Metin durumu Supabase'e kaydedildi.",
+        });
+      }
+      await loadData();
+    } finally {
+      setIsSaving(false);
     }
-    await loadData();
-    setIsSaving(false);
   }
 
   function handleBulkPreview(): void {

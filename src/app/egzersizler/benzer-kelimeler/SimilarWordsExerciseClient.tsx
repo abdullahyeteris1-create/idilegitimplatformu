@@ -178,7 +178,7 @@ function getGridClass(boxCount: BoxCount): string {
   }
 
   if (boxCount === 16) {
-    return "grid-cols-2 sm:grid-cols-4 lg:grid-cols-4";
+    return "grid-cols-2 sm:grid-cols-4";
   }
 
   if (boxCount === 20) {
@@ -186,18 +186,6 @@ function getGridClass(boxCount: BoxCount): string {
   }
 
   return "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6";
-}
-
-function getBoxHeightClass(boxCount: BoxCount): string {
-  if (boxCount <= 16) {
-    return "min-h-[82px] sm:min-h-[94px]";
-  }
-
-  if (boxCount === 20) {
-    return "min-h-[74px] sm:min-h-[84px]";
-  }
-
-  return "min-h-[66px] sm:min-h-[76px]";
 }
 
 function formatDuration(seconds: number): string {
@@ -447,7 +435,7 @@ export function SimilarWordsExerciseClient() {
           { label: "Dogru", value: 0, tone: "ok" },
           { label: "Yanlis", value: 0, tone: "bad" },
         ]}
-        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
+        stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:px-4 md:py-4"
         footer={
           <div className="grid gap-2 lg:grid-cols-5">
             <label className="flex min-w-0 flex-col gap-1">
@@ -595,6 +583,8 @@ export function SimilarWordsExerciseClient() {
       subtitle="Tam ekran calisma modu"
       stats={[
         { label: "Sure", value: formatDuration(remainingSeconds), tone: "brand" },
+        { label: "Kutu", value: boxCount },
+        { label: "Tur Hedefi", value: targetDifferentCount },
         { label: "Kalan", value: remainingTarget, tone: "brand" },
         { label: "Dogru", value: correctCount, tone: "ok" },
         { label: "Yanlis", value: wrongCount, tone: "bad" },
@@ -602,58 +592,20 @@ export function SimilarWordsExerciseClient() {
         { label: "Skor", value: score, tone: "brand" },
       ]}
       finishButton={
-        <button
-          type="button"
-          onClick={handleFinishEarly}
-          className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md"
-          style={FULLSCREEN_TOUCH_STYLE}
-        >
-          Bitir
-        </button>
-      }
-      stageClassName="w-full rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,248,246,0.86)_100%)] px-3 py-4 shadow-[0_20px_60px_rgba(185,28,28,0.10)] backdrop-blur md:px-5 md:py-5"
-      footer={
-        <div className="grid gap-2 lg:grid-cols-5">
-          <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sure</span>
-            <select value={durationSeconds} className={FULLSCREEN_SELECT_CLASS} disabled>
-              <option value={durationSeconds}>{Math.floor(durationSeconds / 60)} dakika</option>
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kutu Sayisi</span>
-            <select value={boxCount} className={FULLSCREEN_SELECT_CLASS} disabled>
-              <option value={boxCount}>{boxCount}</option>
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hedef Kelime</span>
-            <select value={targetDifferentCount} className={FULLSCREEN_SELECT_CLASS} disabled>
-              <option value={targetDifferentCount}>{targetDifferentCount}</option>
-            </select>
-          </label>
-          <button
-            type="button"
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
-            style={FULLSCREEN_TOUCH_STYLE}
-            onClick={handleRetry}
-          >
-            Yeniden Baslat
+        <div className="flex gap-1">
+          <button type="button" onClick={handleRetry} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
+            Yeniden
           </button>
-          <button
-            type="button"
-            className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
-            style={FULLSCREEN_TOUCH_STYLE}
-            onClick={handleFinishEarly}
-          >
+          <button type="button" onClick={handleFinishEarly} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
             Bitir
           </button>
         </div>
       }
+      stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,248,246,0.86)_100%)] p-[clamp(6px,1.5vw,16px)] shadow-[0_20px_60px_rgba(185,28,28,0.10)] backdrop-blur md:rounded-[32px]"
     >
-      <div className="fx-fade-in w-full">
-        <p className="mb-4 text-sm font-semibold text-slate-500">{stageInfoText}</p>
-        <div className={`grid gap-2 sm:gap-3 ${getGridClass(boxCount)}`}>
+      <div className="fx-fade-in flex h-full min-h-0 w-full flex-col">
+        <p className="mb-1 shrink-0 text-xs font-semibold text-slate-500 md:mb-2 md:text-sm">{stageInfoText}</p>
+        <div className={`grid min-h-0 flex-1 auto-rows-fr content-stretch [gap:clamp(6px,1.5vw,16px)] ${getGridClass(boxCount)}`}>
           {boxes.map((box, index) => {
             const theme = cardThemes[index % cardThemes.length];
             const boxStateClass =
@@ -667,7 +619,7 @@ export function SimilarWordsExerciseClient() {
               <button
                 key={box.id}
                 type="button"
-                className={`relative isolate z-50 w-full ${getBoxHeightClass(boxCount)} cursor-pointer select-none touch-manipulation pointer-events-auto overflow-hidden rounded-3xl border p-3 text-center shadow-md transition-all duration-300 active:scale-95 md:p-4 ${boxStateClass}`}
+                className={`relative isolate z-50 flex h-full min-h-0 w-full cursor-pointer select-none touch-manipulation items-center justify-center overflow-hidden rounded-xl border p-1 text-center shadow-md transition-all duration-300 active:scale-95 md:rounded-2xl md:p-2 ${boxStateClass}`}
                 style={TOUCH_STYLE}
                 onClick={() => handleSelectBox(box.id)}
                 disabled={phase !== "play" || box.state !== "idle" || remainingSeconds <= 0}
@@ -679,10 +631,10 @@ export function SimilarWordsExerciseClient() {
                   </>
                 ) : null}
 
-                <div className="relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-center">
-                  <p className="text-xl font-extrabold tracking-wide text-slate-900 break-words sm:text-2xl">{box.pair.leftWord}</p>
-                  <div className={`h-1 w-14 rounded-full ${box.state === "idle" ? theme.line : "bg-slate-300/70"}`} />
-                  <p className="text-xl font-extrabold tracking-wide text-slate-900 break-words sm:text-2xl">{box.pair.rightWord}</p>
+                <div className="relative flex min-h-0 max-w-full flex-col items-center justify-center gap-0.5 text-center md:gap-1">
+                  <p className="max-w-full [overflow-wrap:anywhere] text-[clamp(0.85rem,3.2vw,1.5rem)] font-extrabold leading-tight tracking-wide text-slate-900">{box.pair.leftWord}</p>
+                  <div className={`h-0.5 w-8 rounded-full md:w-12 ${box.state === "idle" ? theme.line : "bg-slate-300/70"}`} />
+                  <p className="max-w-full [overflow-wrap:anywhere] text-[clamp(0.85rem,3.2vw,1.5rem)] font-extrabold leading-tight tracking-wide text-slate-900">{box.pair.rightWord}</p>
                 </div>
               </button>
             );
