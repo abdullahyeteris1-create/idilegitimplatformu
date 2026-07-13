@@ -31,6 +31,7 @@ const TEACHER_NAV_ITEMS: NavItem[] = [
   { href: "/egzersizler", label: "Egzersizler" },
   { href: "/sonuc", label: "Sonuclar" },
   { href: "/ogretmen/icerik-yonetimi", label: "Icerik Yonetimi" },
+  { href: "/ogretmen/icerik-yonetimi/ai-icerik-ureticisi", label: "AI Icerik Ureticisi" },
 ];
 
 export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "default" }: RoleAwareNavProps) {

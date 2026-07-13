@@ -229,6 +229,17 @@ export const CONTENT_GROUPS: ContentGroup[] = [
     panelClass: "border-slate-200 bg-[linear-gradient(135deg,#f8fafc_0%,#ffffff_52%,#eef2ff_100%)]",
     modules: [
       {
+        id: "ai-content-generator",
+        title: "AI İçerik Üreticisi",
+        description: "Sınıf düzeyine uygun okuma metni, hedef kelime ve anlama sorusu taslakları hazırlayın.",
+        href: "/ogretmen/icerik-yonetimi/ai-icerik-ureticisi",
+        status: "linked",
+        icon: "AI",
+        tone: "from-red-600 to-violet-600",
+        tags: ["AI", "Metin", "Taslak"],
+        actionLabel: "İçerik Üret",
+      },
+      {
         id: "comprehension-texts",
         title: "Anlama Testi Metinleri",
         description: "Anlama Testi'nde kullanılacak okuma metinlerini yönetin.",

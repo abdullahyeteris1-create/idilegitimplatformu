@@ -1,0 +1,56 @@
+.fieldControl.fieldControl {
+  border-color: var(--idil-border);
+  background-color: var(--idil-surface-soft);
+  color: var(--idil-text);
+  caret-color: var(--idil-text);
+  color-scheme: dark;
+}
+
+.fieldControl.fieldControl::placeholder {
+  color: var(--idil-muted);
+  opacity: 1;
+}
+
+.fieldControl.fieldControl:hover {
+  border-color: color-mix(in srgb, var(--idil-accent) 45%, var(--idil-border));
+}
+
+.fieldControl.fieldControl:focus,
+.fieldControl.fieldControl:focus-visible {
+  border-color: var(--idil-accent);
+  outline: 2px solid color-mix(in srgb, var(--idil-accent) 24%, transparent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+.fieldControl.fieldControl:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.selectControl.selectControl option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.fieldControl.fieldControl:-webkit-autofill,
+.fieldControl.fieldControl:-webkit-autofill:hover,
+.fieldControl.fieldControl:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--idil-text);
+  caret-color: var(--idil-text);
+  box-shadow: 0 0 0 1000px var(--idil-surface-soft) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+[data-idil-theme="light"] .fieldControl.fieldControl {
+  color-scheme: light;
+}
+
+[data-idil-theme="dark"] .fieldControl.fieldControl {
+  color-scheme: dark;
+}
+
+.answerOption {
+  color: var(--idil-text);
+}
+
