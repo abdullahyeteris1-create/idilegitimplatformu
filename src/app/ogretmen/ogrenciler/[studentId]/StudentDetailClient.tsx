@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { StudentAnalysisCard } from "@/components/ai/StudentAnalysisCard";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getResultsByStudent } from "@/lib/results/resultStorage";
@@ -407,6 +408,8 @@ export function StudentDetailClient() {
           </p>
         ) : null}
       </section>
+
+      <StudentAnalysisCard studentId={student.id} />
 
       <section className="grid gap-3 md:grid-cols-4">
         <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
