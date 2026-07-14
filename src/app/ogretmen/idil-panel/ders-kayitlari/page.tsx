@@ -34,6 +34,14 @@ type ComprehensionFilter = "all" | "high" | "mid" | "low";
 
 type SpeedSort = "date-desc" | "speed-desc" | "speed-asc";
 
+type InlineEditFormState = {
+  lessonDate: string;
+  textTitle: string;
+  readingSpeed: string;
+  comprehensionScore: string;
+  teacherNote: string;
+};
+
 const DEFAULT_FORM: LessonFormState = {
   studentId: "",
   lessonDate: "",
@@ -45,6 +53,14 @@ const DEFAULT_FORM: LessonFormState = {
 
 const MAX_NOTE_LENGTH = 600;
 const PAGE_SIZE = 8;
+
+const DEFAULT_INLINE_EDIT_FORM: InlineEditFormState = {
+  lessonDate: "",
+  textTitle: "",
+  readingSpeed: "",
+  comprehensionScore: "",
+  teacherNote: "",
+};
 
 function toPositiveInteger(value: string): number {
   const parsed = Number(value);
@@ -273,6 +289,9 @@ function LessonRecordsContent() {
   const [editingLesson, setEditingLesson] = useState<LessonRecord | null>(null);
   const [viewingLesson, setViewingLesson] = useState<LessonRecord | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [inlineEditLessonId, setInlineEditLessonId] = useState<string | null>(null);
+  const [inlineEditForm, setInlineEditForm] = useState<InlineEditFormState>(DEFAULT_INLINE_EDIT_FORM);
+  const [openDateGroups, setOpenDateGroups] = useState<Record<string, boolean>>({});
 
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [searchText, setSearchText] = useState("");
@@ -391,6 +410,31 @@ function LessonRecordsContent() {
   const currentPage = Math.min(page, totalPages);
   const pagedLessons = filteredLessons.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const groupedLessons = useMemo(() => {
+    const groupedMap = new Map<string, LessonRecord[]>();
+
+    filteredLessons.forEach((lesson) => {
+      const list = groupedMap.get(lesson.lessonDate) ?? [];
+      list.push(lesson);
+      groupedMap.set(lesson.lessonDate, list);
+    });
+
+    return Array.from(groupedMap.entries())
+      .sort((first, second) => second[0].localeCompare(first[0]))
+      .map(([date, records]) => {
+        const averageSpeed = Math.round(records.reduce((total, item) => total + item.wordsPerMinute, 0) / records.length);
+        const averageComprehension = Math.round(records.reduce((total, item) => total + item.comprehensionScore, 0) / records.length);
+
+        return {
+          date,
+          records,
+          count: records.length,
+          averageSpeed,
+          averageComprehension,
+        };
+      });
+  }, [filteredLessons]);
+
   const recentNotes = useMemo(() => {
     return [...selectedStudentLessons]
       .filter((lesson) => lesson.teacherNote.trim())
@@ -422,6 +466,80 @@ function LessonRecordsContent() {
       teacherNote: lesson.teacherNote ?? "",
     });
     setIsFormOpen(true);
+  };
+
+  const beginInlineEdit = (lesson: LessonRecord) => {
+    setInlineEditLessonId(lesson.id);
+    setInlineEditForm({
+      lessonDate: lesson.lessonDate,
+      textTitle: lesson.textTitle,
+      readingSpeed: String(lesson.wordsPerMinute),
+      comprehensionScore: String(lesson.comprehensionScore),
+      teacherNote: lesson.teacherNote ?? "",
+    });
+  };
+
+  const cancelInlineEdit = () => {
+    setInlineEditLessonId(null);
+    setInlineEditForm(DEFAULT_INLINE_EDIT_FORM);
+  };
+
+  const saveInlineEdit = async (lesson: LessonRecord) => {
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!inlineEditForm.lessonDate) {
+      setErrorMessage("Ders tarihi zorunludur.");
+      return;
+    }
+
+    if (!inlineEditForm.textTitle.trim()) {
+      setErrorMessage("Metnin adi zorunludur.");
+      return;
+    }
+
+    const readingSpeed = toPositiveInteger(inlineEditForm.readingSpeed);
+    if (readingSpeed <= 0) {
+      setErrorMessage("Okuma hizi pozitif bir sayi olmalidir.");
+      return;
+    }
+
+    if (inlineEditForm.comprehensionScore.trim() === "") {
+      setErrorMessage("Anlama yuzdesi zorunludur.");
+      return;
+    }
+
+    if (inlineEditForm.teacherNote.length > MAX_NOTE_LENGTH) {
+      setErrorMessage(`Ogretmen notu en fazla ${MAX_NOTE_LENGTH} karakter olabilir.`);
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await updateLesson(lesson.id, {
+        lessonDate: inlineEditForm.lessonDate,
+        textTitle: inlineEditForm.textTitle.trim(),
+        wordsPerMinute: readingSpeed,
+        comprehensionScore: toComprehension(inlineEditForm.comprehensionScore),
+        teacherNote: inlineEditForm.teacherNote.trim(),
+      });
+
+      setSuccessMessage("Ders kaydi guncellendi.");
+      cancelInlineEdit();
+      await loadData();
+    } catch {
+      setErrorMessage("Ders kaydi guncellenemedi.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleDateGroup = (date: string) => {
+    setOpenDateGroups((previous) => ({
+      ...previous,
+      [date]: !(previous[date] ?? true),
+    }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -750,6 +868,63 @@ function LessonRecordsContent() {
                 </select>
               </div>
 
+              <div className="mt-4 space-y-2">
+                {groupedLessons.length === 0 ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Tarih grubu olusturmak icin kayit bulunmuyor.</div>
+                ) : (
+                  groupedLessons.map((group) => {
+                    const isOpen = openDateGroups[group.date] ?? true;
+
+                    return (
+                      <article key={`group-${group.date}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => toggleDateGroup(group.date)}
+                          className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-3 text-left"
+                          aria-label={`${formatDate(group.date)} tarih grubunu ${isOpen ? "kapat" : "ac"}`}
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{formatDate(group.date)}</p>
+                            <p className="text-xs text-slate-600">{group.count} kayit · Ortalama hiz: {group.averageSpeed} · Ortalama anlama: %{group.averageComprehension}</p>
+                          </div>
+                          <span className="text-xs font-semibold text-slate-500">{isOpen ? "Gizle" : "Goster"}</span>
+                        </button>
+
+                        {isOpen ? (
+                          <div className="space-y-2 border-t border-slate-200 px-3 py-3">
+                            {group.records.map((lesson) => (
+                              <div key={`group-row-${lesson.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                                <div className="min-w-0">
+                                  <p className="truncate font-semibold text-slate-900">{lesson.textTitle}</p>
+                                  <p className="text-slate-600">{lesson.wordsPerMinute} kelime/dk · %{lesson.comprehensionScore}</p>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (window.innerWidth < 768) {
+                                        openEditForm(lesson);
+                                      } else {
+                                        beginInlineEdit(lesson);
+                                      }
+                                    }}
+                                    className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                                  >
+                                    Duzenle
+                                  </button>
+                                  <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Sil</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })
+                )}
+              </div>
+
               <div className="mt-4 grid gap-3 md:hidden">
                 {pagedLessons.length === 0 ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Kayit bulunmuyor.</div>
@@ -792,18 +967,73 @@ function LessonRecordsContent() {
                     ) : (
                       pagedLessons.map((lesson) => (
                         <tr key={lesson.id} className="border-b border-slate-100 last:border-0">
-                          <td className="px-3 py-3 text-slate-700">{formatDate(lesson.lessonDate)}</td>
-                          <td className="px-3 py-3 font-semibold text-slate-900">{lesson.textTitle}</td>
-                          <td className="px-3 py-3 text-slate-700">{lesson.wordsPerMinute} kelime/dk</td>
-                          <td className="px-3 py-3"><span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">%{lesson.comprehensionScore}</span></td>
-                          <td className="max-w-[260px] truncate px-3 py-3 text-slate-700">{lesson.teacherNote || "-"}</td>
-                          <td className="px-3 py-3">
-                            <div className="flex flex-wrap gap-1.5">
-                              <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
-                              <button type="button" onClick={() => openEditForm(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Duzenle</button>
-                              <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Sil</button>
-                            </div>
-                          </td>
+                          {inlineEditLessonId === lesson.id ? (
+                            <>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  type="date"
+                                  value={inlineEditForm.lessonDate}
+                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, lessonDate: event.target.value }))}
+                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  value={inlineEditForm.textTitle}
+                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, textTitle: event.target.value }))}
+                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={inlineEditForm.readingSpeed}
+                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, readingSpeed: event.target.value }))}
+                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={inlineEditForm.comprehensionScore}
+                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, comprehensionScore: event.target.value }))}
+                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <textarea
+                                  rows={2}
+                                  value={inlineEditForm.teacherNote}
+                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, teacherNote: event.target.value.slice(0, MAX_NOTE_LENGTH) }))}
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"
+                                />
+                              </td>
+                              <td className="px-3 py-2 align-top">
+                                <div className="flex flex-wrap gap-1.5">
+                                  <button type="button" onClick={() => void saveInlineEdit(lesson)} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Kaydet</button>
+                                  <button type="button" onClick={cancelInlineEdit} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Iptal</button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-3 py-3 text-slate-700">{formatDate(lesson.lessonDate)}</td>
+                              <td className="px-3 py-3 font-semibold text-slate-900">{lesson.textTitle}</td>
+                              <td className="px-3 py-3 text-slate-700">{lesson.wordsPerMinute} kelime/dk</td>
+                              <td className="px-3 py-3"><span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">%{lesson.comprehensionScore}</span></td>
+                              <td className="max-w-[260px] truncate px-3 py-3 text-slate-700">{lesson.teacherNote || "-"}</td>
+                              <td className="px-3 py-3">
+                                <div className="flex flex-wrap gap-1.5">
+                                  <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
+                                  <button type="button" onClick={() => beginInlineEdit(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Duzenle</button>
+                                  <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Sil</button>
+                                </div>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))
                     )}
