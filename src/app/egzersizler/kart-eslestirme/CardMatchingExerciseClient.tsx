@@ -61,6 +61,7 @@ type CardMatchingResult = {
 const LEVEL_OPTIONS = [1, 2, 3, 4, 5];
 const DELAY_OPTIONS = [500, 750, 1000, 1250, 1500, 2000];
 const PREVIEW_OPTIONS = [2000, 3000, 4000, 5000, 7000, 10000];
+const CARD_MATCHING_SELECT_CLASS = `${FULLSCREEN_SELECT_CLASS} !h-8`;
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -95,18 +96,22 @@ function getFeedbackClass(tone: FeedbackTone): string {
 
 function getGridClass(cardCount: number): string {
   if (cardCount <= 8) {
-    return "grid-cols-4";
+    return "grid-cols-2 grid-rows-4 sm:grid-cols-4 sm:grid-rows-2";
   }
 
   if (cardCount <= 12) {
-    return "grid-cols-4 sm:grid-cols-6";
+    return "grid-cols-3 grid-rows-4 sm:grid-cols-6 sm:grid-rows-2";
   }
 
   if (cardCount <= 16) {
-    return "grid-cols-4 sm:grid-cols-8";
+    return "grid-cols-4 grid-rows-4 sm:grid-cols-8 sm:grid-rows-2";
   }
 
-  return "grid-cols-4 sm:grid-cols-5 lg:grid-cols-8";
+  if (cardCount <= 20) {
+    return "grid-cols-4 grid-rows-5 sm:grid-cols-5 sm:grid-rows-4 lg:grid-cols-10 lg:grid-rows-2";
+  }
+
+  return "grid-cols-6 grid-rows-4 lg:grid-cols-8 lg:grid-rows-3";
 }
 
 export function CardMatchingExerciseClient() {
@@ -514,19 +519,18 @@ export function CardMatchingExerciseClient() {
     { label: "Doğru", value: correctCount, tone: "ok" as const },
     { label: "Yanlış", value: wrongCount, tone: "bad" as const },
     { label: "Net", value: net, tone: "brand" as const },
-    { label: "Kart", value: cards.length },
   ];
 
   const footerControls = (
-    <div className="grid gap-2 lg:grid-cols-9">
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+    <div className="grid grid-cols-4 gap-1.5 lg:grid-cols-9 lg:gap-2">
+      <label className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
           Seviye
         </span>
         <select
           value={startLevel}
           onChange={(event) => handleStartLevelChange(Number(event.target.value))}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={CARD_MATCHING_SELECT_CLASS}
           disabled={phase === "playing" || phase === "preview"}
         >
           {LEVEL_OPTIONS.map((item) => (
@@ -537,14 +541,14 @@ export function CardMatchingExerciseClient() {
         </select>
       </label>
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <label className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
           Bakma
         </span>
         <select
           value={previewDurationMs}
           onChange={(event) => setPreviewDurationMs(Number(event.target.value))}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={CARD_MATCHING_SELECT_CLASS}
           disabled={phase === "playing" || phase === "preview"}
         >
           {PREVIEW_OPTIONS.map((item) => (
@@ -555,14 +559,14 @@ export function CardMatchingExerciseClient() {
         </select>
       </label>
 
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <label className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
           Kapanma
         </span>
         <select
           value={flipBackDelayMs}
           onChange={(event) => setFlipBackDelayMs(Number(event.target.value))}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={CARD_MATCHING_SELECT_CLASS}
           disabled={phase === "playing" || phase === "preview"}
         >
           {DELAY_OPTIONS.map((item) => (
@@ -573,16 +577,19 @@ export function CardMatchingExerciseClient() {
         </select>
       </label>
 
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
           Tema
         </span>
-        <div className="flex h-10 items-center rounded-xl border border-red-100 bg-white/95 px-3 text-sm font-semibold text-slate-800 shadow-sm shadow-red-100/55">
-          Canlı Çocuk Görselleri
+        <div
+          className="flex h-8 items-center truncate rounded-xl border border-red-100 bg-white/95 px-2 text-xs font-semibold text-slate-800 shadow-sm shadow-red-100/55 md:h-9 md:px-3 md:text-sm"
+          title="Canlı Çocuk Görselleri"
+        >
+          Canlı
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:col-span-5">
+      <div className="col-span-4 grid grid-cols-3 gap-1.5 lg:col-span-5 lg:gap-2">
         {phase === "ready" ? (
           <button
             type="button"
@@ -804,7 +811,8 @@ export function CardMatchingExerciseClient() {
 
   return (
     <FullscreenExerciseShell
-      title="Kart Eşleştirme Çalışması"
+      title="Kart Eşleştirme"
+      compactHeader
       subtitle={
         phase === "preview"
           ? "Kartlara bak"
@@ -823,26 +831,26 @@ export function CardMatchingExerciseClient() {
           Bitir
         </button>
       }
-      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-2.5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
+      stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col !overflow-hidden rounded-[20px] border border-white/80 bg-white/94 p-1.5 text-center shadow-[0_10px_28px_rgba(185,28,28,0.09)] backdrop-blur md:rounded-3xl md:p-2.5"
       footer={footerControls}
     >
-      <div className="flex w-full flex-1 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-left">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">
+      <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-1.5 md:gap-2">
+        <div className="flex shrink-0 items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left md:px-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-red-700 md:text-xs">
               {phase === "preview" ? "Bakma Süresi" : "Hedef"}
             </p>
 
-            <p className="mt-1 text-lg font-black text-slate-950 md:text-xl">
+            <p className="truncate text-xs font-black text-slate-950 sm:text-sm md:text-base">
               {phase === "preview"
                 ? "Kartları aklında tut. Birazdan kapanacak."
                 : "Net 10 yap, otomatik seviye atla."}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/80 bg-white px-3 py-1.5 text-center shadow-sm">
-            <p className="text-xs font-bold text-slate-500">Süre</p>
-            <p className="text-2xl font-black text-red-700">
+          <div className="shrink-0 rounded-xl border border-white/80 bg-white px-2.5 py-1 text-center shadow-sm">
+            <p className="text-[10px] font-bold leading-none text-slate-500">Süre</p>
+            <p className="text-base font-black leading-tight text-red-700 md:text-lg">
               {formatElapsed(elapsedSeconds)}
             </p>
           </div>
@@ -850,7 +858,7 @@ export function CardMatchingExerciseClient() {
 
         {feedback ? (
           <div
-            className={`rounded-2xl border px-4 py-3 text-sm font-black ${getFeedbackClass(
+            className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black md:text-sm ${getFeedbackClass(
               feedback.tone,
             )}`}
           >
@@ -859,12 +867,12 @@ export function CardMatchingExerciseClient() {
         ) : null}
 
         <div
-          className={`relative flex-1 rounded-[26px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff8f0_100%)] p-2 shadow-inner md:p-4 ${
+          className={`relative min-h-0 flex-1 overflow-hidden rounded-[18px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff8f0_100%)] p-1.5 shadow-inner md:rounded-[22px] md:p-2.5 ${
             phase === "paused" ? "blur-sm" : ""
           }`}
         >
           <div
-            className={`grid h-full min-h-[300px] content-center gap-2 md:min-h-[360px] md:gap-3 ${getGridClass(
+            className={`grid h-full min-h-0 w-full content-stretch items-stretch justify-items-stretch gap-[clamp(4px,0.8vmin,10px)] ${getGridClass(
               cards.length,
             )}`}
           >
@@ -884,31 +892,31 @@ export function CardMatchingExerciseClient() {
                   disabled={
                     phase !== "playing" || isResolving || card.isMatched
                   }
-                  className="group relative aspect-[4/5] min-h-[62px] rounded-2xl outline-none transition active:scale-[0.97] disabled:cursor-default"
+                  className="group relative h-full min-h-0 w-full touch-manipulation rounded-[10px] outline-none transition active:scale-[0.97] disabled:cursor-default sm:rounded-xl md:rounded-2xl"
                   style={{ ...FULLSCREEN_TOUCH_STYLE, perspective: "900px" }}
                   aria-label={isOpen ? card.title : "Kapalı kart"}
                 >
                   <span
-                    className={`absolute inset-0 rounded-2xl border shadow-[0_10px_24px_rgba(15,23,42,0.13)] transition duration-300 [backface-visibility:hidden] [transform-style:preserve-3d] ${
+                    className={`absolute inset-0 rounded-[10px] border shadow-[0_4px_12px_rgba(15,23,42,0.11)] transition duration-300 [backface-visibility:hidden] [transform-style:preserve-3d] sm:rounded-xl md:rounded-2xl ${
                       isOpen
                         ? "[transform:rotateY(180deg)] border-amber-200 bg-white"
                         : "[transform:rotateY(0deg)] border-red-200 bg-[linear-gradient(135deg,#ef4444_0%,#b91c1c_100%)] group-hover:-translate-y-0.5"
                     }`}
                   >
-                    <span className="flex h-full w-full items-center justify-center rounded-2xl text-lg font-black text-white md:text-2xl">
+                    <span className="flex h-full w-full items-center justify-center rounded-[inherit] text-[clamp(1.1rem,3.2vmin,2rem)] font-black text-white">
                       ?
                     </span>
                   </span>
 
                   <span
-                    className={`absolute inset-0 flex items-center justify-center rounded-2xl border border-amber-200 bg-white p-2 shadow-[0_10px_24px_rgba(15,23,42,0.13)] transition duration-300 [backface-visibility:hidden] [transform-style:preserve-3d] ${
+                    className={`absolute inset-0 flex items-center justify-center rounded-[10px] border border-amber-200 bg-white p-[clamp(2px,0.8vmin,8px)] shadow-[0_4px_12px_rgba(15,23,42,0.11)] transition duration-300 [backface-visibility:hidden] [transform-style:preserve-3d] sm:rounded-xl md:rounded-2xl ${
                       isOpen
                         ? "[transform:rotateY(0deg)] opacity-100"
                         : "[transform:rotateY(180deg)] opacity-0"
                     } ${card.isMatched ? "ring-2 ring-green-300" : ""}`}
                   >
                     {isBroken ? (
-                      <span className="flex h-full w-full items-center justify-center rounded-xl bg-amber-50 text-xl font-black text-amber-800 md:text-3xl">
+                      <span className="flex h-full w-full items-center justify-center rounded-lg bg-amber-50 text-[clamp(0.85rem,3vmin,1.75rem)] font-black text-amber-800">
                         {card.fallback}
                       </span>
                     ) : (
@@ -916,7 +924,7 @@ export function CardMatchingExerciseClient() {
                       <img
                         src={card.src}
                         alt={card.title}
-                        className="h-full max-h-[96px] w-full object-contain"
+                        className="h-[clamp(32px,8vmin,84px)] max-h-full w-[clamp(32px,8vmin,84px)] max-w-full object-contain"
                         onError={() =>
                           setBrokenVisualIds((previous) =>
                             previous.includes(card.visualId)

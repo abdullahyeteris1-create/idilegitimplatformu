@@ -18,6 +18,7 @@ type FullscreenExerciseShellProps = {
   stageClassName?: string;
   mainClassName?: string;
   showNavigation?: boolean;
+  compactHeader?: boolean;
 };
 
 type FullscreenExerciseIntroProps = {
@@ -125,6 +126,7 @@ export function FullscreenExerciseShell({
   stageClassName,
   mainClassName,
   showNavigation = true,
+  compactHeader = false,
 }: FullscreenExerciseShellProps) {
   const shellBackgroundClassName =
     backgroundClassName ??
@@ -138,7 +140,11 @@ export function FullscreenExerciseShell({
     <section className={sectionClassName}>
       <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[20px] border border-white/80 bg-white/76 shadow-[0_18px_58px_rgba(153,27,27,0.13)] backdrop-blur md:rounded-[28px]">
         <header className="z-30 border-b border-red-100/80 bg-white/88 shadow-[0_6px_22px_rgba(185,28,28,0.06)] backdrop-blur">
-          <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 md:gap-2 md:px-4 md:py-2">
+          <div
+            className={`flex flex-wrap items-center gap-1.5 px-2 py-1.5 md:gap-2 md:px-4 ${
+              compactHeader ? "md:py-1" : "md:py-2"
+            }`}
+          >
             <div className="mr-auto min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">{title}</p>
               <p className="text-[11px] text-slate-500 md:text-xs">{subtitle}</p>

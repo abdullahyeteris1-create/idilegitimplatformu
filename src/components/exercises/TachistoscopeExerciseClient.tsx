@@ -478,17 +478,15 @@ export function TachistoscopeExerciseClient() {
     >
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
 
-            <div className="mt-1 flex min-h-[120px] w-full flex-1 items-center justify-center rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-2 py-2 md:mt-2 md:min-h-[180px] md:px-5">
+            <div className="mt-1 flex h-full min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 md:mt-2 md:px-5">
               {responsePhase === "show" && currentRound ? (
                 <div
-                  className="font-black tracking-[0.18em] text-slate-950 transition-all duration-300 ease-out fx-pop-in"
+                  className="fx-pop-in max-w-full text-center text-[clamp(2rem,5vw,3.25rem)] font-black leading-none tracking-normal text-slate-950 transition-all duration-300 ease-out break-words"
                   style={{
-                    fontSize: `clamp(2rem, 10vw, ${Math.max(3.0, 5.6 - (level - 1) * 0.16)}rem)`,
-                    lineHeight: 1,
-                    wordBreak: "break-all",
                     opacity: 1,
                     transform: "scale(1)",
-                    textShadow: "0 12px 32px rgba(185, 28, 28, 0.16)",
+                    overflowWrap: "anywhere",
+                    textShadow: "0 8px 20px rgba(185, 28, 28, 0.12)",
                   }}
                 >
                   {currentRound.content}
