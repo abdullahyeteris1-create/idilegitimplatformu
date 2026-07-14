@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { clearCurrentUser, getResolvedCurrentUser, type CurrentUser } from "@/lib/auth/auth";
+import { TEACHER_NAV_ITEMS as SHARED_TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 
 type NavItem = {
   href: string;
@@ -23,16 +24,7 @@ const STUDENT_NAV_ITEMS: NavItem[] = [
   { href: "/egzersizler/anlama-testi", label: "Okuma Testlerim" },
 ];
 
-const TEACHER_NAV_ITEMS: NavItem[] = [
-  { href: "/ogretmen", label: "Ana Sayfa" },
-  { href: "/ogretmen", label: "Ogretmen" },
-  { href: "/ogretmen/idil-panel", label: "Idil Panel" },
-  { href: "/ogretmen#ogrenciler", label: "Ogrenciler" },
-  { href: "/egzersizler", label: "Egzersizler" },
-  { href: "/sonuc", label: "Sonuclar" },
-  { href: "/ogretmen/icerik-yonetimi", label: "Icerik Yonetimi" },
-  { href: "/ogretmen/icerik-yonetimi/ai-icerik-ureticisi", label: "AI Icerik Ureticisi" },
-];
+const TEACHER_NAV_ITEMS: NavItem[] = SHARED_TEACHER_NAV_ITEMS;
 
 export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "default" }: RoleAwareNavProps) {
   const router = useRouter();
