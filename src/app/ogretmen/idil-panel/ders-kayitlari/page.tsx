@@ -32,7 +32,17 @@ type ChartRange = "5" | "10" | "all";
 
 type ComprehensionFilter = "all" | "high" | "mid" | "low";
 
-type SpeedSort = "date-desc" | "speed-desc" | "speed-asc";
+type SortMode = "date-desc" | "date-asc" | "speed-desc" | "speed-asc";
+
+type LessonDayGroup = {
+  dateKey: string;
+  formattedDate: string;
+  dayNumber: number;
+  lessons: LessonRecord[];
+  recordCount: number;
+  averageSpeed: number | null;
+  averageComprehension: number | null;
+};
 
 type InlineEditFormState = {
   lessonDate: string;
@@ -52,7 +62,6 @@ const DEFAULT_FORM: LessonFormState = {
 };
 
 const MAX_NOTE_LENGTH = 600;
-const PAGE_SIZE = 8;
 
 const DEFAULT_INLINE_EDIT_FORM: InlineEditFormState = {
   lessonDate: "",
@@ -78,6 +87,20 @@ function toComprehension(value: string): number {
   }
 
   return Math.max(0, Math.min(100, Math.round(parsed)));
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function safeAverage(values: Array<number | null>): number | null {
+  const validValues = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (validValues.length === 0) {
+    return null;
+  }
+
+  return Math.round(validValues.reduce((total, value) => total + value, 0) / validValues.length);
 }
 
 function formatDate(dateIso: string): string {
@@ -297,8 +320,7 @@ function LessonRecordsContent() {
   const [searchText, setSearchText] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [comprehensionFilter, setComprehensionFilter] = useState<ComprehensionFilter>("all");
-  const [speedSort, setSpeedSort] = useState<SpeedSort>("date-desc");
-  const [page, setPage] = useState(1);
+  const [sortMode, setSortMode] = useState<SortMode>("date-desc");
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -362,7 +384,7 @@ function LessonRecordsContent() {
   const filteredLessons = useMemo(() => {
     const normalizedSearch = normalizeSearchText(searchText.trim());
 
-    const records = selectedStudentLessons.filter((lesson) => {
+    return selectedStudentLessons.filter((lesson) => {
       if (dateFilter && lesson.lessonDate !== dateFilter) {
         return false;
       }
@@ -385,55 +407,55 @@ function LessonRecordsContent() {
 
       return true;
     });
+  }, [comprehensionFilter, dateFilter, searchText, selectedStudentLessons]);
 
-    records.sort((first, second) => {
-      if (speedSort === "speed-desc") {
-        return second.wordsPerMinute - first.wordsPerMinute;
-      }
-
-      if (speedSort === "speed-asc") {
-        return first.wordsPerMinute - second.wordsPerMinute;
-      }
-
-      const byDate = second.lessonDate.localeCompare(first.lessonDate);
-      if (byDate !== 0) {
-        return byDate;
-      }
-
-      return second.createdAt.localeCompare(first.createdAt);
-    });
-
-    return records;
-  }, [comprehensionFilter, dateFilter, searchText, selectedStudentLessons, speedSort]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredLessons.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedLessons = filteredLessons.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const groupedLessons = useMemo(() => {
-    const groupedMap = new Map<string, LessonRecord[]>();
+  const dayGroups = useMemo<LessonDayGroup[]>(() => {
+    const groupedByDate = new Map<string, LessonRecord[]>();
 
     filteredLessons.forEach((lesson) => {
-      const list = groupedMap.get(lesson.lessonDate) ?? [];
+      const list = groupedByDate.get(lesson.lessonDate) ?? [];
       list.push(lesson);
-      groupedMap.set(lesson.lessonDate, list);
+      groupedByDate.set(lesson.lessonDate, list);
     });
 
-    return Array.from(groupedMap.entries())
-      .sort((first, second) => second[0].localeCompare(first[0]))
-      .map(([date, records]) => {
-        const averageSpeed = Math.round(records.reduce((total, item) => total + item.wordsPerMinute, 0) / records.length);
-        const averageComprehension = Math.round(records.reduce((total, item) => total + item.comprehensionScore, 0) / records.length);
+    const datesAsc = Array.from(groupedByDate.keys()).sort((first, second) => first.localeCompare(second));
+    const dayNumberByDate = new Map<string, number>(datesAsc.map((date, index) => [date, index + 1]));
 
-        return {
-          date,
-          records,
-          count: records.length,
-          averageSpeed,
-          averageComprehension,
-        };
+    const groups = datesAsc.map((dateKey) => {
+      const lessonsForDay = [...(groupedByDate.get(dateKey) ?? [])];
+
+      lessonsForDay.sort((first, second) => {
+        if (sortMode === "speed-desc") {
+          return second.wordsPerMinute - first.wordsPerMinute;
+        }
+
+        if (sortMode === "speed-asc") {
+          return first.wordsPerMinute - second.wordsPerMinute;
+        }
+
+        return second.createdAt.localeCompare(first.createdAt);
       });
-  }, [filteredLessons]);
+
+      const averageSpeed = safeAverage(lessonsForDay.map((lesson) => toFiniteNumber(lesson.wordsPerMinute)));
+      const averageComprehension = safeAverage(lessonsForDay.map((lesson) => toFiniteNumber(lesson.comprehensionScore)));
+
+      return {
+        dateKey,
+        formattedDate: formatDate(dateKey),
+        dayNumber: dayNumberByDate.get(dateKey) ?? 1,
+        lessons: lessonsForDay,
+        recordCount: lessonsForDay.length,
+        averageSpeed,
+        averageComprehension,
+      };
+    });
+
+    if (sortMode === "date-asc") {
+      return groups;
+    }
+
+    return [...groups].sort((first, second) => second.dateKey.localeCompare(first.dateKey));
+  }, [filteredLessons, sortMode]);
 
   const recentNotes = useMemo(() => {
     return [...selectedStudentLessons]
@@ -857,42 +879,45 @@ function LessonRecordsContent() {
                 </select>
 
                 <select
-                  value={speedSort}
-                  onChange={(event) => setSpeedSort(event.target.value as SpeedSort)}
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as SortMode)}
                   className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm md:col-start-4"
                   aria-label="Hiz siralama"
                 >
                   <option value="date-desc">Tarihe Gore (Yeni)</option>
+                  <option value="date-asc">Tarihe Gore (Eski)</option>
                   <option value="speed-desc">Hiz (Yuksekten Dusuge)</option>
                   <option value="speed-asc">Hiz (Dusukten Yuksege)</option>
                 </select>
               </div>
 
               <div className="mt-4 space-y-2">
-                {groupedLessons.length === 0 ? (
+                {dayGroups.length === 0 ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Tarih grubu olusturmak icin kayit bulunmuyor.</div>
                 ) : (
-                  groupedLessons.map((group) => {
-                    const isOpen = openDateGroups[group.date] ?? true;
+                  dayGroups.map((group) => {
+                    const isOpen = openDateGroups[group.dateKey] ?? true;
 
                     return (
-                      <article key={`group-${group.date}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <article key={`group-${group.dateKey}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <button
                           type="button"
-                          onClick={() => toggleDateGroup(group.date)}
+                          onClick={() => toggleDateGroup(group.dateKey)}
                           className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-3 text-left"
-                          aria-label={`${formatDate(group.date)} tarih grubunu ${isOpen ? "kapat" : "ac"}`}
+                          aria-label={`${group.formattedDate} tarih grubunu ${isOpen ? "kapat" : "ac"}`}
                         >
                           <div>
-                            <p className="text-sm font-semibold text-slate-900">{formatDate(group.date)}</p>
-                            <p className="text-xs text-slate-600">{group.count} kayit · Ortalama hiz: {group.averageSpeed} · Ortalama anlama: %{group.averageComprehension}</p>
+                            <p className="text-sm font-semibold text-slate-900">{group.dayNumber}. Gun · {group.formattedDate}</p>
+                            <p className="text-xs text-slate-600">
+                              {group.recordCount} kayit · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}
+                            </p>
                           </div>
                           <span className="text-xs font-semibold text-slate-500">{isOpen ? "Gizle" : "Goster"}</span>
                         </button>
 
                         {isOpen ? (
                           <div className="space-y-2 border-t border-slate-200 px-3 py-3">
-                            {group.records.map((lesson) => (
+                            {group.lessons.map((lesson) => (
                               <div key={`group-row-${lesson.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                                 <div className="min-w-0">
                                   <p className="truncate font-semibold text-slate-900">{lesson.textTitle}</p>
@@ -926,23 +951,37 @@ function LessonRecordsContent() {
               </div>
 
               <div className="mt-4 grid gap-3 md:hidden">
-                {pagedLessons.length === 0 ? (
+                {dayGroups.length === 0 ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Kayit bulunmuyor.</div>
                 ) : (
-                  pagedLessons.map((lesson) => (
-                    <article key={`mobile-${lesson.id}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-sm font-semibold text-slate-900">Metin: {lesson.textTitle}</p>
-                      <p className="mt-1 text-sm text-slate-600">Tarih: {formatDate(lesson.lessonDate)}</p>
-                      <p className="text-sm text-slate-600">Hiz: {lesson.wordsPerMinute} kelime/dk</p>
-                      <p className="text-sm text-slate-600">Anlama: %{lesson.comprehensionScore}</p>
-                      <p className="mt-1 truncate text-sm text-slate-600">Not: {lesson.teacherNote || "-"}</p>
-
-                      <div className="mt-3 flex gap-2">
-                        <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">Goruntule</button>
-                        <button type="button" onClick={() => openEditForm(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Duzenle</button>
-                        <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">Sil</button>
+                  dayGroups.map((group) => (
+                    <section key={`mobile-group-${group.dateKey}`} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-3">
+                        <p className="text-sm font-semibold text-red-900">{group.dayNumber}. Gun</p>
+                        <p className="text-xs text-red-800">{group.formattedDate}</p>
+                        <p className="mt-1 text-xs text-red-800">
+                          {group.recordCount} kayit · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}
+                        </p>
                       </div>
-                    </article>
+
+                      <div className="mt-2 space-y-2">
+                        {group.lessons.map((lesson) => (
+                          <article key={`mobile-${lesson.id}`} className="rounded-xl border border-slate-200 bg-white p-3">
+                            <p className="text-sm font-semibold text-slate-900">Metin: {lesson.textTitle}</p>
+                            <p className="mt-1 text-sm text-slate-600">Tarih: {formatDate(lesson.lessonDate)}</p>
+                            <p className="text-sm text-slate-600">Hiz: {lesson.wordsPerMinute} kelime/dk</p>
+                            <p className="text-sm text-slate-600">Anlama: %{lesson.comprehensionScore}</p>
+                            <p className="mt-1 truncate text-sm text-slate-600">Not: {lesson.teacherNote || "-"}</p>
+
+                            <div className="mt-3 flex gap-2">
+                              <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">Goruntule</button>
+                              <button type="button" onClick={() => openEditForm(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">Duzenle</button>
+                              <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">Sil</button>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
                   ))
                 )}
               </div>
@@ -960,109 +999,105 @@ function LessonRecordsContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pagedLessons.length === 0 ? (
+                    {dayGroups.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-3 py-6 text-center text-sm text-slate-600">Kayit bulunmuyor.</td>
                       </tr>
                     ) : (
-                      pagedLessons.map((lesson) => (
-                        <tr key={lesson.id} className="border-b border-slate-100 last:border-0">
-                          {inlineEditLessonId === lesson.id ? (
-                            <>
-                              <td className="px-3 py-2 align-top">
-                                <input
-                                  type="date"
-                                  value={inlineEditForm.lessonDate}
-                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, lessonDate: event.target.value }))}
-                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
-                                />
-                              </td>
-                              <td className="px-3 py-2 align-top">
-                                <input
-                                  value={inlineEditForm.textTitle}
-                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, textTitle: event.target.value }))}
-                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
-                                />
-                              </td>
-                              <td className="px-3 py-2 align-top">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={inlineEditForm.readingSpeed}
-                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, readingSpeed: event.target.value }))}
-                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
-                                />
-                              </td>
-                              <td className="px-3 py-2 align-top">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={100}
-                                  value={inlineEditForm.comprehensionScore}
-                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, comprehensionScore: event.target.value }))}
-                                  className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
-                                />
-                              </td>
-                              <td className="px-3 py-2 align-top">
-                                <textarea
-                                  rows={2}
-                                  value={inlineEditForm.teacherNote}
-                                  onChange={(event) => setInlineEditForm((previous) => ({ ...previous, teacherNote: event.target.value.slice(0, MAX_NOTE_LENGTH) }))}
-                                  className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"
-                                />
-                              </td>
-                              <td className="px-3 py-2 align-top">
-                                <div className="flex flex-wrap gap-1.5">
-                                  <button type="button" onClick={() => void saveInlineEdit(lesson)} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Kaydet</button>
-                                  <button type="button" onClick={cancelInlineEdit} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Iptal</button>
-                                </div>
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td className="px-3 py-3 text-slate-700">{formatDate(lesson.lessonDate)}</td>
-                              <td className="px-3 py-3 font-semibold text-slate-900">{lesson.textTitle}</td>
-                              <td className="px-3 py-3 text-slate-700">{lesson.wordsPerMinute} kelime/dk</td>
-                              <td className="px-3 py-3"><span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">%{lesson.comprehensionScore}</span></td>
-                              <td className="max-w-[260px] truncate px-3 py-3 text-slate-700">{lesson.teacherNote || "-"}</td>
-                              <td className="px-3 py-3">
-                                <div className="flex flex-wrap gap-1.5">
-                                  <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
-                                  <button type="button" onClick={() => beginInlineEdit(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Duzenle</button>
-                                  <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Sil</button>
-                                </div>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))
+                      dayGroups.flatMap((group) => {
+                        const summaryRow = (
+                          <tr key={`summary-${group.dateKey}`} className="bg-red-50/70">
+                            <td colSpan={6} className="border-b border-red-100 px-3 py-3">
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-red-900">
+                                <span className="font-semibold">{group.dayNumber}. Gun · {group.formattedDate}</span>
+                                <span className="inline-flex rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-semibold">{group.recordCount} kayit</span>
+                                <span className="text-xs">Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`}</span>
+                                <span className="text-xs">Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+
+                        const lessonRows = group.lessons.map((lesson) => (
+                          <tr key={lesson.id} className="border-b border-slate-100 last:border-0">
+                            {inlineEditLessonId === lesson.id ? (
+                              <>
+                                <td className="px-3 py-2 align-top">
+                                  <input
+                                    type="date"
+                                    value={inlineEditForm.lessonDate}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, lessonDate: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
+                                  <input
+                                    value={inlineEditForm.textTitle}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, textTitle: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={inlineEditForm.readingSpeed}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, readingSpeed: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={inlineEditForm.comprehensionScore}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, comprehensionScore: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
+                                  <textarea
+                                    rows={2}
+                                    value={inlineEditForm.teacherNote}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, teacherNote: event.target.value.slice(0, MAX_NOTE_LENGTH) }))}
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <button type="button" onClick={() => void saveInlineEdit(lesson)} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Kaydet</button>
+                                    <button type="button" onClick={cancelInlineEdit} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Iptal</button>
+                                  </div>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-3 py-3 text-slate-700">{formatDate(lesson.lessonDate)}</td>
+                                <td className="px-3 py-3 font-semibold text-slate-900">{lesson.textTitle}</td>
+                                <td className="px-3 py-3 text-slate-700">{lesson.wordsPerMinute} kelime/dk</td>
+                                <td className="px-3 py-3"><span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">%{lesson.comprehensionScore}</span></td>
+                                <td className="max-w-[260px] truncate px-3 py-3 text-slate-700">{lesson.teacherNote || "-"}</td>
+                                <td className="px-3 py-3">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
+                                    <button type="button" onClick={() => beginInlineEdit(lesson)} className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Duzenle</button>
+                                    <button type="button" onClick={() => void handleDelete(lesson.id)} className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">Sil</button>
+                                  </div>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        ));
+
+                        return [summaryRow, ...lessonRows];
+                      })
                     )}
                   </tbody>
                 </table>
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
-                <p>Toplam {filteredLessons.length} kayit</p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={currentPage <= 1}
-                    onClick={() => setPage((previous) => Math.max(1, previous - 1))}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
-                  >
-                    Onceki
-                  </button>
-                  <span className="text-xs font-semibold">{currentPage} / {totalPages}</span>
-                  <button
-                    type="button"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setPage((previous) => Math.min(totalPages, previous + 1))}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
-                  >
-                    Sonraki
-                  </button>
-                </div>
-              </div>
+              <div className="mt-3 text-sm text-slate-600">Toplam {filteredLessons.length} kayit</div>
             </PanelCard>
 
             {viewingLesson ? (
