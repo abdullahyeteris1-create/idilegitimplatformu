@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
@@ -16,15 +16,29 @@ import {
   type LessonRecord,
   type LessonRecordStudent,
 } from "@/lib/idil-panel/summaryStorage";
+import {
+  getTextLibraryItems,
+  refreshTextLibraryCache,
+  type TextLibraryItem,
+} from "@/lib/settings/textLibraryStorage";
+import {
+  getTextIdsWithActiveQuestions,
+  refreshQuestionLibraryCache,
+} from "@/lib/settings/questionLibraryStorage";
+import { getResultsByStudentWithRemote } from "@/lib/results/resultStorage";
+import type { ExerciseResult } from "@/lib/results/types";
 import { getStudentsWithRemote } from "@/lib/students/studentStorage";
 import type { Student } from "@/lib/students/types";
 
 type LessonFormState = {
   studentId: string;
   lessonDate: string;
+  lessonNo: string;
   textTitle: string;
+  selectedTextId: string;
   readingSpeed: string;
   comprehensionScore: string;
+  focusScore: string;
   teacherNote: string;
 };
 
@@ -32,44 +46,118 @@ type ChartRange = "5" | "10" | "all";
 
 type ComprehensionFilter = "all" | "high" | "mid" | "low";
 
-type SortMode = "date-desc" | "date-asc" | "speed-desc" | "speed-asc";
-
 type LessonDayGroup = {
-  dateKey: string;
-  formattedDate: string;
+  lessonNo: number;
+  dateLabel: string;
   dayNumber: number;
   lessons: LessonRecord[];
   recordCount: number;
   averageSpeed: number | null;
   averageComprehension: number | null;
+  averageFocus: number | null;
 };
 
 type InlineEditFormState = {
+  lessonNo: string;
   lessonDate: string;
   textTitle: string;
   readingSpeed: string;
   comprehensionScore: string;
+  focusScore: string;
   teacherNote: string;
+};
+
+type LibraryTextOption = {
+  id: string;
+  title: string;
+  category: string;
+  level?: string;
+  timesRead: number;
+  lastReadLessonNo: number | null;
+  lastReadDate: string | null;
+  lastReadSpeed: number | null;
+  lastReadComprehension: number | null;
+  lastReadFocus: number | null;
+};
+
+type StudentGeneralPerformance = {
+  totalStudy: number;
+  averageSuccess: number | null;
+  totalScore: number;
+  lastStudyAt: string | null;
 };
 
 const DEFAULT_FORM: LessonFormState = {
   studentId: "",
   lessonDate: "",
+  lessonNo: "1",
   textTitle: "",
+  selectedTextId: "",
   readingSpeed: "",
   comprehensionScore: "",
+  focusScore: "",
   teacherNote: "",
 };
 
 const MAX_NOTE_LENGTH = 600;
 
 const DEFAULT_INLINE_EDIT_FORM: InlineEditFormState = {
+  lessonNo: "1",
   lessonDate: "",
   textTitle: "",
   readingSpeed: "",
   comprehensionScore: "",
+  focusScore: "",
   teacherNote: "",
 };
+
+const LESSON_DAY_OPTIONS = Array.from({ length: 16 }, (_, index) => index + 1);
+
+function toLessonNo(value: string): number | null {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 16) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function toFocusScore(value: string): number | null {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function normalizeTitle(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:!?"'`’“”()\-_/\\]/g, "")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c");
+}
+
+function resolveLessonNo(lesson: LessonRecord, fallbackLessonNoByDate: Map<string, number>): number {
+  const currentLessonNo = Number(lesson.lessonNo);
+  if (Number.isInteger(currentLessonNo) && currentLessonNo >= 1 && currentLessonNo <= 16) {
+    return currentLessonNo;
+  }
+
+  return fallbackLessonNoByDate.get(lesson.lessonDate) ?? 1;
+}
+
+function buildFallbackLessonNoMap(lessons: LessonRecord[]): Map<string, number> {
+  const uniqueDates = Array.from(new Set(lessons.map((lesson) => lesson.lessonDate))).sort((a, b) => a.localeCompare(b));
+  return new Map(uniqueDates.map((dateKey, index) => [dateKey, index + 1]));
+}
 
 function toPositiveInteger(value: string): number {
   const parsed = Number(value);
@@ -113,6 +201,46 @@ function formatDate(dateIso: string): string {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(dateIso));
+}
+
+function formatDateTime(dateIso: string | null): string {
+  if (!dateIso) {
+    return "Henuz calisma yok";
+  }
+
+  const parsed = new Date(dateIso);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Henuz calisma yok";
+  }
+
+  return parsed.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function buildGeneralPerformance(results: ExerciseResult[]): StudentGeneralPerformance {
+  const sortedResults = [...results].sort((first, second) => second.date.localeCompare(first.date));
+  const validSuccessRates = sortedResults
+    .map((result) => toFiniteNumber(result.successRate))
+    .filter((value): value is number => value !== null);
+  const validScores = sortedResults
+    .map((result) => toFiniteNumber(result.score))
+    .filter((value): value is number => value !== null);
+
+  return {
+    totalStudy: sortedResults.length,
+    averageSuccess: validSuccessRates.length > 0
+      ? Math.round(validSuccessRates.reduce((total, value) => total + value, 0) / validSuccessRates.length)
+      : null,
+    totalScore: validScores.length > 0
+      ? Math.round(validScores.reduce((total, value) => total + value, 0))
+      : 0,
+    lastStudyAt: sortedResults[0]?.date ?? null,
+  };
 }
 
 function formatStudentClass(student: Student | undefined): string {
@@ -304,6 +432,17 @@ function LessonRecordsContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isPerformanceLoading, setIsPerformanceLoading] = useState(false);
+  const [performanceErrorMessage, setPerformanceErrorMessage] = useState("");
+  const [generalPerformance, setGeneralPerformance] = useState<StudentGeneralPerformance | null>(null);
+  const generalPerformanceCacheRef = useRef<Map<string, StudentGeneralPerformance>>(new Map());
+  const [libraryTexts, setLibraryTexts] = useState<TextLibraryItem[]>([]);
+  const [isTextLibraryLoading, setIsTextLibraryLoading] = useState(false);
+  const [textLibraryErrorMessage, setTextLibraryErrorMessage] = useState("");
+  const [isTextSelectorOpen, setIsTextSelectorOpen] = useState(false);
+  const [textSearchTerm, setTextSearchTerm] = useState("");
+  const [textPickerInfoMessage, setTextPickerInfoMessage] = useState("");
+  const textSelectorRef = useRef<HTMLDivElement | null>(null);
 
   const [form, setForm] = useState<LessonFormState>({
     ...DEFAULT_FORM,
@@ -320,11 +459,12 @@ function LessonRecordsContent() {
   const [searchText, setSearchText] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [comprehensionFilter, setComprehensionFilter] = useState<ComprehensionFilter>("all");
-  const [sortMode, setSortMode] = useState<SortMode>("date-desc");
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
+    setIsTextLibraryLoading(true);
     setErrorMessage("");
+    setTextLibraryErrorMessage("");
 
     try {
       const [nextStudents, nextLessons, nextStudentDetails] = await Promise.all([
@@ -336,12 +476,38 @@ function LessonRecordsContent() {
       setStudents(nextStudents);
       setLessons(nextLessons);
       setStudentDetails(nextStudentDetails);
+
+      const [questionRefreshResult, textLibraryResult] = await Promise.all([
+        refreshQuestionLibraryCache(),
+        refreshTextLibraryCache(),
+      ]);
+
+      const activeQuestionTextIds = new Set(getTextIdsWithActiveQuestions());
+      const availableTexts = (textLibraryResult.items.length > 0 ? textLibraryResult.items : getTextLibraryItems())
+        .filter((item) => item.isActive && activeQuestionTextIds.has(item.id));
+
+      setLibraryTexts(availableTexts);
+
+      void questionRefreshResult;
+
+      if (textLibraryResult.error) {
+        setTextLibraryErrorMessage("Metin kutuphanesi yuklenemedi.");
+      }
     } catch {
       setErrorMessage("Ders kayitlari yuklenemedi.");
+      setTextLibraryErrorMessage("Metin kutuphanesi yuklenemedi.");
     } finally {
       setIsLoading(false);
+      setIsTextLibraryLoading(false);
     }
   }, []);
+
+  const handleStudentSelectChange = (nextStudentId: string) => {
+    setForm((previous) => ({ ...previous, studentId: nextStudentId }));
+    setGeneralPerformance(null);
+    setPerformanceErrorMessage("");
+    setIsPerformanceLoading(Boolean(nextStudentId));
+  };
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -353,6 +519,34 @@ function LessonRecordsContent() {
     };
   }, [loadData]);
 
+  useEffect(() => {
+    if (!isTextSelectorOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (textSelectorRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setIsTextSelectorOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsTextSelectorOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isTextSelectorOpen]);
+
   const selectedStudent = useMemo(() => {
     return students.find((student) => student.id === form.studentId) ?? null;
   }, [form.studentId, students]);
@@ -361,6 +555,68 @@ function LessonRecordsContent() {
     return studentDetails.find((student) => student.id === form.studentId);
   }, [form.studentId, studentDetails]);
 
+  useEffect(() => {
+    if (!form.studentId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const studentId = form.studentId;
+      const studentName = selectedStudentDetail?.name ?? selectedStudent?.name;
+      const username = selectedStudentDetail?.username;
+      const cacheKey = `${studentId}::${username ?? ""}::${studentName ?? ""}`;
+      const cachedPerformance = generalPerformanceCacheRef.current.get(cacheKey);
+
+      if (cachedPerformance) {
+        if (!cancelled) {
+          setGeneralPerformance(cachedPerformance);
+          setPerformanceErrorMessage("");
+          setIsPerformanceLoading(false);
+        }
+
+        return;
+      }
+
+      if (!cancelled) {
+        setIsPerformanceLoading(true);
+      }
+
+      try {
+        const results = await getResultsByStudentWithRemote(studentId, studentName, username);
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextPerformance = buildGeneralPerformance(results);
+        generalPerformanceCacheRef.current.set(cacheKey, nextPerformance);
+        setGeneralPerformance(nextPerformance);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setGeneralPerformance({
+          totalStudy: 0,
+          averageSuccess: null,
+          totalScore: 0,
+          lastStudyAt: null,
+        });
+        setPerformanceErrorMessage("Genel performans verileri su anda yuklenemiyor.");
+      } finally {
+        if (!cancelled) {
+          setIsPerformanceLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.studentId, selectedStudent?.name, selectedStudentDetail?.name, selectedStudentDetail?.username]);
+
   const selectedStudentLessons = useMemo(() => {
     if (!form.studentId) {
       return [];
@@ -368,6 +624,21 @@ function LessonRecordsContent() {
 
     return lessons.filter((lesson) => lesson.studentId === form.studentId);
   }, [form.studentId, lessons]);
+
+  const fallbackLessonNoByDate = useMemo(() => buildFallbackLessonNoMap(selectedStudentLessons), [selectedStudentLessons]);
+
+  const recommendedLessonNo = useMemo(() => {
+    const maxLessonNo = selectedStudentLessons.reduce((maxValue, lesson) => {
+      const resolved = resolveLessonNo(lesson, fallbackLessonNoByDate);
+      return Math.max(maxValue, resolved);
+    }, 0);
+
+    if (maxLessonNo <= 0) {
+      return 1;
+    }
+
+    return Math.min(16, maxLessonNo + 1);
+  }, [fallbackLessonNoByDate, selectedStudentLessons]);
 
   const sortedByDateAsc = useMemo(() => {
     return [...selectedStudentLessons].sort((first, second) => first.lessonDate.localeCompare(second.lessonDate));
@@ -378,6 +649,102 @@ function LessonRecordsContent() {
   const averageComprehension = sortedByDateAsc.length > 0
     ? Math.round(sortedByDateAsc.reduce((total, lesson) => total + lesson.comprehensionScore, 0) / sortedByDateAsc.length)
     : null;
+  const averageFocus = useMemo(() => {
+    const focusValues = sortedByDateAsc
+      .map((lesson) => toFiniteNumber(lesson.focusScore))
+      .filter((value): value is number => value !== null);
+
+    if (focusValues.length === 0) {
+      return null;
+    }
+
+    return Math.round(focusValues.reduce((total, value) => total + value, 0) / focusValues.length);
+  }, [sortedByDateAsc]);
+
+  const readTextInfoByTitle = useMemo(() => {
+    const lessonByTitle = new Map<string, LessonRecord[]>();
+
+    selectedStudentLessons.forEach((lesson) => {
+      const titleKey = normalizeTitle(lesson.textTitle);
+      if (!titleKey) {
+        return;
+      }
+
+      const currentList = lessonByTitle.get(titleKey) ?? [];
+      currentList.push(lesson);
+      lessonByTitle.set(titleKey, currentList);
+    });
+
+    return lessonByTitle;
+  }, [selectedStudentLessons]);
+
+  const libraryTextOptions = useMemo<LibraryTextOption[]>(() => {
+    return [...libraryTexts]
+      .sort((a, b) => a.title.localeCompare(b.title, "tr"))
+      .map((textItem) => {
+        const titleKey = normalizeTitle(textItem.title);
+        const matchedLessons = [...(readTextInfoByTitle.get(titleKey) ?? [])]
+          .sort((a, b) => {
+            if (a.lessonDate !== b.lessonDate) {
+              return a.lessonDate.localeCompare(b.lessonDate);
+            }
+
+            return a.createdAt.localeCompare(b.createdAt);
+          });
+        const lastLesson = matchedLessons[matchedLessons.length - 1] ?? null;
+
+        return {
+          id: textItem.id,
+          title: textItem.title,
+          category: textItem.category,
+          level: textItem.level,
+          timesRead: matchedLessons.length,
+          lastReadLessonNo: lastLesson ? resolveLessonNo(lastLesson, fallbackLessonNoByDate) : null,
+          lastReadDate: lastLesson?.lessonDate ?? null,
+          lastReadSpeed: lastLesson?.wordsPerMinute ?? null,
+          lastReadComprehension: lastLesson?.comprehensionScore ?? null,
+          lastReadFocus: lastLesson?.focusScore ?? null,
+        };
+      });
+  }, [fallbackLessonNoByDate, libraryTexts, readTextInfoByTitle]);
+
+  const filteredLibraryTextOptions = useMemo(() => {
+    const normalizedSearch = normalizeTitle(textSearchTerm);
+    if (!normalizedSearch) {
+      return libraryTextOptions;
+    }
+
+    return libraryTextOptions.filter((item) => normalizeTitle(item.title).includes(normalizedSearch));
+  }, [libraryTextOptions, textSearchTerm]);
+
+  const selectedTextReadInfo = useMemo(() => {
+    if (!form.textTitle.trim()) {
+      return null;
+    }
+
+    const titleKey = normalizeTitle(form.textTitle);
+    const matchingLessons = readTextInfoByTitle.get(titleKey) ?? [];
+
+    if (matchingLessons.length === 0) {
+      return null;
+    }
+
+    const latestLesson = [...matchingLessons].sort((a, b) => {
+      if (a.lessonDate !== b.lessonDate) {
+        return b.lessonDate.localeCompare(a.lessonDate);
+      }
+
+      return b.createdAt.localeCompare(a.createdAt);
+    })[0];
+
+    return {
+      count: matchingLessons.length,
+      lessonNo: resolveLessonNo(latestLesson, fallbackLessonNoByDate),
+      speed: latestLesson.wordsPerMinute,
+      comprehension: latestLesson.comprehensionScore,
+      focus: latestLesson.focusScore,
+    };
+  }, [fallbackLessonNoByDate, form.textTitle, readTextInfoByTitle]);
 
   const progress = useMemo(() => evaluateProgress(sortedByDateAsc), [sortedByDateAsc]);
 
@@ -410,52 +777,50 @@ function LessonRecordsContent() {
   }, [comprehensionFilter, dateFilter, searchText, selectedStudentLessons]);
 
   const dayGroups = useMemo<LessonDayGroup[]>(() => {
-    const groupedByDate = new Map<string, LessonRecord[]>();
+    const fallbackByDate = buildFallbackLessonNoMap(filteredLessons);
+    const groupedByLessonNo = new Map<number, LessonRecord[]>();
 
     filteredLessons.forEach((lesson) => {
-      const list = groupedByDate.get(lesson.lessonDate) ?? [];
-      list.push(lesson);
-      groupedByDate.set(lesson.lessonDate, list);
+      const lessonNo = resolveLessonNo(lesson, fallbackByDate);
+      const current = groupedByLessonNo.get(lessonNo) ?? [];
+      current.push(lesson);
+      groupedByLessonNo.set(lessonNo, current);
     });
 
-    const datesAsc = Array.from(groupedByDate.keys()).sort((first, second) => first.localeCompare(second));
-    const dayNumberByDate = new Map<string, number>(datesAsc.map((date, index) => [date, index + 1]));
+    return Array.from(groupedByLessonNo.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([lessonNo, lessonsForDay]) => {
+        const orderedLessons = [...lessonsForDay].sort((a, b) => {
+          if (a.lessonDate !== b.lessonDate) {
+            return a.lessonDate.localeCompare(b.lessonDate);
+          }
 
-    const groups = datesAsc.map((dateKey) => {
-      const lessonsForDay = [...(groupedByDate.get(dateKey) ?? [])];
+          return a.createdAt.localeCompare(b.createdAt);
+        });
 
-      lessonsForDay.sort((first, second) => {
-        if (sortMode === "speed-desc") {
-          return second.wordsPerMinute - first.wordsPerMinute;
-        }
+        const dayDates = orderedLessons.map((lesson) => lesson.lessonDate).sort((a, b) => a.localeCompare(b));
+        const firstDate = dayDates[0] ?? "";
+        const lastDate = dayDates[dayDates.length - 1] ?? firstDate;
+        const dateLabel = firstDate && lastDate && firstDate !== lastDate
+          ? `${formatDate(firstDate)} - ${formatDate(lastDate)}`
+          : formatDate(firstDate);
 
-        if (sortMode === "speed-asc") {
-          return first.wordsPerMinute - second.wordsPerMinute;
-        }
+        const averageSpeed = safeAverage(orderedLessons.map((lesson) => toFiniteNumber(lesson.wordsPerMinute)));
+        const averageComprehension = safeAverage(orderedLessons.map((lesson) => toFiniteNumber(lesson.comprehensionScore)));
+        const averageFocus = safeAverage(orderedLessons.map((lesson) => toFiniteNumber(lesson.focusScore)));
 
-        return second.createdAt.localeCompare(first.createdAt);
+        return {
+          lessonNo,
+          dateLabel,
+          dayNumber: lessonNo,
+          lessons: orderedLessons,
+          recordCount: orderedLessons.length,
+          averageSpeed,
+          averageComprehension,
+          averageFocus,
+        };
       });
-
-      const averageSpeed = safeAverage(lessonsForDay.map((lesson) => toFiniteNumber(lesson.wordsPerMinute)));
-      const averageComprehension = safeAverage(lessonsForDay.map((lesson) => toFiniteNumber(lesson.comprehensionScore)));
-
-      return {
-        dateKey,
-        formattedDate: formatDate(dateKey),
-        dayNumber: dayNumberByDate.get(dateKey) ?? 1,
-        lessons: lessonsForDay,
-        recordCount: lessonsForDay.length,
-        averageSpeed,
-        averageComprehension,
-      };
-    });
-
-    if (sortMode === "date-asc") {
-      return groups;
-    }
-
-    return [...groups].sort((first, second) => second.dateKey.localeCompare(first.dateKey));
-  }, [filteredLessons, sortMode]);
+  }, [filteredLessons]);
 
   const recentNotes = useMemo(() => {
     return [...selectedStudentLessons]
@@ -466,9 +831,13 @@ function LessonRecordsContent() {
 
   const resetForm = () => {
     setEditingLesson(null);
+    setTextPickerInfoMessage("");
+    setTextSearchTerm("");
+    setIsTextSelectorOpen(false);
     setForm((previous) => ({
       ...DEFAULT_FORM,
       studentId: previous.studentId,
+      lessonNo: String(recommendedLessonNo),
     }));
   };
 
@@ -479,12 +848,18 @@ function LessonRecordsContent() {
 
   const openEditForm = (lesson: LessonRecord) => {
     setEditingLesson(lesson);
+    setTextPickerInfoMessage("");
+    setTextSearchTerm("");
+    setIsTextSelectorOpen(false);
     setForm({
       studentId: lesson.studentId,
       lessonDate: lesson.lessonDate,
+      lessonNo: String(resolveLessonNo(lesson, fallbackLessonNoByDate)),
       textTitle: lesson.textTitle,
+      selectedTextId: "",
       readingSpeed: String(lesson.wordsPerMinute),
       comprehensionScore: String(lesson.comprehensionScore),
+      focusScore: lesson.focusScore === null ? "" : String(lesson.focusScore),
       teacherNote: lesson.teacherNote ?? "",
     });
     setIsFormOpen(true);
@@ -493,10 +868,12 @@ function LessonRecordsContent() {
   const beginInlineEdit = (lesson: LessonRecord) => {
     setInlineEditLessonId(lesson.id);
     setInlineEditForm({
+      lessonNo: String(resolveLessonNo(lesson, fallbackLessonNoByDate)),
       lessonDate: lesson.lessonDate,
       textTitle: lesson.textTitle,
       readingSpeed: String(lesson.wordsPerMinute),
       comprehensionScore: String(lesson.comprehensionScore),
+      focusScore: lesson.focusScore === null ? "" : String(lesson.focusScore),
       teacherNote: lesson.teacherNote ?? "",
     });
   };
@@ -531,6 +908,18 @@ function LessonRecordsContent() {
       return;
     }
 
+    const lessonNo = toLessonNo(inlineEditForm.lessonNo);
+    if (lessonNo === null) {
+      setErrorMessage("Kacinci ders gunu 1 ile 16 arasinda olmalidir.");
+      return;
+    }
+
+    const focusScore = toFocusScore(inlineEditForm.focusScore);
+    if (focusScore === null) {
+      setErrorMessage("Odaklanma puani 0 ile 100 arasinda olmalidir.");
+      return;
+    }
+
     if (inlineEditForm.teacherNote.length > MAX_NOTE_LENGTH) {
       setErrorMessage(`Ogretmen notu en fazla ${MAX_NOTE_LENGTH} karakter olabilir.`);
       return;
@@ -540,10 +929,12 @@ function LessonRecordsContent() {
 
     try {
       await updateLesson(lesson.id, {
+        lessonNo,
         lessonDate: inlineEditForm.lessonDate,
         textTitle: inlineEditForm.textTitle.trim(),
         wordsPerMinute: readingSpeed,
         comprehensionScore: toComprehension(inlineEditForm.comprehensionScore),
+        focusScore,
         teacherNote: inlineEditForm.teacherNote.trim(),
       });
 
@@ -596,6 +987,18 @@ function LessonRecordsContent() {
       return;
     }
 
+    const lessonNo = toLessonNo(form.lessonNo);
+    if (lessonNo === null) {
+      setErrorMessage("Kacinci ders gunu 1 ile 16 arasinda olmalidir.");
+      return;
+    }
+
+    const focusScore = toFocusScore(form.focusScore);
+    if (focusScore === null) {
+      setErrorMessage("Odaklanma puani 0 ile 100 arasinda olmalidir.");
+      return;
+    }
+
     if (form.teacherNote.length > MAX_NOTE_LENGTH) {
       setErrorMessage(`Ogretmen notu en fazla ${MAX_NOTE_LENGTH} karakter olabilir.`);
       return;
@@ -608,14 +1011,14 @@ function LessonRecordsContent() {
         studentId: form.studentId,
         scheduleId: null,
         courseId: null,
-        lessonNo: editingLesson?.lessonNo ?? Math.max(1, selectedStudentLessons.length + 1),
+        lessonNo,
         lessonDate: form.lessonDate,
         textTitle: form.textTitle.trim(),
         wordCount: editingLesson?.wordCount ?? 0,
         durationSeconds: editingLesson?.durationSeconds ?? 0,
         wordsPerMinute: readingSpeed,
         comprehensionScore,
-        focusScore: editingLesson?.focusScore ?? null,
+        focusScore,
         completedLessonCount: editingLesson?.completedLessonCount ?? Math.max(1, selectedStudentLessons.length),
         status: editingLesson?.status ?? "Tamamlandi",
         teacherNote: form.teacherNote.trim(),
@@ -658,6 +1061,23 @@ function LessonRecordsContent() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSelectLibraryText = (textOption: LibraryTextOption) => {
+    setForm((previous) => ({
+      ...previous,
+      textTitle: textOption.title,
+      selectedTextId: textOption.id,
+    }));
+
+    if (textOption.timesRead > 0) {
+      const summary = `Bu ogrenci bu metni daha once okudu. Son kayit: ${textOption.lastReadLessonNo ?? "-"}. Gun · ${textOption.lastReadSpeed ?? "-"} kelime/dk · %${textOption.lastReadComprehension ?? "-"} anlama`;
+      setTextPickerInfoMessage(summary);
+    } else {
+      setTextPickerInfoMessage("");
+    }
+
+    setIsTextSelectorOpen(false);
   };
 
   return (
@@ -714,7 +1134,7 @@ function LessonRecordsContent() {
               <span className="sr-only">Ogrenci sec</span>
               <select
                 value={form.studentId}
-                onChange={(event) => setForm((previous) => ({ ...previous, studentId: event.target.value }))}
+                onChange={(event) => handleStudentSelectChange(event.target.value)}
                 className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800"
               >
                 <option value="">Ogrenci secin</option>
@@ -759,31 +1179,83 @@ function LessonRecordsContent() {
               </div>
             </PanelCard>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold text-red-600">Baslangic Hizi</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{firstLesson ? firstLesson.wordsPerMinute : "-"}</p>
-                <p className="text-sm text-slate-500">kelime/dk</p>
-              </article>
+            <PanelCard title="Genel Performans" subtitle="Egzersiz sonuclarindan hesaplanan ogrenci ozeti">
+              {performanceErrorMessage ? (
+                <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                  {performanceErrorMessage}
+                </div>
+              ) : null}
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold text-emerald-600">Guncel Hiz</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{latestLesson ? latestLesson.wordsPerMinute : "-"}</p>
-                <p className="text-sm text-slate-500">kelime/dk</p>
-              </article>
+              {isPerformanceLoading ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                  Genel performans yukleniyor...
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 max-[360px]:grid-cols-1 lg:grid-cols-4">
+                  <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-xs font-semibold text-blue-600">Toplam Calisma</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-950">{generalPerformance?.totalStudy ?? 0}</p>
+                    <p className="text-xs text-slate-500">egzersiz kaydi</p>
+                  </article>
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold text-amber-600">Ortalama Anlama</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{averageComprehension === null ? "-" : `%${averageComprehension}`}</p>
-                <p className="text-sm text-slate-500">tum dersler</p>
-              </article>
+                  <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-xs font-semibold text-emerald-600">Ortalama Basari</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-950">
+                      {generalPerformance?.averageSuccess === null || generalPerformance?.averageSuccess === undefined
+                        ? "-"
+                        : `%${generalPerformance.averageSuccess}`}
+                    </p>
+                    <p className="text-xs text-slate-500">tum sonuclar</p>
+                  </article>
 
-              <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold text-blue-600">Toplam Ders</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{selectedStudentLessons.length}</p>
-                <p className="text-sm text-slate-500">kayit</p>
-              </article>
-            </div>
+                  <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-xs font-semibold text-rose-600">Toplam Puan</p>
+                    <p className="mt-1 text-2xl font-semibold text-slate-950">{generalPerformance?.totalScore ?? 0}</p>
+                    <p className="text-xs text-slate-500">birikimli</p>
+                  </article>
+
+                  <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <p className="text-xs font-semibold text-amber-600">Son Calisma</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatDateTime(generalPerformance?.lastStudyAt ?? null)}</p>
+                    <p className="text-xs text-slate-500">son tamamlanan egzersiz</p>
+                  </article>
+                </div>
+              )}
+            </PanelCard>
+
+            <PanelCard title="Ders Kayitlari Ozeti" subtitle="Secili ogrencinin ders kayitlarindan uretilen metrikler">
+              <div className="grid grid-cols-2 gap-3 max-[360px]:grid-cols-1 lg:grid-cols-5">
+                <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-red-600">Baslangic Hizi</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{firstLesson ? firstLesson.wordsPerMinute : "-"}</p>
+                  <p className="text-xs text-slate-500">kelime/dk</p>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-emerald-600">Guncel Hiz</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{latestLesson ? latestLesson.wordsPerMinute : "-"}</p>
+                  <p className="text-xs text-slate-500">kelime/dk</p>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-amber-600">Ortalama Anlama</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{averageComprehension === null ? "-" : `%${averageComprehension}`}</p>
+                  <p className="text-xs text-slate-500">tum dersler</p>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-teal-600">Ortalama Odaklanma</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{averageFocus === null ? "-" : `%${averageFocus}`}</p>
+                  <p className="text-xs text-slate-500">tum dersler</p>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-blue-600">Toplam Ders</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{selectedStudentLessons.length}</p>
+                  <p className="text-xs text-slate-500">kayit</p>
+                </article>
+              </div>
+            </PanelCard>
 
             <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
               <PanelCard title="Okuma Hizi ve Anlama Gelisimi" subtitle="Gercek ders kayitlarina gore trend grafigi">
@@ -878,17 +1350,6 @@ function LessonRecordsContent() {
                   <option value="low">Anlama: %70 alti</option>
                 </select>
 
-                <select
-                  value={sortMode}
-                  onChange={(event) => setSortMode(event.target.value as SortMode)}
-                  className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm md:col-start-4"
-                  aria-label="Hiz siralama"
-                >
-                  <option value="date-desc">Tarihe Gore (Yeni)</option>
-                  <option value="date-asc">Tarihe Gore (Eski)</option>
-                  <option value="speed-desc">Hiz (Yuksekten Dusuge)</option>
-                  <option value="speed-asc">Hiz (Dusukten Yuksege)</option>
-                </select>
               </div>
 
               <div className="mt-4 space-y-2">
@@ -896,20 +1357,21 @@ function LessonRecordsContent() {
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Tarih grubu olusturmak icin kayit bulunmuyor.</div>
                 ) : (
                   dayGroups.map((group) => {
-                    const isOpen = openDateGroups[group.dateKey] ?? true;
+                    const groupKey = String(group.lessonNo);
+                    const isOpen = openDateGroups[groupKey] ?? true;
 
                     return (
-                      <article key={`group-${group.dateKey}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <article key={`group-${group.lessonNo}`} className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <button
                           type="button"
-                          onClick={() => toggleDateGroup(group.dateKey)}
+                          onClick={() => toggleDateGroup(groupKey)}
                           className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-3 text-left"
-                          aria-label={`${group.formattedDate} tarih grubunu ${isOpen ? "kapat" : "ac"}`}
+                          aria-label={`${group.dayNumber}. gun grubunu ${isOpen ? "kapat" : "ac"}`}
                         >
                           <div>
-                            <p className="text-sm font-semibold text-slate-900">{group.dayNumber}. Gun · {group.formattedDate}</p>
+                            <p className="text-sm font-semibold text-slate-900">{group.dayNumber}. Gun · {group.dateLabel}</p>
                             <p className="text-xs text-slate-600">
-                              {group.recordCount} kayit · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}
+                              {group.recordCount} metin · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`} · Ortalama odaklanma: {group.averageFocus === null ? "—" : `%${group.averageFocus}`}
                             </p>
                           </div>
                           <span className="text-xs font-semibold text-slate-500">{isOpen ? "Gizle" : "Goster"}</span>
@@ -921,7 +1383,7 @@ function LessonRecordsContent() {
                               <div key={`group-row-${lesson.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                                 <div className="min-w-0">
                                   <p className="truncate font-semibold text-slate-900">{lesson.textTitle}</p>
-                                  <p className="text-slate-600">{lesson.wordsPerMinute} kelime/dk · %{lesson.comprehensionScore}</p>
+                                  <p className="text-slate-600">{lesson.wordsPerMinute} kelime/dk · %{lesson.comprehensionScore} · Odaklanma: {lesson.focusScore === null ? "—" : `%${lesson.focusScore}`}</p>
                                 </div>
                                 <div className="flex gap-1.5">
                                   <button type="button" onClick={() => setViewingLesson(lesson)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">Goruntule</button>
@@ -955,22 +1417,24 @@ function LessonRecordsContent() {
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">Kayit bulunmuyor.</div>
                 ) : (
                   dayGroups.map((group) => (
-                    <section key={`mobile-group-${group.dateKey}`} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <section key={`mobile-group-${group.lessonNo}`} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                       <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-3">
                         <p className="text-sm font-semibold text-red-900">{group.dayNumber}. Gun</p>
-                        <p className="text-xs text-red-800">{group.formattedDate}</p>
+                        <p className="text-xs text-red-800">{group.dateLabel}</p>
                         <p className="mt-1 text-xs text-red-800">
-                          {group.recordCount} kayit · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}
+                          {group.recordCount} metin · Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`} · Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`} · Ortalama odaklanma: {group.averageFocus === null ? "—" : `%${group.averageFocus}`}
                         </p>
                       </div>
 
                       <div className="mt-2 space-y-2">
                         {group.lessons.map((lesson) => (
                           <article key={`mobile-${lesson.id}`} className="rounded-xl border border-slate-200 bg-white p-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">{resolveLessonNo(lesson, fallbackLessonNoByDate)}. Gun</p>
                             <p className="text-sm font-semibold text-slate-900">Metin: {lesson.textTitle}</p>
                             <p className="mt-1 text-sm text-slate-600">Tarih: {formatDate(lesson.lessonDate)}</p>
                             <p className="text-sm text-slate-600">Hiz: {lesson.wordsPerMinute} kelime/dk</p>
                             <p className="text-sm text-slate-600">Anlama: %{lesson.comprehensionScore}</p>
+                            <p className="text-sm text-slate-600">Odaklanma: {lesson.focusScore === null ? "—" : `%${lesson.focusScore}`}</p>
                             <p className="mt-1 truncate text-sm text-slate-600">Not: {lesson.teacherNote || "-"}</p>
 
                             <div className="mt-3 flex gap-2">
@@ -990,10 +1454,12 @@ function LessonRecordsContent() {
                 <table className="min-w-[980px] w-full border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
                     <tr>
+                      <th className="border-b border-slate-200 px-3 py-3 font-semibold">Ders Gunu</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Tarih</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Metnin Adi</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Okuma Hizi</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Anlama</th>
+                      <th className="border-b border-slate-200 px-3 py-3 font-semibold">Odaklanma</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Ogretmen Notu</th>
                       <th className="border-b border-slate-200 px-3 py-3 font-semibold">Islem</th>
                     </tr>
@@ -1001,18 +1467,18 @@ function LessonRecordsContent() {
                   <tbody>
                     {dayGroups.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-sm text-slate-600">Kayit bulunmuyor.</td>
+                        <td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-600">Kayit bulunmuyor.</td>
                       </tr>
                     ) : (
                       dayGroups.flatMap((group) => {
                         const summaryRow = (
-                          <tr key={`summary-${group.dateKey}`} className="bg-red-50/70">
-                            <td colSpan={6} className="border-b border-red-100 px-3 py-3">
+                          <tr key={`summary-${group.lessonNo}`} className="bg-red-50/70">
+                            <td colSpan={8} className="border-b border-red-100 px-3 py-3">
                               <div className="flex flex-wrap items-center gap-2 text-sm text-red-900">
-                                <span className="font-semibold">{group.dayNumber}. Gun · {group.formattedDate}</span>
-                                <span className="inline-flex rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-semibold">{group.recordCount} kayit</span>
-                                <span className="text-xs">Ortalama hiz: {group.averageSpeed === null ? "—" : `${group.averageSpeed} kelime/dk`}</span>
+                                <span className="font-semibold">{group.dayNumber}. Gun · {group.dateLabel}</span>
+                                <span className="inline-flex rounded-full border border-red-200 bg-white px-2 py-0.5 text-xs font-semibold">{group.recordCount} metin</span>
                                 <span className="text-xs">Ortalama anlama: {group.averageComprehension === null ? "—" : `%${group.averageComprehension}`}</span>
+                                <span className="text-xs">Ortalama odaklanma: {group.averageFocus === null ? "—" : `%${group.averageFocus}`}</span>
                               </div>
                             </td>
                           </tr>
@@ -1022,6 +1488,17 @@ function LessonRecordsContent() {
                           <tr key={lesson.id} className="border-b border-slate-100 last:border-0">
                             {inlineEditLessonId === lesson.id ? (
                               <>
+                                <td className="px-3 py-2 align-top">
+                                  <select
+                                    value={inlineEditForm.lessonNo}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, lessonNo: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  >
+                                    {LESSON_DAY_OPTIONS.map((option) => (
+                                      <option key={`inline-day-${lesson.id}-${option}`} value={String(option)}>{option}. Gun</option>
+                                    ))}
+                                  </select>
+                                </td>
                                 <td className="px-3 py-2 align-top">
                                   <input
                                     type="date"
@@ -1057,6 +1534,16 @@ function LessonRecordsContent() {
                                   />
                                 </td>
                                 <td className="px-3 py-2 align-top">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={inlineEditForm.focusScore}
+                                    onChange={(event) => setInlineEditForm((previous) => ({ ...previous, focusScore: event.target.value }))}
+                                    className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 align-top">
                                   <textarea
                                     rows={2}
                                     value={inlineEditForm.teacherNote}
@@ -1073,10 +1560,16 @@ function LessonRecordsContent() {
                               </>
                             ) : (
                               <>
+                                <td className="px-3 py-3 text-slate-700">{resolveLessonNo(lesson, fallbackLessonNoByDate)}. Gun</td>
                                 <td className="px-3 py-3 text-slate-700">{formatDate(lesson.lessonDate)}</td>
                                 <td className="px-3 py-3 font-semibold text-slate-900">{lesson.textTitle}</td>
                                 <td className="px-3 py-3 text-slate-700">{lesson.wordsPerMinute} kelime/dk</td>
                                 <td className="px-3 py-3"><span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">%{lesson.comprehensionScore}</span></td>
+                                <td className="px-3 py-3">
+                                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${lesson.focusScore === null ? "border-slate-200 bg-slate-50 text-slate-600" : lesson.focusScore >= 80 ? "border-emerald-200 bg-emerald-50 text-emerald-700" : lesson.focusScore >= 60 ? "border-amber-200 bg-amber-50 text-amber-700" : "border-rose-200 bg-rose-50 text-rose-700"}`}>
+                                    {lesson.focusScore === null ? "—" : `%${lesson.focusScore}`}
+                                  </span>
+                                </td>
                                 <td className="max-w-[260px] truncate px-3 py-3 text-slate-700">{lesson.teacherNote || "-"}</td>
                                 <td className="px-3 py-3">
                                   <div className="flex flex-wrap gap-1.5">
@@ -1103,10 +1596,12 @@ function LessonRecordsContent() {
             {viewingLesson ? (
               <PanelCard title="Kayit Detayi" subtitle="Secilen ders kaydinin tam notu">
                 <div className="space-y-1 text-sm text-slate-700">
+                  <p><span className="font-semibold text-slate-900">Ders Gunu:</span> {resolveLessonNo(viewingLesson, fallbackLessonNoByDate)}. Gun</p>
                   <p><span className="font-semibold text-slate-900">Tarih:</span> {formatDate(viewingLesson.lessonDate)}</p>
                   <p><span className="font-semibold text-slate-900">Metin:</span> {viewingLesson.textTitle}</p>
                   <p><span className="font-semibold text-slate-900">Hiz:</span> {viewingLesson.wordsPerMinute} kelime/dk</p>
                   <p><span className="font-semibold text-slate-900">Anlama:</span> %{viewingLesson.comprehensionScore}</p>
+                  <p><span className="font-semibold text-slate-900">Odaklanma:</span> {viewingLesson.focusScore === null ? "—" : `%${viewingLesson.focusScore}`}</p>
                   <p><span className="font-semibold text-slate-900">Ogretmen Notu:</span> {viewingLesson.teacherNote || "-"}</p>
                 </div>
               </PanelCard>
@@ -1157,14 +1652,97 @@ function LessonRecordsContent() {
                     />
                   </label>
 
-                  <label className="block md:col-span-2">
-                    <span className="text-sm font-semibold text-slate-700">Metnin Adi</span>
-                    <input
-                      value={form.textTitle}
-                      onChange={(event) => setForm((previous) => ({ ...previous, textTitle: event.target.value }))}
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-700">Kacinci Ders Gunu</span>
+                    <select
+                      value={form.lessonNo}
+                      onChange={(event) => setForm((previous) => ({ ...previous, lessonNo: event.target.value }))}
                       className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
                       required
+                    >
+                      {LESSON_DAY_OPTIONS.map((option) => (
+                        <option key={`modal-day-${option}`} value={String(option)}>{option}. Gun</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block md:col-span-2">
+                    <span className="text-sm font-semibold text-slate-700">Metnin Adi</span>
+                    <div ref={textSelectorRef} className="relative mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsTextSelectorOpen((previous) => !previous)}
+                        className="flex min-h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800"
+                        aria-expanded={isTextSelectorOpen}
+                        aria-label="Metin seciciyi ac"
+                      >
+                        <span className="truncate">{form.textTitle || "Metin secin"}</span>
+                        <span className="text-xs font-semibold text-slate-500">Sec</span>
+                      </button>
+
+                      {isTextSelectorOpen ? (
+                        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                          <input
+                            value={textSearchTerm}
+                            onChange={(event) => setTextSearchTerm(event.target.value)}
+                            placeholder="Metin ara"
+                            className="min-h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"
+                          />
+
+                          <div className="mt-2 max-h-56 overflow-y-auto space-y-1">
+                            {isTextLibraryLoading ? (
+                              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Metinler yukleniyor...</div>
+                            ) : textLibraryErrorMessage ? (
+                              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">Metin kutuphanesi yuklenemedi.</div>
+                            ) : filteredLibraryTextOptions.length === 0 ? (
+                              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Anlama testi kutuphanesinde kullanilabilir metin bulunamadi.</div>
+                            ) : (
+                              filteredLibraryTextOptions.map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => handleSelectLibraryText(item)}
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left hover:border-red-200 hover:bg-red-50"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="font-semibold text-slate-900">{item.title}</p>
+                                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${item.timesRead > 0 ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                                      {item.timesRead > 0 ? `${item.timesRead} kez okundu` : "Yeni"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-slate-600">
+                                    {item.category}
+                                    {item.level ? ` · Seviye ${item.level}` : ""}
+                                    {item.lastReadDate ? ` · Son: ${formatDate(item.lastReadDate)}` : ""}
+                                  </p>
+                                  {item.lastReadLessonNo !== null ? (
+                                    <p className="text-xs text-slate-500">{item.lastReadLessonNo}. Gun · {item.lastReadSpeed ?? "-"} kelime/dk · %{item.lastReadComprehension ?? "-"} anlama · Odak %{item.lastReadFocus ?? "-"}</p>
+                                  ) : null}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                    <input
+                      value={form.textTitle}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setForm((previous) => ({ ...previous, textTitle: nextValue, selectedTextId: "" }));
+                      }}
+                      className="mt-2 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                      placeholder="Gerekirse metin adini duzenleyin"
+                      required
                     />
+                    {textPickerInfoMessage ? (
+                      <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">{textPickerInfoMessage}</p>
+                    ) : null}
+                    {selectedTextReadInfo ? (
+                      <p className="mt-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800">
+                        Bu metin daha once {selectedTextReadInfo.count} kez okundu. Son kayit: {selectedTextReadInfo.lessonNo}. Gun · {selectedTextReadInfo.speed} kelime/dk · %{selectedTextReadInfo.comprehension} anlama · Odak %{selectedTextReadInfo.focus ?? "-"}
+                      </p>
+                    ) : null}
                   </label>
 
                   <label className="block">
@@ -1187,6 +1765,19 @@ function LessonRecordsContent() {
                       max={100}
                       value={form.comprehensionScore}
                       onChange={(event) => setForm((previous) => ({ ...previous, comprehensionScore: event.target.value }))}
+                      className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-700">Odaklanma Puani</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={form.focusScore}
+                      onChange={(event) => setForm((previous) => ({ ...previous, focusScore: event.target.value }))}
                       className="mt-1 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
                       required
                     />

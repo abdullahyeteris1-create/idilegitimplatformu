@@ -661,6 +661,16 @@ export function deleteStudent(id: string): boolean {
   return deactivateStudent(id) !== null;
 }
 
+export function removeStudentFromLocalCache(studentId: string): void {
+  const nextStudents = getStudents().filter((student) => student.id !== studentId);
+  writeStudents(normalizeStudentsWithDemo(nextStudents));
+
+  const currentStudent = getCurrentStudent();
+  if (currentStudent?.id === studentId) {
+    clearCurrentStudent();
+  }
+}
+
 export function generateStudentPassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   return Array.from({ length: 10 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");

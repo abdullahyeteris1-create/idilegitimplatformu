@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { StudentAnalysisCard } from "@/components/ai/StudentAnalysisCard";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
@@ -10,6 +10,7 @@ import { getResultsByStudent } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import {
   getStudentById,
+  removeStudentFromLocalCache,
   updateStudentWelcomeEmailStatus,
 } from "@/lib/students/studentStorage";
 import type { WelcomeEmailStatus } from "@/lib/students/types";
@@ -23,6 +24,15 @@ type ExerciseSummary = {
   lastScore: number;
   lastDate: string;
 };
+
+function SpinnerIcon() {
+  return (
+    <span
+      aria-hidden="true"
+      className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
+    />
+  );
+}
 
 function toDisplayDate(value: string | null): string {
   if (!value) {
@@ -144,6 +154,7 @@ function getExerciseTitle(type: ExerciseType): string {
 
 export function StudentDetailClient() {
   const params = useParams<{ studentId: string }>();
+  const router = useRouter();
   const studentId = params.studentId;
 
   const [isMounted, setIsMounted] = useState(false);
@@ -151,6 +162,9 @@ export function StudentDetailClient() {
   const [results, setResults] = useState<ExerciseResult[]>([]);
   const [readingTests, setReadingTests] = useState<ReadingTestResult[]>([]);
   const [isSendingWelcomeEmail, setIsSendingWelcomeEmail] = useState(false);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
   const [emailFeedback, setEmailFeedback] = useState<{
     tone: "success" | "error";
     text: string;
@@ -301,6 +315,34 @@ export function StudentDetailClient() {
     setIsSendingWelcomeEmail(false);
   };
 
+  const handleDeleteStudent = async () => {
+    if (!student || isDeletingStudent) {
+      return;
+    }
+
+    setDeleteErrorMessage("");
+    setIsDeletingStudent(true);
+
+    try {
+      const response = await fetch(`/api/admin/students/${encodeURIComponent(student.id)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        throw new Error("delete-failed");
+      }
+
+      removeStudentFromLocalCache(student.id);
+      router.push("/ogretmen/idil-panel/ogrenci-takip");
+    } catch {
+      setDeleteErrorMessage("Ogrenci silinemedi. Lutfen yeniden deneyin.");
+    } finally {
+      setIsDeletingStudent(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   if (!isMounted) {
     return (
       <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
@@ -365,7 +407,7 @@ export function StudentDetailClient() {
           </p>
         ) : null}
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href={`/ogretmen/ogrenciler/${student.id}/duzenle`}
             className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 transition hover:bg-red-100"
@@ -392,6 +434,20 @@ export function StudentDetailClient() {
               ? "E-posta Gönderiliyor..."
               : "Veliye E-postayı Yeniden Gönder"}
           </button>
+          <button
+            type="button"
+            onClick={() => setIsDeleteModalOpen(true)}
+            disabled={isDeletingStudent}
+            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
+            style={{ touchAction: "manipulation" }}
+          >
+            {isDeletingStudent ? (
+              <>
+                <SpinnerIcon />
+                Siliniyor...
+              </>
+            ) : "Ogrenciyi Sil"}
+          </button>
         </div>
 
         {emailFeedback ? (
@@ -405,6 +461,15 @@ export function StudentDetailClient() {
             }
           >
             {emailFeedback.text}
+          </p>
+        ) : null}
+
+        {deleteErrorMessage ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800"
+          >
+            {deleteErrorMessage}
           </p>
         ) : null}
       </section>
@@ -514,6 +579,48 @@ export function StudentDetailClient() {
           </div>
         )}
       </section>
+
+      {isDeleteModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4" role="dialog" aria-modal="true" aria-label="Ogrenci silme onayi">
+          <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-950">Ogrenciyi silmek istediginize emin misiniz?</h3>
+            <p className="mt-2 text-sm text-slate-700">
+              Bu islem geri alinamaz. Ogrenciye ait ders kayitlari ve egzersiz sonuclari da silinebilir.
+            </p>
+            <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+              Ogrenci: {student.name}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDeletingStudent) {
+                    setIsDeleteModalOpen(false);
+                  }
+                }}
+                disabled={isDeletingStudent}
+                className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Vazgec
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDeleteStudent()}
+                disabled={isDeletingStudent}
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isDeletingStudent ? (
+                  <>
+                    <SpinnerIcon />
+                    Siliniyor...
+                  </>
+                ) : "Ogrenciyi Sil"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

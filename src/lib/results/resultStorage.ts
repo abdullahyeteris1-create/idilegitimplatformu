@@ -11,6 +11,14 @@ type ResultIdentity = {
   username?: string;
 };
 
+type ResultCacheEntry = {
+  results: ExerciseResult[];
+  cachedAt: number;
+};
+
+const STUDENT_RESULTS_CACHE_TTL_MS = 60_000;
+const studentResultsRemoteCache = new Map<string, ResultCacheEntry>();
+
 function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
@@ -65,6 +73,20 @@ function normalizeLookup(value: string | undefined): string {
     .replace(/ç/g, "c")
     .replace(/İ/g, "i")
     .replace(/[^a-z0-9]/g, "");
+}
+
+function buildIdentityCacheKey(identity: ResultIdentity): string {
+  const idPart = normalizeLookup(identity.studentId);
+  if (idPart) {
+    return `id:${idPart}`;
+  }
+
+  const usernamePart = normalizeLookup(identity.username);
+  if (usernamePart) {
+    return `username:${usernamePart}`;
+  }
+
+  return `name:${normalizeLookup(identity.studentName)}`;
 }
 
 function isUuid(value: string | undefined): boolean {
@@ -295,6 +317,36 @@ export async function getExerciseResultsForCurrentUserWithRemote(): Promise<Exer
 
 export function getResultsByStudent(studentId: string, studentName?: string, username?: string): ExerciseResult[] {
   return filterResultsByIdentity(readResults(), { studentId, studentName, username });
+}
+
+export async function getResultsByStudentWithRemote(
+  studentId: string,
+  studentName?: string,
+  username?: string,
+): Promise<ExerciseResult[]> {
+  const identity: ResultIdentity = { studentId, studentName, username };
+  const cacheKey = buildIdentityCacheKey(identity);
+
+  if (cacheKey) {
+    const cached = studentResultsRemoteCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAt < STUDENT_RESULTS_CACHE_TTL_MS) {
+      return cached.results;
+    }
+  }
+
+  const remoteResults = await fetchResultsFromSupabase(identity);
+  const nextResults = remoteResults
+    ? filterResultsByIdentity(remoteResults, identity)
+    : getResultsByStudent(studentId, studentName, username);
+
+  if (cacheKey) {
+    studentResultsRemoteCache.set(cacheKey, {
+      results: nextResults,
+      cachedAt: Date.now(),
+    });
+  }
+
+  return nextResults;
 }
 
 export function getResultsByExercise(exerciseType: ExerciseType): ExerciseResult[] {
