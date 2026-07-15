@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ExerciseStage } from "@/components/exercises/ExerciseStage";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type GamePhase = "intro" | "memorize" | "question" | "result" | "finished";
@@ -272,7 +273,8 @@ export default function CardMemoryGamePage() {
 
   setPhase("result");
 
-  window.setTimeout(() => {
+  timerRef.current = window.setTimeout(() => {
+    timerRef.current = null;
     setQuestionIndex((previous) => {
       const next = previous + 1;
 
@@ -297,7 +299,7 @@ export default function CardMemoryGamePage() {
 
     if (options?.isBack) {
       return (
-        <div className="relative flex h-72 w-52 items-center justify-center rounded-[2rem] border-8 border-white bg-yellow-200 shadow-2xl">
+        <div className="relative flex aspect-[13/18] h-[clamp(12rem,42dvh,18rem)] max-w-full items-center justify-center rounded-[2rem] border-8 border-white bg-yellow-200 shadow-2xl">
           <div className="absolute inset-4 rounded-[1.4rem] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.65)_0,rgba(255,255,255,0.65)_10%,transparent_11%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_9%,transparent_10%)]" />
           <div className="relative text-5xl font-black text-white/80">?</div>
         </div>
@@ -306,7 +308,7 @@ export default function CardMemoryGamePage() {
 
     return (
       <div
-        className={`relative flex h-72 w-52 flex-col items-center justify-center rounded-[2rem] border-8 border-white shadow-2xl ${card?.colorClass}`}
+        className={`relative flex aspect-[13/18] h-[clamp(12rem,42dvh,18rem)] max-w-full flex-col items-center justify-center rounded-[2rem] border-8 border-white shadow-2xl ${card?.colorClass}`}
       >
         <div className="absolute left-5 top-5 rounded-full bg-white/80 px-3 py-1 text-xs font-black text-slate-600 shadow-sm">
           {card?.name}
@@ -317,10 +319,10 @@ export default function CardMemoryGamePage() {
     );
   }
 
-  return (
-    <main className="min-h-screen bg-slate-900 px-4 py-5 text-slate-900">
-      <section className="mx-auto min-h-[calc(100vh-40px)] max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
-        <div className="relative min-h-[calc(100vh-40px)] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
+  const content = (
+    <main className="h-full min-h-0 min-w-0 max-w-full overflow-auto bg-slate-900 px-2 py-2 text-slate-900 md:px-4 md:py-5">
+      <section className="mx-auto min-h-full min-w-0 max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
+        <div className="relative min-h-full min-w-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
           <div className="flex justify-end px-4 pt-4 sm:px-6">
             <ExerciseNavigationControls compact />
           </div>
@@ -352,7 +354,7 @@ export default function CardMemoryGamePage() {
             </h1>
           </div>
 
-          <div className="mx-auto mt-5 grid max-w-4xl grid-cols-4 gap-3 px-5 text-center">
+          <div className="mx-auto mt-3 grid max-w-4xl grid-cols-2 gap-2 px-3 text-center sm:grid-cols-4 md:mt-5 md:gap-3 md:px-5">
             <div className="rounded-2xl bg-white/70 px-4 py-3 shadow-sm">
               <p className="text-xs font-black text-slate-500">Seviye</p>
               <p className="text-2xl font-black text-cyan-700">{level}</p>
@@ -376,7 +378,7 @@ export default function CardMemoryGamePage() {
             </div>
           </div>
 
-          <section className="flex min-h-[440px] items-center justify-center px-5 py-8">
+          <section className="flex min-h-[min(24rem,55dvh)] min-w-0 items-center justify-center overflow-auto px-3 py-4 md:px-5 md:py-8">
             {phase === "intro" && (
               <div className="w-full max-w-2xl rounded-[2rem] border-4 border-white bg-white/80 p-6 text-center shadow-xl">
                 <h2 className="text-3xl font-black text-slate-900">
@@ -456,7 +458,7 @@ export default function CardMemoryGamePage() {
                 )}
 
                 {phase === "question" && (
-                  <div className="relative z-50 mt-8 flex touch-manipulation select-none items-center justify-center gap-8">
+                  <div className="relative z-50 mt-5 flex touch-manipulation select-none items-center justify-center gap-4 sm:gap-8">
   <button
     type="button"
     onTouchStart={(event) => {
@@ -581,5 +583,29 @@ export default function CardMemoryGamePage() {
         </div>
       </section>
     </main>
+  );
+
+  if (phase === "intro") return content;
+
+  return (
+    <ExerciseStage
+      title="Kart Hafıza"
+      subtitle={phase === "memorize" ? "Kartları aklında tut" : phase === "finished" ? "Tur tamamlandı" : "Kartı değerlendir"}
+      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span><span className="compact-stat-chip">Net: {netCount}</span></>}
+      settings={(
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <label className="grid gap-1 text-sm font-bold text-slate-700">
+            <span>Seviye</span>
+            <select value={level} onChange={(event) => startGame(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">
+              {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}. seviye</option>)}
+            </select>
+          </label>
+          <button type="button" onClick={resetGame} className="min-h-11 rounded-xl bg-slate-900 px-4 font-bold text-white">Ayarlara dön</button>
+        </div>
+      )}
+      onExit={resetGame}
+    >
+      {content}
+    </ExerciseStage>
   );
 }

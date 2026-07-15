@@ -430,6 +430,7 @@ export function LetterNumberCountingFocusClient() {
         stats={stats}
         stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[380px]"
         footer={footerControls}
+        settings={footerControls}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
@@ -509,6 +510,7 @@ export function LetterNumberCountingFocusClient() {
       }
       stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-2.5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
       footer={footerControls}
+      settings={footerControls}
     >
       <div className="flex w-full flex-1 flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-left">

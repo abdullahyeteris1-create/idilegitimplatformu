@@ -563,6 +563,7 @@ export function SquareVisionExerciseClient() {
       }
       stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4"
       footer={phase === "ready" ? controls : undefined}
+      settings={controls}
     >
       <div className="flex h-full min-h-0 w-full flex-col">
         {phase === "ready" ? (

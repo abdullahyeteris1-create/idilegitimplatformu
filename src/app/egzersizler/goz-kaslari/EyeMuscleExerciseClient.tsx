@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ExerciseStage } from "@/components/exercises/ExerciseStage";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 type EmojiOption = {
@@ -103,6 +105,7 @@ function createRandomPosition(
 }
 
 export default function GozCalismasiPage() {
+  const router = useRouter();
   const flashTimerRef = useRef<number | null>(null);
   const elapsedTimerRef = useRef<number | null>(null);
   const positionRef = useRef<Position>({ x: 50, y: 50 });
@@ -216,7 +219,20 @@ export default function GozCalismasiPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white px-3 py-3 text-slate-900 md:px-5 md:py-4">
+    <ExerciseStage
+      title="Göz Kasları"
+      subtitle={isRunning ? "Çalışma sürüyor" : "Hazırlık"}
+      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Tur: {round}</span><span className="compact-stat-chip">Süre: {formatTime(elapsedSeconds)}</span></>}
+      onExit={() => router.push("/egzersizler")}
+      settings={(
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-bold"><span>Hız</span><select value={speed} disabled={isRunning} onChange={(event) => setSpeed(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 px-3">{SPEED_OPTIONS.map((value) => <option key={value} value={value}>{value} ms</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-bold"><span>Seviye</span><select value={level} disabled={isRunning} onChange={(event) => setLevel(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 px-3">{LEVEL_OPTIONS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-bold"><span>Simge</span><select value={selectedEmoji} disabled={isRunning} onChange={(event) => setSelectedEmoji(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 px-3">{EMOJI_OPTIONS.map((option) => <option key={option.label} value={option.value}>{option.label}</option>)}</select></label>
+        </div>
+      )}
+    >
+    <main className="h-full min-h-0 min-w-0 max-w-full overflow-auto bg-white px-3 py-3 text-slate-900 md:px-5 md:py-4">
       <section className="mx-auto flex min-h-[calc(100vh-24px)] w-full max-w-6xl flex-col gap-3">
         <div className="flex justify-end">
           <ExerciseNavigationControls compact />
@@ -428,5 +444,6 @@ export default function GozCalismasiPage() {
         </section>
       </section>
     </main>
+    </ExerciseStage>
   );
 }

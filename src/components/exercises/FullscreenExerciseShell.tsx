@@ -1,4 +1,8 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { ExerciseStage } from "@/components/exercises/ExerciseStage";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 
 export type FullscreenExerciseStat = {
@@ -14,6 +18,7 @@ type FullscreenExerciseShellProps = {
   children: ReactNode;
   footer?: ReactNode;
   finishButton?: ReactNode;
+  settings?: ReactNode;
   backgroundClassName?: string;
   stageClassName?: string;
   mainClassName?: string;
@@ -122,53 +127,35 @@ export function FullscreenExerciseShell({
   children,
   footer,
   finishButton,
+  settings,
   backgroundClassName,
   stageClassName,
   mainClassName,
   showNavigation = true,
   compactHeader = false,
 }: FullscreenExerciseShellProps) {
-  const shellBackgroundClassName =
-    backgroundClassName ??
-    "bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] p-1 text-slate-900 sm:p-2 md:p-3";
-
-  const sectionClassName = backgroundClassName
-    ? `h-[100dvh] overflow-hidden ${shellBackgroundClassName} p-1 sm:p-2 md:p-3`
-    : `h-[100dvh] overflow-hidden ${shellBackgroundClassName}`;
+  const router = useRouter();
+  const status = stats.length || finishButton ? (
+    <>
+      {stats.length > 0 ? <ExerciseCompactControls items={stats} /> : null}
+      {finishButton}
+    </>
+  ) : undefined;
 
   return (
-    <section className={sectionClassName}>
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-[20px] border border-white/80 bg-white/76 shadow-[0_18px_58px_rgba(153,27,27,0.13)] backdrop-blur md:rounded-[28px]">
-        <header className="z-30 border-b border-red-100/80 bg-white/88 shadow-[0_6px_22px_rgba(185,28,28,0.06)] backdrop-blur">
-          <div
-            className={`flex flex-wrap items-center gap-1.5 px-2 py-1.5 md:gap-2 md:px-4 ${
-              compactHeader ? "md:py-1" : "md:py-2"
-            }`}
-          >
-            <div className="mr-auto min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">{title}</p>
-              <p className="text-[11px] text-slate-500 md:text-xs">{subtitle}</p>
-            </div>
-
-            {stats.length > 0 ? <ExerciseCompactControls items={stats} /> : null}
-
-            {showNavigation ? <ExerciseNavigationControls compact /> : null}
-            {finishButton}
-          </div>
-        </header>
-
-        <main className={mainClassName ?? "flex min-h-0 flex-1 items-center justify-center p-1.5 md:p-3"}>
-          <div className="flex h-full min-h-0 w-full max-w-6xl flex-col items-center justify-center text-center">
-            <div className={`${stageClassName ?? FULLSCREEN_STAGE_CLASS} exercise-stage-fit`}>{children}</div>
-          </div>
-        </main>
-
-        {footer ? (
-          <footer className="exercise-footer-fit shrink-0 glass-control-bar border-t border-red-100/75 px-2 py-1.5 md:px-4 md:py-2">
-            {footer}
-          </footer>
-        ) : null}
+    <ExerciseStage
+      title={title}
+      subtitle={subtitle}
+      status={status}
+      settings={settings}
+      footer={footer}
+      onExit={showNavigation ? () => router.push("/egzersizler") : undefined}
+      stageClassName={`${backgroundClassName ?? ""} ${compactHeader ? "[&_.exercise-stage__toolbar]:md:py-1" : ""}`}
+      contentClassName={mainClassName ?? "flex items-center justify-center p-1.5 md:p-3"}
+    >
+      <div className="flex h-full min-h-0 min-w-0 w-full max-w-6xl flex-col items-center justify-center text-center">
+        <div className={`${stageClassName ?? FULLSCREEN_STAGE_CLASS} exercise-stage-fit min-w-0 max-w-full`}>{children}</div>
       </div>
-    </section>
+    </ExerciseStage>
   );
 }

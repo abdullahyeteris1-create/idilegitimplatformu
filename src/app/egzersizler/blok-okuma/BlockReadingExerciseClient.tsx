@@ -472,6 +472,7 @@ export function BlockReadingExerciseClient() {
         ]}
         stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
         footer={footerControls}
+        settings={footerControls}
       >
         {isLoadingTexts ? (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
@@ -600,6 +601,7 @@ export function BlockReadingExerciseClient() {
         </button>
       }
       footer={footerControls}
+      settings={footerControls}
     >
       <div className="fx-fade-in flex w-full flex-col items-center justify-center text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Bloğu</p>

@@ -37,6 +37,8 @@ type RoundSettings = {
 
 const SPEED_OPTIONS: SpeedMs[] = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const LEVEL_OPTIONS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const AUTO_ADVANCE_DELAY_MS = 500;
+const WORD_FONT_CLASS = "text-3xl md:text-4xl";
 
 function normalizeInput(value: string): string {
   return value.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
@@ -83,6 +85,7 @@ export function TachistoscopeExerciseClient() {
   });
 
   const feedbackAdvanceGuardRef = useRef(false);
+  const answerSubmissionGuardRef = useRef(false);
 
   const currentNet = currentLevelCorrect - currentLevelWrong;
   const totalAnswered = totalCorrect + totalWrong;
@@ -113,7 +116,13 @@ export function TachistoscopeExerciseClient() {
       return;
     }
 
-    inputRef.current?.focus();
+    const focusFrame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+    };
   }, [phase, responsePhase, currentRound?.content]);
 
   useEffect(() => {
@@ -157,6 +166,7 @@ export function TachistoscopeExerciseClient() {
     setCurrentRound(nextRound);
     setResponsePhase("show");
     setCurrentInput("");
+    answerSubmissionGuardRef.current = false;
     setAnswerLocked(false);
     setCurrentFeedback("");
     setCurrentFeedbackTone("neutral");
@@ -168,8 +178,9 @@ export function TachistoscopeExerciseClient() {
     }
 
     autoAdvanceTimerRef.current = window.setTimeout(() => {
-      handleNext();
-    }, 900);
+      autoAdvanceTimerRef.current = null;
+      startNextRound();
+    }, AUTO_ADVANCE_DELAY_MS);
   };
 
   const handleStart = () => {
@@ -242,10 +253,19 @@ export function TachistoscopeExerciseClient() {
     router.push(`/sonuc?exerciseType=tachistoscope&correct=${totalCorrect}&wrong=${totalWrong}&successRate=${successRate}&score=${score}`);
   };
 
-  const checkAnswer = () => {
-    if (phase !== "play" || responsePhase !== "answer" || answerLocked || !currentRound) {
+  const handleSubmitAnswer = () => {
+    if (
+      phase !== "play" ||
+      responsePhase !== "answer" ||
+      answerLocked ||
+      answerSubmissionGuardRef.current ||
+      !currentRound ||
+      !currentInput.trim()
+    ) {
       return;
     }
+
+    answerSubmissionGuardRef.current = true;
 
     const normalizedExpected = normalizeInput(currentRound.expected);
     const normalizedInput = normalizeInput(currentInput);
@@ -366,14 +386,14 @@ export function TachistoscopeExerciseClient() {
   }, [phase, responsePhase]);
 
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") {
+    if (event.key !== "Enter" || event.repeat) {
       return;
     }
 
     event.preventDefault();
 
     if (responsePhase === "answer") {
-      checkAnswer();
+      handleSubmitAnswer();
       return;
     }
 
@@ -381,6 +401,15 @@ export function TachistoscopeExerciseClient() {
       handleNext();
     }
   };
+
+  const stageSettings = (
+    <div className="grid gap-3">
+      <label className="grid gap-1 text-sm font-bold"><span>Hız</span><select className={FULLSCREEN_SELECT_CLASS} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
+      <label className="grid gap-1 text-sm font-bold"><span>Seviye</span><select className={FULLSCREEN_SELECT_CLASS} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className="grid gap-1 text-sm font-bold"><span>Çalışma şekli</span><select className={FULLSCREEN_SELECT_CLASS} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
+      <label className="grid gap-1 text-sm font-bold"><span>İçerik türü</span><select className={FULLSCREEN_SELECT_CLASS} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
+    </div>
+  );
 
   if (phase === "start") {
     return (
@@ -403,6 +432,7 @@ export function TachistoscopeExerciseClient() {
           { label: "Hiz", value: `${speedMs} ms`, tone: "brand" },
           { label: "Mod", value: workMode === "manual" ? "Manuel" : "Otomatik" },
         ]}
+        settings={stageSettings}
         footer={
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
               <label className="flex min-w-0 flex-col gap-1">
@@ -469,6 +499,7 @@ export function TachistoscopeExerciseClient() {
         { label: "Mod", value: workMode === "manual" ? "Manuel" : "Otomatik" },
         { label: "Icerik", value: contentType === "mixed" ? "Karisik" : contentType === "number" ? "Rakam" : "Harf" },
       ]}
+      settings={stageSettings}
       finishButton={
         <button type="button" onClick={finishExercise} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
           Bitir
@@ -478,13 +509,14 @@ export function TachistoscopeExerciseClient() {
     >
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
 
-            <div className="mt-1 flex h-full min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 md:mt-2 md:px-5">
+            <div className="mt-1 flex h-full min-h-[120px] w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 md:mt-2 md:px-5">
               {responsePhase === "show" && currentRound ? (
                 <div
-                  className="fx-pop-in max-w-full text-center text-[clamp(2rem,5vw,3.25rem)] font-black leading-none tracking-normal text-slate-950 transition-all duration-300 ease-out break-words"
+                  className={`${WORD_FONT_CLASS} max-w-full break-words px-4 text-center font-black leading-tight tracking-normal text-slate-950`}
                   style={{
-                    opacity: 1,
-                    transform: "scale(1)",
+                    animation: "none",
+                    transform: "none",
+                    transition: "none",
                     overflowWrap: "anywhere",
                     textShadow: "0 8px 20px rgba(185, 28, 28, 0.12)",
                   }}
@@ -511,6 +543,8 @@ export function TachistoscopeExerciseClient() {
                   value={currentInput}
                   onChange={(event) => setCurrentInput(event.target.value)}
                   onKeyDown={handleInputKeyDown}
+                  aria-label="Gordugun kelimeyi yaz"
+                  disabled={answerLocked}
                   className="min-h-[44px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
                   placeholder="Gordugun kelimeyi yaz"
                   inputMode="text"
@@ -520,7 +554,13 @@ export function TachistoscopeExerciseClient() {
                 />
 
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={checkAnswer}>
+                  <button
+                    type="button"
+                    className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+                    style={FULLSCREEN_TOUCH_STYLE}
+                    onClick={handleSubmitAnswer}
+                    disabled={answerLocked || !currentInput.trim()}
+                  >
                     Kontrol Et
                   </button>
                   <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>

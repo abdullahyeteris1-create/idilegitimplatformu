@@ -445,6 +445,14 @@ export function TwoSideFocusExerciseClient() {
       title="Çift Taraflı Odak"
       description="Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver."
       backHref="/egzersizler"
+      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span></>}
+      settings={(
+        <div className="grid gap-3">
+          <label className="grid gap-2 text-sm font-bold"><span>Hız</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} /><span>{speed} ms</span></label>
+          <button type="button" onClick={handleStartStop} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-bold text-white">{isRunning ? "Duraklat" : "Başlat"}</button>
+          <button type="button" onClick={handleReset} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeniden Başlat</button>
+        </div>
+      )}
     >
       <section className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
         <header className="border-b border-slate-200 bg-white/90 px-3 py-2 md:px-4">
