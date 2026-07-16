@@ -1,3 +1,5 @@
+import { normalizeDelayMs, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
+
 export type ShadowReadingSpeedMode = "interval" | "wpm";
 
 export type CalculateIntervalOptions = {
@@ -38,8 +40,7 @@ export function calculateIntervalMs(options: CalculateIntervalOptions): number {
     : 1;
 
   if (options.mode === "interval") {
-    const rawInterval = options.intervalMs ?? 1000;
-    return Number.isFinite(rawInterval) ? Math.max(50, Math.round(rawInterval)) : 1000;
+    return normalizeDelayMs(options.intervalMs, 1000);
   }
 
   const wordsPerMinute = options.wordsPerMinute ?? 150;
@@ -47,7 +48,7 @@ export function calculateIntervalMs(options: CalculateIntervalOptions): number {
     ? Math.max(1, Math.round(wordsPerMinute))
     : 150;
 
-  return Math.round((normalizedBlockSize * 60000) / safeWordsPerMinute);
+  return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedBlockSize);
 }
 
 export function calculateReadingDuration(options: CalculateIntervalOptions): number {

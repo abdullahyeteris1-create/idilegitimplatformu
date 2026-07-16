@@ -496,6 +496,71 @@ export function ColumnEyeExerciseClient() {
         },
         { label: "Kolon", value: columnCount },
       ]}
+      settings={
+        phase === "running" || phase === "paused" ? (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Çalışma Süresi</span>
+              <select
+                value={durationMinutes}
+                onChange={(event) => {
+                  setDurationMinutes(Number(event.target.value) as DurationMinutes);
+                  resetExercise();
+                }}
+                className={FULLSCREEN_SELECT_CLASS}
+              >
+                {DURATION_OPTIONS.map((value) => (
+                  <option key={value} value={value}>{value}:00</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Atlama Hızı</span>
+              <select
+                value={jumpSpeed}
+                onChange={(event) => {
+                  setJumpSpeed(Number(event.target.value) as JumpSpeed);
+                  resetExercise();
+                }}
+                className={FULLSCREEN_SELECT_CLASS}
+              >
+                {JUMP_SPEED_OPTIONS.map((value) => (
+                  <option key={value} value={value}>{value} ms</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Akış Yönü</span>
+              <select
+                value={flowDirection}
+                onChange={(event) => {
+                  setFlowDirection(event.target.value as FlowDirection);
+                  resetExercise();
+                }}
+                className={FULLSCREEN_SELECT_CLASS}
+              >
+                <option value="column">Sütun Şeklinde</option>
+                <option value="row">Satır Şeklinde</option>
+              </select>
+            </label>
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kolon Sayısı</span>
+              <select
+                value={columnCount}
+                onChange={(event) => {
+                  setColumnCount(Number(event.target.value) as ColumnCount);
+                  resetExercise();
+                }}
+                className={FULLSCREEN_SELECT_CLASS}
+              >
+                {COLUMN_OPTIONS.map((value) => (
+                  <option key={value} value={value}>{value} Kolon</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null
+      }
       finishButton={
         phase === "running" || phase === "paused" ? (
           <div className="flex gap-1">

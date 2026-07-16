@@ -2,8 +2,10 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ExerciseStage } from "@/components/exercises/ExerciseStage";
-import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import {
+  FixedExerciseStage,
+  FixedExerciseStat,
+} from "@/components/exercises/FixedExerciseStage";
 
 export type FullscreenExerciseStat = {
   label: string;
@@ -91,32 +93,33 @@ export function FullscreenExerciseIntro({
   secondary,
   showNavigation = true,
 }: FullscreenExerciseIntroProps) {
+  const router = useRouter();
+
   return (
-    <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff7f4_44%,#f8f0ea_100%)] px-2 py-3 text-slate-900 md:px-4 md:py-5">
-      <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col md:min-h-[calc(100dvh-2.5rem)]">
-        {showNavigation ? (
-          <div className="flex justify-end pb-3">
-            <ExerciseNavigationControls compact />
-          </div>
-        ) : null}
-        <div className="flex flex-1 items-center justify-center">
-          <div className="fx-slide-up flex w-full max-w-2xl flex-col items-center rounded-[28px] border border-white/75 bg-white/85 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] backdrop-blur md:px-7 md:py-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Egzersiz</p>
-            <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
-            <button
-              type="button"
-              onClick={onStart}
-              className="mt-5 inline-flex min-h-[46px] w-full max-w-sm items-center justify-center rounded-xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_48%,#b91c1c_100%)] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-red-300/45 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-red-300/60"
-              style={FULLSCREEN_TOUCH_STYLE}
-            >
-              {buttonLabel}
-            </button>
-            {secondary ? <div className="mt-3 w-full max-w-md">{secondary}</div> : null}
-          </div>
+    <FixedExerciseStage
+      title={title}
+      subtitle="Hazırlık modu"
+      onExit={showNavigation ? () => router.push("/egzersizler") : undefined}
+      controls={(
+        <div className="mx-auto grid w-full max-w-md gap-2">
+          <button
+            type="button"
+            onClick={onStart}
+            className="inline-flex min-h-[46px] w-full items-center justify-center rounded-xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_48%,#b91c1c_100%)] px-5 py-2.5 text-sm font-extrabold text-white shadow-lg shadow-red-300/45 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-red-300/60"
+            style={FULLSCREEN_TOUCH_STYLE}
+          >
+            {buttonLabel}
+          </button>
+          {secondary}
         </div>
+      )}
+    >
+      <div className="fx-slide-up flex max-h-full w-full max-w-2xl flex-col items-center overflow-auto rounded-[28px] border border-white/75 bg-white/90 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-7 md:py-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Egzersiz</p>
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
       </div>
-    </section>
+    </FixedExerciseStage>
   );
 }
 
@@ -135,27 +138,30 @@ export function FullscreenExerciseShell({
   compactHeader = false,
 }: FullscreenExerciseShellProps) {
   const router = useRouter();
-  const status = stats.length || finishButton ? (
-    <>
-      {stats.length > 0 ? <ExerciseCompactControls items={stats} /> : null}
+  const topStats = stats.length > 0 ? stats.map((stat) => (
+    <FixedExerciseStat key={stat.label} {...stat} />
+  )) : undefined;
+  const duplicatedFooter = Boolean(settings && footer && settings === footer);
+  const controls = footer || finishButton ? (
+    <div className="flex min-w-0 flex-wrap items-center justify-center gap-2">
+      {!duplicatedFooter ? footer : null}
       {finishButton}
-    </>
+    </div>
   ) : undefined;
 
   return (
-    <ExerciseStage
+    <FixedExerciseStage
       title={title}
       subtitle={subtitle}
-      status={status}
-      settings={settings}
-      footer={footer}
+      topStats={topStats}
+      bottomSettings={settings}
+      controls={controls}
       onExit={showNavigation ? () => router.push("/egzersizler") : undefined}
-      stageClassName={`${backgroundClassName ?? ""} ${compactHeader ? "[&_.exercise-stage__toolbar]:md:py-1" : ""}`}
-      contentClassName={mainClassName ?? "flex items-center justify-center p-1.5 md:p-3"}
+      className={`${backgroundClassName ?? ""} ${compactHeader ? "[&_.fixed-exercise-stage__topbar]:md:py-1" : ""}`}
     >
-      <div className="flex h-full min-h-0 min-w-0 w-full max-w-6xl flex-col items-center justify-center text-center">
+      <div className={`${mainClassName ?? "flex items-center justify-center"} h-full min-h-0 min-w-0 w-full max-w-6xl flex-col text-center`}>
         <div className={`${stageClassName ?? FULLSCREEN_STAGE_CLASS} exercise-stage-fit min-w-0 max-w-full`}>{children}</div>
       </div>
-    </ExerciseStage>
+    </FixedExerciseStage>
   );
 }

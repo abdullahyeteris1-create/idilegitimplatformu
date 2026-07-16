@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useRouter } from "next/navigation";
+import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -130,6 +131,7 @@ function getScore(status: GameStatus, attemptsUsed: number) {
 }
 
 export function WordGuessExerciseClient() {
+  const router = useRouter();
   const [wordLength, setWordLength] = useState(5);
   const [answer, setAnswer] = useState(() => pickWord(5));
   const [currentGuess, setCurrentGuess] = useState("");
@@ -284,19 +286,23 @@ export function WordGuessExerciseClient() {
   const keyboardRows = ["QWERTYUIOP".split(""), "ASDFGHJKL".split(""), "ZXCVBNM".split("")];
 
   return (
-    <main className="min-h-screen bg-emerald-50 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-3 flex justify-end">
-          <ExerciseNavigationControls compact />
-        </div>
+    <FixedExerciseStage
+      title="Kelime Tahmin"
+      subtitle={message}
+      topStats={<><FixedExerciseStat label="Deneme" value={`${guesses.length}/${MAX_ATTEMPTS}`} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+      bottomSettings={<label className="grid gap-1 text-sm font-bold"><span>Kelime uzunluğu</span><select value={wordLength} onChange={(event) => resetGame(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{WORD_LENGTH_OPTIONS.map((length) => <option key={length} value={length}>{length} harf</option>)}</select></label>}
+      controls={<div className="mx-auto grid w-full max-w-4xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"><input value={currentGuess} onChange={(event) => setCurrentGuess(normalizeInput(event.target.value, wordLength))} onKeyDown={(event) => { if (event.key === "Enter") submitGuess(); }} disabled={status !== "playing"} placeholder={`${wordLength} harfli tahmin yaz`} className="min-h-11 rounded-xl border border-slate-300 px-3 text-center font-bold uppercase" /><button type="button" onClick={submitGuess} disabled={status !== "playing"} className="min-h-11 rounded-xl bg-emerald-600 px-4 font-bold text-white disabled:opacity-50">Tahmin Et</button><button type="button" onClick={() => resetGame(wordLength)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status !== "playing"} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 font-bold text-emerald-800 disabled:opacity-50">Bitir</button></div>}
+      onExit={() => router.push("/egzersizler")}
+    >
+      <div className="max-h-full w-full max-w-4xl overflow-auto">
         <section className="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-8">
-          <div className="mb-6 text-center">
+          <div className="hidden">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-700">Kelime Oyunlari</p>
             <h1 className="mt-2 text-3xl font-black">Kelime Tahmin</h1>
             <p className="mt-2 text-sm text-slate-600">Gizli kelimeyi 6 denemede bulmaya calis.</p>
           </div>
 
-          <div className="mb-5 grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="hidden">
             <div className="text-center text-sm font-semibold sm:text-left">{message}</div>
 
             <div className="flex flex-wrap justify-center gap-2">
@@ -339,7 +345,7 @@ export function WordGuessExerciseClient() {
             })}
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="hidden">
             <input
               value={currentGuess}
               onChange={(event) => setCurrentGuess(normalizeInput(event.target.value, wordLength))}
@@ -443,6 +449,6 @@ export function WordGuessExerciseClient() {
           </div>
         </section>
       </div>
-    </main>
+    </FixedExerciseStage>
   );
 }

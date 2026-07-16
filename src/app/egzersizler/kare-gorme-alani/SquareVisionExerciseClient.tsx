@@ -580,19 +580,21 @@ export function SquareVisionExerciseClient() {
             </p>
           </div>
         ) : (
-          <>
-            <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-              <p className="text-sm font-bold text-slate-700">
-                Sol ok: Farklı · Sağ ok: Aynı
-              </p>
-              <p className="text-sm font-black text-red-700">
-                {formatTime(remainingSeconds)}
-              </p>
+          <div className="flex h-full min-h-0 w-full flex-col">
+            <div className="shrink-0">
+              <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                <p className="text-sm font-bold text-slate-700">
+                  Sol ok: Farklı · Sağ ok: Aynı
+                </p>
+                <p className="text-sm font-black text-red-700">
+                  {formatTime(remainingSeconds)}
+                </p>
+              </div>
             </div>
 
-            <div className="mx-auto flex min-h-0 w-[min(80vw,65dvh)] max-w-full flex-1 items-center justify-center">
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
               <div
-                className={`relative grid aspect-square w-full overflow-hidden rounded-2xl border-2 bg-slate-50 p-1 shadow-inner transition ${
+                className={`relative grid aspect-square max-h-full max-w-full overflow-hidden rounded-2xl border-2 bg-slate-50 p-1 shadow-inner transition ${
                   lastFeedback === "correct"
                     ? "border-green-400"
                     : lastFeedback === "wrong"
@@ -600,6 +602,8 @@ export function SquareVisionExerciseClient() {
                       : "border-slate-300"
                 }`}
                 style={{
+                  width: "min(100%, 100%)",
+                  height: "min(100%, 100%)",
                   gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
                   gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
                 }}
@@ -634,37 +638,39 @@ export function SquareVisionExerciseClient() {
               </div>
             </div>
 
-            <div className="mt-1.5 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => answerRound("different")}
-                disabled={phase !== "running"}
-                className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
-                style={FULLSCREEN_TOUCH_STYLE}
-              >
-                Farklı Harfler ←
-              </button>
-              <button
-                type="button"
-                onClick={() => answerRound("same")}
-                disabled={phase !== "running"}
-                className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
-                style={FULLSCREEN_TOUCH_STYLE}
-              >
-                Aynı Harfler →
-              </button>
-            </div>
+            <div className="shrink-0">
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => answerRound("different")}
+                  disabled={phase !== "running"}
+                  className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
+                  style={FULLSCREEN_TOUCH_STYLE}
+                >
+                  Farklı Harfler ←
+                </button>
+                <button
+                  type="button"
+                  onClick={() => answerRound("same")}
+                  disabled={phase !== "running"}
+                  className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
+                  style={FULLSCREEN_TOUCH_STYLE}
+                >
+                  Aynı Harfler →
+                </button>
+              </div>
 
-            {phase === "paused" ? (
-              <p className="mt-3 text-center text-sm font-bold text-red-700">
-                Egzersiz duraklatıldı.
-              </p>
-            ) : null}
+              {phase === "paused" ? (
+                <p className="mt-3 text-center text-sm font-bold text-red-700">
+                  Egzersiz duraklatıldı.
+                </p>
+              ) : null}
 
-            <div className="mt-1 text-center text-xs font-bold text-slate-600">
-              Puan: {score} · Başarı: %{successRate}
+              <div className="mt-1 text-center text-xs font-bold text-slate-600">
+                Puan: {score} · Başarı: %{successRate}
+              </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </FullscreenExerciseShell>

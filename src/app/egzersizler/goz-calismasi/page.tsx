@@ -7,7 +7,9 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 
 type ExercisePhase = "idle" | "countdown" | "running" | "paused" | "finished";
 type SymbolId = "target" | "star" | "heart" | "diamond" | "ring" | "eye";
@@ -287,6 +289,7 @@ function EyeMark() {
 }
 
 export default function EyeTrackingExercisePage() {
+  const router = useRouter();
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const accumulatedMsRef = useRef(0);
   const activeStartedAtRef = useRef<number | null>(null);
@@ -475,7 +478,15 @@ export default function EyeTrackingExercisePage() {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f6f8f7] text-slate-900">
+    <FixedExerciseStage
+      title="Göz Takip Çalışması"
+      subtitle={STATUS_LABELS[phase]}
+      topStats={<><FixedExerciseStat label="Seviye" value={level} tone="brand" /><FixedExerciseStat label="Süre" value={formatTime(elapsedMs)} /><FixedExerciseStat label="Hız" value={`${speedMs} ms`} /><FixedExerciseStat label="Desen" value={pattern.name} /></>}
+      bottomSettings={<div className="grid gap-2 sm:grid-cols-2"><label className="grid gap-1 text-sm font-bold"><span>Geçiş hızı: {speedMs} ms</span><input type="range" min="100" max="500" step="50" value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value))} disabled={phase === "countdown"} className="min-h-11 w-full accent-teal-700" /></label><label className="grid gap-1 text-sm font-bold"><span>Takip simgesi</span><select value={selectedSymbolId} onChange={(event) => setSelectedSymbolId(event.target.value as SymbolId)} disabled={phase === "running" || phase === "countdown"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{SYMBOLS.map((symbol) => <option key={symbol.id} value={symbol.id}>{symbol.label}</option>)}</select></label></div>}
+      controls={<div className="flex flex-wrap justify-center gap-2">{phase === "idle" || phase === "finished" ? <button type="button" onClick={startExercise} className="min-h-11 rounded-xl bg-slate-950 px-5 font-bold text-white">{phase === "finished" ? "Yeniden Başlat" : "Çalışmayı Başlat"}</button> : phase === "paused" ? <button type="button" onClick={resumeExercise} className="min-h-11 rounded-xl bg-teal-700 px-5 font-bold text-white">Devam Et</button> : <button type="button" onClick={pauseExercise} disabled={phase === "countdown"} className="min-h-11 rounded-xl bg-amber-500 px-5 font-bold text-white disabled:opacity-50">Duraklat</button>}{phase !== "idle" ? <button type="button" onClick={finishExercise} className="min-h-11 rounded-xl border border-rose-200 bg-rose-50 px-5 font-bold text-rose-700">Bitir</button> : null}<button type="button" onClick={resetExercise} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-bold">Sıfırla</button></div>}
+      onExit={() => router.push("/egzersizler")}
+    >
+    <main className="h-full min-h-0 w-full overflow-hidden bg-[#f6f8f7] text-slate-900">
       <style>{`
         @keyframes eye-tracking-pulse {
           0%, 100% { opacity: .58; transform: translate(-50%, -50%) scale(.9); }
@@ -562,8 +573,8 @@ export default function EyeTrackingExercisePage() {
         <div className="absolute bottom-[-14rem] left-1/3 h-[28rem] w-[28rem] rounded-full bg-amber-50 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-[1540px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-        <header className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative mx-auto h-full min-h-0 w-full max-w-[1540px]">
+        <header className="hidden">
           <div className="flex min-w-0 items-center gap-3.5">
             <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/15">
               <EyeMark />
@@ -604,8 +615,8 @@ export default function EyeTrackingExercisePage() {
           </div>
         </header>
 
-        <div className="grid items-start gap-5 lg:grid-cols-[330px_minmax(0,1fr)] xl:grid-cols-[350px_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border border-white/80 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-5 lg:sticky lg:top-5">
+        <div className="h-full min-h-0">
+          <aside className="hidden">
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.17em] text-teal-700">Kontrol paneli</p>
@@ -783,9 +794,9 @@ export default function EyeTrackingExercisePage() {
 
           <section
             ref={workspaceRef}
-            className="eye-workspace min-w-0 rounded-[30px] border border-white/80 bg-white/92 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.09)] backdrop-blur-xl sm:p-4"
+            className="eye-workspace h-full min-h-0 min-w-0 rounded-[30px] border border-white/80 bg-white/92 p-1 shadow-[0_24px_70px_rgba(15,23,42,0.09)] backdrop-blur-xl"
           >
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1 sm:mb-4">
+            <div className="hidden">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
                   <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">Süre</p>
@@ -838,7 +849,7 @@ export default function EyeTrackingExercisePage() {
             </div>
 
             <div
-              className="eye-stage relative min-h-[500px] overflow-hidden rounded-[24px] border border-slate-200/80 bg-[#fbfdfc] lg:min-h-[clamp(560px,70vh,760px)]"
+              className="eye-stage relative h-full min-h-0 overflow-hidden rounded-[24px] border border-slate-200/80 bg-[#fbfdfc]"
               style={{
                 backgroundImage:
                   "radial-gradient(circle at 50% 50%, rgba(13,148,136,.055), transparent 34%), linear-gradient(rgba(15,118,110,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(15,118,110,.045) 1px, transparent 1px)",
@@ -1023,5 +1034,6 @@ export default function EyeTrackingExercisePage() {
         </div>
       </div>
     </main>
+    </FixedExerciseStage>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExerciseStage } from "@/components/exercises/ExerciseStage";
+import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 
 type PuzzleItem = {
   id: string;
@@ -313,8 +313,25 @@ export function PictureWordPuzzleClient() {
 
   if (!started) {
     return (
-      <main className="min-h-dvh bg-[var(--background)] px-3 py-4 md:px-6">
-        <section className="mx-auto max-w-5xl rounded-3xl border border-red-100 bg-white p-5 shadow-xl shadow-red-100/40 md:p-8">
+      <FixedExerciseStage
+        title="Parçalı Resim Kelime"
+        subtitle="Hazırlık modu"
+        onExit={() => router.push("/egzersizler")}
+        bottomSettings={(
+          <label className="grid gap-1 text-sm font-bold text-slate-700">
+            <span>Başlangıç Seviyesi</span>
+            <select value={level} onChange={(event) => setLevel(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3" aria-label="Başlangıç seviyesini seç">
+              {LEVELS.map((entry) => <option key={entry.level} value={entry.level}>{entry.level}. Seviye · {entry.rows}×{entry.cols} parça</option>)}
+            </select>
+          </label>
+        )}
+        controls={(
+          <button type="button" onClick={() => { setStarted(true); startRound(1, level); }} className="mx-auto block min-h-12 w-full max-w-md rounded-2xl bg-red-600 px-5 font-black text-white transition hover:bg-red-700 active:scale-[0.99]">
+            Çalışmayı Başlat
+          </button>
+        )}
+      >
+        <section className="max-h-full w-full max-w-5xl overflow-auto rounded-3xl border border-red-100 bg-white p-5 shadow-xl shadow-red-100/40 md:p-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-red-600">
             Görsel Kelime Bulmaca
           </p>
@@ -326,30 +343,7 @@ export function PictureWordPuzzleClient() {
             koy ve kelimeyi bul. Havuzda {ITEMS.length} farklı görsel bulunuyor.
           </p>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <label className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                Başlangıç Seviyesi
-              </span>
-              <select
-                value={level}
-                onChange={(event) => setLevel(Number(event.target.value))}
-                style={{ colorScheme: "light", color: "#0f172a", WebkitTextFillColor: "#0f172a" }}
-                className="mt-2 min-h-11 w-full appearance-auto rounded-xl border border-slate-400 bg-white px-3 text-sm font-bold text-slate-900 opacity-100 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/20"
-                aria-label="Başlangıç seviyesini seç"
-              >
-                {LEVELS.map((entry) => (
-                  <option
-                    key={entry.level}
-                    value={entry.level}
-                    className="bg-white text-slate-900"
-                  >
-                    {entry.level}. Seviye · {entry.rows}×{entry.cols} parça
-                  </option>
-                ))}
-              </select>
-            </label>
-
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
             <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-600">Seviye Sistemi</p>
               <p className="mt-2 text-sm leading-6 text-slate-700">
@@ -365,28 +359,18 @@ export function PictureWordPuzzleClient() {
             </article>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setStarted(true);
-              startRound(1, level);
-            }}
-            className="mt-6 min-h-12 w-full rounded-2xl bg-red-600 px-5 font-black text-white transition hover:bg-red-700 active:scale-[0.99]"
-          >
-            Çalışmayı Başlat
-          </button>
         </section>
-      </main>
+      </FixedExerciseStage>
     );
   }
 
   return (
-    <ExerciseStage
+    <FixedExerciseStage
       title="Parçalı Resim Kelime"
       subtitle={`Tur ${round} · ${totalTiles} parça`}
       onExit={() => router.push("/egzersizler")}
-      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correct}</span><span className="compact-stat-chip">Yanlış: {wrong}</span></>}
-      settings={(
+      topStats={<><FixedExerciseStat label="Seviye" value={level} tone="brand" /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Tur" value={round} /></>}
+      bottomSettings={(
         <label className="grid gap-2 text-sm font-bold text-slate-700">
           <span>Seviye</span>
           <select value={level} disabled={isTransitioning} onChange={(event) => setLevelAndRestart(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3" aria-label="Oyun seviyesini seç">
@@ -394,28 +378,9 @@ export function PictureWordPuzzleClient() {
           </select>
         </label>
       )}
-      contentClassName="bg-slate-950"
+      controls={<button type="button" onClick={() => startRound(round + 1, level)} className="mx-auto block min-h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white">Yeni Kelime</button>}
     >
     <main className="flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden bg-slate-950 text-white">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-900 px-3 py-2 md:px-5">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Parçalı Resim</p>
-          <h1 className="text-base font-black md:text-lg">Kelimeyi Bul</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Seviye {level}</span>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-300">Doğru {correct}</span>
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-red-300">Yanlış {wrong}</span>
-          <button
-            type="button"
-            onClick={() => router.push("/egzersizler")}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 hover:bg-white/10"
-          >
-            Egzersizlere Dön
-          </button>
-        </div>
-      </header>
-
       <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-auto px-3 py-3 md:px-6">
         <div className="w-full max-w-3xl text-center">
           <p className="min-h-5 text-sm font-semibold text-slate-200" aria-live="polite">{message}</p>
@@ -500,39 +465,8 @@ export function PictureWordPuzzleClient() {
         </div>
       </section>
 
-      <footer className="shrink-0 border-t border-white/10 bg-slate-900 px-3 py-2">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <label className="flex min-w-fit items-center gap-2 text-xs font-bold text-slate-200">
-            <span className="whitespace-nowrap">Seviye</span>
-            <select
-              value={level}
-              disabled={isTransitioning}
-              onChange={(event) => setLevelAndRestart(Number(event.target.value))}
-              style={{ colorScheme: "dark", color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
-              className="min-h-10 min-w-[154px] appearance-auto rounded-xl border border-white/30 bg-slate-800 px-3 text-sm font-bold text-white opacity-100 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/30 disabled:opacity-60"
-              aria-label="Oyun seviyesini seç"
-            >
-              {LEVELS.map((entry) => (
-                <option key={entry.level} value={entry.level} className="bg-slate-900 text-white">
-                  {entry.level}. Seviye · {entry.rows}×{entry.cols}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="text-xs text-slate-400">
-            Tur {round} · {totalTiles} parça · {ITEMS.length} görsel
-          </div>
-          <button
-            type="button"
-            onClick={() => startRound(round + 1, level)}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10"
-          >
-            Yeni Kelime
-          </button>
-        </div>
-      </footer>
     </main>
-    </ExerciseStage>
+    </FixedExerciseStage>
   );
 }
 

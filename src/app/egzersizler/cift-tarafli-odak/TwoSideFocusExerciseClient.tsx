@@ -443,141 +443,18 @@ export function TwoSideFocusExerciseClient() {
   return (
     <ExerciseFullscreenShell
       title="Çift Taraflı Odak"
-      description="Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver."
+      description={`Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver. ${getLevelDescription(level)}`}
       backHref="/egzersizler"
-      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span></>}
+      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span><span className="compact-stat-chip">Net: {netCount}/{NET_TARGET}</span><span className="compact-stat-chip">Kelime: {wordCount}</span></>}
       settings={(
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-bold"><span>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
           <label className="grid gap-2 text-sm font-bold"><span>Hız</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} /><span>{speed} ms</span></label>
-          <button type="button" onClick={handleStartStop} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-bold text-white">{isRunning ? "Duraklat" : "Başlat"}</button>
-          <button type="button" onClick={handleReset} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeniden Başlat</button>
         </div>
       )}
+      footer={<div className="flex flex-wrap justify-center gap-2"><button type="button" onClick={handleStartStop} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-bold text-white">{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeni Kelimeler</button><button type="button" onClick={handleReset} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeniden Başlat</button></div>}
     >
       <section className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
-        <header className="border-b border-slate-200 bg-white/90 px-3 py-2 md:px-4">
-          <div className="grid grid-cols-4 gap-2">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-center shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
-                Seviye
-              </p>
-              <p className="text-lg font-black text-indigo-700 md:text-xl">
-                {level}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-2 py-2 text-center shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">
-                Doğru
-              </p>
-              <p className="text-lg font-black text-emerald-700 md:text-xl">
-                {correctCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-2 py-2 text-center shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wide text-rose-700">
-                Yanlış
-              </p>
-              <p className="text-lg font-black text-rose-700 md:text-xl">
-                {wrongCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-2 py-2 text-center shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-wide text-blue-700">
-                Net
-              </p>
-              <p className="text-lg font-black text-blue-700 md:text-xl">
-                {netCount}/{NET_TARGET}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div className="grid gap-2 border-b border-slate-200 bg-slate-50/70 px-3 py-2 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-black text-slate-800">Seviye Seç</p>
-              <span className="rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-black text-indigo-700">
-                {wordCount} kelime
-              </span>
-            </div>
-
-            <div className="mt-2 grid grid-cols-5 gap-2">
-              {LEVELS.map((levelNumber) => (
-                <button
-                  key={levelNumber}
-                  type="button"
-                  onClick={() => prepareLevel(levelNumber)}
-                  className={`min-h-[38px] rounded-xl border px-2 py-2 text-sm font-black transition ${
-                    level === levelNumber
-                      ? "border-indigo-300 bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-indigo-50"
-                  }`}
-                >
-                  {levelNumber}
-                </button>
-              ))}
-            </div>
-
-            <p className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold leading-5 text-indigo-800">
-              {getLevelDescription(level)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-slate-800">Hız Ayarı</p>
-                <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
-                  Cevap verilmezse yanlış sayılır.
-                </p>
-              </div>
-
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-black text-rose-700">
-                {speed}ms
-              </span>
-            </div>
-
-            <input
-              type="range"
-              min={SPEED_MIN}
-              max={SPEED_MAX}
-              step={100}
-              value={speed}
-              onChange={(event) => handleSpeedChange(Number(event.target.value))}
-              className="mt-3 w-full accent-indigo-600"
-            />
-
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleSpeedChange(500)}
-                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
-              >
-                500ms
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSpeedChange(1500)}
-                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
-              >
-                1500ms
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSpeedChange(5000)}
-                className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
-              >
-                5000ms
-              </button>
-            </div>
-          </div>
-        </div>
-
         <section className="flex min-h-0 flex-col px-3 py-3 md:px-4">
           <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -589,35 +466,6 @@ export function TwoSideFocusExerciseClient() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleStartStop}
-                className={`min-h-[42px] rounded-xl px-4 py-2 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 ${
-                  isRunning
-                    ? "bg-rose-600 hover:bg-rose-700"
-                    : "bg-emerald-600 hover:bg-emerald-700"
-                }`}
-              >
-                {isRunning ? "Durdur" : "Başlat"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleRefresh}
-                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
-                Yeni Kelimeler
-              </button>
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
-                Sıfırla
-              </button>
-            </div>
           </div>
 
           <div

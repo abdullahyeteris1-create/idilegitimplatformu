@@ -1,3 +1,5 @@
+import { normalizeDelayMs, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
+
 export type FocusedReadingSpeedMode = "interval" | "wpm";
 
 export type CalculateFocusedReadingOptions = {
@@ -33,8 +35,7 @@ export function calculateIntervalMs(options: CalculateFocusedReadingOptions): nu
     : 1;
 
   if (options.mode === "interval") {
-    const rawInterval = options.intervalMs ?? 500;
-    return Number.isFinite(rawInterval) ? Math.max(50, Math.round(rawInterval)) : 500;
+    return normalizeDelayMs(options.intervalMs, 500);
   }
 
   const wordsPerMinute = options.wordsPerMinute ?? 200;
@@ -42,7 +43,7 @@ export function calculateIntervalMs(options: CalculateFocusedReadingOptions): nu
     ? Math.max(1, Math.round(wordsPerMinute))
     : 200;
 
-  return Math.round((normalizedGroupSize * 60000) / safeWordsPerMinute);
+  return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedGroupSize);
 }
 
 export function calculateReadingDuration(options: CalculateFocusedReadingOptions): number {

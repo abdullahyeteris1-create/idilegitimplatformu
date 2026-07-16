@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useRouter } from "next/navigation";
+import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -44,6 +45,7 @@ function formatSpeed(speed: SpeedOption) {
 }
 
 export function CatchSameExerciseClient() {
+  const router = useRouter();
   const [mode, setMode] = useState<GameMode>("word");
   const [speed, setSpeed] = useState<SpeedOption>(1000);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(60);
@@ -309,13 +311,17 @@ export function CatchSameExerciseClient() {
   const statusLabel = status === "ready" ? "Hazir" : status === "running" ? "Calisiyor" : status === "paused" ? "Duraklatildi" : "Bitti";
 
   return (
-    <main className="min-h-screen bg-cyan-50 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-3 flex justify-end">
-          <ExerciseNavigationControls compact />
-        </div>
+    <FixedExerciseStage
+      title="Aynı Olanı Yakala"
+      subtitle={statusLabel}
+      topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+      bottomSettings={<div className="grid gap-2 min-[340px]:grid-cols-2 sm:grid-cols-3"><label className="grid gap-1 text-sm font-bold"><span>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3"><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="grid gap-1 text-sm font-bold"><span>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="grid gap-1 text-sm font-bold"><span>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option} saniye</option>)}</select></label></div>}
+      controls={<div className="flex flex-wrap justify-center gap-2">{status === "ready" || status === "finished" ? <button type="button" onClick={startGame} className="min-h-11 rounded-xl bg-emerald-600 px-5 font-bold text-white">Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className="min-h-11 rounded-xl bg-amber-500 px-5 font-bold text-white">Duraklat</button> : <button type="button" onClick={resumeGame} className="min-h-11 rounded-xl bg-cyan-600 px-5 font-bold text-white">Devam Et</button>}<button type="button" onClick={newGame} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-bold">Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished"} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-5 font-bold text-emerald-800 disabled:opacity-60">Bitir</button></div>}
+      onExit={() => router.push("/egzersizler")}
+    >
+      <div className="h-full min-h-0 w-full max-w-5xl overflow-auto">
         <section className="overflow-hidden rounded-3xl border border-cyan-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-6 text-white sm:px-8">
+          <div className="hidden">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-100">Kelime Oyunlari</p>
             <h1 className="mt-2 text-3xl font-black">Ayni Olani Yakala</h1>
             <p className="mt-2 max-w-2xl text-sm text-emerald-100">
@@ -324,7 +330,7 @@ export function CatchSameExerciseClient() {
           </div>
 
           <div className="p-5 sm:p-8">
-            <div className="mb-6 grid gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 lg:grid-cols-4">
+            <div className="hidden">
               <label className="space-y-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Mod</span>
                 <select
@@ -419,7 +425,7 @@ export function CatchSameExerciseClient() {
               </div>
             </div>
 
-            <div className="mb-3 flex justify-end">
+            <div className="hidden">
               <button
                 type="button"
                 onClick={finishExercise}
@@ -430,7 +436,7 @@ export function CatchSameExerciseClient() {
               </button>
             </div>
 
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-6">
+            <div className="hidden">
               <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-center">
                 <p className="text-xs font-semibold text-slate-500">Durum</p>
                 <p className="mt-1 text-lg font-black text-cyan-700">{statusLabel}</p>
@@ -528,6 +534,6 @@ export function CatchSameExerciseClient() {
           </div>
         </section>
       </div>
-    </main>
+    </FixedExerciseStage>
   );
 }

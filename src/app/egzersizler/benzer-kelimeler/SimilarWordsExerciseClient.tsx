@@ -577,7 +577,7 @@ export function SimilarWordsExerciseClient() {
     );
   }
 
-  return (
+    return (
     <FullscreenExerciseShell
       title="Benzer Kelimeler"
       subtitle="Tam ekran calisma modu"
@@ -591,6 +591,56 @@ export function SimilarWordsExerciseClient() {
         { label: "Net", value: net, tone: net >= 0 ? "brand" : "bad" },
         { label: "Skor", value: score, tone: "brand" },
       ]}
+      settings={
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sure</span>
+            <select
+              value={durationSeconds}
+              onChange={(event) => {
+                const nextDuration = Number(event.target.value) as DurationSeconds;
+                setDurationSeconds(nextDuration);
+                setRemainingSeconds(nextDuration);
+              }}
+              className={FULLSCREEN_SELECT_CLASS}
+            >
+              <option value={60}>1 dakika</option>
+              <option value={120}>2 dakika</option>
+              <option value={180}>3 dakika</option>
+              <option value={240}>4 dakika</option>
+              <option value={300}>5 dakika</option>
+            </select>
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kutu Sayisi</span>
+            <select
+              value={boxCount}
+              onChange={(event) => setBoxCount(Number(event.target.value) as BoxCount)}
+              className={FULLSCREEN_SELECT_CLASS}
+            >
+              <option value={12}>12</option>
+              <option value={16}>16</option>
+              <option value={20}>20</option>
+              <option value={24}>24</option>
+            </select>
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hedef Kelime</span>
+            <select
+              value={targetDifferentCount}
+              onChange={(event) => setTargetDifferentCount(Number(event.target.value) as TargetDifferentCount)}
+              className={FULLSCREEN_SELECT_CLASS}
+            >
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+              <option value={5}>5</option>
+              <option value={6}>6</option>
+              <option value={7}>7</option>
+              <option value={8}>8</option>
+            </select>
+          </label>
+        </div>
+      }
       finishButton={
         <div className="flex gap-1">
           <button type="button" onClick={handleRetry} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>

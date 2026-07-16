@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useExerciseTimer } from "@/hooks/useExerciseTimer";
 import { calculateCharacterCount, formatDuration, splitTextIntoWords } from "@/lib/exercise-engine/shadowReading";
+import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
@@ -114,13 +116,23 @@ export function GroupingExerciseClient() {
   const totalWords = words.length;
   const totalCharacters = selected ? calculateCharacterCount(selected.text) : 0;
 
-  const safeMilliseconds = Math.min(10000, Math.max(50, customMilliseconds));
-  const safeWordsPerMinute = Math.min(3000, Math.max(30, customWordsPerMinute));
+  const safeMilliseconds = normalizeDelayMs(customMilliseconds, 1000, 50, 10000);
+  const safeWordsPerMinute = normalizeReadingSpeed(customWordsPerMinute, 300, 50, 3000);
+  const currentGroupWordCount = groups[index]?.length || groupSize;
 
-  const intervalMs =
-    speedMode === "milliseconds"
+  const intervalMs = useMemo(
+    () => speedMode === "milliseconds"
       ? safeMilliseconds
-      : Math.max(50, Math.round((60000 * groupSize) / safeWordsPerMinute));
+      : wordsPerMinuteToDelay(safeWordsPerMinute, groupSize),
+    [groupSize, safeMilliseconds, safeWordsPerMinute, speedMode],
+  );
+
+  const timerDelayMs = useMemo(
+    () => speedMode === "milliseconds"
+      ? safeMilliseconds
+      : wordsPerMinuteToDelay(safeWordsPerMinute, currentGroupWordCount),
+    [currentGroupWordCount, safeMilliseconds, safeWordsPerMinute, speedMode],
+  );
 
   const estimatedSeconds = Math.max(1, Math.ceil((totalGroups * intervalMs) / 1000));
   const estimatedWpm = Math.round((totalWords / estimatedSeconds) * 60);
@@ -218,24 +230,21 @@ export function GroupingExerciseClient() {
     ],
   );
 
-  useEffect(() => {
-    if (phase !== "running" || paused || !totalGroups) {
+  const advanceGroup = useCallback(() => {
+    if (index >= totalGroups - 1) {
+      finish(true);
       return;
     }
 
-    const id = window.setTimeout(() => {
-      setIndex((current) => {
-        if (current >= totalGroups - 1) {
-          finish(true);
-          return current;
-        }
+    setIndex((current) => Math.min(current + 1, totalGroups - 1));
+  }, [finish, index, totalGroups]);
 
-        return current + 1;
-      });
-    }, intervalMs);
-
-    return () => window.clearTimeout(id);
-  }, [finish, intervalMs, paused, phase, totalGroups]);
+  useExerciseTimer({
+    running: phase === "running" && totalGroups > 0,
+    paused,
+    delayMs: totalGroups > 0 ? timerDelayMs : null,
+    onTick: advanceGroup,
+  });
 
   useEffect(() => {
     if (phase !== "running" || paused) {
@@ -252,7 +261,7 @@ export function GroupingExerciseClient() {
   useEffect(() => {
     if (phase === "running" && !paused) {
       activeRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: "auto",
         block: scrollMode === "line" ? "nearest" : "center",
       });
     }
@@ -320,7 +329,9 @@ export function GroupingExerciseClient() {
           value={groupSize}
           disabled={phase === "running" && !paused}
           onChange={(event) => {
-            setGroupSize(Number(event.target.value) as GroupSize);
+            const nextGroupSize = Number(event.target.value);
+            if (!Number.isFinite(nextGroupSize)) return;
+            setGroupSize(nextGroupSize as GroupSize);
             reset();
           }}
         >
@@ -337,10 +348,8 @@ export function GroupingExerciseClient() {
         <select
           className={FULLSCREEN_SELECT_CLASS}
           value={speedMode}
-          disabled={phase === "running" && !paused}
           onChange={(event) => {
             setSpeedMode(event.target.value as SpeedMode);
-            reset();
           }}
         >
           <option value="milliseconds">Atlama Hizi</option>
@@ -357,10 +366,10 @@ export function GroupingExerciseClient() {
             min={50}
             max={10000}
             value={customMilliseconds}
-            disabled={phase === "running" && !paused}
             onChange={(event) => {
-              setCustomMilliseconds(Number(event.target.value));
-              reset();
+              const nextSpeed = Number(event.target.value);
+              if (!Number.isFinite(nextSpeed)) return;
+              setCustomMilliseconds(Math.min(10000, Math.max(50, nextSpeed)));
             }}
           />
         </label>
@@ -370,14 +379,19 @@ export function GroupingExerciseClient() {
           <input
             className={FULLSCREEN_SELECT_CLASS}
             type="number"
-            min={30}
+            min={50}
             max={3000}
-            value={customWordsPerMinute}
-            disabled={phase === "running" && !paused}
+            value={Number.isFinite(customWordsPerMinute) ? customWordsPerMinute : ""}
             onChange={(event) => {
-              setCustomWordsPerMinute(Number(event.target.value));
-              reset();
+              if (event.target.value === "") {
+                setCustomWordsPerMinute(Number.NaN);
+                return;
+              }
+              const nextSpeed = Number(event.target.value);
+              if (!Number.isFinite(nextSpeed)) return;
+              setCustomWordsPerMinute(nextSpeed);
             }}
+            onBlur={() => setCustomWordsPerMinute(safeWordsPerMinute)}
           />
         </label>
       )}
@@ -554,6 +568,10 @@ export function GroupingExerciseClient() {
             </Link>
           ) : null}
         </div>
+      ) : totalGroups === 0 ? (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 font-bold text-amber-900">
+          Çalıştırılacak içerik bulunamadı.
+        </p>
       ) : phase === "ready" ? (
         <div className="text-center">
           <h2 className="text-xl font-black md:text-3xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
