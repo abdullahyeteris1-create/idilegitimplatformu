@@ -146,26 +146,6 @@ function getNextLevel(level: ExerciseLevel): ExerciseLevel {
   return 5;
 }
 
-function getLevelDescription(level: ExerciseLevel) {
-  if (level === 1) {
-    return "2 kelime görünür. Aynıysa Sol, farklıysa Sağ.";
-  }
-
-  if (level === 2) {
-    return "3 kelime görünür. Tüm kelimeler aynı mı, biri farklı mı karar ver.";
-  }
-
-  if (level === 3) {
-    return "4 kelime görünür. Benzer kelimelerde küçük farkları yakala.";
-  }
-
-  if (level === 4) {
-    return "4 kelime görünür. Kelimelerin yerleri hafif değişir.";
-  }
-
-  return "5 kelime görünür. Hızlı ve doğru karar vermeye çalış.";
-}
-
 function getOffsetClass(offset: WordOffset) {
   if (offset === "up") return "md:-translate-y-5";
   if (offset === "down") return "md:translate-y-5";
@@ -441,35 +421,31 @@ export function TwoSideFocusExerciseClient() {
   };
 
   return (
-    <ExerciseFullscreenShell
+        <ExerciseFullscreenShell
       title="Çift Taraflı Odak"
-      description={`Kelimeler aynıysa Sol, farklıysa Sağ cevabını ver. ${getLevelDescription(level)}`}
       backHref="/egzersizler"
       status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span><span className="compact-stat-chip">Net: {netCount}/{NET_TARGET}</span><span className="compact-stat-chip">Kelime: {wordCount}</span></>}
       settings={(
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm font-bold"><span>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
-          <label className="grid gap-2 text-sm font-bold"><span>Hız</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} /><span>{speed} ms</span></label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-bold"><span>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
+          <label className="grid gap-1 text-xs font-bold"><span>Hız: {speed} ms</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" /></label>
         </div>
       )}
-      footer={<div className="flex flex-wrap justify-center gap-2"><button type="button" onClick={handleStartStop} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-bold text-white">{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeni Kelimeler</button><button type="button" onClick={handleReset} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeniden Başlat</button></div>}
+      footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white md:text-sm">{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm">Yeni Kelimeler</button><button type="button" onClick={handleReset} className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm">Yeniden Başlat</button></div>}
     >
-      <section className="mx-auto flex w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-lg">
-        <section className="flex min-h-0 flex-col px-3 py-3 md:px-4">
-          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-black text-slate-950 md:text-xl">
-                Aynı mı, Farklı mı?
-              </h2>
-              <p className="text-xs font-semibold text-slate-600 md:text-sm">
-                Tüm kelimeler aynıysa Sol. Bir kelime farklıysa Sağ.
-              </p>
-            </div>
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+        <div className="shrink-0 px-1 md:px-2">
+          <h2 className="text-sm font-black text-slate-950 md:text-base">
+            Aynı mı, Farklı mı?
+          </h2>
+          <p className="text-[10px] font-semibold text-slate-600 md:text-xs">
+            Tüm kelimeler aynıysa Sol. Bir kelime farklıysa Sağ.
+          </p>
+        </div>
 
-          </div>
-
+        <div className="shrink-0 px-1 md:px-2">
           <div
-            className={`mb-3 rounded-xl border px-3 py-2 text-center text-xs font-black md:text-sm ${
+            className={`rounded-lg border px-2 py-1 text-center text-[10px] font-bold md:text-xs ${
               feedback.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : feedback.type === "error"
@@ -479,51 +455,44 @@ export function TwoSideFocusExerciseClient() {
           >
             {feedback.message}
           </div>
+        </div>
 
-          <div className="relative flex min-h-[280px] items-center justify-center overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-indigo-50 p-3 shadow-inner sm:min-h-[320px] md:min-h-[360px] md:p-5">
-            <div className="relative z-10 flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-3 py-5 md:gap-4 md:py-7">
-              {roundData.words.map((item) => (
-                <div
-                  key={item.id}
-                  className={`transition-all duration-300 ${getOffsetClass(
-                    item.offset,
-                  )}`}
-                >
-                  <span className="flex min-h-[68px] min-w-[130px] items-center justify-center rounded-3xl border-2 border-indigo-200 bg-white px-4 py-3 text-center text-2xl font-black text-slate-950 shadow-lg shadow-slate-200/60 sm:min-h-[76px] sm:min-w-[160px] sm:text-3xl md:min-h-[82px] md:min-w-[190px] md:px-7 md:py-3 md:text-4xl">
-                    {item.text}
-                  </span>
-                </div>
-              ))}
-            </div>
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 md:px-2">
+          <div className="flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-2 md:gap-3">
+            {roundData.words.map((item) => (
+              <div
+                key={item.id}
+                className={`transition-all duration-300 ${getOffsetClass(
+                  item.offset,
+                )}`}
+              >
+                <span className="flex min-h-[44px] min-w-[90px] items-center justify-center rounded-2xl border-2 border-indigo-200 bg-white px-3 py-2 text-center text-lg font-black text-slate-950 shadow shadow-slate-200/60 sm:min-h-[52px] sm:min-w-[110px] sm:text-xl md:min-h-[60px] md:min-w-[140px] md:px-5 md:py-2 md:text-2xl">
+                  {item.text}
+                </span>
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="shrink-0 px-1 md:px-2">
+          <div className="grid gap-1.5 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleAnswer("same")}
-              className="min-h-[58px] rounded-2xl border-2 border-blue-200 bg-blue-50 px-4 py-3 text-lg font-black text-blue-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-95 md:min-h-[68px] md:text-xl"
+              className="min-h-[40px] rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2 text-sm font-black text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-95 md:min-h-[48px] md:text-base"
             >
               ← SOL / AYNI
             </button>
-
             <button
               type="button"
               onClick={() => handleAnswer("different")}
-              className="min-h-[58px] rounded-2xl border-2 border-rose-200 bg-rose-50 px-4 py-3 text-lg font-black text-rose-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 active:scale-95 md:min-h-[68px] md:text-xl"
+              className="min-h-[40px] rounded-xl border-2 border-rose-200 bg-rose-50 px-3 py-2 text-sm font-black text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-95 md:min-h-[48px] md:text-base"
             >
               SAĞ / FARKLI →
             </button>
           </div>
-
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <p className="text-xs font-black text-slate-800">Kullanım</p>
-            <p className="mt-1 text-xs font-medium leading-5 text-slate-600 md:text-sm">
-              Bilgisayarda sol ve sağ yön tuşlarını kullanabilirsin. Dokunmatik
-              ekranda alttaki SOL / AYNI ve SAĞ / FARKLI butonlarına bas.
-            </p>
-          </div>
-        </section>
-      </section>
+        </div>
+      </div>
     </ExerciseFullscreenShell>
   );
 }

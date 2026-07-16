@@ -38,7 +38,7 @@ export function ExerciseFullscreenShell({
       onExit={showNavigation ? () => router.push(backHref) : undefined}
       contentClassName="p-2 md:p-4"
     >
-      <div className="box-border h-full min-h-0 min-w-0 max-w-full overflow-auto">{children}</div>
+      <div className="box-border h-full min-h-0 min-w-0 max-w-full overflow-hidden">{children}</div>
     </ExerciseStage>
   );
 }
