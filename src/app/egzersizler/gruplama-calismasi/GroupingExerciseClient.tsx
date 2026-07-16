@@ -9,6 +9,7 @@ import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -101,12 +102,17 @@ export function GroupingExerciseClient() {
 
   const categories = useMemo(() => [ALL, ...getTextCategories()], []);
 
+  const sortedTexts = useMemo(() => {
+    const categoryOrder = categories.filter((item) => item !== ALL);
+    return sortByCategoryAndTitle(texts, { categoryOrder });
+  }, [categories, texts]);
+
   const filtered = useMemo(() => {
-    return category === ALL ? texts : texts.filter((item) => item.category === category);
-  }, [category, texts]);
+    return category === ALL ? sortedTexts : sortedTexts.filter((item) => item.category === category);
+  }, [category, sortedTexts]);
 
   const resolvedTextId = filtered.some((item) => item.id === textId) ? textId : (filtered[0]?.id ?? "");
-  const selected = texts.find((item) => item.id === resolvedTextId) ?? null;
+  const selected = sortedTexts.find((item) => item.id === resolvedTextId) ?? null;
 
   const words = useMemo(() => {
     return selected ? splitTextIntoWords(selected.text) : [];
@@ -349,7 +355,7 @@ export function GroupingExerciseClient() {
         >
           {filtered.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.title}
+              {getDisplayTextTitle(item.title)}
             </option>
           ))}
         </select>

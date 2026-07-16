@@ -20,6 +20,12 @@ import {
   activateQuestionSetIfAllInactiveAndSync,
   setQuestionsActiveByTextIdAndSync,
 } from "@/lib/settings/questionLibraryStorage";
+import {
+  getDisplayTextTitle,
+  normalizeTextCategory,
+  normalizeTextTitle,
+  sortByCategoryAndTitle,
+} from "@/lib/text-library/sorting";
 
 type TextFormState = {
   title: string;
@@ -219,14 +225,18 @@ export function TextLibraryClient() {
   }, [categories.length, items]);
 
   const filteredItems = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
+    const normalizedSearch = normalizeTextTitle(searchTerm).toLocaleLowerCase("tr-TR");
 
-    return items.filter((item) => {
+    const nextItems = items.filter((item) => {
+      const title = normalizeTextTitle(item.title);
+      const content = String(item.content ?? "");
+      const category = normalizeTextCategory(item.category);
+
       const matchesSearch =
         !normalizedSearch ||
-        item.title.toLocaleLowerCase("tr-TR").includes(normalizedSearch) ||
-        item.content.toLocaleLowerCase("tr-TR").includes(normalizedSearch);
-      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
+        title.toLocaleLowerCase("tr-TR").includes(normalizedSearch) ||
+        content.toLocaleLowerCase("tr-TR").includes(normalizedSearch);
+      const matchesCategory = categoryFilter === "all" || category === categoryFilter;
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && item.isActive) ||
@@ -234,7 +244,9 @@ export function TextLibraryClient() {
 
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [categoryFilter, items, searchTerm, statusFilter]);
+
+    return sortByCategoryAndTitle(nextItems, { categoryOrder: categories });
+  }, [categories, categoryFilter, items, searchTerm, statusFilter]);
 
   const formWordCount = countWords(form.content);
   const formCharacterCount = countCharacters(form.content);
@@ -860,7 +872,7 @@ export function TextLibraryClient() {
                 <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="line-clamp-2 break-words text-[18px] font-semibold text-slate-950">{item.title}</h3>
+                      <h3 className="line-clamp-2 break-words text-[18px] font-semibold text-slate-950">{getDisplayTextTitle(item.title)}</h3>
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
                           item.isActive ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
@@ -869,7 +881,7 @@ export function TextLibraryClient() {
                         {item.isActive ? "Aktif" : "Pasif"}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-slate-500">{item.category}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">{normalizeTextCategory(item.category)}</p>
                     <p className="mt-2 max-w-full overflow-hidden text-ellipsis break-words text-sm text-slate-600">
                       {getShortPreview(item.content)}
                     </p>

@@ -15,6 +15,7 @@ import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
+import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -140,17 +141,22 @@ export function BlockReadingExerciseClient() {
     return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
+  const sortedTexts = useMemo<ReadableText[]>(() => {
+    const categoryOrder = availableCategories.filter((item) => item !== ALL_CATEGORIES);
+    return sortByCategoryAndTitle(availableTexts, { categoryOrder });
+  }, [availableCategories, availableTexts]);
+
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : ALL_CATEGORIES;
   }, [availableCategories, category]);
 
   const textsByCategory = useMemo(() => {
     if (resolvedCategory === ALL_CATEGORIES) {
-      return availableTexts;
+      return sortedTexts;
     }
 
-    return availableTexts.filter((item) => item.category === resolvedCategory);
-  }, [availableTexts, resolvedCategory]);
+    return sortedTexts.filter((item) => item.category === resolvedCategory);
+  }, [resolvedCategory, sortedTexts]);
 
   const resolvedTextId = useMemo(() => {
     if (textsByCategory.length === 0) {
@@ -162,8 +168,8 @@ export function BlockReadingExerciseClient() {
   }, [textId, textsByCategory]);
 
   const selectedText = useMemo(() => {
-    return availableTexts.find((item) => item.id === resolvedTextId) ?? null;
-  }, [availableTexts, resolvedTextId]);
+    return sortedTexts.find((item) => item.id === resolvedTextId) ?? null;
+  }, [resolvedTextId, sortedTexts]);
 
   const words = useMemo(() => {
     if (!selectedText) {
@@ -403,7 +409,7 @@ export function BlockReadingExerciseClient() {
         }} className={FULLSCREEN_SELECT_CLASS}>
           {textsByCategory.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.title}
+              {getDisplayTextTitle(item.title)}
             </option>
           ))}
         </select>

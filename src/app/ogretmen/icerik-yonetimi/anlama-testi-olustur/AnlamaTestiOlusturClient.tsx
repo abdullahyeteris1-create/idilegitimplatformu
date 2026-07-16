@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TEXT_LIBRARY_CATEGORIES, countCharacters, countWords, getTextLibraryItems, type TextLibraryItem } from "@/lib/settings/textLibraryStorage";
 import {
+  getDisplayTextTitle,
+  normalizeTextCategory,
+  sortByCategoryAndTitle,
+} from "@/lib/text-library/sorting";
+import {
   createQuestion,
   deleteQuestion,
   getQuestions,
@@ -73,17 +78,26 @@ export function AnlamaTestiOlusturClient() {
   }, []);
 
   const categories = useMemo(() => {
-    const textCategorySet = new Set(texts.map((item) => item.category));
+    const textCategorySet = new Set(texts.map((item) => normalizeTextCategory(item.category)));
     return TEXT_LIBRARY_CATEGORIES.filter((category) => textCategorySet.has(category));
   }, [texts]);
 
+  const sortedTexts = useMemo(() => {
+    return sortByCategoryAndTitle(texts, { categoryOrder: [...TEXT_LIBRARY_CATEGORIES] });
+  }, [texts]);
+
   const filteredTexts = useMemo(() => {
-    return texts.filter((item) => categoryFilter === "all" || item.category === categoryFilter);
-  }, [categoryFilter, texts]);
+    return sortedTexts.filter((item) => categoryFilter === "all" || normalizeTextCategory(item.category) === categoryFilter);
+  }, [categoryFilter, sortedTexts]);
 
   const selectedText = useMemo(() => {
-    return texts.find((item) => item.id === selectedTextId) ?? filteredTexts[0] ?? null;
-  }, [filteredTexts, selectedTextId, texts]);
+    return sortedTexts.find((item) => item.id === selectedTextId) ?? filteredTexts[0] ?? null;
+  }, [filteredTexts, selectedTextId, sortedTexts]);
+
+  const optionEditorKeys = useMemo(() => {
+    const editorScope = editingQuestionId ?? "draft";
+    return form.options.map((_, index) => `${editorScope}-option-${index}`);
+  }, [editingQuestionId, form.options]);
 
   const selectedTextQuestions = useMemo(() => {
     if (!selectedText) {
@@ -295,7 +309,7 @@ export function AnlamaTestiOlusturClient() {
               <option value="all">Tüm Kategoriler</option>
               {categories.map((category) => (
                 <option key={category} value={category}>
-                  {category}
+                  {normalizeTextCategory(category)}
                 </option>
               ))}
             </select>
@@ -311,7 +325,7 @@ export function AnlamaTestiOlusturClient() {
               {filteredTexts.length === 0 ? <option value="">Metin bulunamadı</option> : null}
               {filteredTexts.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.title}
+                  {getDisplayTextTitle(item.title)}
                 </option>
               ))}
             </select>
@@ -322,11 +336,11 @@ export function AnlamaTestiOlusturClient() {
           <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
             <article>
               <p className="text-xs text-slate-500">Metin Başlığı</p>
-              <p className="mt-1 font-semibold text-slate-950">{selectedText.title}</p>
+              <p className="mt-1 font-semibold text-slate-950">{getDisplayTextTitle(selectedText.title)}</p>
             </article>
             <article>
               <p className="text-xs text-slate-500">Kategori</p>
-              <p className="mt-1 font-semibold text-slate-950">{selectedText.category}</p>
+              <p className="mt-1 font-semibold text-slate-950">{normalizeTextCategory(selectedText.category)}</p>
             </article>
             <article>
               <p className="text-xs text-slate-500">Kelime Sayısı</p>
@@ -417,7 +431,7 @@ export function AnlamaTestiOlusturClient() {
                   const isCorrect = form.correctAnswerIndex === index;
 
                   return (
-                    <div key={`option-${index}`} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
+                    <div key={optionEditorKeys[index]} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
                       <label className="grid gap-1 text-sm font-medium text-slate-700">
                         Şık {index + 1}
                         <input

@@ -17,6 +17,7 @@ import {
   type LessonRecordStudent,
 } from "@/lib/idil-panel/summaryStorage";
 import {
+  getTextCategories,
   getTextLibraryItems,
   refreshTextLibraryCache,
   type TextLibraryItem,
@@ -29,6 +30,13 @@ import { getResultsByStudentWithRemote } from "@/lib/results/resultStorage";
 import type { ExerciseResult } from "@/lib/results/types";
 import { getStudentsWithRemote } from "@/lib/students/studentStorage";
 import type { Student } from "@/lib/students/types";
+import {
+  compareTurkishTextTitles,
+  getDisplayTextTitle,
+  normalizeTextCategory,
+  normalizeTextTitle,
+  sortByCategoryAndTitle,
+} from "@/lib/text-library/sorting";
 
 type LessonFormState = {
   studentId: string;
@@ -679,10 +687,11 @@ function LessonRecordsContent() {
   }, [selectedStudentLessons]);
 
   const libraryTextOptions = useMemo<LibraryTextOption[]>(() => {
-    return [...libraryTexts]
-      .sort((a, b) => a.title.localeCompare(b.title, "tr"))
+    const categoryOrder = getTextCategories();
+
+    return sortByCategoryAndTitle(libraryTexts, { categoryOrder })
       .map((textItem) => {
-        const titleKey = normalizeTitle(textItem.title);
+        const titleKey = normalizeTitle(getDisplayTextTitle(textItem.title));
         const matchedLessons = [...(readTextInfoByTitle.get(titleKey) ?? [])]
           .sort((a, b) => {
             if (a.lessonDate !== b.lessonDate) {
@@ -695,8 +704,8 @@ function LessonRecordsContent() {
 
         return {
           id: textItem.id,
-          title: textItem.title,
-          category: textItem.category,
+          title: getDisplayTextTitle(textItem.title),
+          category: normalizeTextCategory(textItem.category),
           level: textItem.level,
           timesRead: matchedLessons.length,
           lastReadLessonNo: lastLesson ? resolveLessonNo(lastLesson, fallbackLessonNoByDate) : null,
@@ -714,7 +723,20 @@ function LessonRecordsContent() {
       return libraryTextOptions;
     }
 
-    return libraryTextOptions.filter((item) => normalizeTitle(item.title).includes(normalizedSearch));
+    return [...libraryTextOptions]
+      .filter((item) => normalizeTitle(item.title).includes(normalizedSearch))
+      .sort((left, right) => {
+        const categoryCompare = normalizeTextCategory(left.category).localeCompare(normalizeTextCategory(right.category), "tr-TR", {
+          sensitivity: "base",
+          numeric: true,
+        });
+
+        if (categoryCompare !== 0) {
+          return categoryCompare;
+        }
+
+        return compareTurkishTextTitles(normalizeTextTitle(left.title), normalizeTextTitle(right.title));
+      });
   }, [libraryTextOptions, textSearchTerm]);
 
   const selectedTextReadInfo = useMemo(() => {
