@@ -71,7 +71,7 @@ const TOUCH_STYLE: CSSProperties = {
 };
 
 function normalizeWordsPerMinute(value: number): number {
-  return normalizeReadingSpeed(value, 150, 50, 1000);
+  return normalizeReadingSpeed(value, 150, 1);
 }
 
 export function ShadowReadingExerciseClient() {
@@ -93,6 +93,8 @@ export function ShadowReadingExerciseClient() {
   const [speedMode, setSpeedMode] = useState<ShadowReadingSpeedMode>("interval");
   const [intervalInputMs, setIntervalInputMs] = useState<JumpSpeedMs>(500);
   const [wordsPerMinute, setWordsPerMinute] = useState<WordsPerMinute>(150);
+  const [wordsPerMinuteInput, setWordsPerMinuteInput] = useState("150");
+  const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSizePx>(20);
 
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
@@ -214,6 +216,33 @@ export function ShadowReadingExerciseClient() {
     speedMode === "interval"
       ? `Atlama hizi: ${intervalMs} ms`
       : `Okuma hizi: ${safeWordsPerMinute} kelime/dk`;
+  const transitionSeconds = timerDelayMs / 1000;
+  const transitionSecondsLabel = transitionSeconds >= 10
+    ? transitionSeconds.toFixed(0)
+    : transitionSeconds >= 1
+      ? transitionSeconds.toFixed(1)
+      : transitionSeconds.toFixed(2);
+
+  const commitWordsPerMinuteInput = useCallback((rawValue: string): boolean => {
+    if (rawValue.trim() === "") {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setWordsPerMinuteInput(String(wordsPerMinute));
+      return false;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setWordsPerMinuteInput(String(wordsPerMinute));
+      return false;
+    }
+
+    const nextSpeed = Math.max(1, Math.round(parsed));
+    setWordsPerMinute(nextSpeed);
+    setWordsPerMinuteInput(String(nextSpeed));
+    setReadingSpeedError(null);
+    return true;
+  }, [wordsPerMinute]);
 
   const activeRange = useMemo(() => {
     return getActiveBlockRange(currentBlockIndex, blockSize);
@@ -317,6 +346,10 @@ export function ShadowReadingExerciseClient() {
 
   const handleBeginPlay = () => {
     if (!selectedText || totalBlocks === 0) {
+      return;
+    }
+
+    if (speedMode === "wpm" && !commitWordsPerMinuteInput(wordsPerMinuteInput)) {
       return;
     }
 
@@ -460,14 +493,21 @@ export function ShadowReadingExerciseClient() {
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hız Modu</span>
         <select value={speedMode} onChange={(event) => {
-          setSpeedMode(event.target.value as ShadowReadingSpeedMode);
+          const nextMode = event.target.value as ShadowReadingSpeedMode;
+          setSpeedMode(nextMode);
+          if (nextMode === "wpm") {
+            setWordsPerMinuteInput(String(safeWordsPerMinute));
+            setReadingSpeedError(null);
+          }
         }} className={FULLSCREEN_SELECT_CLASS}>
           <option value="interval">Atlama Hızı</option>
           <option value="wpm">Kelime / Dakika</option>
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hız</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {speedMode === "interval" ? "Hız" : "Okuma Hızı (kelime/dk)"}
+        </span>
         {speedMode === "interval" ? (
           <select value={intervalInputMs} onChange={(event) => {
             const nextSpeed = Number(event.target.value);
@@ -481,25 +521,44 @@ export function ShadowReadingExerciseClient() {
             ))}
           </select>
         ) : (
-          <input
-            type="number"
-            min={50}
-            max={1000}
-            step={1}
-            inputMode="numeric"
-            value={Number.isFinite(wordsPerMinute) ? wordsPerMinute : ""}
-            onChange={(event) => {
-              if (event.target.value === "") {
-                setWordsPerMinute(Number.NaN);
-                return;
-              }
-              const nextSpeed = Number(event.target.value);
-              if (!Number.isFinite(nextSpeed)) return;
-              setWordsPerMinute(nextSpeed);
-            }}
-            onBlur={() => setWordsPerMinute(safeWordsPerMinute)}
-            className={FULLSCREEN_SELECT_CLASS}
-          />
+          <>
+            <input
+              type="number"
+              step={1}
+              inputMode="numeric"
+              value={wordsPerMinuteInput}
+              onChange={(event) => {
+                const rawValue = event.target.value;
+                setWordsPerMinuteInput(rawValue);
+
+                if (rawValue.trim() === "") {
+                  setReadingSpeedError(null);
+                  return;
+                }
+
+                const parsed = Number(rawValue);
+                if (!Number.isFinite(parsed) || parsed < 1) {
+                  setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+                  return;
+                }
+
+                setWordsPerMinute(Math.max(1, Math.round(parsed)));
+                setReadingSpeedError(null);
+              }}
+              onBlur={() => {
+                void commitWordsPerMinuteInput(wordsPerMinuteInput);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void commitWordsPerMinuteInput(wordsPerMinuteInput);
+                }
+              }}
+              className={FULLSCREEN_SELECT_CLASS}
+            />
+            {readingSpeedError ? <p className="text-xs font-semibold text-red-700">{readingSpeedError}</p> : null}
+            <p className="text-[11px] text-slate-500">Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
+            {safeWordsPerMinute > 1500 ? <p className="text-[11px] text-amber-700">Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
+          </>
         )}
       </label>
       <label className="flex min-w-0 flex-col gap-1">

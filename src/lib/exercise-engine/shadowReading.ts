@@ -1,4 +1,4 @@
-import { normalizeDelayMs, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
+import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
 
 export type ShadowReadingSpeedMode = "interval" | "wpm";
 
@@ -44,9 +44,7 @@ export function calculateIntervalMs(options: CalculateIntervalOptions): number {
   }
 
   const wordsPerMinute = options.wordsPerMinute ?? 150;
-  const safeWordsPerMinute = Number.isFinite(wordsPerMinute)
-    ? Math.max(1, Math.round(wordsPerMinute))
-    : 150;
+  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 150, 1);
 
   return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedBlockSize);
 }
@@ -60,9 +58,7 @@ export function calculateReadingDuration(options: CalculateIntervalOptions): num
 
   if (options.mode === "wpm") {
     const wordsPerMinute = options.wordsPerMinute ?? 150;
-    const safeWordsPerMinute = Number.isFinite(wordsPerMinute)
-      ? Math.max(1, Math.round(wordsPerMinute))
-      : 150;
+    const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 150, 1);
 
     return Math.round((totalWords / safeWordsPerMinute) * 60);
   }
@@ -98,3 +94,4 @@ export function getActiveBlockRange(currentBlockIndex: number, blockSize: number
     endIndex: startIndex + safeBlockSize - 1,
   };
 }
+

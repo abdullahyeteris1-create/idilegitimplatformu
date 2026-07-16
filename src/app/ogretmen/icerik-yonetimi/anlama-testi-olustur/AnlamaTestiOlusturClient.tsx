@@ -417,7 +417,7 @@ export function AnlamaTestiOlusturClient() {
                   const isCorrect = form.correctAnswerIndex === index;
 
                   return (
-                    <div key={`${index}-${option}`} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
+                    <div key={`option-${index}`} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
                       <label className="grid gap-1 text-sm font-medium text-slate-700">
                         Şık {index + 1}
                         <input
@@ -534,8 +534,8 @@ export function AnlamaTestiOlusturClient() {
                 </div>
 
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {question.options.map((option) => (
-                    <div key={option} className={`rounded-xl border px-3 py-2 text-sm ${option === question.correctAnswer ? "border-green-200 bg-green-50 text-green-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                                    {question.options.map((option, optionIndex) => (
+                    <div key={`opt-${question.id}-${optionIndex}`} className={`rounded-xl border px-3 py-2 text-sm ${option === question.correctAnswer ? "border-green-200 bg-green-50 text-green-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
                       {option}
                     </div>
                   ))}

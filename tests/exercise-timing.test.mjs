@@ -19,19 +19,25 @@ const EXERCISE_COMPONENTS = [
 
 test("WPM değerlerini kelime sayısına göre milisaniyeye çevirir", () => {
   const expectedSingleWordDelays = new Map([
+    [1, 60000],
+    [25, 2400],
     [50, 1200],
     [100, 600],
     [250, 240],
     [500, 120],
     [1000, 60],
+    [1500, 40],
+    [2000, 30],
+    [3000, 20],
   ]);
 
   for (const [wordsPerMinute, expectedDelay] of expectedSingleWordDelays) {
     assert.equal(wordsPerMinuteToDelay(wordsPerMinute), expectedDelay);
   }
 
-  assert.equal(wordsPerMinuteToDelay(50, 4), 4800);
+  assert.equal(wordsPerMinuteToDelay(25, 4), 9600);
   assert.equal(wordsPerMinuteToDelay(120, 3), 1500);
+  assert.equal(wordsPerMinuteToDelay(2000, 4), 120);
 });
 
 test("milisaniye değerlerini WPM hesabına sokmadan korur", () => {
@@ -45,8 +51,9 @@ test("geçersiz ve sınır dışı değerleri güvenli aralığa çeker", () => 
   assert.equal(normalizeDelayMs(Number.POSITIVE_INFINITY), 1000);
   assert.equal(normalizeDelayMs(-1), 1000);
   assert.equal(normalizeDelayMs(10), 50);
-  assert.equal(normalizeReadingSpeed("50", 150, 50, 1000), 50);
-  assert.equal(normalizeReadingSpeed(5000, 150, 50, 1000), 1000);
+  assert.equal(normalizeReadingSpeed("50", 150, 1), 50);
+  assert.equal(normalizeReadingSpeed(5000, 150, 1), 5000);
+  assert.equal(wordsPerMinuteToDelay(0), 400);
 });
 
 test("dört metin akışı ortak timer hook'unu kullanır", async () => {

@@ -1,7 +1,9 @@
 export const MIN_EXERCISE_DELAY_MS = 50;
 export const MAX_EXERCISE_DELAY_MS = 60_000;
-export const MIN_READING_SPEED = 10;
-export const MAX_READING_SPEED = 3_000;
+
+
+export const MIN_READING_SPEED = 1;
+export const MAX_READING_SPEED = Number.MAX_SAFE_INTEGER;
 
 type NormalizeOptions = {
   min?: number;
@@ -45,8 +47,9 @@ export function wordsPerMinuteToDelay(
   wordsPerMinute: unknown,
   wordCount: unknown = 1,
 ): number {
-  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute);
+  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 150, 1);
   const safeWordCount = normalizePositiveNumber(wordCount, 1, { min: 1, max: 10_000 });
 
-  return normalizeDelayMs(Math.round((60_000 * safeWordCount) / safeWordsPerMinute));
+  return Math.max(1, Math.round((60_000 * safeWordCount) / safeWordsPerMinute));
 }
+

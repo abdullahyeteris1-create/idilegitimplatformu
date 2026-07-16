@@ -72,6 +72,8 @@ export function GroupingExerciseClient() {
   const [speedMode, setSpeedMode] = useState<SpeedMode>("milliseconds");
   const [customMilliseconds, setCustomMilliseconds] = useState(1000);
   const [customWordsPerMinute, setCustomWordsPerMinute] = useState(300);
+  const [customWordsPerMinuteInput, setCustomWordsPerMinuteInput] = useState("300");
+  const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
 
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -117,7 +119,7 @@ export function GroupingExerciseClient() {
   const totalCharacters = selected ? calculateCharacterCount(selected.text) : 0;
 
   const safeMilliseconds = normalizeDelayMs(customMilliseconds, 1000, 50, 10000);
-  const safeWordsPerMinute = normalizeReadingSpeed(customWordsPerMinute, 300, 50, 3000);
+  const safeWordsPerMinute = normalizeReadingSpeed(customWordsPerMinute, 300, 1);
   const currentGroupWordCount = groups[index]?.length || groupSize;
 
   const intervalMs = useMemo(
@@ -133,6 +135,33 @@ export function GroupingExerciseClient() {
       : wordsPerMinuteToDelay(safeWordsPerMinute, currentGroupWordCount),
     [currentGroupWordCount, safeMilliseconds, safeWordsPerMinute, speedMode],
   );
+  const transitionSeconds = timerDelayMs / 1000;
+  const transitionSecondsLabel = transitionSeconds >= 10
+    ? transitionSeconds.toFixed(0)
+    : transitionSeconds >= 1
+      ? transitionSeconds.toFixed(1)
+      : transitionSeconds.toFixed(2);
+
+  const commitWordsPerMinuteInput = useCallback((rawValue: string): boolean => {
+    if (rawValue.trim() === "") {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setCustomWordsPerMinuteInput(String(customWordsPerMinute));
+      return false;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setCustomWordsPerMinuteInput(String(customWordsPerMinute));
+      return false;
+    }
+
+    const nextSpeed = Math.max(1, Math.round(parsed));
+    setCustomWordsPerMinute(nextSpeed);
+    setCustomWordsPerMinuteInput(String(nextSpeed));
+    setReadingSpeedError(null);
+    return true;
+  }, [customWordsPerMinute]);
 
   const estimatedSeconds = Math.max(1, Math.ceil((totalGroups * intervalMs) / 1000));
   const estimatedWpm = Math.round((totalWords / estimatedSeconds) * 60);
@@ -272,6 +301,10 @@ export function GroupingExerciseClient() {
       return;
     }
 
+    if (speedMode === "wordsPerMinute" && !commitWordsPerMinuteInput(customWordsPerMinuteInput)) {
+      return;
+    }
+
     savedRef.current = false;
     startedAtRef.current = Date.now();
     setIndex(0);
@@ -349,7 +382,12 @@ export function GroupingExerciseClient() {
           className={FULLSCREEN_SELECT_CLASS}
           value={speedMode}
           onChange={(event) => {
-            setSpeedMode(event.target.value as SpeedMode);
+            const nextMode = event.target.value as SpeedMode;
+            setSpeedMode(nextMode);
+            if (nextMode === "wordsPerMinute") {
+              setCustomWordsPerMinuteInput(String(safeWordsPerMinute));
+              setReadingSpeedError(null);
+            }
           }}
         >
           <option value="milliseconds">Atlama Hizi</option>
@@ -375,24 +413,43 @@ export function GroupingExerciseClient() {
         </label>
       ) : (
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-semibold uppercase text-slate-500">Kelime / Dakika</span>
+          <span className="text-[11px] font-semibold uppercase text-slate-500">Okuma Hizi (kelime/dk)</span>
           <input
             className={FULLSCREEN_SELECT_CLASS}
             type="number"
-            min={50}
-            max={3000}
-            value={Number.isFinite(customWordsPerMinute) ? customWordsPerMinute : ""}
+            step={1}
+            inputMode="numeric"
+            value={customWordsPerMinuteInput}
             onChange={(event) => {
-              if (event.target.value === "") {
-                setCustomWordsPerMinute(Number.NaN);
+              const rawValue = event.target.value;
+              setCustomWordsPerMinuteInput(rawValue);
+
+              if (rawValue.trim() === "") {
+                setReadingSpeedError(null);
                 return;
               }
-              const nextSpeed = Number(event.target.value);
-              if (!Number.isFinite(nextSpeed)) return;
-              setCustomWordsPerMinute(nextSpeed);
+
+              const parsed = Number(rawValue);
+              if (!Number.isFinite(parsed) || parsed < 1) {
+                setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+                return;
+              }
+
+              setCustomWordsPerMinute(Math.max(1, Math.round(parsed)));
+              setReadingSpeedError(null);
             }}
-            onBlur={() => setCustomWordsPerMinute(safeWordsPerMinute)}
+            onBlur={() => {
+              void commitWordsPerMinuteInput(customWordsPerMinuteInput);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void commitWordsPerMinuteInput(customWordsPerMinuteInput);
+              }
+            }}
           />
+          {readingSpeedError ? <p className="text-xs font-semibold text-red-700">{readingSpeedError}</p> : null}
+          <p className="text-[11px] text-slate-500">Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
+          {safeWordsPerMinute > 1500 ? <p className="text-[11px] text-amber-700">Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
         </label>
       )}
 
