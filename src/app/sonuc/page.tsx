@@ -60,8 +60,8 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
 
   return (
     <AppShell
-      title="Sonuc"
-      subtitle="Performans ozetini incele ve bir sonraki calisma planini yap."
+      title="Sonuçlarım"
+      subtitle="Tüm çalışma sonuçlarını görüntüle ve filtrele."
       navItems={APP_NAV_ITEMS}
       headerVariant="student-vibrant"
     >
@@ -75,3 +75,4 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     </AppShell>
   );
 }
+

@@ -223,6 +223,43 @@ export function LetterNumberCountingFocusClient() {
     }, 850);
   }, [clearFeedbackTimer, clearTimer, continueAfterFeedback, correctCount, level, phase, round, wrongCount]);
 
+  // --- Klavye desteği: sayı tuşları ve Numpad ---
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Sadece "running" fazında çalışsın
+      if (phase !== "running" || !round) {
+        return;
+      }
+
+      let pressedNumber: number | null = null;
+
+      if (event.key.startsWith("Digit")) {
+        pressedNumber = Number(event.key.replace("Digit", ""));
+      } else if (event.key.startsWith("Numpad")) {
+        pressedNumber = Number(event.key.replace("Numpad", ""));
+      } else if (event.key === "0") {
+        pressedNumber = 10;
+      }
+
+      // Geçersiz veya cevap aralığı dışındaki tuşları yoksay
+      if (pressedNumber === null || pressedNumber < 1 || pressedNumber > Math.max(...ANSWER_OPTIONS)) {
+        return;
+      }
+
+      event.preventDefault();
+      submitAnswer(pressedNumber, "answer");
+    },
+    [phase, round, submitAnswer],
+  );
+
+  // Klavye event listener'ı (document seviyesinde, sadece "running" fazında aktif)
+  useEffect(() => {
+    if (phase !== "running") return;
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown, phase]);
+
   useEffect(() => {
     if (phase !== "running") {
       clearTimer();
