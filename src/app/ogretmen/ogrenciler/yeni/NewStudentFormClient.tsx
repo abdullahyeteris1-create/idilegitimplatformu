@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
   createStudentWithRemote,
   generateStudentPassword,
@@ -32,6 +33,7 @@ export function NewStudentFormClient() {
   const [birthDate, setBirthDate] = useState("");
   const [status, setStatus] = useState<StudentStatus>("active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>("general");
+  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [resultMessage, setResultMessage] = useState<ResultMessage | null>(null);
@@ -44,6 +46,11 @@ export function NewStudentFormClient() {
 
     if (!name.trim() || !username.trim() || !password.trim()) {
       setError("Ad soyad, kullanici adi ve sifre zorunludur.");
+      return;
+    }
+
+    if (!educationLevel) {
+      setError("Egitim duzeyi secimi zorunludur.");
       return;
     }
 
@@ -80,6 +87,7 @@ export function NewStudentFormClient() {
         birthDate,
         status,
         educationStatus,
+        educationLevel: educationLevel || undefined,
         notes,
         welcomeEmailStatus: sendWelcomeEmail ? undefined : "not_requested",
       });
@@ -296,6 +304,22 @@ export function NewStudentFormClient() {
           >
             <option value="general">Genel</option>
             <option value="speed-reading">Hizli Okuma</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
+          Egitim Duzeyi (Zorunlu)
+          <select
+            value={educationLevel}
+            onChange={(event) => setEducationLevel(event.target.value as EducationLevel | "")}
+            className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          >
+            <option value="">Seciniz</option>
+            {EDUCATION_LEVELS.map((value) => (
+              <option key={value} value={value}>
+                {EDUCATION_LEVEL_LABELS[value]}
+              </option>
+            ))}
           </select>
         </label>
       </div>

@@ -3,7 +3,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
-import { getStudentByUsername, getStudentByUsernameWithRemote, getStudents } from "@/lib/students/studentStorage";
+import type { Student } from "@/lib/students/types";
 
 type LoginMode = "student" | "teacher";
 type TabDirection = "forward" | "backward";
@@ -43,25 +43,6 @@ export function LoginForm() {
     setMessage("Bu ozellik yakinda eklenecek.");
   };
 
-  const normalizeLoginValue = (value: string): string => {
-    const trimmed = value.trim();
-
-    if (!trimmed) {
-      return "";
-    }
-
-    return trimmed
-      .toLocaleLowerCase("tr-TR")
-      .replace(/ğ/g, "g")
-      .replace(/ü/g, "u")
-      .replace(/ş/g, "s")
-      .replace(/ı/g, "i")
-      .replace(/ö/g, "o")
-      .replace(/ç/g, "c")
-      .replace(/İ/g, "i")
-      .replace(/[^a-z0-9]/g, "");
-  };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage("");
@@ -98,62 +79,30 @@ export function LoginForm() {
       return;
     }
 
-    const normalizedUsername = normalizeLoginValue(cleanUsername);
-    const normalizedPassword = cleanPassword.trim();
+    const response = await fetch("/api/student-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        username: cleanUsername,
+        password: cleanPassword,
+      }),
+    });
 
-    if (normalizedUsername === "ogrenci" && normalizedPassword === "1234") {
-      const demoStudent =
-        (await getStudentByUsernameWithRemote("ogrenci")) ??
-        getStudentByUsername("ogrenci") ??
-        getStudents().find((item) => item.id === "demo-student") ?? {
-        id: "demo-student",
-        name: "Demo Öğrenci",
-        username: "ogrenci",
-        password: "1234",
-        className: "Demo",
-        classLevel: "Demo",
-        parentName: "",
-        phone: "",
-        parentPhone: "",
-        status: "active" as const,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
+    const payload = (await response.json()) as {
+      ok?: boolean;
+      message?: string;
+      student?: Student;
+    };
 
-      setCurrentStudent(demoStudent);
-      setCurrentUser({
-        role: "student",
-        studentId: demoStudent.id,
-        studentName: demoStudent.name,
-        username: demoStudent.username,
-      });
-      router.replace("/ogrenci");
+    if (!response.ok || !payload.ok || !payload.student) {
+      setMessage(payload.message ?? "Kullanıcı adı veya şifre hatalı.");
       return;
     }
 
-    const student =
-      (await getStudentByUsernameWithRemote(cleanUsername)) ??
-      getStudentByUsername(cleanUsername) ??
-      getStudents().find((item) => normalizeLoginValue(item.name) === normalizedUsername) ??
-      null;
-
-    if (!student) {
-      setMessage("Kullanıcı adı veya şifre hatalı.");
-      return;
-    }
-
-    if (student.password.trim() !== normalizedPassword) {
-      setMessage("Kullanıcı adı veya şifre hatalı.");
-      return;
-    }
-
-    const isActive = student.isActive ?? student.status === "active";
-
-    if (!isActive) {
-      setMessage("Bu öğrenci hesabı pasif durumda. Lütfen öğretmeninizle iletişime geçin.");
-      return;
-    }
-
+    const student = payload.student;
     setCurrentStudent(student);
     setCurrentUser({
       role: "student",

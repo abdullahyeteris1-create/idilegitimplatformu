@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
+import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { getStudents, getStudentsWithRemote, removeStudentFromLocalCache } from "@/lib/students/studentStorage";
 import type { Student, StudentStatus } from "@/lib/students/types";
@@ -43,6 +44,15 @@ function getClassName(student: Student): string {
 
 function getParentPhone(student: Student): string {
   return student.phone ?? student.parentPhone ?? "-";
+}
+
+function getEducationLevelLabel(student: Student): string {
+  const educationLevel = student.educationLevel;
+  if (!educationLevel) {
+    return "-";
+  }
+
+  return EDUCATION_LEVEL_LABELS[educationLevel] ?? "-";
 }
 
 function getStatusBadgeClass(status: StudentStatus): string {
@@ -354,6 +364,7 @@ export default function StudentTrackingPage() {
                       </div>
                       <div className="mt-3 grid gap-1 text-sm text-slate-600">
                         <p>Sınıf: {getClassName(student)}</p>
+                        <p>Egitim Duzeyi: {getEducationLevelLabel(student)}</p>
                         <p>Veli: {student.parentName ?? "-"}</p>
                         <p>Telefon: {getParentPhone(student)}</p>
                       </div>
@@ -373,7 +384,7 @@ export default function StudentTrackingPage() {
                 <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500">
                     <tr>
-                      {["Ad Soyad", "Sınıf", "Veli", "Telefon", "Kullanıcı Adı", "Durum", "İşlemler"].map((column) => (
+                      {["Ad Soyad", "Sınıf", "Egitim Duzeyi", "Veli", "Telefon", "Kullanıcı Adı", "Durum", "İşlemler"].map((column) => (
                         <th key={column} className="border-b border-slate-200 px-3 py-3 font-semibold">
                           {column}
                         </th>
@@ -388,6 +399,7 @@ export default function StudentTrackingPage() {
                         <tr key={student.id} className="border-b border-slate-100 last:border-0">
                           <td className="px-3 py-3 font-semibold text-slate-950">{student.name}</td>
                           <td className="px-3 py-3 text-slate-700">{getClassName(student)}</td>
+                          <td className="px-3 py-3 text-slate-700">{getEducationLevelLabel(student)}</td>
                           <td className="px-3 py-3 text-slate-700">{student.parentName ?? "-"}</td>
                           <td className="px-3 py-3 text-slate-700">{getParentPhone(student)}</td>
                           <td className="px-3 py-3 font-mono text-xs text-slate-800">{student.username}</td>

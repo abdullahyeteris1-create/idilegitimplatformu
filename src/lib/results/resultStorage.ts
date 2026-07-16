@@ -24,7 +24,11 @@ function hasWindow(): boolean {
 }
 
 function generateId(): string {
-  return `res-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
 function readResults(): ExerciseResult[] {
@@ -132,8 +136,10 @@ function getResultIdentityDefaults(): { studentId?: string; studentName?: string
 function mapResultToSupabaseRow(result: ExerciseResult): Record<string, unknown> {
   const completedAt = result.date;
   const safeStudentId = isUuid(result.studentId) ? result.studentId : null;
+  const safeResultId = isUuid(result.id) ? result.id : null;
 
   return {
+    ...(safeResultId ? { id: safeResultId } : {}),
     student_id: safeStudentId,
     student_name: result.studentName,
     username: result.username ?? null,
@@ -192,6 +198,37 @@ async function insertResultToSupabase(result: ExerciseResult): Promise<void> {
   console.warn("Exercise result Supabase save failed");
 }
 
+function getAssignmentItemIdFromUrl(): string | null {
+  if (!hasWindow()) {
+    return null;
+  }
+
+  const value = new URLSearchParams(window.location.search).get("assignmentItemId");
+  return value?.trim() || null;
+}
+
+async function completeAssignmentItemIfNeeded(result: ExerciseResult): Promise<void> {
+  const assignmentItemId = getAssignmentItemIdFromUrl();
+  if (!assignmentItemId) {
+    return;
+  }
+
+  try {
+    await fetch(`/api/student/assignment-items/${encodeURIComponent(assignmentItemId)}/complete`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        resultId: result.id,
+      }),
+    });
+  } catch {
+    // Sonuc kaydi bozulmadan devam eder.
+  }
+}
+
 async function fetchResultsFromSupabase(identity?: ResultIdentity): Promise<ExerciseResult[] | null> {
   if (!supabase) {
     return null;
@@ -245,6 +282,7 @@ export function saveExerciseResult(result: ExerciseResultInput): ExerciseResult 
   writeResults([nextResult, ...current]);
   console.log("Exercise result saved locally");
   void insertResultToSupabase(nextResult);
+  void completeAssignmentItemIfNeeded(nextResult);
 
   return nextResult;
 }

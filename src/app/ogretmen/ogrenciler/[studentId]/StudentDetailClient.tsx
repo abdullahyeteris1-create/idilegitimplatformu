@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { StudentAnalysisCard } from "@/components/ai/StudentAnalysisCard";
+import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getResultsByStudent } from "@/lib/results/resultStorage";
@@ -387,6 +388,7 @@ export function StudentDetailClient() {
           <p>Veli E-posta: <span className="font-semibold">{parentEmail ?? "-"}</span></p>
           <p>Kayit Tarihi: <span className="font-semibold">{toDisplayDate(student.createdAt)}</span></p>
           <p>Egitim Durumu: <span className="font-semibold">{student.educationStatus ?? "-"}</span></p>
+          <p>Egitim Duzeyi: <span className="font-semibold">{student.educationLevel ? EDUCATION_LEVEL_LABELS[student.educationLevel] : "-"}</span></p>
           <p className="flex flex-wrap items-center gap-2">
             E-posta Durumu:
             <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getWelcomeEmailStatusClass(student.welcomeEmailStatus)}`}>

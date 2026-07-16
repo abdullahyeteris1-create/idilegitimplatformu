@@ -1,4 +1,5 @@
 import { clearCurrentStudent, getCurrentStudent, getCurrentUser, setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
+import { normalizeEducationLevel } from "@/lib/assignments/educationLevels";
 import { DEMO_STUDENT, MOCK_STUDENTS } from "@/lib/students/mockStudents";
 import { supabase } from "@/lib/supabase/client";
 import type { Student, WelcomeEmailStatus } from "@/lib/students/types";
@@ -22,6 +23,8 @@ type StudentInput = {
   profileImageUrl?: string;
   status?: "active" | "passive";
   educationStatus?: "general" | "speed-reading";
+  educationLevel?: Student["educationLevel"];
+  assignmentMode?: Student["assignmentMode"];
   notes?: string;
 };
 
@@ -70,6 +73,9 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
   const username = normalizeOptional(student.username) ?? generateUsernameFromName(name);
   const password = normalizeOptional(student.password) ?? generateStudentPassword();
   const classLevel = normalizeOptional(student.classLevel) ?? normalizeOptional(student.className);
+  const educationLevel =
+    normalizeEducationLevel(student.educationLevel) ??
+    normalizeEducationLevel(classLevel);
   const parentPhone = normalizeOptional(student.parentPhone) ?? normalizeOptional(student.phone);
   const parentEmail = normalizeOptional(student.parentEmail) ?? normalizeOptional(student.email);
   const status = student.isActive === true ? "active" : student.isActive === false ? "passive" : student.status ?? "active";
@@ -82,6 +88,7 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     password,
     className: normalizeOptional(student.className) ?? classLevel,
     classLevel,
+    educationLevel,
     parentName: normalizeOptional(student.parentName),
     phone: normalizeOptional(student.phone) ?? parentPhone,
     parentPhone,
@@ -94,6 +101,12 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     isActive: status === "active",
     status: status === "passive" ? "passive" : "active",
     educationStatus: student.educationStatus,
+    assignmentMode:
+      student.assignmentMode === "manual" ||
+      student.assignmentMode === "ai_assisted" ||
+      student.assignmentMode === "automatic"
+        ? student.assignmentMode
+        : "automatic",
     createdAt: normalizeOptional(student.createdAt) ?? new Date().toISOString(),
     notes: normalizeOptional(student.notes),
   };
@@ -134,6 +147,7 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
     password: String(row.password ?? ""),
     className: typeof row.class_name === "string" ? row.class_name : typeof row.className === "string" ? row.className : undefined,
     classLevel: typeof row.class_level === "string" ? row.class_level : typeof row.classLevel === "string" ? row.classLevel : undefined,
+    educationLevel: normalizeEducationLevel(row.education_level ?? row.educationLevel),
     parentName: typeof row.parent_name === "string" ? row.parent_name : typeof row.parentName === "string" ? row.parentName : undefined,
     phone: typeof row.phone === "string" ? row.phone : undefined,
     parentPhone: typeof row.parent_phone === "string" ? row.parent_phone : typeof row.parentPhone === "string" ? row.parentPhone : undefined,
@@ -168,6 +182,12 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
         : row.educationStatus === "general" || row.educationStatus === "speed-reading"
           ? row.educationStatus
           : undefined,
+    assignmentMode:
+      row.assignment_mode === "manual" || row.assignment_mode === "ai_assisted" || row.assignment_mode === "automatic"
+        ? row.assignment_mode
+        : row.assignmentMode === "manual" || row.assignmentMode === "ai_assisted" || row.assignmentMode === "automatic"
+          ? row.assignmentMode
+          : "automatic",
     createdAt:
       typeof row.created_at === "string"
         ? row.created_at
@@ -189,6 +209,8 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
     parent_name: student.parentName ?? null,
     phone: student.phone ?? student.parentPhone ?? null,
     parent_email: student.parentEmail ?? student.email ?? null,
+    education_level: student.educationLevel ?? null,
+    assignment_mode: student.assignmentMode ?? "automatic",
     welcome_email_sent_at: student.welcomeEmailSentAt ?? null,
     welcome_email_status: student.welcomeEmailStatus ?? null,
     is_active: (student.isActive ?? student.status === "active") === true,
@@ -475,6 +497,8 @@ function buildNewStudent(studentInput: StudentInput): Student {
     status: studentInput.status ?? "active",
     isActive: (studentInput.status ?? "active") === "active",
     educationStatus: studentInput.educationStatus,
+    educationLevel: normalizeEducationLevel(studentInput.educationLevel) ?? normalizeEducationLevel(studentInput.classLevel),
+    assignmentMode: studentInput.assignmentMode ?? "automatic",
     createdAt: new Date().toISOString(),
     notes: normalizeOptional(studentInput.notes),
   };
@@ -564,6 +588,14 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
           ? updates.status === "active"
           : existingStudent.isActive ?? existingStudent.status === "active",
     notes: updates.notes !== undefined ? normalizeOptional(updates.notes) : existingStudent.notes,
+    educationLevel:
+      updates.educationLevel !== undefined
+        ? normalizeEducationLevel(updates.educationLevel)
+        : existingStudent.educationLevel,
+    assignmentMode:
+      updates.assignmentMode !== undefined
+        ? updates.assignmentMode
+        : existingStudent.assignmentMode ?? "automatic",
   };
 
   const nextStudents = [...students];

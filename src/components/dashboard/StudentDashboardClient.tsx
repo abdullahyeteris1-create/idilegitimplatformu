@@ -67,6 +67,30 @@ type StatCardProps = {
 type SidebarTab = "resume" | "reading" | "history";
 type SidebarDirection = "forward" | "backward";
 
+type DailyAssignmentItemView = {
+  id: string;
+  exerciseSlug: string;
+  exerciseTitle: string;
+  category: string;
+  sortOrder: number;
+  status: "pending" | "started" | "completed" | "skipped";
+  settingsJson: Record<string, unknown>;
+  targetType?: string;
+  targetValue?: number;
+  resultId?: string;
+  assignedTextTitle?: string;
+  isRepeat: boolean;
+  teacherNote?: string;
+};
+
+type DailyAssignmentView = {
+  id: string;
+  assignmentDate: string;
+  status: "pending" | "in_progress" | "completed" | "skipped";
+  warningMessage?: string;
+  items: DailyAssignmentItemView[];
+};
+
 const MOBILE_SIDEBAR_TABS: SidebarTab[] = ["resume", "reading", "history"];
 
 const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
@@ -384,6 +408,9 @@ export function StudentDashboardClient() {
   const [mobileSidebarTab, setMobileSidebarTab] = useState<SidebarTab>("resume");
   const [mobileTabDirection, setMobileTabDirection] = useState<SidebarDirection>("forward");
   const [mobileStickyTop, setMobileStickyTop] = useState(8);
+  const [dailyAssignment, setDailyAssignment] = useState<DailyAssignmentView | null>(null);
+  const [dailyAssignmentError, setDailyAssignmentError] = useState<string | null>(null);
+  const [isDailyAssignmentLoading, setIsDailyAssignmentLoading] = useState(false);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -406,6 +433,72 @@ export function StudentDashboardClient() {
 
     return () => window.clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    if (!student?.id) {
+      return;
+    }
+
+    let cancelled = false;
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Istanbul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const load = async () => {
+      setIsDailyAssignmentLoading(true);
+      setDailyAssignmentError(null);
+
+      try {
+        const response = await fetch(
+          `/api/student/daily-assignment?date=${today}`,
+          {
+            credentials: "same-origin",
+            cache: "no-store",
+          },
+        );
+
+        const data = (await response.json()) as {
+          ok?: boolean;
+          assignment?: DailyAssignmentView;
+          message?: string;
+        };
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok || !data.ok || !data.assignment) {
+          setDailyAssignment(null);
+          setDailyAssignmentError(
+            data.message ??
+              "Gunluk odev olusturulamadi. Egitim duzeyinizin ogretmen tarafindan belirlenmesi gerekiyor.",
+          );
+          return;
+        }
+
+        setDailyAssignment(data.assignment);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setDailyAssignmentError("Gunluk odevler yuklenemedi.");
+      } finally {
+        if (!cancelled) {
+          setIsDailyAssignmentLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [student?.id]);
 
   useEffect(() => {
     const headerElement = document.querySelector<HTMLElement>("[data-dashboard-shell-header], [data-app-shell-header]");
@@ -482,6 +575,22 @@ export function StudentDashboardClient() {
   const resumeBadge = lastResult ? lastSuccessValue : `${quickFocusCategory.count} çalışma`;
   const mobileTabMotionClass =
     mobileTabDirection === "forward" ? "motion-safe:animate-idil-tab-forward" : "motion-safe:animate-idil-tab-backward";
+  const completedDailyCount = dailyAssignment?.items.filter((item) => item.status === "completed").length ?? 0;
+  const dailyTotalCount = dailyAssignment?.items.length ?? 0;
+  const dailyProgress = dailyTotalCount > 0 ? Math.round((completedDailyCount / dailyTotalCount) * 100) : 0;
+
+  const formatAssignmentSettings = (settings: Record<string, unknown>): string[] => {
+    const labels: string[] = [];
+
+    if (typeof settings.level === "number") labels.push(`Seviye ${settings.level}`);
+    if (typeof settings.speedMs === "number") labels.push(`Hiz ${settings.speedMs} ms`);
+    if (typeof settings.wordsPerMinute === "number") labels.push(`${settings.wordsPerMinute} WPM`);
+    if (typeof settings.durationMinutes === "number") labels.push(`${settings.durationMinutes} dk`);
+    if (typeof settings.groupSize === "number") labels.push(`Grup ${settings.groupSize}`);
+    if (typeof settings.wordLength === "number") labels.push(`${settings.wordLength} harf`);
+
+    return labels;
+  };
 
   const handleMobileTabChange = (tab: SidebarTab) => {
     if (tab === mobileSidebarTab) {
@@ -636,6 +745,100 @@ export function StudentDashboardClient() {
               accentClassName="from-violet-500 to-fuchsia-500"
             />
           </div>
+        </section>
+
+        <section aria-labelledby="daily-assignment-title" className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-red-700">Bugunku Plan</p>
+              <h3 id="daily-assignment-title" className="mt-1 text-xl font-black tracking-tight text-slate-950">Bugunku Odevlerin</h3>
+              <p className="mt-1 text-sm text-slate-600">
+                {dailyAssignment
+                  ? `${completedDailyCount} / ${dailyTotalCount} tamamlandi`
+                  : "Plan olusturuldugunda burada gorunecek."}
+              </p>
+            </div>
+            {dailyAssignment ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+                %{dailyProgress} ilerleme
+              </div>
+            ) : null}
+          </div>
+
+          {dailyAssignment ? (
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${dailyProgress}%` }} />
+            </div>
+          ) : null}
+
+          {isDailyAssignmentLoading ? (
+            <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Gunluk odevler yukleniyor...</p>
+          ) : null}
+
+          {dailyAssignmentError ? (
+            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">{dailyAssignmentError}</p>
+          ) : null}
+
+          {dailyAssignment?.warningMessage ? (
+            <p className="mt-4 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-800">{dailyAssignment.warningMessage}</p>
+          ) : null}
+
+          {dailyAssignment ? (
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {dailyAssignment.items.map((item) => {
+                const settingsSummary = formatAssignmentSettings(item.settingsJson);
+                const itemHref = `/egzersizler/${item.exerciseSlug}?assignmentItemId=${encodeURIComponent(item.id)}`;
+
+                return (
+                  <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{item.sortOrder}. Gorev</p>
+                        <h4 className="mt-1 text-lg font-bold text-slate-900">{item.exerciseTitle}</h4>
+                        <p className="mt-1 text-sm text-slate-600">Kategori: {item.category}</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${item.status === "completed" ? "bg-emerald-100 text-emerald-800" : item.status === "started" ? "bg-sky-100 text-sky-800" : item.status === "skipped" ? "bg-slate-200 text-slate-700" : "bg-amber-100 text-amber-800"}`}>
+                        {item.status === "completed"
+                          ? "Tamamlandi"
+                          : item.status === "started"
+                            ? "Baslandi"
+                            : item.status === "skipped"
+                              ? "Atlandi"
+                              : "Bekliyor"}
+                      </span>
+                    </div>
+
+                    {settingsSummary.length > 0 ? (
+                      <p className="mt-2 text-sm text-slate-700">{settingsSummary.join(" • ")}</p>
+                    ) : null}
+
+                    {item.assignedTextTitle ? (
+                      <p className="mt-2 text-sm text-slate-700">Metin: {item.assignedTextTitle}</p>
+                    ) : null}
+
+                    {item.isRepeat ? (
+                      <p className="mt-2 inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">Tekrar Calismasi</p>
+                    ) : null}
+
+                    {item.teacherNote ? (
+                      <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">Ogretmen Notu: {item.teacherNote}</p>
+                    ) : null}
+
+                    <Link
+                      href={itemHref}
+                      className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
+                    >
+                      Calismayi Baslat
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {dailyAssignment && dailyTotalCount > 0 && completedDailyCount === dailyTotalCount ? (
+            <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">Bugunku odevlerini tamamladin.</p>
+          ) : null}
         </section>
 
         <section className="xl:hidden">

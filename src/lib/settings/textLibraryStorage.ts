@@ -308,6 +308,7 @@ function normalizeUnknownItem(rawItem: unknown, index: number, storageKey: strin
     isActive: readBoolean(row.is_active ?? row.isActive ?? row.active, true),
     createdAt: readStringField(row, ["created_at", "createdAt"], now),
     updatedAt: readStringField(row, ["updated_at", "updatedAt"], now),
+    level: readStringField(row, ["education_level", "level", "duzey"], ""),
   });
 }
 
@@ -409,6 +410,7 @@ function normalizeStoredItem(item: TextLibraryItem): TextLibraryItem {
     wordCount: countWords(content),
     characterCount: countCharacters(content),
     isActive: item.isActive !== false,
+    level: item.level?.trim() || undefined,
     createdAt: item.createdAt ?? new Date().toISOString(),
     updatedAt: item.updatedAt ?? item.createdAt ?? new Date().toISOString(),
   };
@@ -426,6 +428,7 @@ function normalizeTextItem(input: TextLibraryItemInput): TextLibraryItem {
     wordCount: countWords(content),
     characterCount: countCharacters(content),
     isActive: input.isActive,
+    level: input.level?.trim() || undefined,
     createdAt: input.createdAt ?? now,
     updatedAt: input.updatedAt ?? now,
   };
@@ -442,6 +445,12 @@ function mapSupabaseRowToTextItem(row: Record<string, unknown>): TextLibraryItem
     wordCount: countWords(content),
     characterCount: countCharacters(content),
     isActive: typeof row.is_active === "boolean" ? row.is_active : typeof row.isActive === "boolean" ? row.isActive : true,
+    level:
+      typeof row.education_level === "string"
+        ? row.education_level
+        : typeof row.level === "string"
+          ? row.level
+          : undefined,
     createdAt: typeof row.created_at === "string" ? row.created_at : typeof row.createdAt === "string" ? row.createdAt : new Date().toISOString(),
     updatedAt: typeof row.updated_at === "string" ? row.updated_at : typeof row.updatedAt === "string" ? row.updatedAt : new Date().toISOString(),
   });
@@ -453,6 +462,7 @@ function mapTextItemToSupabaseRow(item: TextLibraryItem, includeId = true): Reco
     category: item.category,
     content: item.content,
     is_active: item.isActive,
+    education_level: item.level ?? null,
     created_at: item.createdAt,
     updated_at: item.updatedAt,
   };

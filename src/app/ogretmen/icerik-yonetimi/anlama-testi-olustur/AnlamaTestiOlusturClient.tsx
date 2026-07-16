@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { TEXT_LIBRARY_CATEGORIES, countCharacters, countWords, getTextLibraryItems, type TextLibraryItem } from "@/lib/settings/textLibraryStorage";
 import {
   getDisplayTextTitle,
@@ -139,6 +140,10 @@ export function AnlamaTestiOlusturClient() {
         wordCount: countWords(selectedText.content),
         characterCount: countCharacters(selectedText.content),
         isActive: selectedText.isActive,
+        levelLabel:
+          typeof selectedText.level === "string" && selectedText.level in EDUCATION_LEVEL_LABELS
+            ? EDUCATION_LEVEL_LABELS[selectedText.level as keyof typeof EDUCATION_LEVEL_LABELS]
+            : "Secilmedi",
       }
     : null;
 
@@ -349,6 +354,10 @@ export function AnlamaTestiOlusturClient() {
             <article>
               <p className="text-xs text-slate-500">Karakter Sayısı</p>
               <p className="mt-1 font-semibold text-slate-950">{selectedTextStats.characterCount}</p>
+            </article>
+            <article>
+              <p className="text-xs text-slate-500">Egitim Duzeyi</p>
+              <p className="mt-1 font-semibold text-slate-950">{selectedTextStats.levelLabel}</p>
             </article>
             <article className="sm:col-span-2">
               <p className="text-xs text-slate-500">Durum</p>

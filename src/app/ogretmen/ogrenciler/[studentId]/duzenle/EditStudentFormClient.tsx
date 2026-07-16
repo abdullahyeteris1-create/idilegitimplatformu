@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
   generateStudentPassword,
   generateUsernameFromName,
@@ -31,6 +32,7 @@ export function EditStudentFormClient() {
   const [birthDate, setBirthDate] = useState(student?.birthDate ?? "");
   const [status, setStatus] = useState<StudentStatus>(student?.status ?? "active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>(student?.educationStatus ?? "general");
+  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">(student?.educationLevel ?? "");
   const [notes, setNotes] = useState(student?.notes ?? "");
   const [error, setError] = useState("");
 
@@ -50,6 +52,11 @@ export function EditStudentFormClient() {
       return;
     }
 
+    if (!educationLevel) {
+      setError("Egitim duzeyi secimi zorunludur.");
+      return;
+    }
+
     const updated = updateStudent(studentId, {
       name,
       username,
@@ -61,6 +68,7 @@ export function EditStudentFormClient() {
       birthDate,
       status,
       educationStatus,
+      educationLevel,
       notes,
     });
 
@@ -202,6 +210,22 @@ export function EditStudentFormClient() {
           >
             <option value="general">Genel</option>
             <option value="speed-reading">Hizli Okuma</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
+          Egitim Duzeyi (Zorunlu)
+          <select
+            value={educationLevel}
+            onChange={(event) => setEducationLevel(event.target.value as EducationLevel | "")}
+            className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          >
+            <option value="">Seciniz</option>
+            {EDUCATION_LEVELS.map((value) => (
+              <option key={value} value={value}>
+                {EDUCATION_LEVEL_LABELS[value]}
+              </option>
+            ))}
           </select>
         </label>
       </div>
