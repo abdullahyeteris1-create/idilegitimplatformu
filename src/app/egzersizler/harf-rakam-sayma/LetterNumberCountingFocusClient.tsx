@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
@@ -18,9 +19,6 @@ import { saveExerciseResult } from "@/lib/results/resultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
-  FULLSCREEN_PRIMARY_BUTTON_CLASS,
-  FULLSCREEN_SECONDARY_BUTTON_CLASS,
-  FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 
@@ -343,66 +341,66 @@ export function LetterNumberCountingFocusClient() {
   ];
 
   const footerControls = (
-    <div className="grid gap-2 lg:grid-cols-8">
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Mod</span>
-        <select value={mode} onChange={(event) => handleSettingChange(() => setMode(event.target.value as CountingMode))} className={FULLSCREEN_SELECT_CLASS}>
+    <div className="flex flex-wrap items-end gap-1.5">
+      <label className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Mod</span>
+        <select value={mode} onChange={(event) => handleSettingChange(() => setMode(event.target.value as CountingMode))} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           <option value="letters">Harf</option>
           <option value="numbers">Rakam</option>
-          <option value="mixed">Harf + Rakam</option>
+          <option value="mixed">Harf+Rakam</option>
         </select>
       </label>
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seviye</span>
+      <label className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Seviye</span>
         <select value={startLevel} onChange={(event) => {
           const nextLevel = Number(event.target.value);
           setStartLevel(nextLevel);
           resetToReady(nextLevel);
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           {[1, 2, 3, 4].map((item) => (
             <option key={item} value={item}>{item}</option>
           ))}
         </select>
       </label>
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Zorluk</span>
-        <select value={difficulty} onChange={(event) => handleSettingChange(() => setDifficulty(event.target.value as CountingDifficulty))} className={FULLSCREEN_SELECT_CLASS}>
+      <label className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Zorluk</span>
+        <select value={difficulty} onChange={(event) => handleSettingChange(() => setDifficulty(event.target.value as CountingDifficulty))} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           <option value="normal">Normal</option>
           <option value="hard">Zor</option>
         </select>
       </label>
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz / Sure</span>
+      <label className="flex shrink-0 flex-col gap-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Hız</span>
         <select value={speedSeconds} onChange={(event) => handleSettingChange(() => {
           const nextSpeed = Number(event.target.value);
           setSpeedSeconds(nextSpeed);
           setRemainingSeconds(nextSpeed);
-        })} className={FULLSCREEN_SELECT_CLASS}>
+        })} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           {SPEED_OPTIONS.map((item) => (
-            <option key={item} value={item}>{item} saniye</option>
+            <option key={item} value={item}>{item}s</option>
           ))}
         </select>
       </label>
-      <div className="grid gap-2 sm:grid-cols-3 lg:col-span-4">
+      <div className="flex flex-wrap gap-1.5">
         {phase === "ready" ? (
-          <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>
-            Baslat
+          <button type="button" className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>
+            Başlat
           </button>
         ) : (
           <>
             {phase === "paused" ? (
-              <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>
-                Devam Et
+              <button type="button" className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>
+                Devam
               </button>
             ) : (
-              <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>
+              <button type="button" className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>
                 Duraklat
               </button>
             )}
-            <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>
-              Yeniden Baslat
+            <button type="button" className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>
+              Sıfırla
             </button>
-            <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+            <button type="button" className="min-h-9 rounded-xl bg-red-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
               Bitir
             </button>
           </>
@@ -503,32 +501,26 @@ export function LetterNumberCountingFocusClient() {
         ...stats,
         { label: "Kalan", value: `${remainingSeconds} sn`, tone: remainingSeconds <= 3 ? "bad" : "brand" },
       ]}
-      finishButton={
-        <button type="button" onClick={finishExercise} className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md" style={FULLSCREEN_TOUCH_STYLE}>
-          Bitir
-        </button>
-      }
-      stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/94 p-2.5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
       footer={footerControls}
       settings={footerControls}
     >
-      <div className="flex w-full flex-1 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-left">
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
+        <div className="shrink-0 flex items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">Hedef</p>
-            <p className="mt-1 text-xl font-black text-slate-950 md:text-2xl">Kac tane <span className="text-red-700">{round?.target ?? "?"}</span> var?</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-red-700">Hedef</p>
+            <p className="text-sm font-black text-slate-950 md:text-base">Kaç tane <span className="text-red-700">{round?.target ?? "?"}</span> var?</p>
           </div>
-          <div className="rounded-2xl border border-white/80 bg-white px-3 py-1.5 text-center shadow-sm">
-            <p className="text-xs font-bold text-slate-500">Sure</p>
-            <p className="text-2xl font-black text-red-700">{remainingSeconds}</p>
+          <div className="rounded-xl border border-white/80 bg-white px-2 py-1 text-center shadow-sm">
+            <p className="text-[10px] font-bold text-slate-500">Süre</p>
+            <p className="text-base font-black text-red-700 md:text-lg">{remainingSeconds}</p>
           </div>
         </div>
 
-        <div className={`relative min-h-[220px] flex-1 overflow-hidden rounded-[26px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner md:min-h-[280px] ${phase === "paused" ? "blur-sm" : ""}`}>
+        <div className={`relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner ${phase === "paused" ? "blur-sm" : ""}`}>
           {round?.characters.map((character) => (
             <span
               key={character.id}
-              className="fx-fade-in absolute inline-flex h-10 min-w-10 select-none items-center justify-center rounded-xl border border-red-100 bg-white/92 px-2 font-black text-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.10)]"
+              className="fx-fade-in absolute inline-flex h-8 min-w-8 select-none items-center justify-center rounded-xl border border-red-100 bg-white/92 px-1.5 font-black text-slate-950 shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
               style={{
                 left: `${character.x}%`,
                 top: `${character.y}%`,
@@ -540,28 +532,28 @@ export function LetterNumberCountingFocusClient() {
             </span>
           ))}
           {phase === "paused" ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-[26px] bg-white/60 backdrop-blur-[2px]">
-              <p className="rounded-2xl border border-red-100 bg-white px-5 py-4 text-sm font-bold text-red-700 shadow-sm">
-                Duraklatildi. Devam Et ile sure kaldigi yerden devam eder.
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-[2px]">
+              <p className="rounded-xl border border-red-100 bg-white px-4 py-2 text-xs font-bold text-red-700 shadow-sm">
+                Duraklatıldı. Devam et ile kaldığın yerden devam eder.
               </p>
             </div>
           ) : null}
         </div>
 
         {feedback ? (
-          <div className={`rounded-2xl border px-4 py-3 text-sm font-black ${getFeedbackClass(feedback.tone)}`}>
+          <div className={`shrink-0 rounded-xl border px-2.5 py-1.5 text-xs font-bold ${getFeedbackClass(feedback.tone)}`}>
             {feedback.message}
           </div>
         ) : null}
 
-        <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
+        <div className="shrink-0 grid grid-cols-10 gap-1">
           {ANSWER_OPTIONS.map((answer) => (
             <button
               key={answer}
               type="button"
               onClick={() => submitAnswer(answer, "answer")}
               disabled={phase !== "running"}
-              className="min-h-[40px] rounded-xl border border-red-100 bg-white px-1 text-sm font-black text-slate-900 shadow-sm transition hover:bg-red-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[44px]"
+              className="min-h-8 rounded-lg border border-red-100 bg-white px-0.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-red-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
               style={FULLSCREEN_TOUCH_STYLE}
             >
               {answer}
