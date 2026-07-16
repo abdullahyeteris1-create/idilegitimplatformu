@@ -134,6 +134,7 @@ export default function CardMemoryGamePage() {
   const router = useRouter();
   const [level, setLevel] = useState(1);
   const [phase, setPhase] = useState<GamePhase>("intro");
+  const [isAnswerLocked, setIsAnswerLocked] = useState(false);
 
   const [seenCards, setSeenCards] = useState<CardItem[]>([]);
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -176,6 +177,7 @@ export default function CardMemoryGamePage() {
     setCorrectCount(0);
     setWrongCount(0);
     setLastResult(null);
+    setIsAnswerLocked(false);
     setPhase("memorize");
   }
 
@@ -204,6 +206,7 @@ export default function CardMemoryGamePage() {
     setCorrectCount(0);
     setWrongCount(0);
     setLastResult(null);
+    setIsAnswerLocked(false);
   }
 
   useEffect(() => {
@@ -232,50 +235,59 @@ export default function CardMemoryGamePage() {
   }, [config.showMs, memorizeIndex, phase, seenCards.length]);
 
   function answerQuestion(answerSeen: boolean) {
-  if (answerLockRef.current) {
-    return;
-  }
+    if (answerLockRef.current || isAnswerLocked) {
+      return;
+    }
 
-  if (phase !== "question") {
-    return;
-  }
+    if (phase !== "question") {
+      return;
+    }
 
-  if (!currentQuestion) {
-    return;
-  }
+    if (!currentQuestion) {
+      return;
+    }
 
-  answerLockRef.current = true;
+    answerLockRef.current = true;
+    setIsAnswerLocked(true);
 
-  const isCorrect = answerSeen === currentQuestion.wasSeen;
+    const isCorrect = answerSeen === currentQuestion.wasSeen;
 
-  if (isCorrect) {
-    setCorrectCount((previous) => previous + 1);
-    setLastResult("correct");
-  } else {
-    setWrongCount((previous) => previous + 1);
-    setLastResult("wrong");
-  }
+    if (isCorrect) {
+      setCorrectCount((previous) => previous + 1);
+      setLastResult("correct");
+    } else {
+      setWrongCount((previous) => previous + 1);
+      setLastResult("wrong");
+    }
 
-  setPhase("result");
+    setPhase("result");
 
-  timerRef.current = window.setTimeout(() => {
-    timerRef.current = null;
-    setQuestionIndex((previous) => {
-      const next = previous + 1;
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      setQuestionIndex((previous) => {
+        const next = previous + 1;
 
-      if (next >= questions.length) {
-        setPhase("finished");
+        if (next >= questions.length) {
+          setPhase("finished");
+          answerLockRef.current = false;
+          setIsAnswerLocked(false);
+          return previous;
+        }
+
+        setPhase("question");
+        setLastResult(null);
         answerLockRef.current = false;
-        return previous;
-      }
+        setIsAnswerLocked(false);
+        return next;
+      });
+    }, 700);
+  }
 
-      setPhase("question");
-      setLastResult(null);
-      answerLockRef.current = false;
-      return next;
-    });
-  }, 700);
-}
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, []);
 
   function renderCard(card: CardItem | undefined, options?: { isBack?: boolean }) {
     if (!card && !options?.isBack) {
@@ -284,7 +296,7 @@ export default function CardMemoryGamePage() {
 
     if (options?.isBack) {
       return (
-        <div className="relative flex aspect-[13/18] h-[clamp(12rem,42dvh,18rem)] max-w-full items-center justify-center rounded-[2rem] border-8 border-white bg-yellow-200 shadow-2xl">
+        <div className="relative flex aspect-[13/18] h-[clamp(10rem,34dvh,15rem)] max-w-full items-center justify-center rounded-[2rem] border-8 border-white bg-yellow-200 shadow-2xl">
           <div className="absolute inset-4 rounded-[1.4rem] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.65)_0,rgba(255,255,255,0.65)_10%,transparent_11%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_9%,transparent_10%)]" />
           <div className="relative text-5xl font-black text-white/80">?</div>
         </div>
@@ -293,7 +305,7 @@ export default function CardMemoryGamePage() {
 
     return (
       <div
-        className={`relative flex aspect-[13/18] h-[clamp(12rem,42dvh,18rem)] max-w-full flex-col items-center justify-center rounded-[2rem] border-8 border-white shadow-2xl ${card?.colorClass}`}
+        className={`relative flex aspect-[13/18] h-[clamp(10rem,34dvh,15rem)] max-w-full flex-col items-center justify-center rounded-[2rem] border-8 border-white shadow-2xl ${card?.colorClass}`}
       >
         <div className="absolute left-5 top-5 rounded-full bg-white/80 px-3 py-1 text-xs font-black text-slate-600 shadow-sm">
           {card?.name}
@@ -305,10 +317,10 @@ export default function CardMemoryGamePage() {
   }
 
   const content = (
-    <main className="h-full min-h-0 min-w-0 max-w-full overflow-auto bg-slate-900 px-2 py-2 text-slate-900 md:px-4 md:py-5">
-      <section className="mx-auto min-h-full min-w-0 max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
-        <div className="relative min-h-full min-w-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
-          <section className="flex min-h-[min(24rem,55dvh)] min-w-0 items-center justify-center overflow-auto px-3 py-4 md:px-5 md:py-8">
+    <main className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-slate-900 px-2 py-2 text-slate-900 md:px-4 md:py-4">
+      <section className="mx-auto h-full min-h-0 min-w-0 max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
+        <div className="relative flex h-full min-h-0 min-w-0 items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
+          <section className="flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-3 py-4 md:px-5 md:py-6">
             {phase === "intro" && (
               <div className="w-full max-w-2xl rounded-[2rem] border-4 border-white bg-white/80 p-6 text-center shadow-xl">
                 <h2 className="text-3xl font-black text-slate-900">
@@ -364,22 +376,12 @@ export default function CardMemoryGamePage() {
                 )}
 
                 {phase === "question" && (
-                  <div className="relative z-50 mt-5 flex touch-manipulation select-none items-center justify-center gap-4 sm:gap-8">
+                  <div className="relative z-50 mt-4 flex touch-manipulation select-none items-center justify-center gap-4 sm:gap-6">
   <button
     type="button"
-    onTouchStart={(event) => {
-      event.preventDefault();
-      answerQuestion(true);
-    }}
-    onMouseDown={(event) => {
-      event.preventDefault();
-      answerQuestion(true);
-    }}
-    onClick={(event) => {
-      event.preventDefault();
-      answerQuestion(true);
-    }}
-    className="relative z-50 flex h-28 w-28 touch-manipulation select-none items-center justify-center rounded-full border-4 border-emerald-900 bg-emerald-500 text-5xl font-black text-white shadow-xl transition active:scale-95"
+    onClick={() => answerQuestion(true)}
+    disabled={phase !== "question" || isAnswerLocked}
+    className="relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 border-emerald-900 bg-emerald-500 text-4xl font-black text-white shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl"
     title="Gördüm"
     aria-label="Gördüm"
   >
@@ -388,19 +390,9 @@ export default function CardMemoryGamePage() {
 
   <button
     type="button"
-    onTouchStart={(event) => {
-      event.preventDefault();
-      answerQuestion(false);
-    }}
-    onMouseDown={(event) => {
-      event.preventDefault();
-      answerQuestion(false);
-    }}
-    onClick={(event) => {
-      event.preventDefault();
-      answerQuestion(false);
-    }}
-    className="relative z-50 flex h-28 w-28 touch-manipulation select-none items-center justify-center rounded-full border-4 border-rose-900 bg-rose-600 text-5xl font-black text-white shadow-xl transition active:scale-95"
+    onClick={() => answerQuestion(false)}
+    disabled={phase !== "question" || isAnswerLocked}
+    className="relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 border-rose-900 bg-rose-600 text-4xl font-black text-white shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl"
     title="Görmedim"
     aria-label="Görmedim"
   >
