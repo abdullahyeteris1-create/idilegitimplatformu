@@ -104,7 +104,7 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Tarama", "Kelime"],
       },
       {
-        title: "Göz Egzersizleri: Kolonlar",
+        title: "Kelime Kolonları",
         description: "Farklı kelimeleri kolonlar boyunca ritmik göz hareketleriyle takip et.",
         href: "/egzersizler/goz-egzersizleri-kolonlar",
         icon: "GK",

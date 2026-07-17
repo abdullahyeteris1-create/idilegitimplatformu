@@ -16,7 +16,7 @@ import {
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
 type DurationMinutes = 1 | 2 | 3 | 4 | 5;
 type ColumnCount = 3 | 4 | 5 | 6 | 7;
-type JumpSpeed = 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500 | 600 | 800 | 1000 | 1200| 1400 | 1600 | 1800;
+type JumpSpeed = 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
 type FlowDirection = "column" | "row";
 
 type ExerciseResult = {
@@ -30,21 +30,19 @@ type ExerciseResult = {
 const DURATION_OPTIONS: DurationMinutes[] = [1, 2, 3, 4, 5];
 const COLUMN_OPTIONS: ColumnCount[] = [3, 4, 5, 6, 7];
 const JUMP_SPEED_OPTIONS: JumpSpeed[] = [
-  50,
-  100,
-  150,
   200,
-  250,
-  300,
   400,
-  500,
   600,
   800,
   1000,
-  1200,
-  1400,
-  1600,
-  1800,
+  1500,
+  2000,
+  2500,
+  3000,
+  3500,
+  4000,
+  4500,
+  5000,
 ];
 
 const WORD_POOL = [
@@ -122,10 +120,11 @@ function getNextIndex(
 export function ColumnEyeExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
+  const finishExerciseRef = useRef<() => void>(() => undefined);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
-  const [jumpSpeed, setJumpSpeed] = useState<JumpSpeed>(500);
+  const [jumpSpeed, setJumpSpeed] = useState<JumpSpeed>(1000);
   const [columnCount, setColumnCount] = useState<ColumnCount>(5);
   const [flowDirection, setFlowDirection] = useState<FlowDirection>("column");
   const [words, setWords] = useState<string[]>([]);
@@ -202,7 +201,7 @@ export function ColumnEyeExerciseClient() {
       studentId: student?.id ?? "no-student",
       studentName: student?.name ?? "Seçilmemiş Öğrenci",
       exerciseType: "eye-columns",
-      exerciseTitle: "Göz Egzersizleri: Kolonlar",
+      exerciseTitle: "Kelime Kolonları",
       durationSeconds,
       correctCount: 0,
       wrongCount: 0,
@@ -242,6 +241,10 @@ export function ColumnEyeExerciseClient() {
   ]);
 
   useEffect(() => {
+    finishExerciseRef.current = finishExercise;
+  });
+
+  useEffect(() => {
     if (phase !== "running" || visibleWordCount <= 0) {
       return;
     }
@@ -266,7 +269,7 @@ export function ColumnEyeExerciseClient() {
         const next = current + 1;
 
         if (next >= totalDurationSeconds) {
-          window.setTimeout(finishExercise, 0);
+          window.setTimeout(() => finishExerciseRef.current(), 0);
           return totalDurationSeconds;
         }
 
@@ -275,7 +278,7 @@ export function ColumnEyeExerciseClient() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [finishExercise, phase, totalDurationSeconds]);
+  }, [phase, totalDurationSeconds]);
 
   const beginExercise = () => {
     setWords(shuffleUniqueWords());
@@ -406,7 +409,7 @@ export function ColumnEyeExerciseClient() {
   if (phase === "setup") {
     return (
       <FullscreenExerciseIntro
-        title="Göz Egzersizleri: Kolonlar"
+        title="Kelime Kolonları"
         description="Farklı kelimeler arasında satır veya sütun yönünde ritmik göz hareketi yaparak odak geçişini geliştir."
         buttonLabel="Eğitime Başla"
         onStart={resetExercise}
@@ -418,7 +421,7 @@ export function ColumnEyeExerciseClient() {
     return (
       <section className="idil-card p-5 md:p-7">
         <h1 className="text-2xl font-black text-slate-950">
-          Göz Egzersizleri: Kolonlar Sonucu
+          Kelime Kolonları Sonucu
         </h1>
         <p className="mt-2 text-sm text-slate-500">Çalışma tamamlandı.</p>
 
@@ -481,7 +484,7 @@ export function ColumnEyeExerciseClient() {
 
   return (
     <FullscreenExerciseShell
-      title="Göz Egzersizleri: Kolonlar"
+      title="Kelime Kolonları"
       subtitle={
         flowDirection === "column"
           ? "Sütun şeklinde takip"
