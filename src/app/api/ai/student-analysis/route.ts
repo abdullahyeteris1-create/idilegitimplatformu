@@ -36,6 +36,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "grouping-reading": "Gruplama Çalışması",
   "eye-columns": "Göz Egzersizleri: Kolonlar",
   "square-vision": "KAREL: Kare Görme Alanı",
+  "number-table": "Sayı Tablosu",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);

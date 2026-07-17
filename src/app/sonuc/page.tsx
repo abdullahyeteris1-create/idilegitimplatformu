@@ -42,7 +42,11 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "eye-brain" ||
     value === "word-guess" ||
     value === "catch-same" ||
-    value === "hangman"
+    value === "hangman" ||
+    value === "grouping-reading" ||
+    value === "eye-columns" ||
+    value === "square-vision" ||
+    value === "number-table"
   ) {
     return value;
   }

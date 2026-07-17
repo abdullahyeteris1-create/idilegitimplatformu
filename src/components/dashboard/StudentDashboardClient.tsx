@@ -143,6 +143,22 @@ const studyCategories: DashboardCategory[] = [
     },
   },
   {
+    id: "mind-games",
+    title: "Akıl ve Zeka Oyunları",
+    description: "Sıralama, görsel tarama ve odaklanma becerilerini geliştiren zihinsel oyunlar.",
+    count: 1,
+    icon: "layers",
+    examples: ["Sayı Tablosu"],
+    theme: {
+      card: "border-cyan-100 hover:border-cyan-200 hover:shadow-cyan-100/80",
+      wash: "from-cyan-50 via-sky-50 to-white",
+      icon: "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-cyan-200",
+      badge: "border-cyan-200 bg-cyan-50 text-cyan-800",
+      dot: "bg-cyan-500",
+      button: "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700",
+    },
+  },
+  {
     id: "assessment",
     title: "Okuma ve Anlama Testleri",
     description: "Okuma hızını, anlama performansını ve çalışma sonuçlarını birlikte değerlendirir.",

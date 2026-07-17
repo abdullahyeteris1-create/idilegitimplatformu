@@ -110,6 +110,22 @@ function getExerciseTitle(type: ExerciseType): string {
     return "Adam Asmaca";
   }
 
+  if (type === "grouping-reading") {
+    return "Gruplama Çalışması";
+  }
+
+  if (type === "eye-columns") {
+    return "Kelime Kolonları";
+  }
+
+  if (type === "square-vision") {
+    return "KAREL: Kare Görme Alanı";
+  }
+
+  if (type === "number-table") {
+    return "Sayı Tablosu";
+  }
+
   return "Blok Okuma";
 }
 
@@ -180,6 +196,10 @@ export function StudentDetailClient() {
       "word-guess",
       "catch-same",
       "hangman",
+      "grouping-reading",
+      "eye-columns",
+      "square-vision",
+      "number-table",
     ];
 
     return types.map((type) => {

@@ -165,6 +165,24 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
     ],
   },
   {
+    id: "mind-games",
+    title: "Akıl ve Zeka Oyunları",
+    shortTitle: "Akıl ve Zeka",
+    description: "Görsel tarama, sıralama ve problem çözme becerilerini geliştiren oyunlar.",
+    icon: "#",
+    image: "/exercise-visuals/categories/attention.svg",
+    exercises: [
+      {
+        title: "Sayı Tablosu",
+        description: "Sayıları sırayla bularak dikkat, görsel tarama ve odaklanma becerilerini geliştir.",
+        href: "/egzersizler/sayi-tablosu",
+        icon: "ST",
+        image: "/exercise-visuals/exercises/square-vision.svg",
+        tags: ["Sayı", "Tarama", "Odak"],
+      },
+    ],
+  },
+  {
     id: "fluency",
     title: "Okuma Akıcılığı",
     shortTitle: "Okuma Akıcılığı",
@@ -379,6 +397,23 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     cardButton: "bg-emerald-600 hover:bg-emerald-700",
     cardAccent: "from-lime-500 to-cyan-600",
   },
+  "mind-games": {
+    menuActive: "border-cyan-200 bg-cyan-50 ring-2 ring-cyan-100",
+    menuInactiveHover: "hover:border-cyan-200 hover:shadow-cyan-100/70",
+    menuActiveIcon: "bg-white text-cyan-700",
+    menuInactiveIcon: "bg-cyan-100 text-cyan-700",
+    menuCountBadge: "border-cyan-200 bg-white text-cyan-700",
+    menuChevronActive: "text-cyan-700",
+    headerLabel: "text-cyan-700",
+    headerBadge: "border-cyan-200 bg-cyan-50 text-cyan-800",
+    headerIcon: "bg-cyan-100 text-cyan-700",
+    cardHover: "hover:border-cyan-200",
+    cardImage: "bg-cyan-50 border-cyan-100",
+    cardCode: "bg-cyan-100 text-cyan-700",
+    cardTag: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    cardButton: "bg-cyan-600 hover:bg-cyan-700",
+    cardAccent: "from-cyan-500 to-blue-600",
+  },
   assessment: {
     menuActive: "border-indigo-200 bg-indigo-50 ring-2 ring-indigo-100",
     menuInactiveHover: "hover:border-indigo-200 hover:shadow-indigo-100/70",
@@ -426,8 +461,12 @@ const EXERCISE_COUNT_BY_GROUP_ID = DETERMINISTIC_EXERCISE_GROUPS.reduce<Record<s
   return accumulator;
 }, {});
 
-export function ExercisesCenterClient() {
-  const [activeGroupId, setActiveGroupId] = useState(DEFAULT_GROUP_ID);
+export function ExercisesCenterClient({ initialGroupId }: { initialGroupId?: string }) {
+  const [activeGroupId, setActiveGroupId] = useState(() =>
+    DETERMINISTIC_EXERCISE_GROUPS.some((group) => group.id === initialGroupId)
+      ? initialGroupId ?? DEFAULT_GROUP_ID
+      : DEFAULT_GROUP_ID,
+  );
 
   const activeGroup = useMemo(() => {
     return DETERMINISTIC_EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? DETERMINISTIC_EXERCISE_GROUPS[0];

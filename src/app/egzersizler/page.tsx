@@ -12,7 +12,8 @@ type ExercisesPageProps = {
 };
 
 export default async function ExercisesPage({ searchParams }: ExercisesPageProps) {
-  await searchParams;
+  const params = await searchParams;
+  const category = Array.isArray(params.category) ? params.category[0] : params.category;
 
   return (
     <AppShell
@@ -22,7 +23,7 @@ export default async function ExercisesPage({ searchParams }: ExercisesPageProps
       compactHeader
       wide
     >
-      <ExercisesCenterClient />
+      <ExercisesCenterClient key={category ?? "default"} initialGroupId={category} />
     </AppShell>
   );
 }

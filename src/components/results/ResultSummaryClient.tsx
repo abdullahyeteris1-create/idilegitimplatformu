@@ -39,6 +39,10 @@ const RESULT_TITLES: Record<ExerciseType, string> = {
   "word-guess": "Kelime Tahmin Sonuclari",
   "catch-same": "Ayni Olani Yakala Sonuclari",
   hangman: "Adam Asmaca Sonuclari",
+  "grouping-reading": "Gruplama Çalışması Sonuçları",
+  "eye-columns": "Kelime Kolonları Sonuçları",
+  "square-vision": "KAREL: Kare Görme Alanı Sonuçları",
+  "number-table": "Sayı Tablosu Sonuçları",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
@@ -60,6 +64,10 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "word-guess": "/egzersizler/kelime-tahmin",
   "catch-same": "/egzersizler/ayni-olani-yakala",
   hangman: "/egzersizler/adam-asmaca",
+  "grouping-reading": "/egzersizler/gruplama-calismasi",
+  "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
+  "square-vision": "/egzersizler/kare-gorme-alani",
+  "number-table": "/egzersizler/sayi-tablosu",
 };
 
 export function ResultSummaryClient({

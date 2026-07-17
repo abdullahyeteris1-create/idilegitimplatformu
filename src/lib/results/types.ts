@@ -19,7 +19,8 @@ export type ExerciseType =
   | "hangman"
   | "grouping-reading"
   | "eye-columns"
-  | "square-vision";
+  | "square-vision"
+  | "number-table";
 
 export type ExerciseResult = {
   id: string;
