@@ -1,4 +1,4 @@
-﻿export type ExerciseType =
+export type ExerciseType =
   | "tachistoscope"
   | "similar-words"
   | "block-reading"
@@ -41,5 +41,4 @@ export type ExerciseResultInput = Omit<ExerciseResult, "id" | "date"> & {
   id?: string;
   date?: string;
 };
-
 

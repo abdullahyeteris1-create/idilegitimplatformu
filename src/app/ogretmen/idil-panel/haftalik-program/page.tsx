@@ -3,9 +3,6 @@
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TeacherOnly } from "@/components/auth/TeacherOnly";
-import { AppShell } from "@/components/layout/AppShell";
-import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 
 type Student = {
   id: string;
@@ -713,14 +710,8 @@ export default function WeeklyProgramPage() {
   }
 
   return (
-    <AppShell
-      title="Haftalik Program"
-      subtitle="Pazartesiden pazara ders planini gor, duzenle ve takip et."
-      navItems={TEACHER_NAV_ITEMS}
-      wide
-    >
-      <TeacherOnly>
-      <section className="w-full text-slate-900">
+    <main className="min-h-screen bg-slate-100 px-4 py-5 text-slate-900">
+      <section className="mx-auto w-full max-w-[1900px]">
         <div className="mb-4 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
@@ -1217,8 +1208,7 @@ export default function WeeklyProgramPage() {
           </div>
         </div>
       )}
-      </TeacherOnly>
-    </AppShell>
+    </main>
   );
 }
 

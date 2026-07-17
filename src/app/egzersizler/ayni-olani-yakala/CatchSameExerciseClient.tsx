@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -30,6 +29,13 @@ function getPoolByMode(mode: GameMode) {
   return NUMBERS;
 }
 
+function getModeLabel(mode: GameMode) {
+  if (mode === "word") return "Kelime";
+  if (mode === "letter") return "Harf";
+  if (mode === "symbol") return "Sembol";
+  return "Rakam";
+}
+
 function formatSpeed(speed: SpeedOption) {
   if (speed === 1500) return "1.5 sn";
   if (speed === 1000) return "1 sn";
@@ -38,13 +44,13 @@ function formatSpeed(speed: SpeedOption) {
 }
 
 export function CatchSameExerciseClient() {
-  const router = useRouter();
   const [mode, setMode] = useState<GameMode>("word");
   const [speed, setSpeed] = useState<SpeedOption>(1000);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(60);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [timeLeft, setTimeLeft] = useState<number>(60);
-    const [currentItem, setCurrentItem] = useState("Hazir");
+  const [currentItem, setCurrentItem] = useState("Hazir");
+  const [previousItem, setPreviousItem] = useState<string | null>(null);
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [missed, setMissed] = useState(0);
@@ -158,8 +164,11 @@ export function CatchSameExerciseClient() {
     transitionTimeoutRef.current = setTimeout(() => {
       if (statusRef.current !== "running") return;
 
-            previousItemRef.current = oldCurrent === "Hazir" ? null : oldCurrent;
+      previousItemRef.current = oldCurrent === "Hazir" ? null : oldCurrent;
       currentItemRef.current = nextItem;
+      clickedThisRoundRef.current = false;
+
+      setPreviousItem(previousItemRef.current);
       setCurrentItem(nextItem);
       setRoundCount((value) => value + 1);
       setItemVersion((value) => value + 1);
@@ -199,6 +208,7 @@ export function CatchSameExerciseClient() {
     setStatus(nextStatus);
     setTimeLeft(selectedDuration);
     setCurrentItem("Hazir");
+    setPreviousItem(null);
     setCorrect(0);
     setWrong(0);
     setMissed(0);
@@ -299,64 +309,225 @@ export function CatchSameExerciseClient() {
   const statusLabel = status === "ready" ? "Hazir" : status === "running" ? "Calisiyor" : status === "paused" ? "Duraklatildi" : "Bitti";
 
   return (
-    <FixedExerciseStage
-      title="Aynı Olanı Yakala"
-      subtitle={statusLabel}
-      topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
-      bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs"><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
-      controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" onClick={startGame} className="min-h-9 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white">Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className="min-h-9 rounded-xl bg-amber-500 px-3 text-xs font-bold text-white">Duraklat</button> : <button type="button" onClick={resumeGame} className="min-h-9 rounded-xl bg-cyan-600 px-3 text-xs font-bold text-white">Devam Et</button>}<button type="button" onClick={newGame} className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold">Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished"} className="min-h-9 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 disabled:opacity-60">Bitir</button></div>}
-      onExit={() => router.push("/egzersizler")}
-        >
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
-        <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-center text-xs font-semibold text-slate-700">{feedback}</div>
-
-        <button
-          type="button"
-          onClick={handleCardClick}
-          disabled={status !== "running" || isChanging}
-          className={`relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
-            isChanging ? "scale-[0.98] border-cyan-300 bg-white text-cyan-300" : "scale-100 border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
-          }`}
-        >
-          <div key={itemVersion} className={`flex flex-col items-center justify-center transition-all duration-200 ${isChanging ? "scale-90 opacity-20" : "scale-100 opacity-100"}`}>
-            <span className="mb-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500 shadow-sm">
-              {status === "running" ? "Yeni Öge" : "Hazır"}
-            </span>
-            <span className="text-5xl font-black sm:text-6xl">{isChanging ? "..." : currentItem}</span>
-          </div>
-
-          {status === "running" && (
-            <span
-              key={`pulse-${itemVersion}`}
-              className="pointer-events-none absolute inset-3 rounded-2xl border-4 border-cyan-300 opacity-0 animate-[ping_0.45s_ease-out_1]"
-            />
-          )}
-        </button>
-
-        <div className="shrink-0 grid grid-cols-3 gap-1.5">
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Doğru</p>
-            <p className="text-sm font-black text-emerald-700">{correct}</p>
-          </div>
-          <div className="rounded-xl border border-red-100 bg-red-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Yanlış</p>
-            <p className="text-sm font-black text-red-700">{wrong}</p>
-          </div>
-          <div className="rounded-xl border border-orange-100 bg-orange-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Kaçırılan</p>
-            <p className="text-sm font-black text-orange-700">{missed}</p>
-          </div>
+    <main className="min-h-screen bg-cyan-50 px-4 py-8 text-slate-900">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-3 flex justify-end">
+          <ExerciseNavigationControls compact />
         </div>
-
-        {status === "finished" ? (
-          <div className="shrink-0 rounded-2xl border border-cyan-200 bg-cyan-50 p-3 text-center">
-            <p className="text-base font-black text-cyan-800">Oyun Bitti</p>
-            <p className="mt-1 text-xs text-slate-700">
-              Skor: <strong>{score}</strong> | Doğru: <strong>{correct}</strong> | Yanlış: <strong>{wrong}</strong> | Kaçırılan: <strong>{missed}</strong>
+        <section className="overflow-hidden rounded-3xl border border-cyan-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-6 text-white sm:px-8">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-100">Kelime Oyunlari</p>
+            <h1 className="mt-2 text-3xl font-black">Ayni Olani Yakala</h1>
+            <p className="mt-2 max-w-2xl text-sm text-emerald-100">
+              Ekranda arka arkaya ayni oge gelirse buyuk karta tikla. Dikkat, takip ve hizli tepki becerini gelistir.
             </p>
           </div>
-        ) : null}
+
+          <div className="p-5 sm:p-8">
+            <div className="mb-6 grid gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 lg:grid-cols-4">
+              <label className="space-y-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Mod</span>
+                <select
+                  value={mode}
+                  onChange={(event) => setMode(event.target.value as GameMode)}
+                  disabled={status === "running" || status === "paused"}
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold outline-none focus:border-cyan-500 disabled:opacity-60"
+                >
+                  <option value="word">Kelime</option>
+                  <option value="letter">Harf</option>
+                  <option value="symbol">Sembol</option>
+                  <option value="number">Rakam</option>
+                </select>
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Hiz</span>
+                <select
+                  value={speed}
+                  onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)}
+                  disabled={status === "running" || status === "paused"}
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold outline-none focus:border-cyan-500 disabled:opacity-60"
+                >
+                  {SPEED_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {formatSpeed(option)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Sure</span>
+                <select
+                  value={selectedDuration}
+                  onChange={(event) => {
+                    const nextDuration = Number(event.target.value) as DurationOption;
+                    setSelectedDuration(nextDuration);
+                    if (status === "ready") {
+                      setTimeLeft(nextDuration);
+                    }
+                  }}
+                  disabled={status === "running" || status === "paused"}
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold outline-none focus:border-cyan-500 disabled:opacity-60"
+                >
+                  {DURATION_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option} saniye
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="flex items-end gap-2">
+                {(status === "ready" || status === "finished") && (
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className="min-h-11 flex-1 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white transition hover:bg-emerald-700"
+                  >
+                    Baslat
+                  </button>
+                )}
+
+                {status === "running" && (
+                  <button
+                    type="button"
+                    onClick={pauseGame}
+                    className="min-h-11 flex-1 rounded-xl bg-amber-500 px-4 text-sm font-bold text-white transition hover:bg-amber-600"
+                  >
+                    Duraklat
+                  </button>
+                )}
+
+                {status === "paused" && (
+                  <button
+                    type="button"
+                    onClick={resumeGame}
+                    className="min-h-11 flex-1 rounded-xl bg-cyan-600 px-4 text-sm font-bold text-white transition hover:bg-cyan-700"
+                  >
+                    Devam Et
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={newGame}
+                  className="min-h-11 flex-1 rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 transition hover:bg-slate-100"
+                >
+                  Yeni Oyun
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={finishExercise}
+                disabled={status === "ready" || status === "finished"}
+                className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Egzersizi Bitir
+              </button>
+            </div>
+
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-6">
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Durum</p>
+                <p className="mt-1 text-lg font-black text-cyan-700">{statusLabel}</p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Sure</p>
+                <p className="mt-1 text-lg font-black text-blue-700">{timeLeft}</p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Dogru</p>
+                <p className="mt-1 text-lg font-black text-emerald-700">{correct}</p>
+              </div>
+
+              <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Yanlis</p>
+                <p className="mt-1 text-lg font-black text-red-700">{wrong}</p>
+              </div>
+
+              <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Kacirilan</p>
+                <p className="mt-1 text-lg font-black text-orange-700">{missed}</p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">Skor</p>
+                <p className="mt-1 text-lg font-black text-slate-800">{score}</p>
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center text-sm font-semibold text-slate-700">{feedback}</div>
+
+            <button
+              type="button"
+              onClick={handleCardClick}
+              disabled={status !== "running" || isChanging}
+              className={`relative flex min-h-64 w-full items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed text-center transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
+                isChanging ? "scale-[0.98] border-cyan-300 bg-white text-cyan-300" : "scale-100 border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
+              }`}
+            >
+              <div key={itemVersion} className={`flex flex-col items-center justify-center transition-all duration-200 ${isChanging ? "scale-90 opacity-20" : "scale-100 opacity-100"}`}>
+                <span className="mb-3 rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-cyan-500 shadow-sm">
+                  {status === "running" ? "Yeni Oge" : "Hazir"}
+                </span>
+
+                <span className="text-6xl font-black sm:text-7xl">{isChanging ? "..." : currentItem}</span>
+              </div>
+
+              {status === "running" && (
+                <span
+                  key={`pulse-${itemVersion}`}
+                  className="pointer-events-none absolute inset-4 rounded-3xl border-4 border-cyan-300 opacity-0 animate-[ping_0.45s_ease-out_1]"
+                />
+              )}
+            </button>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700 md:col-span-2">
+                <p className="font-bold">Nasil oynanir?</p>
+                <p className="mt-1">
+                  Ekranda gelen ogeleri takip et. Bir oge, hemen onceki ogeyle ayniysa buyuk karta tikla. Ayni degilken tiklarsan yanlis, ayniyken tiklamazsan kacirilan sayilir.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">
+                <p>
+                  <strong>Mod:</strong> {getModeLabel(mode)}
+                </p>
+                <p>
+                  <strong>Hiz:</strong> {formatSpeed(speed)}
+                </p>
+                <p>
+                  <strong>Tur:</strong> {roundCount}
+                </p>
+                <p>
+                  <strong>Basari:</strong> %{successRate}
+                </p>
+                {previousItem ? (
+                  <p>
+                    <strong>Onceki:</strong> {previousItem}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            {status === "finished" ? (
+              <div className="mt-6 rounded-3xl border border-cyan-200 bg-cyan-50 p-5 text-center">
+                <p className="text-xl font-black text-cyan-800">Oyun Bitti</p>
+                <p className="mt-2 text-sm text-slate-700">
+                  Skorun: <strong>{score}</strong> | Dogru: <strong>{correct}</strong> | Yanlis: <strong>{wrong}</strong> | Kacirilan: <strong>{missed}</strong>
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
       </div>
-    </FixedExerciseStage>
+    </main>
   );
 }

@@ -1,5 +1,3 @@
-import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
-
 export type FocusedReadingSpeedMode = "interval" | "wpm";
 
 export type CalculateFocusedReadingOptions = {
@@ -35,13 +33,16 @@ export function calculateIntervalMs(options: CalculateFocusedReadingOptions): nu
     : 1;
 
   if (options.mode === "interval") {
-    return normalizeDelayMs(options.intervalMs, 500);
+    const rawInterval = options.intervalMs ?? 500;
+    return Number.isFinite(rawInterval) ? Math.max(50, Math.round(rawInterval)) : 500;
   }
 
   const wordsPerMinute = options.wordsPerMinute ?? 200;
-  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 200, 1);
+  const safeWordsPerMinute = Number.isFinite(wordsPerMinute)
+    ? Math.max(1, Math.round(wordsPerMinute))
+    : 200;
 
-  return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedGroupSize);
+  return Math.round((normalizedGroupSize * 60000) / safeWordsPerMinute);
 }
 
 export function calculateReadingDuration(options: CalculateFocusedReadingOptions): number {
@@ -53,7 +54,9 @@ export function calculateReadingDuration(options: CalculateFocusedReadingOptions
 
   if (options.mode === "wpm") {
     const wordsPerMinute = options.wordsPerMinute ?? 200;
-    const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 200, 1);
+    const safeWordsPerMinute = Number.isFinite(wordsPerMinute)
+      ? Math.max(1, Math.round(wordsPerMinute))
+      : 200;
 
     return Math.round((totalWords / safeWordsPerMinute) * 60);
   }
@@ -78,4 +81,3 @@ export function formatDuration(seconds: number): string {
 
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
-

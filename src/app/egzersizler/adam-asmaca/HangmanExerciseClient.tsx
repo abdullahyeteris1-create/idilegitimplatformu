@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -15,7 +14,6 @@ function pickWord(): string {
 }
 
 export function HangmanExerciseClient() {
-  const router = useRouter();
   const [word, setWord] = useState(() => pickWord());
   const [guesses, setGuesses] = useState<string[]>([]);
   const hasSavedResultRef = useRef(false);
@@ -120,14 +118,36 @@ export function HangmanExerciseClient() {
   };
 
   return (
-    <FixedExerciseStage
-      title="Adam Asmaca"
-      subtitle="Kelimeyi altı yanlış hakkı bitmeden bul"
-      topStats={<><FixedExerciseStat label="Kalan Hak" value={remaining} /><FixedExerciseStat label="Yanlış" value={wrongGuesses.length} tone="bad" /></>}
-      controls={<div className="flex flex-wrap justify-center gap-2"><button type="button" onClick={finishExercise} disabled={isFinished} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 font-semibold text-emerald-800 disabled:opacity-60">Egzersizi Bitir</button><button type="button" onClick={startNewGame} className="min-h-11 rounded-xl bg-emerald-600 px-4 font-semibold text-white">Yeni Oyun</button></div>}
-      onExit={() => router.push("/egzersizler")}
-    >
-      <section className="max-h-full w-full max-w-3xl overflow-auto rounded-3xl border border-lime-200 bg-white p-3 shadow-sm md:p-5">
+    <main className="min-h-screen bg-lime-50 px-4 py-10 text-slate-900">
+      <section className="mx-auto max-w-3xl rounded-3xl border border-lime-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Kelime Oyunlari</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">Adam Asmaca</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Harf sec, kelimeyi bul, 6 yanlis hakki bitmeden oyunu kazan.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={finishExercise}
+              disabled={isFinished}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Egzersizi Bitir
+            </button>
+            <button
+              type="button"
+              onClick={startNewGame}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              Yeni Oyun
+            </button>
+          </div>
+        </div>
+
         <div className="mt-6 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="mx-auto flex h-48 w-40 items-end justify-center rounded-2xl border border-slate-200 bg-white p-4">
@@ -145,6 +165,16 @@ export function HangmanExerciseClient() {
               </div>
             </div>
 
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-semibold">
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-500">Kalan Hak</p>
+                <p className="mt-1 text-2xl">{remaining}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-500">Yanlis</p>
+                <p className="mt-1 text-2xl">{wrongGuesses.length}</p>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -185,6 +215,6 @@ export function HangmanExerciseClient() {
           </div>
         </div>
       </section>
-    </FixedExerciseStage>
+    </main>
   );
 }

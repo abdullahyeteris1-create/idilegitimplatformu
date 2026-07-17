@@ -11,24 +11,12 @@ type ResultIdentity = {
   username?: string;
 };
 
-type ResultCacheEntry = {
-  results: ExerciseResult[];
-  cachedAt: number;
-};
-
-const STUDENT_RESULTS_CACHE_TTL_MS = 60_000;
-const studentResultsRemoteCache = new Map<string, ResultCacheEntry>();
-
 function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
 
 function generateId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  return `res-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
 
 function readResults(): ExerciseResult[] {
@@ -79,20 +67,6 @@ function normalizeLookup(value: string | undefined): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
-function buildIdentityCacheKey(identity: ResultIdentity): string {
-  const idPart = normalizeLookup(identity.studentId);
-  if (idPart) {
-    return `id:${idPart}`;
-  }
-
-  const usernamePart = normalizeLookup(identity.username);
-  if (usernamePart) {
-    return `username:${usernamePart}`;
-  }
-
-  return `name:${normalizeLookup(identity.studentName)}`;
-}
-
 function isUuid(value: string | undefined): boolean {
   if (!value) {
     return false;
@@ -136,10 +110,8 @@ function getResultIdentityDefaults(): { studentId?: string; studentName?: string
 function mapResultToSupabaseRow(result: ExerciseResult): Record<string, unknown> {
   const completedAt = result.date;
   const safeStudentId = isUuid(result.studentId) ? result.studentId : null;
-  const safeResultId = isUuid(result.id) ? result.id : null;
 
   return {
-    ...(safeResultId ? { id: safeResultId } : {}),
     student_id: safeStudentId,
     student_name: result.studentName,
     username: result.username ?? null,
@@ -198,37 +170,6 @@ async function insertResultToSupabase(result: ExerciseResult): Promise<void> {
   console.warn("Exercise result Supabase save failed");
 }
 
-function getAssignmentItemIdFromUrl(): string | null {
-  if (!hasWindow()) {
-    return null;
-  }
-
-  const value = new URLSearchParams(window.location.search).get("assignmentItemId");
-  return value?.trim() || null;
-}
-
-async function completeAssignmentItemIfNeeded(result: ExerciseResult): Promise<void> {
-  const assignmentItemId = getAssignmentItemIdFromUrl();
-  if (!assignmentItemId) {
-    return;
-  }
-
-  try {
-    await fetch(`/api/student/assignment-items/${encodeURIComponent(assignmentItemId)}/complete`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        resultId: result.id,
-      }),
-    });
-  } catch {
-    // Sonuc kaydi bozulmadan devam eder.
-  }
-}
-
 async function fetchResultsFromSupabase(identity?: ResultIdentity): Promise<ExerciseResult[] | null> {
   if (!supabase) {
     return null;
@@ -282,7 +223,6 @@ export function saveExerciseResult(result: ExerciseResultInput): ExerciseResult 
   writeResults([nextResult, ...current]);
   console.log("Exercise result saved locally");
   void insertResultToSupabase(nextResult);
-  void completeAssignmentItemIfNeeded(nextResult);
 
   return nextResult;
 }
@@ -355,36 +295,6 @@ export async function getExerciseResultsForCurrentUserWithRemote(): Promise<Exer
 
 export function getResultsByStudent(studentId: string, studentName?: string, username?: string): ExerciseResult[] {
   return filterResultsByIdentity(readResults(), { studentId, studentName, username });
-}
-
-export async function getResultsByStudentWithRemote(
-  studentId: string,
-  studentName?: string,
-  username?: string,
-): Promise<ExerciseResult[]> {
-  const identity: ResultIdentity = { studentId, studentName, username };
-  const cacheKey = buildIdentityCacheKey(identity);
-
-  if (cacheKey) {
-    const cached = studentResultsRemoteCache.get(cacheKey);
-    if (cached && Date.now() - cached.cachedAt < STUDENT_RESULTS_CACHE_TTL_MS) {
-      return cached.results;
-    }
-  }
-
-  const remoteResults = await fetchResultsFromSupabase(identity);
-  const nextResults = remoteResults
-    ? filterResultsByIdentity(remoteResults, identity)
-    : getResultsByStudent(studentId, studentName, username);
-
-  if (cacheKey) {
-    studentResultsRemoteCache.set(cacheKey, {
-      results: nextResults,
-      cachedAt: Date.now(),
-    });
-  }
-
-  return nextResults;
 }
 
 export function getResultsByExercise(exerciseType: ExerciseType): ExerciseResult[] {

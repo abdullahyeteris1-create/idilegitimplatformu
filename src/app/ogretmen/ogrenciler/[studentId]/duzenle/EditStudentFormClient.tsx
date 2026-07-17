@@ -3,7 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
   generateStudentPassword,
   generateUsernameFromName,
@@ -12,8 +11,6 @@ import {
   updateStudent,
 } from "@/lib/students/studentStorage";
 import type { EducationStatus, StudentStatus } from "@/lib/students/types";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function EditStudentFormClient() {
   const router = useRouter();
@@ -28,11 +25,10 @@ export function EditStudentFormClient() {
   const [classLevel, setClassLevel] = useState(student?.classLevel ?? "");
   const [parentName, setParentName] = useState(student?.parentName ?? "");
   const [parentPhone, setParentPhone] = useState(student?.parentPhone ?? "");
-  const [parentEmail, setParentEmail] = useState(student?.parentEmail ?? student?.email ?? "");
+  const [email, setEmail] = useState(student?.email ?? "");
   const [birthDate, setBirthDate] = useState(student?.birthDate ?? "");
   const [status, setStatus] = useState<StudentStatus>(student?.status ?? "active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>(student?.educationStatus ?? "general");
-  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">(student?.educationLevel ?? "");
   const [notes, setNotes] = useState(student?.notes ?? "");
   const [error, setError] = useState("");
 
@@ -42,18 +38,8 @@ export function EditStudentFormClient() {
       return;
     }
 
-    if (parentEmail.trim() && !EMAIL_PATTERN.test(parentEmail.trim())) {
-      setError("Geçerli bir veli e-posta adresi girin.");
-      return;
-    }
-
     if (!isStudentUsernameAvailable(username, studentId)) {
       setError("Bu kullanici adi baska bir ogrenci tarafindan kullaniliyor.");
-      return;
-    }
-
-    if (!educationLevel) {
-      setError("Egitim duzeyi secimi zorunludur.");
       return;
     }
 
@@ -64,11 +50,10 @@ export function EditStudentFormClient() {
       classLevel,
       parentName,
       parentPhone,
-      parentEmail,
+      email,
       birthDate,
       status,
       educationStatus,
-      educationLevel,
       notes,
     });
 
@@ -167,15 +152,11 @@ export function EditStudentFormClient() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          Veli E-posta Adresi (Opsiyonel)
+          E-posta (Opsiyonel)
           <input
-            type="email"
-            name="parentEmail"
-            value={parentEmail}
-            onChange={(event) => setParentEmail(event.target.value)}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
-            placeholder="veli@example.com"
-            autoComplete="email"
           />
         </label>
 
@@ -210,22 +191,6 @@ export function EditStudentFormClient() {
           >
             <option value="general">Genel</option>
             <option value="speed-reading">Hizli Okuma</option>
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm font-semibold">
-          Egitim Duzeyi (Zorunlu)
-          <select
-            value={educationLevel}
-            onChange={(event) => setEducationLevel(event.target.value as EducationLevel | "")}
-            className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
-          >
-            <option value="">Seciniz</option>
-            {EDUCATION_LEVELS.map((value) => (
-              <option key={value} value={value}>
-                {EDUCATION_LEVEL_LABELS[value]}
-              </option>
-            ))}
           </select>
         </label>
       </div>

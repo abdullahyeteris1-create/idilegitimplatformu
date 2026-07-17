@@ -25,13 +25,6 @@ export type ComprehensionQuestionInput = Omit<ComprehensionQuestion, "id" | "cre
 
 type QuestionPatch = Partial<Omit<ComprehensionQuestionInput, "id" | "createdAt">>;
 
-export type QuestionActivationResult = {
-  activated: boolean;
-  error: string | null;
-};
-
-const QUESTION_ACTIVATION_ERROR = "Bağlı soruların yayın durumu Supabase'e kaydedilemedi.";
-
 function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
@@ -146,7 +139,12 @@ function mapSupabaseRowToQuestion(row: Record<string, unknown>): ComprehensionQu
     correctAnswer: String(row.correct_answer ?? row.correctAnswer ?? ""),
     explanation: typeof row.explanation === "string" ? row.explanation : undefined,
     isActive: typeof row.is_active === "boolean" ? row.is_active : typeof row.isActive === "boolean" ? row.isActive : true,
-    questionOrder: 0,
+    questionOrder:
+      typeof row.question_order === "number"
+        ? row.question_order
+        : typeof row.questionOrder === "number"
+          ? row.questionOrder
+          : 0,
     createdAt:
       typeof row.created_at === "string"
         ? row.created_at
@@ -159,7 +157,7 @@ function mapSupabaseRowToQuestion(row: Record<string, unknown>): ComprehensionQu
         : typeof row.updatedAt === "string"
           ? row.updatedAt
           : new Date().toISOString(),
-    questionType: undefined,
+    questionType: typeof row.question_type === "string" ? row.question_type : typeof row.questionType === "string" ? row.questionType : undefined,
   });
 }
 
@@ -171,6 +169,8 @@ function mapQuestionToSupabaseRow(question: ComprehensionQuestion): Record<strin
     correct_answer: question.correctAnswer,
     explanation: question.explanation ?? null,
     is_active: question.isActive,
+    question_order: question.questionOrder ?? 0,
+    question_type: question.questionType ?? "multiple_choice",
     updated_at: new Date().toISOString(),
   };
 
@@ -226,7 +226,7 @@ async function fetchQuestionsFromSupabase(): Promise<ComprehensionQuestion[] | n
     return null;
   }
 
-  const { data, error } = await supabase.from(QUESTION_LIBRARY_TABLE).select("*").order("created_at", { ascending: true });
+  const { data, error } = await supabase.from(QUESTION_LIBRARY_TABLE).select("*").order("question_order", { ascending: true });
 
   if (error || !Array.isArray(data)) {
     return null;
@@ -247,7 +247,10 @@ async function upsertQuestionToSupabase(question: ComprehensionQuestion): Promis
     if (error) {
       console.error("Supabase question_library upsert failed", {
         message: error.message,
+        details: error.details,
+        hint: error.hint,
         code: error.code,
+        payload,
       });
     }
 
@@ -361,58 +364,4 @@ export function mapQuestionToReadingQuestion(question: ComprehensionQuestion): {
     options: [...question.options],
     correctAnswerIndex,
   };
-}
-
-export async function setQuestionsActiveByTextIdAndSync(textId: string, isActive: boolean): Promise<QuestionActivationResult> {
-  const normalizedTextId = normalizeText(textId);
-  if (!supabase || !normalizedTextId) {
-    return { activated: false, error: QUESTION_ACTIVATION_ERROR };
-  }
-
-  const { data, error } = await supabase
-    .from(QUESTION_LIBRARY_TABLE)
-    .update({ is_active: isActive, updated_at: new Date().toISOString() })
-    .eq("text_id", normalizedTextId)
-    .select("*");
-
-  if (error || !Array.isArray(data)) {
-    if (error) {
-      console.error("Supabase question_library activation update failed", {
-        code: error.code,
-        message: error.message,
-      });
-    }
-    return { activated: false, error: QUESTION_ACTIVATION_ERROR };
-  }
-
-  data.forEach((row) => syncQuestionInLocalCache(mapSupabaseRowToQuestion(row as Record<string, unknown>)));
-  return { activated: data.length > 0 && isActive, error: null };
-}
-
-export async function activateQuestionSetIfAllInactiveAndSync(textId: string): Promise<QuestionActivationResult> {
-  const normalizedTextId = normalizeText(textId);
-  if (!supabase || !normalizedTextId) {
-    return { activated: false, error: QUESTION_ACTIVATION_ERROR };
-  }
-
-  const { data, error } = await supabase
-    .from(QUESTION_LIBRARY_TABLE)
-    .select("id,is_active")
-    .eq("text_id", normalizedTextId);
-
-  if (error || !Array.isArray(data)) {
-    if (error) {
-      console.error("Supabase question_library activation lookup failed", {
-        code: error.code,
-        message: error.message,
-      });
-    }
-    return { activated: false, error: QUESTION_ACTIVATION_ERROR };
-  }
-
-  if (data.length === 0 || data.some((question) => question.is_active === true)) {
-    return { activated: false, error: null };
-  }
-
-  return setQuestionsActiveByTextIdAndSync(normalizedTextId, true);
 }

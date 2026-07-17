@@ -21,7 +21,6 @@ export default async function ExercisesPage({ searchParams }: ExercisesPageProps
       navItems={EXERCISES_NAV_ITEMS}
       compactHeader
       wide
-      headerVariant="student-vibrant"
     >
       <ExercisesCenterClient />
     </AppShell>

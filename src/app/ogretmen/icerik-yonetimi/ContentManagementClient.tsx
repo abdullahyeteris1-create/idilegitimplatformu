@@ -74,12 +74,6 @@ export function ContentManagementClient() {
               >
                 Anlama Testi Oluştur
               </Link>
-              <Link
-                href="/ogretmen/icerik-yonetimi/ai-icerik-ureticisi"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-800 transition hover:bg-violet-100"
-              >
-                AI İçerik Üreticisi
-              </Link>
             </div>
           </div>
 

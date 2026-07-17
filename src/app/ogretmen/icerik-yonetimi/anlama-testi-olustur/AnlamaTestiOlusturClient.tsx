@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { TEXT_LIBRARY_CATEGORIES, countCharacters, countWords, getTextLibraryItems, type TextLibraryItem } from "@/lib/settings/textLibraryStorage";
-import {
-  getDisplayTextTitle,
-  normalizeTextCategory,
-  sortByCategoryAndTitle,
-} from "@/lib/text-library/sorting";
 import {
   createQuestion,
   deleteQuestion,
@@ -79,26 +73,17 @@ export function AnlamaTestiOlusturClient() {
   }, []);
 
   const categories = useMemo(() => {
-    const textCategorySet = new Set(texts.map((item) => normalizeTextCategory(item.category)));
+    const textCategorySet = new Set(texts.map((item) => item.category));
     return TEXT_LIBRARY_CATEGORIES.filter((category) => textCategorySet.has(category));
   }, [texts]);
 
-  const sortedTexts = useMemo(() => {
-    return sortByCategoryAndTitle(texts, { categoryOrder: [...TEXT_LIBRARY_CATEGORIES] });
-  }, [texts]);
-
   const filteredTexts = useMemo(() => {
-    return sortedTexts.filter((item) => categoryFilter === "all" || normalizeTextCategory(item.category) === categoryFilter);
-  }, [categoryFilter, sortedTexts]);
+    return texts.filter((item) => categoryFilter === "all" || item.category === categoryFilter);
+  }, [categoryFilter, texts]);
 
   const selectedText = useMemo(() => {
-    return sortedTexts.find((item) => item.id === selectedTextId) ?? filteredTexts[0] ?? null;
-  }, [filteredTexts, selectedTextId, sortedTexts]);
-
-  const optionEditorKeys = useMemo(() => {
-    const editorScope = editingQuestionId ?? "draft";
-    return form.options.map((_, index) => `${editorScope}-option-${index}`);
-  }, [editingQuestionId, form.options]);
+    return texts.find((item) => item.id === selectedTextId) ?? filteredTexts[0] ?? null;
+  }, [filteredTexts, selectedTextId, texts]);
 
   const selectedTextQuestions = useMemo(() => {
     if (!selectedText) {
@@ -140,10 +125,6 @@ export function AnlamaTestiOlusturClient() {
         wordCount: countWords(selectedText.content),
         characterCount: countCharacters(selectedText.content),
         isActive: selectedText.isActive,
-        levelLabel:
-          typeof selectedText.level === "string" && selectedText.level in EDUCATION_LEVEL_LABELS
-            ? EDUCATION_LEVEL_LABELS[selectedText.level as keyof typeof EDUCATION_LEVEL_LABELS]
-            : "Secilmedi",
       }
     : null;
 
@@ -314,7 +295,7 @@ export function AnlamaTestiOlusturClient() {
               <option value="all">Tüm Kategoriler</option>
               {categories.map((category) => (
                 <option key={category} value={category}>
-                  {normalizeTextCategory(category)}
+                  {category}
                 </option>
               ))}
             </select>
@@ -330,7 +311,7 @@ export function AnlamaTestiOlusturClient() {
               {filteredTexts.length === 0 ? <option value="">Metin bulunamadı</option> : null}
               {filteredTexts.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {getDisplayTextTitle(item.title)}
+                  {item.title}
                 </option>
               ))}
             </select>
@@ -341,11 +322,11 @@ export function AnlamaTestiOlusturClient() {
           <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
             <article>
               <p className="text-xs text-slate-500">Metin Başlığı</p>
-              <p className="mt-1 font-semibold text-slate-950">{getDisplayTextTitle(selectedText.title)}</p>
+              <p className="mt-1 font-semibold text-slate-950">{selectedText.title}</p>
             </article>
             <article>
               <p className="text-xs text-slate-500">Kategori</p>
-              <p className="mt-1 font-semibold text-slate-950">{normalizeTextCategory(selectedText.category)}</p>
+              <p className="mt-1 font-semibold text-slate-950">{selectedText.category}</p>
             </article>
             <article>
               <p className="text-xs text-slate-500">Kelime Sayısı</p>
@@ -354,10 +335,6 @@ export function AnlamaTestiOlusturClient() {
             <article>
               <p className="text-xs text-slate-500">Karakter Sayısı</p>
               <p className="mt-1 font-semibold text-slate-950">{selectedTextStats.characterCount}</p>
-            </article>
-            <article>
-              <p className="text-xs text-slate-500">Egitim Duzeyi</p>
-              <p className="mt-1 font-semibold text-slate-950">{selectedTextStats.levelLabel}</p>
             </article>
             <article className="sm:col-span-2">
               <p className="text-xs text-slate-500">Durum</p>
@@ -440,7 +417,7 @@ export function AnlamaTestiOlusturClient() {
                   const isCorrect = form.correctAnswerIndex === index;
 
                   return (
-                    <div key={optionEditorKeys[index]} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
+                    <div key={`${index}-${option}`} className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:grid-cols-[minmax(0,1fr)_180px_auto] md:items-center">
                       <label className="grid gap-1 text-sm font-medium text-slate-700">
                         Şık {index + 1}
                         <input
@@ -557,8 +534,8 @@ export function AnlamaTestiOlusturClient() {
                 </div>
 
                 <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                    {question.options.map((option, optionIndex) => (
-                    <div key={`opt-${question.id}-${optionIndex}`} className={`rounded-xl border px-3 py-2 text-sm ${option === question.correctAnswer ? "border-green-200 bg-green-50 text-green-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                  {question.options.map((option) => (
+                    <div key={option} className={`rounded-xl border px-3 py-2 text-sm ${option === question.correctAnswer ? "border-green-200 bg-green-50 text-green-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
                       {option}
                     </div>
                   ))}

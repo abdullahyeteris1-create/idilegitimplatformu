@@ -1,8 +1,7 @@
 import { clearCurrentStudent, getCurrentStudent, getCurrentUser, setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
-import { normalizeEducationLevel } from "@/lib/assignments/educationLevels";
 import { DEMO_STUDENT, MOCK_STUDENTS } from "@/lib/students/mockStudents";
 import { supabase } from "@/lib/supabase/client";
-import type { Student, WelcomeEmailStatus } from "@/lib/students/types";
+import type { Student } from "@/lib/students/types";
 
 const STUDENTS_STORAGE_KEY = "idil-students";
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -14,17 +13,11 @@ type StudentInput = {
   classLevel?: string;
   parentName?: string;
   parentPhone?: string;
-  parentEmail?: string;
-  /** @deprecated Use parentEmail. */
   email?: string;
-  welcomeEmailSentAt?: string;
-  welcomeEmailStatus?: WelcomeEmailStatus;
   birthDate?: string;
   profileImageUrl?: string;
   status?: "active" | "passive";
   educationStatus?: "general" | "speed-reading";
-  educationLevel?: Student["educationLevel"];
-  assignmentMode?: Student["assignmentMode"];
   notes?: string;
 };
 
@@ -35,12 +28,6 @@ function hasWindow(): boolean {
 function normalizeOptional(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
-}
-
-function normalizeWelcomeEmailStatus(value: unknown): WelcomeEmailStatus | undefined {
-  return value === "sent" || value === "failed" || value === "not_requested"
-    ? value
-    : undefined;
 }
 
 function isUuid(value?: string): boolean {
@@ -73,11 +60,7 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
   const username = normalizeOptional(student.username) ?? generateUsernameFromName(name);
   const password = normalizeOptional(student.password) ?? generateStudentPassword();
   const classLevel = normalizeOptional(student.classLevel) ?? normalizeOptional(student.className);
-  const educationLevel =
-    normalizeEducationLevel(student.educationLevel) ??
-    normalizeEducationLevel(classLevel);
   const parentPhone = normalizeOptional(student.parentPhone) ?? normalizeOptional(student.phone);
-  const parentEmail = normalizeOptional(student.parentEmail) ?? normalizeOptional(student.email);
   const status = student.isActive === true ? "active" : student.isActive === false ? "passive" : student.status ?? "active";
 
   return {
@@ -88,25 +71,15 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     password,
     className: normalizeOptional(student.className) ?? classLevel,
     classLevel,
-    educationLevel,
     parentName: normalizeOptional(student.parentName),
     phone: normalizeOptional(student.phone) ?? parentPhone,
     parentPhone,
-    parentEmail,
-    email: parentEmail,
-    welcomeEmailSentAt: normalizeOptional(student.welcomeEmailSentAt),
-    welcomeEmailStatus: normalizeWelcomeEmailStatus(student.welcomeEmailStatus),
+    email: normalizeOptional(student.email),
     birthDate: normalizeOptional(student.birthDate),
     profileImageUrl: normalizeOptional(student.profileImageUrl),
     isActive: status === "active",
     status: status === "passive" ? "passive" : "active",
     educationStatus: student.educationStatus,
-    assignmentMode:
-      student.assignmentMode === "manual" ||
-      student.assignmentMode === "ai_assisted" ||
-      student.assignmentMode === "automatic"
-        ? student.assignmentMode
-        : "automatic",
     createdAt: normalizeOptional(student.createdAt) ?? new Date().toISOString(),
     notes: normalizeOptional(student.notes),
   };
@@ -131,15 +104,6 @@ function normalizeStudentsWithDemo(students: Student[]): Student[] {
 }
 
 function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
-  const parentEmail =
-    typeof row.parent_email === "string"
-      ? row.parent_email
-      : typeof row.parentEmail === "string"
-        ? row.parentEmail
-        : typeof row.email === "string"
-          ? row.email
-          : undefined;
-
   const mapped: Student = {
     id: String(row.id ?? ""),
     name: String(row.name ?? ""),
@@ -147,21 +111,10 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
     password: String(row.password ?? ""),
     className: typeof row.class_name === "string" ? row.class_name : typeof row.className === "string" ? row.className : undefined,
     classLevel: typeof row.class_level === "string" ? row.class_level : typeof row.classLevel === "string" ? row.classLevel : undefined,
-    educationLevel: normalizeEducationLevel(row.education_level ?? row.educationLevel),
     parentName: typeof row.parent_name === "string" ? row.parent_name : typeof row.parentName === "string" ? row.parentName : undefined,
     phone: typeof row.phone === "string" ? row.phone : undefined,
     parentPhone: typeof row.parent_phone === "string" ? row.parent_phone : typeof row.parentPhone === "string" ? row.parentPhone : undefined,
-    parentEmail,
-    email: parentEmail,
-    welcomeEmailSentAt:
-      typeof row.welcome_email_sent_at === "string"
-        ? row.welcome_email_sent_at
-        : typeof row.welcomeEmailSentAt === "string"
-          ? row.welcomeEmailSentAt
-          : undefined,
-    welcomeEmailStatus: normalizeWelcomeEmailStatus(
-      row.welcome_email_status ?? row.welcomeEmailStatus,
-    ),
+    email: undefined,
     birthDate: typeof row.birth_date === "string" ? row.birth_date : typeof row.birthDate === "string" ? row.birthDate : undefined,
     profileImageUrl:
       typeof row.profile_image_url === "string"
@@ -182,12 +135,6 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
         : row.educationStatus === "general" || row.educationStatus === "speed-reading"
           ? row.educationStatus
           : undefined,
-    assignmentMode:
-      row.assignment_mode === "manual" || row.assignment_mode === "ai_assisted" || row.assignment_mode === "automatic"
-        ? row.assignment_mode
-        : row.assignmentMode === "manual" || row.assignmentMode === "ai_assisted" || row.assignmentMode === "automatic"
-          ? row.assignmentMode
-          : "automatic",
     createdAt:
       typeof row.created_at === "string"
         ? row.created_at
@@ -208,11 +155,6 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
     class_name: student.className ?? student.classLevel ?? null,
     parent_name: student.parentName ?? null,
     phone: student.phone ?? student.parentPhone ?? null,
-    parent_email: student.parentEmail ?? student.email ?? null,
-    education_level: student.educationLevel ?? null,
-    assignment_mode: student.assignmentMode ?? "automatic",
-    welcome_email_sent_at: student.welcomeEmailSentAt ?? null,
-    welcome_email_status: student.welcomeEmailStatus ?? null,
     is_active: (student.isActive ?? student.status === "active") === true,
     notes: student.notes ?? null,
     updated_at: new Date().toISOString(),
@@ -301,16 +243,9 @@ async function fetchStudentsFromSupabase(): Promise<Student[] | null> {
   return normalizeStudentsWithDemo(data.map((row) => mapSupabaseRowToStudent(row as Record<string, unknown>)));
 }
 
-function logStudentSyncFailure(operation: string, code?: string): void {
-  console.error("Supabase student sync failed", {
-    operation,
-    code: code ?? "unknown",
-  });
-}
-
-async function upsertStudentToSupabase(student: Student, previousUsername?: string): Promise<Student | null> {
+async function upsertStudentToSupabase(student: Student, previousUsername?: string): Promise<void> {
   if (!supabase) {
-    return null;
+    return;
   }
 
   const payload = mapStudentToSupabaseRow(student);
@@ -325,14 +260,19 @@ async function upsertStudentToSupabase(student: Student, previousUsername?: stri
       .maybeSingle();
 
     if (!error && data) {
-      const syncedStudent = mapSupabaseRowToStudent(data as Record<string, unknown>);
-      syncStudentInLocalCache(syncedStudent, normalizedPreviousUsername);
-      return syncedStudent;
+      syncStudentInLocalCache(mapSupabaseRowToStudent(data as Record<string, unknown>), normalizedPreviousUsername);
+      return;
     }
 
     if (error) {
-      logStudentSyncFailure("update-by-id", error.code);
-      return null;
+      console.error("Supabase students upsert failed", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        payload,
+      });
+      return;
     }
   }
 
@@ -345,14 +285,19 @@ async function upsertStudentToSupabase(student: Student, previousUsername?: stri
       .maybeSingle();
 
     if (!error && data) {
-      const syncedStudent = mapSupabaseRowToStudent(data as Record<string, unknown>);
-      syncStudentInLocalCache(syncedStudent, normalizedPreviousUsername);
-      return syncedStudent;
+      syncStudentInLocalCache(mapSupabaseRowToStudent(data as Record<string, unknown>), normalizedPreviousUsername);
+      return;
     }
 
     if (error) {
-      logStudentSyncFailure("update-by-username", error.code);
-      return null;
+      console.error("Supabase students upsert failed", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        payload,
+      });
+      return;
     }
   }
 
@@ -363,13 +308,17 @@ async function upsertStudentToSupabase(student: Student, previousUsername?: stri
     .single();
 
   if (error) {
-    logStudentSyncFailure("upsert-by-username", error.code);
-    return null;
+    console.error("Supabase students upsert failed", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      payload,
+    });
+    return;
   }
 
-  const syncedStudent = mapSupabaseRowToStudent(data as Record<string, unknown>);
-  syncStudentInLocalCache(syncedStudent, normalizedPreviousUsername);
-  return syncedStudent;
+  syncStudentInLocalCache(mapSupabaseRowToStudent(data as Record<string, unknown>), normalizedPreviousUsername);
 }
 
 function isUsernameTaken(username: string, students: Student[], excludedStudentId?: string): boolean {
@@ -475,35 +424,6 @@ export function isStudentUsernameAvailable(username: string, excludedStudentId?:
   return !isUsernameTaken(username, getStudents(), excludedStudentId);
 }
 
-function buildNewStudent(studentInput: StudentInput): Student {
-  const username = studentInput.username.trim();
-  const parentEmail =
-    normalizeOptional(studentInput.parentEmail) ?? normalizeOptional(studentInput.email);
-
-  return {
-    id: createStudentId(),
-    name: studentInput.name.trim(),
-    username,
-    password: studentInput.password.trim(),
-    classLevel: normalizeOptional(studentInput.classLevel),
-    parentName: normalizeOptional(studentInput.parentName),
-    parentPhone: normalizeOptional(studentInput.parentPhone),
-    parentEmail,
-    email: parentEmail,
-    welcomeEmailSentAt: normalizeOptional(studentInput.welcomeEmailSentAt),
-    welcomeEmailStatus: normalizeWelcomeEmailStatus(studentInput.welcomeEmailStatus),
-    birthDate: normalizeOptional(studentInput.birthDate),
-    profileImageUrl: normalizeOptional(studentInput.profileImageUrl),
-    status: studentInput.status ?? "active",
-    isActive: (studentInput.status ?? "active") === "active",
-    educationStatus: studentInput.educationStatus,
-    educationLevel: normalizeEducationLevel(studentInput.educationLevel) ?? normalizeEducationLevel(studentInput.classLevel),
-    assignmentMode: studentInput.assignmentMode ?? "automatic",
-    createdAt: new Date().toISOString(),
-    notes: normalizeOptional(studentInput.notes),
-  };
-}
-
 export function createStudent(studentInput: StudentInput): Student | null {
   const students = getStudents();
   const username = studentInput.username.trim();
@@ -512,29 +432,27 @@ export function createStudent(studentInput: StudentInput): Student | null {
     return null;
   }
 
-  const newStudent = buildNewStudent(studentInput);
+  const newStudent: Student = {
+    id: createStudentId(),
+    name: studentInput.name.trim(),
+    username,
+    password: studentInput.password.trim(),
+    classLevel: normalizeOptional(studentInput.classLevel),
+    parentName: normalizeOptional(studentInput.parentName),
+    parentPhone: normalizeOptional(studentInput.parentPhone),
+    email: normalizeOptional(studentInput.email),
+    birthDate: normalizeOptional(studentInput.birthDate),
+    profileImageUrl: normalizeOptional(studentInput.profileImageUrl),
+    status: studentInput.status ?? "active",
+    isActive: (studentInput.status ?? "active") === "active",
+    educationStatus: studentInput.educationStatus,
+    createdAt: new Date().toISOString(),
+    notes: normalizeOptional(studentInput.notes),
+  };
 
   writeStudents([newStudent, ...students]);
   void upsertStudentToSupabase(newStudent);
   return newStudent;
-}
-
-export async function createStudentWithRemote(studentInput: StudentInput): Promise<Student | null> {
-  const students = getStudents();
-  const username = studentInput.username.trim();
-
-  if (isUsernameTaken(username, students)) {
-    return null;
-  }
-
-  const newStudent = buildNewStudent(studentInput);
-
-  if (!supabase) {
-    writeStudents([newStudent, ...students]);
-    return newStudent;
-  }
-
-  return upsertStudentToSupabase(newStudent);
 }
 
 export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | "createdAt">>): Student | null {
@@ -552,13 +470,6 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
     return null;
   }
 
-  const nextParentEmail =
-    updates.parentEmail !== undefined
-      ? normalizeOptional(updates.parentEmail)
-      : updates.email !== undefined
-        ? normalizeOptional(updates.email)
-        : existingStudent.parentEmail ?? existingStudent.email;
-
   const updatedStudent: Student = {
     ...existingStudent,
     ...updates,
@@ -568,16 +479,7 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
     classLevel: updates.classLevel !== undefined ? normalizeOptional(updates.classLevel) : existingStudent.classLevel,
     parentName: updates.parentName !== undefined ? normalizeOptional(updates.parentName) : existingStudent.parentName,
     parentPhone: updates.parentPhone !== undefined ? normalizeOptional(updates.parentPhone) : existingStudent.parentPhone,
-    parentEmail: nextParentEmail,
-    email: nextParentEmail,
-    welcomeEmailSentAt:
-      updates.welcomeEmailSentAt !== undefined
-        ? normalizeOptional(updates.welcomeEmailSentAt)
-        : existingStudent.welcomeEmailSentAt,
-    welcomeEmailStatus:
-      updates.welcomeEmailStatus !== undefined
-        ? normalizeWelcomeEmailStatus(updates.welcomeEmailStatus)
-        : existingStudent.welcomeEmailStatus,
+    email: updates.email !== undefined ? normalizeOptional(updates.email) : existingStudent.email,
     birthDate: updates.birthDate !== undefined ? normalizeOptional(updates.birthDate) : existingStudent.birthDate,
     profileImageUrl:
       updates.profileImageUrl !== undefined ? normalizeOptional(updates.profileImageUrl) : existingStudent.profileImageUrl,
@@ -588,14 +490,6 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
           ? updates.status === "active"
           : existingStudent.isActive ?? existingStudent.status === "active",
     notes: updates.notes !== undefined ? normalizeOptional(updates.notes) : existingStudent.notes,
-    educationLevel:
-      updates.educationLevel !== undefined
-        ? normalizeEducationLevel(updates.educationLevel)
-        : existingStudent.educationLevel,
-    assignmentMode:
-      updates.assignmentMode !== undefined
-        ? updates.assignmentMode
-        : existingStudent.assignmentMode ?? "automatic",
   };
 
   const nextStudents = [...students];
@@ -609,66 +503,6 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
   }
 
   return updatedStudent;
-}
-
-export async function updateStudentWelcomeEmailStatus(
-  id: string,
-  welcomeEmailStatus: WelcomeEmailStatus,
-  welcomeEmailSentAt?: string,
-): Promise<Student | null> {
-  const students = getStudents();
-  const studentIndex = students.findIndex((student) => student.id === id);
-
-  if (studentIndex < 0) {
-    return null;
-  }
-
-  const existingStudent = students[studentIndex];
-  const normalizedSentAt =
-    welcomeEmailStatus === "sent"
-      ? normalizeOptional(welcomeEmailSentAt) ?? new Date().toISOString()
-      : undefined;
-  const updatedStudent: Student = {
-    ...existingStudent,
-    welcomeEmailSentAt: normalizedSentAt,
-    welcomeEmailStatus,
-  };
-  const nextStudents = [...students];
-  nextStudents[studentIndex] = updatedStudent;
-  writeStudents(nextStudents);
-
-  const currentStudent = getCurrentStudent();
-  if (currentStudent?.id === id) {
-    setCurrentStudent(updatedStudent);
-  }
-
-  if (!supabase) {
-    return updatedStudent;
-  }
-
-  const statusPayload = {
-    welcome_email_sent_at: normalizedSentAt ?? null,
-    welcome_email_status: welcomeEmailStatus,
-    updated_at: new Date().toISOString(),
-  };
-  const updateQuery = supabase.from(STUDENTS_TABLE).update(statusPayload);
-  const { data, error } = isUuid(existingStudent.id)
-    ? await updateQuery.eq("id", existingStudent.id).select("*").maybeSingle()
-    : await updateQuery.eq("username", existingStudent.username).select("*").maybeSingle();
-
-  if (error) {
-    logStudentSyncFailure("update-welcome-email-status", error.code);
-    return updatedStudent;
-  }
-
-  if (!data) {
-    logStudentSyncFailure("update-welcome-email-status");
-    return updatedStudent;
-  }
-
-  const syncedStudent = mapSupabaseRowToStudent(data as Record<string, unknown>);
-  syncStudentInLocalCache(syncedStudent);
-  return syncedStudent;
 }
 
 export function deactivateStudent(id: string): Student | null {
@@ -691,16 +525,6 @@ export function activateStudent(id: string): Student | null {
 
 export function deleteStudent(id: string): boolean {
   return deactivateStudent(id) !== null;
-}
-
-export function removeStudentFromLocalCache(studentId: string): void {
-  const nextStudents = getStudents().filter((student) => student.id !== studentId);
-  writeStudents(normalizeStudentsWithDemo(nextStudents));
-
-  const currentStudent = getCurrentStudent();
-  if (currentStudent?.id === studentId) {
-    clearCurrentStudent();
-  }
 }
 
 export function generateStudentPassword(): string {

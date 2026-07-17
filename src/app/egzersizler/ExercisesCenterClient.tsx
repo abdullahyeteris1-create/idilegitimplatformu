@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 type ExerciseCard = {
   title: string;
@@ -95,30 +94,6 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/similar-words.svg",
         tags: ["Ayırt Etme", "Dikkat"],
       },
-      {
-        title: "Kelime Bulma",
-        description: "Metin içindeki hedef kelimeyi hızla bul.",
-        href: "/egzersizler/kelime-bulma",
-        icon: "KB",
-        image: "/exercise-visuals/exercises/word-finding.svg",
-        tags: ["Tarama", "Kelime"],
-      },
-      {
-        title: "Göz Egzersizleri: Kolonlar",
-        description: "Farklı kelimeleri kolonlar boyunca ritmik göz hareketleriyle takip et.",
-        href: "/egzersizler/goz-egzersizleri-kolonlar",
-        icon: "GK",
-        image: "/exercise-visuals/exercises/eye-columns.svg",
-        tags: ["Göz Hareketi", "Kolonlar"],
-      },
-      {
-        title: "KAREL: Kare Görme Alanı",
-        description: "Merkez noktaya odaklanırken çevredeki iki harfi gör ve aynı mı farklı mı olduğunu belirle.",
-        href: "/egzersizler/kare-gorme-alani",
-        icon: "KG",
-        image: "/exercise-visuals/exercises/square-vision.svg",
-        tags: ["Görme Alanı", "Odak"],
-      },
     ],
   },
   {
@@ -153,14 +128,6 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/letter-number-counting.svg",
         tags: ["Sayma", "Odak"],
       },
-      {
-        title: "Ayni Olani Yakala",
-        description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
-        href: "/egzersizler/ayni-olani-yakala",
-        icon: "AO",
-        image: "/exercise-visuals/exercises/similar-words.svg",
-        tags: ["Dikkat", "Hiz"],
-      },
     ],
   },
   {
@@ -180,6 +147,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Kelime", "Tahmin"],
       },
       {
+        title: "Ayni Olani Yakala",
+        description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
+        href: "/egzersizler/ayni-olani-yakala",
+        icon: "AO",
+        image: "/exercise-visuals/exercises/similar-words.svg",
+        tags: ["Dikkat", "Hiz"],
+      },
+      {
         title: "Adam Asmaca",
         description: "Gizli kelimeyi harf tahminleriyle bul, kelime hafizani gelistir.",
         href: "/egzersizler/adam-asmaca",
@@ -191,8 +166,8 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
   },
   {
     id: "fluency",
-    title: "Metin Çalışmaları",
-    shortTitle: "Metin Çalışmaları",
+    title: "Okuma Akıcılığı",
+    shortTitle: "Okuma Akıcılığı",
     description: "Okuma akıcılığı ve metin takip çalışmaları.",
     icon: "📚",
     image: "/exercise-visuals/categories/fluency.svg",
@@ -222,12 +197,12 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Odak", "Metin"],
       },
       {
-        title: "Gruplama Çalışması",
-        description: "Kelime gruplarını tek bakışta algılama ve okuma alanını geliştirme çalışması.",
-        href: "/egzersizler/gruplama-calismasi",
-        icon: "GR",
-        image: "/exercise-visuals/exercises/grouping.svg",
-        tags: ["Gruplama", "Okuma Alanı"],
+        title: "Kelime Bulma",
+        description: "Metin içindeki hedef kelimeyi hızla bul.",
+        href: "/egzersizler/kelime-bulma",
+        icon: "KB",
+        image: "/exercise-visuals/exercises/word-finding.svg",
+        tags: ["Tarama", "Kelime"],
       },
     ],
   },
@@ -450,42 +425,15 @@ const EXERCISE_COUNT_BY_GROUP_ID = DETERMINISTIC_EXERCISE_GROUPS.reduce<Record<s
   accumulator[group.id] = group.exercises.length;
   return accumulator;
 }, {});
-const EXERCISE_GROUP_ID_SET = new Set(DETERMINISTIC_EXERCISE_GROUPS.map((group) => group.id));
-
-function resolveGroupId(value: string | null): string {
-  if (value && EXERCISE_GROUP_ID_SET.has(value)) {
-    return value;
-  }
-
-  return DEFAULT_GROUP_ID;
-}
 
 export function ExercisesCenterClient() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const activeGroupId = useMemo(() => {
-    return resolveGroupId(searchParams.get("category"));
-  }, [searchParams]);
+  const [activeGroupId, setActiveGroupId] = useState(DEFAULT_GROUP_ID);
 
   const activeGroup = useMemo(() => {
     return DETERMINISTIC_EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? DETERMINISTIC_EXERCISE_GROUPS[0];
   }, [activeGroupId]);
 
   const activeTheme = CATEGORY_THEMES[activeGroup.id] ?? FALLBACK_THEME;
-
-  const handleCategorySelect = (groupId: string) => {
-    const nextGroupId = resolveGroupId(groupId);
-
-    if (nextGroupId === activeGroupId) {
-      return;
-    }
-
-    const nextSearchParams = new URLSearchParams(searchParams.toString());
-    nextSearchParams.set("category", nextGroupId);
-    router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false });
-  };
 
   return (
     <section className="grid min-h-[calc(100vh-220px)] gap-4 lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
@@ -510,8 +458,7 @@ export function ExercisesCenterClient() {
               <button
                 key={group.id}
                 type="button"
-                onClick={() => handleCategorySelect(group.id)}
-                aria-pressed={isActive}
+                onClick={() => setActiveGroupId(group.id)}
                 className={`group flex min-h-[118px] w-full items-start gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition duration-200 ${
                   isActive
                     ? groupTheme.menuActive
@@ -526,7 +473,7 @@ export function ExercisesCenterClient() {
                   {group.icon}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-semibold tracking-tight text-slate-950">{group.title}</span>
+                  <span className="block text-[15px] font-semibold tracking-tight text-slate-950">{group.title}</span>
                   <span className="mt-1 block text-sm leading-5 text-slate-600">{group.description}</span>
                   <span
                     className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
@@ -603,5 +550,3 @@ export function ExercisesCenterClient() {
     </section>
   );
 }
-
-

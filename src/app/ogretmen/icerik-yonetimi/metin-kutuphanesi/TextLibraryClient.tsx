@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
   DEFAULT_TEXT_CATEGORY,
   TEXT_LIBRARY_CATEGORIES,
@@ -17,21 +16,10 @@ import {
   updateTextLibraryItemAndSync,
   type TextLibraryItem,
 } from "@/lib/settings/textLibraryStorage";
-import {
-  activateQuestionSetIfAllInactiveAndSync,
-  setQuestionsActiveByTextIdAndSync,
-} from "@/lib/settings/questionLibraryStorage";
-import {
-  getDisplayTextTitle,
-  normalizeTextCategory,
-  normalizeTextTitle,
-  sortByCategoryAndTitle,
-} from "@/lib/text-library/sorting";
 
 type TextFormState = {
   title: string;
   category: string;
-  level: EducationLevel | "";
   content: string;
   isActive: boolean;
 };
@@ -51,7 +39,6 @@ type BulkPreviewItem = {
 const EMPTY_FORM: TextFormState = {
   title: "",
   category: DEFAULT_TEXT_CATEGORY,
-  level: "",
   content: "",
   isActive: true,
 };
@@ -228,18 +215,14 @@ export function TextLibraryClient() {
   }, [categories.length, items]);
 
   const filteredItems = useMemo(() => {
-    const normalizedSearch = normalizeTextTitle(searchTerm).toLocaleLowerCase("tr-TR");
+    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
 
-    const nextItems = items.filter((item) => {
-      const title = normalizeTextTitle(item.title);
-      const content = String(item.content ?? "");
-      const category = normalizeTextCategory(item.category);
-
+    return items.filter((item) => {
       const matchesSearch =
         !normalizedSearch ||
-        title.toLocaleLowerCase("tr-TR").includes(normalizedSearch) ||
-        content.toLocaleLowerCase("tr-TR").includes(normalizedSearch);
-      const matchesCategory = categoryFilter === "all" || category === categoryFilter;
+        item.title.toLocaleLowerCase("tr-TR").includes(normalizedSearch) ||
+        item.content.toLocaleLowerCase("tr-TR").includes(normalizedSearch);
+      const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && item.isActive) ||
@@ -247,9 +230,7 @@ export function TextLibraryClient() {
 
       return matchesSearch && matchesCategory && matchesStatus;
     });
-
-    return sortByCategoryAndTitle(nextItems, { categoryOrder: categories });
-  }, [categories, categoryFilter, items, searchTerm, statusFilter]);
+  }, [categoryFilter, items, searchTerm, statusFilter]);
 
   const formWordCount = countWords(form.content);
   const formCharacterCount = countCharacters(form.content);
@@ -294,13 +275,13 @@ export function TextLibraryClient() {
   }, []);
 
   function resetForm(): void {
-    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY, level: "" });
+    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY });
     setEditingItemId(null);
     setIsFormOpen(false);
   }
 
   function openCreateForm(): void {
-    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY, level: "" });
+    setForm({ ...EMPTY_FORM, category: DEFAULT_TEXT_CATEGORY });
     setEditingItemId(null);
     setIsFormOpen(true);
   }
@@ -322,7 +303,6 @@ export function TextLibraryClient() {
     setForm({
       title: item.title,
       category: item.category,
-      level: (item.level as EducationLevel | undefined) ?? "",
       content: item.content,
       isActive: item.isActive,
     });
@@ -342,7 +322,6 @@ export function TextLibraryClient() {
       const result = await updateTextLibraryItemAndSync(editingItemId, {
         title: form.title,
         category: form.category,
-        level: form.level || undefined,
         content: form.content,
         isActive: form.isActive,
       });
@@ -355,7 +334,6 @@ export function TextLibraryClient() {
       const result = await saveTextLibraryItemAndSync({
         title: form.title,
         category: form.category,
-        level: form.level || undefined,
         content: form.content,
         isActive: form.isActive,
       });
@@ -392,36 +370,14 @@ export function TextLibraryClient() {
   async function handleToggleActive(item: TextLibraryItem): Promise<void> {
     setIsSaving(true);
     setStatusMessage(null);
-    let activatedQuestionSet = false;
-
-    try {
-      if (!item.isActive) {
-        const questionResult = await activateQuestionSetIfAllInactiveAndSync(item.id);
-        if (questionResult.error) {
-          setStatusMessage({ tone: "error", text: questionResult.error });
-          return;
-        }
-        activatedQuestionSet = questionResult.activated;
-      }
-
-      const result = await toggleTextLibraryItemActiveAndSync(item.id);
-      if (result.error) {
-        if (activatedQuestionSet) {
-          await setQuestionsActiveByTextIdAndSync(item.id, false);
-        }
-        setStatusMessage({ tone: "error", text: result.error });
-      } else {
-        setStatusMessage({
-          tone: "success",
-          text: activatedQuestionSet
-            ? "Metin ve bağlı sorular öğrencilere açıldı."
-            : "Metin durumu Supabase'e kaydedildi.",
-        });
-      }
-      await loadData();
-    } finally {
-      setIsSaving(false);
+    const result = await toggleTextLibraryItemActiveAndSync(item.id);
+    if (result.error) {
+      setStatusMessage({ tone: "error", text: result.error });
+    } else {
+      setStatusMessage({ tone: "success", text: "Metin durumu Supabase'e kaydedildi." });
     }
+    await loadData();
+    setIsSaving(false);
   }
 
   function handleBulkPreview(): void {
@@ -579,22 +535,6 @@ export function TextLibraryClient() {
                   {categories.map((category) => (
                     <option key={category} value={category}>
                       {category}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
-                Egitim Duzeyi
-                <select
-                  value={form.level}
-                  onChange={(event) => setForm((current) => ({ ...current, level: event.target.value as EducationLevel | "" }))}
-                  className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                >
-                  <option value="">Secilmedi</option>
-                  {EDUCATION_LEVELS.map((level) => (
-                    <option key={level} value={level}>
-                      {EDUCATION_LEVEL_LABELS[level]}
                     </option>
                   ))}
                 </select>
@@ -894,7 +834,7 @@ export function TextLibraryClient() {
                 <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1 overflow-hidden">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="line-clamp-2 break-words text-[18px] font-semibold text-slate-950">{getDisplayTextTitle(item.title)}</h3>
+                      <h3 className="line-clamp-2 break-words text-[18px] font-semibold text-slate-950">{item.title}</h3>
                       <span
                         className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
                           item.isActive ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
@@ -903,10 +843,7 @@ export function TextLibraryClient() {
                         {item.isActive ? "Aktif" : "Pasif"}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-slate-500">{normalizeTextCategory(item.category)}</p>
-                    {item.level ? (
-                      <p className="mt-1 text-xs font-semibold text-slate-500">Egitim Duzeyi: {EDUCATION_LEVEL_LABELS[item.level as EducationLevel]}</p>
-                    ) : null}
+                    <p className="mt-1 text-sm font-medium text-slate-500">{item.category}</p>
                     <p className="mt-2 max-w-full overflow-hidden text-ellipsis break-words text-sm text-slate-600">
                       {getShortPreview(item.content)}
                     </p>

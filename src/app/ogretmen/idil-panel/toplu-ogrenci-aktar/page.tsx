@@ -11,7 +11,6 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 type CsvColumn =
   | "name"
   | "class_name"
-  | "education_level"
   | "parent_name"
   | "phone"
   | "username"
@@ -24,7 +23,6 @@ type PreviewStatus = "ready" | "missing-name" | "username-conflict" | "skipped" 
 type CsvStudentPayload = {
   name: string;
   class_name: string | null;
-  education_level: string | null;
   parent_name: string | null;
   phone: string | null;
   username: string;
@@ -228,7 +226,6 @@ function buildPreviewRows(csvText: string, existingUsernames: Set<string>): Prev
   const parsedRows = parseCsv(csvText);
   const [headerRow, ...dataRows] = parsedRows;
   const headers = (headerRow ?? []).map((header) => cleanCell(header).toLocaleLowerCase("tr-TR"));
-  const educationLevelColumnIndex = headers.indexOf("education_level");
   const missingColumns = REQUIRED_COLUMNS.filter((column) => !headers.includes(column));
 
   if (missingColumns.length > 0) {
@@ -256,8 +253,6 @@ function buildPreviewRows(csvText: string, existingUsernames: Set<string>): Prev
       rowNumber: index + 2,
       name,
       class_name: values.get("class_name") || null,
-      education_level:
-        educationLevelColumnIndex >= 0 ? cleanCell(row[educationLevelColumnIndex]) || null : null,
       parent_name: values.get("parent_name") || null,
       phone: values.get("phone") || null,
       username,
@@ -286,7 +281,6 @@ function toStudentPayload(row: PreviewRow): CsvStudentPayload {
   return {
     name: row.name,
     class_name: row.class_name,
-    education_level: row.education_level,
     parent_name: row.parent_name,
     phone: row.phone,
     username: row.username,

@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FULLSCREEN_PRIMARY_BUTTON_CLASS,
-  FULLSCREEN_SECONDARY_BUTTON_CLASS,
-  FULLSCREEN_SELECT_CLASS,
-  FULLSCREEN_TOUCH_STYLE,
-} from "@/components/exercises/FullscreenExerciseShell";
-import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
-type ExercisePhase = "ready" | "play";
+type ExercisePhase = "start" | "ready" | "play";
 type ResponsePhase = "show" | "answer" | "feedback";
 type SpeedMs = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
 type Level = TachistoscopeLevel;
@@ -34,16 +28,22 @@ type RoundSettings = {
   contentType: ContentType;
 };
 
+const ACTION_BUTTON_CLASS =
+  "relative z-50 w-full min-h-[50px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_48%,#b91c1c_100%)] px-4 py-3 text-sm font-bold text-white shadow-md shadow-red-300/45 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-xl hover:shadow-red-300/60 disabled:cursor-not-allowed disabled:opacity-60";
+
+const SECONDARY_BUTTON_CLASS =
+  "relative z-50 min-h-[42px] rounded-xl border border-red-200/80 bg-white/90 px-3 py-2.5 text-xs font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md";
+
+const SELECT_CLASS =
+  "h-10 w-full rounded-xl border border-red-100 bg-white/95 px-3 text-sm font-semibold text-slate-800 shadow-sm shadow-red-100/60 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200";
+
+const TOUCH_STYLE: CSSProperties = {
+  touchAction: "manipulation",
+  WebkitTapHighlightColor: "transparent",
+};
+
 const SPEED_OPTIONS: SpeedMs[] = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const LEVEL_OPTIONS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-const AUTO_ADVANCE_DELAY_MS = 500;
-const WORD_FONT_CLASS = "text-3xl md:text-4xl";
-
-function formatElapsed(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
 
 function normalizeInput(value: string): string {
   return value.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
@@ -61,7 +61,7 @@ export function TachistoscopeExerciseClient() {
   const autoAdvanceTimerRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
 
-  const [phase, setPhase] = useState<ExercisePhase>("ready");
+  const [phase, setPhase] = useState<ExercisePhase>("start");
   const [responsePhase, setResponsePhase] = useState<ResponsePhase>("show");
   const [speedMs, setSpeedMs] = useState<SpeedMs>(300);
   const [level, setLevel] = useState<Level>(1);
@@ -72,6 +72,8 @@ export function TachistoscopeExerciseClient() {
   const [currentInput, setCurrentInput] = useState("");
   const [currentFeedback, setCurrentFeedback] = useState("");
   const [currentFeedbackTone, setCurrentFeedbackTone] = useState<"ok" | "bad" | "brand" | "neutral">("neutral");
+  const [currentCorrect, setCurrentCorrect] = useState(0);
+  const [currentWrong, setCurrentWrong] = useState(0);
   const [currentLevelCorrect, setCurrentLevelCorrect] = useState(0);
   const [currentLevelWrong, setCurrentLevelWrong] = useState(0);
   const [totalCorrect, setTotalCorrect] = useState(0);
@@ -80,7 +82,6 @@ export function TachistoscopeExerciseClient() {
   const [reachedLevel, setReachedLevel] = useState<Level>(1);
   const [answerLocked, setAnswerLocked] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const latestSettingsRef = useRef<RoundSettings>({
     level: 1,
@@ -89,27 +90,14 @@ export function TachistoscopeExerciseClient() {
   });
 
   const feedbackAdvanceGuardRef = useRef(false);
-  const answerSubmissionGuardRef = useRef(false);
 
+  const currentNet = currentLevelCorrect - currentLevelWrong;
   const totalAnswered = totalCorrect + totalWrong;
   const totalNet = totalCorrect - totalWrong;
-  const liveScore = totalCorrect * 10 - totalWrong * 5;
 
   useEffect(() => {
     latestSettingsRef.current = { level, speedMs, contentType };
   }, [level, speedMs, contentType]);
-
-  useEffect(() => {
-    if (phase !== "play" || sessionStartedAt === null) return;
-
-    const updateElapsed = () => {
-      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - sessionStartedAt) / 1000)));
-    };
-
-    updateElapsed();
-    const timerId = window.setInterval(updateElapsed, 1000);
-    return () => window.clearInterval(timerId);
-  }, [phase, sessionStartedAt]);
 
   useEffect(() => {
     feedbackAdvanceGuardRef.current = false;
@@ -132,13 +120,7 @@ export function TachistoscopeExerciseClient() {
       return;
     }
 
-    const focusFrame = window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-    };
+    inputRef.current?.focus();
   }, [phase, responsePhase, currentRound?.content]);
 
   useEffect(() => {
@@ -182,7 +164,6 @@ export function TachistoscopeExerciseClient() {
     setCurrentRound(nextRound);
     setResponsePhase("show");
     setCurrentInput("");
-    answerSubmissionGuardRef.current = false;
     setAnswerLocked(false);
     setCurrentFeedback("");
     setCurrentFeedbackTone("neutral");
@@ -194,20 +175,31 @@ export function TachistoscopeExerciseClient() {
     }
 
     autoAdvanceTimerRef.current = window.setTimeout(() => {
-      autoAdvanceTimerRef.current = null;
-      startNextRound();
-    }, AUTO_ADVANCE_DELAY_MS);
+      handleNext();
+    }, 900);
   };
 
-  const handleBeginPlay = () => {
+  const handleStart = () => {
     hasSavedResultRef.current = false;
+    setCurrentCorrect(0);
+    setCurrentWrong(0);
     setCurrentLevelCorrect(0);
     setCurrentLevelWrong(0);
     setTotalCorrect(0);
     setTotalWrong(0);
     setAutoLevelUpCount(0);
     setReachedLevel(level);
-    setElapsedSeconds(0);
+    setCurrentFeedback("");
+    setCurrentFeedbackTone("neutral");
+    setCurrentInput("");
+    setCurrentRound(null);
+    setResponsePhase("show");
+    setSessionStartedAt(null);
+    setPhase("ready");
+  };
+
+  const handleBeginPlay = () => {
+    hasSavedResultRef.current = false;
     setPhase("play");
     setSessionStartedAt(Date.now());
     startNextRound({ level, speedMs, contentType });
@@ -257,19 +249,10 @@ export function TachistoscopeExerciseClient() {
     router.push(`/sonuc?exerciseType=tachistoscope&correct=${totalCorrect}&wrong=${totalWrong}&successRate=${successRate}&score=${score}`);
   };
 
-  const handleSubmitAnswer = () => {
-    if (
-      phase !== "play" ||
-      responsePhase !== "answer" ||
-      answerLocked ||
-      answerSubmissionGuardRef.current ||
-      !currentRound ||
-      !currentInput.trim()
-    ) {
+  const checkAnswer = () => {
+    if (phase !== "play" || responsePhase !== "answer" || answerLocked || !currentRound) {
       return;
     }
-
-    answerSubmissionGuardRef.current = true;
 
     const normalizedExpected = normalizeInput(currentRound.expected);
     const normalizedInput = normalizeInput(currentInput);
@@ -281,6 +264,8 @@ export function TachistoscopeExerciseClient() {
 
     setTotalCorrect((prev) => prev + (isCorrect ? 1 : 0));
     setTotalWrong((prev) => prev + (isCorrect ? 0 : 1));
+    setCurrentCorrect(nextCurrentCorrect);
+    setCurrentWrong(nextCurrentWrong);
     setCurrentLevelCorrect(nextCurrentCorrect);
     setCurrentLevelWrong(nextCurrentWrong);
     setCurrentFeedback(isCorrect ? "Doğru cevap." : `Yanlış cevap.\nDoğru cevap: ${currentRound.expected}`);
@@ -300,6 +285,8 @@ export function TachistoscopeExerciseClient() {
         setAutoLevelUpCount((prev) => prev + 1);
         setCurrentFeedback(`Tebrikler! Seviye ${nextLevel} seviyesine gectin.`);
         setCurrentFeedbackTone("brand");
+        setCurrentCorrect(0);
+        setCurrentWrong(0);
         setCurrentLevelCorrect(0);
         setCurrentLevelWrong(0);
       }, 120);
@@ -386,14 +373,14 @@ export function TachistoscopeExerciseClient() {
   }, [phase, responsePhase]);
 
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter" || event.repeat) {
+    if (event.key !== "Enter") {
       return;
     }
 
     event.preventDefault();
 
     if (responsePhase === "answer") {
-      handleSubmitAnswer();
+      checkAnswer();
       return;
     }
 
@@ -402,125 +389,148 @@ export function TachistoscopeExerciseClient() {
     }
   };
 
-  const stageSettings = (
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 landscape:grid-cols-4 landscape:gap-1.5">
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Hız</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Seviye</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Çalışma şekli</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>İçerik türü</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
-    </div>
-  );
-
-  const topStats = (
-    <>
-      <FixedExerciseStat label="Seviye" value={level} />
-      <FixedExerciseStat label="Skor" value={liveScore} tone="brand" />
-      <FixedExerciseStat label="Doğru" value={totalCorrect} tone="ok" />
-      <FixedExerciseStat label="Yanlış" value={totalWrong} tone="bad" />
-      <FixedExerciseStat label="Net" value={totalNet} tone={totalNet < 0 ? "bad" : "brand"} />
-      <FixedExerciseStat label="Süre" value={formatElapsed(elapsedSeconds)} />
-    </>
-  );
-
-  const playFooter = responsePhase === "answer" ? (
-    <div className="mx-auto grid w-full max-w-4xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-      <input
-        ref={inputRef}
-        value={currentInput}
-        onChange={(event) => setCurrentInput(event.target.value)}
-        onKeyDown={handleInputKeyDown}
-        aria-label="Gordugun kelimeyi yaz"
-        disabled={answerLocked}
-        className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
-        placeholder="Gordugun kelimeyi yaz"
-        inputMode="text"
-        autoComplete="off"
-        autoCorrect="off"
-        spellCheck={false}
-      />
-      <button
-        type="button"
-        className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} sm:w-auto sm:min-w-32`}
-        style={FULLSCREEN_TOUCH_STYLE}
-        onClick={handleSubmitAnswer}
-        disabled={answerLocked || !currentInput.trim()}
-      >
-        Kontrol Et
-      </button>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
-        Bitir
-      </button>
-    </div>
-  ) : responsePhase === "feedback" ? (
-    <div className="mx-auto grid w-full max-w-xl grid-cols-2 gap-2">
-      <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleNext}>
-        Sonraki
-      </button>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
-        Bitir
-      </button>
-    </div>
-  ) : (
-    <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
-      <p className="min-w-0 text-xs font-semibold text-slate-500">İçerik gösteriliyor...</p>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
-        Bitir
-      </button>
-    </div>
-  );
+  if (phase === "start") {
+    return (
+      <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd7dd_0%,#fff8f6_42%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto mb-2 flex w-full max-w-7xl justify-end">
+          <ExerciseNavigationControls compact />
+        </div>
+        <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl items-center justify-center overflow-hidden rounded-[28px] border border-white/80 bg-white/76 px-4 py-6 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)] md:px-6 md:py-8">
+          <div className="w-full max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Takistoskop</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">Takistoskop</h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Kisa sureli anlamli kelimeleri takip et. Egitime basla ile tam ekran calisma moduna gecersin.
+            </p>
+            <button
+              type="button"
+              onClick={handleStart}
+              className="fx-pop-in mt-7 inline-flex min-h-[52px] w-full max-w-md items-center justify-center rounded-2xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_48%,#b91c1c_100%)] px-5 py-3 text-base font-extrabold text-white shadow-lg shadow-red-300/50 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-red-300/60 sm:w-auto sm:px-10"
+            >
+              Egitime Basla
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (phase === "ready") {
     return (
-      <FixedExerciseStage
-        title="Takistoskop"
-        subtitle="Hazirlik modu"
-        topStats={topStats}
-        bottomSettings={stageSettings}
-        controls={
-          <div className="mx-auto w-full max-w-sm">
-            <button type="button" onClick={handleBeginPlay} className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
-              Çalışmayı Başlat
-            </button>
-          </div>
-        }
-        onExit={() => router.push("/egzersizler")}
-      >
-        <div data-testid="tachistoscope-game-frame" className="flex aspect-video max-h-full w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-          <div className="fx-slide-up flex w-full max-w-xl flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50/60 px-4 py-5 text-center shadow-sm md:px-6 md:py-7">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950 md:text-3xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-            <p className="mx-auto mt-2 max-w-lg text-sm leading-5 text-slate-500">
-              Hiz, seviye, calisma sekli ve icerik turunu alt seritten sec.
-            </p>
-          </div>
+      <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd8de_0%,#fff7f4_46%,#f7efe9_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+        <div className="mx-auto mb-2 flex w-full max-w-7xl justify-end">
+          <ExerciseNavigationControls compact />
         </div>
-      </FixedExerciseStage>
+        <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/76 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)]">
+          <main className="flex flex-1 items-center justify-center px-3 py-4 md:px-5 md:py-5">
+            <div className="fx-slide-up flex w-full max-w-3xl flex-col items-center rounded-[28px] border border-white/70 bg-white/75 px-4 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.12)] backdrop-blur md:px-6 md:py-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                Hiz, seviye, calisma sekli ve icerik turunu alt bolumden sec. Hazir oldugunda ilk icerik baslayacak.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleBeginPlay}
+                className="fx-pop-in mt-7 inline-flex min-h-[52px] w-full max-w-sm items-center justify-center rounded-2xl border border-red-950/20 bg-[linear-gradient(135deg,#ef4444_0%,#d72839_48%,#b91c1c_100%)] px-5 py-3 text-base font-extrabold text-white shadow-lg shadow-red-300/50 transition duration-200 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-red-300/60"
+                style={TOUCH_STYLE}
+              >
+                Baslat / Hazirim
+              </button>
+            </div>
+          </main>
+
+          <footer className="glass-control-bar border-t border-red-100/75 px-3 py-2.5 md:px-5 md:py-2.5">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz</span>
+                <select className={SELECT_CLASS} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>
+                  {SPEED_OPTIONS.map((item) => (
+                    <option key={item} value={item}>{item} ms</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seviye</span>
+                <select className={SELECT_CLASS} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>
+                  {LEVEL_OPTIONS.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Calisma Sekli</span>
+                <select className={SELECT_CLASS} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}>
+                  <option value="manual">Manuel</option>
+                  <option value="automatic">Otomatik</option>
+                </select>
+              </label>
+
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Icerik Turu</span>
+                <select className={SELECT_CLASS} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}>
+                  <option value="letter">Harf</option>
+                  <option value="number">Rakam</option>
+                  <option value="mixed">Harf + Rakam</option>
+                </select>
+              </label>
+            </div>
+          </footer>
+        </div>
+      </section>
     );
   }
 
   return (
-    <FixedExerciseStage
-      title="Takistoskop"
-      subtitle="Odakli calisma modu"
-      topStats={topStats}
-      bottomSettings={stageSettings}
-      controls={playFooter}
-      onExit={() => router.push("/egzersizler")}
-    >
-      <div data-testid="tachistoscope-game-frame" className="flex aspect-video max-h-full w-full max-w-5xl min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-2 shadow-sm md:p-4">
+    <section className="min-h-[100dvh] bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] px-2 py-2 text-slate-900 md:px-4 md:py-4">
+      <div className="mx-auto flex min-h-[calc(100dvh-1rem)] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white/76 shadow-[0_20px_70px_rgba(153,27,27,0.13)] backdrop-blur md:min-h-[calc(100dvh-2rem)]">
+        <header className="sticky top-0 z-30 border-b border-red-100/80 bg-white/84 shadow-[0_8px_28px_rgba(185,28,28,0.08)] backdrop-blur">
+          <div className="flex flex-wrap items-center gap-1.5 px-3 py-2.5 md:px-5 md:py-2.5">
+            <div className="mr-auto min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Takistoskop</p>
+              <p className="text-xs text-slate-500">Tam ekran calisma modu</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-700">
+              <span className="compact-stat-chip border-red-100 bg-white/90 shadow-sm shadow-red-100/70">Seviye: {level}</span>
+              <span className="compact-stat-chip border-green-100 bg-green-50/90 text-green-700 shadow-sm shadow-green-100/60">Dogru: {currentCorrect}</span>
+              <span className="compact-stat-chip border-red-100 bg-red-50/90 text-red-700 shadow-sm shadow-red-100/60">Yanlis: {currentWrong}</span>
+              <span className={`compact-stat-chip border px-3 py-1.5 shadow-sm ${currentNet >= 0 ? "border-red-100 bg-white/90 text-red-700" : "border-red-200 bg-red-50/90 text-red-700"}`}>
+                Net: {currentNet}
+              </span>
+              <span className="compact-stat-chip border-red-100 bg-white/90 shadow-sm shadow-red-100/70">Hiz: {speedMs} ms</span>
+            </div>
+
+            <ExerciseNavigationControls compact />
+            <button
+              type="button"
+              onClick={finishExercise}
+              className={SECONDARY_BUTTON_CLASS}
+              style={TOUCH_STYLE}
+            >
+              Bitir
+            </button>
+          </div>
+        </header>
+
+        <main className="flex flex-1 items-center justify-center px-3 py-4 md:px-5 md:py-5">
+          <div className="flex w-full max-w-5xl flex-col items-center justify-center text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
 
-            <div className="mt-1 flex h-full min-h-[120px] w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 md:mt-2 md:px-5">
+            <div className="fx-slide-up mt-3 flex min-h-[340px] w-full items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 shadow-[0_18px_54px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[420px] md:px-6 lg:min-h-[480px]">
               {responsePhase === "show" && currentRound ? (
                 <div
-                  data-testid="tachistoscope-word"
-                  className={`${WORD_FONT_CLASS} max-w-full break-words px-4 text-center font-black leading-tight tracking-normal text-slate-950`}
+                  className="font-black tracking-[0.18em] text-slate-950 transition-all duration-300 ease-out fx-pop-in"
                   style={{
-                    animation: "none",
-                    transform: "none",
-                    transition: "none",
-                    overflowWrap: "anywhere",
-                    textShadow: "0 8px 20px rgba(185, 28, 28, 0.12)",
+                    fontSize: `${Math.max(3.0, 5.6 - (level - 1) * 0.16)}rem`,
+                    lineHeight: 1,
+                    wordBreak: "break-all",
+                    opacity: 1,
+                    transform: "scale(1)",
+                    textShadow: "0 12px 32px rgba(185, 28, 28, 0.16)",
                   }}
                 >
                   {currentRound.content}
@@ -531,15 +541,41 @@ export function TachistoscopeExerciseClient() {
             </div>
 
             {responsePhase !== "show" ? (
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500 md:text-sm">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
                 {responsePhase === "answer"
                   ? "Gordugun kelimeyi yaz. Buyuk kucuk harf fark etmez, bosluklar temizlenir."
                   : "Kontrol edildi. Manuel modda Sonraki ile bir sonraki icerige gecebilirsin."}
               </p>
             ) : null}
 
+            {responsePhase === "answer" ? (
+              <div className="mt-5 w-full max-w-2xl">
+                <input
+                  ref={inputRef}
+                  value={currentInput}
+                  onChange={(event) => setCurrentInput(event.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  className="min-h-[50px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
+                  placeholder="Gordugun kelimeyi yaz"
+                  inputMode="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={checkAnswer}>
+                    Kontrol Et
+                  </button>
+                  <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={finishExercise}>
+                    Bitir
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {responsePhase === "feedback" ? (
-              <div className="mt-2 max-h-[45%] w-full max-w-2xl overflow-y-auto overscroll-contain">
+              <div className="mt-5 w-full max-w-2xl">
                 {currentFeedback ? (
                   <div
                     className={`mx-auto max-w-2xl rounded-3xl border px-4 py-3 text-left text-sm font-semibold leading-6 shadow-lg whitespace-pre-line break-words md:px-5 ${
@@ -556,9 +592,59 @@ export function TachistoscopeExerciseClient() {
                   </div>
                 ) : null}
 
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleNext}>
+                    Sonraki
+                  </button>
+
+                  <button type="button" className={SECONDARY_BUTTON_CLASS} style={TOUCH_STYLE} onClick={finishExercise}>
+                    Bitir
+                  </button>
+                </div>
               </div>
             ) : null}
+          </div>
+        </main>
+
+        <footer className="glass-control-bar border-t border-red-100/75 px-3 py-2.5 md:px-5 md:py-2.5">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz</span>
+              <select className={SELECT_CLASS} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>
+                {SPEED_OPTIONS.map((item) => (
+                  <option key={item} value={item}>{item} ms</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Seviye</span>
+              <select className={SELECT_CLASS} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>
+                {LEVEL_OPTIONS.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Calisma Sekli</span>
+              <select className={SELECT_CLASS} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}>
+                <option value="manual">Manuel</option>
+                <option value="automatic">Otomatik</option>
+              </select>
+            </label>
+
+            <label className="flex min-w-0 flex-col gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Icerik Turu</span>
+              <select className={SELECT_CLASS} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}>
+                <option value="letter">Harf</option>
+                <option value="number">Rakam</option>
+                <option value="mixed">Harf + Rakam</option>
+              </select>
+            </label>
+          </div>
+        </footer>
       </div>
-    </FixedExerciseStage>
+    </section>
   );
 }

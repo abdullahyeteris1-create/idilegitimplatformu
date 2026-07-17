@@ -21,7 +21,6 @@ import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
 import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
 import { DEFAULT_TEXT_CATEGORY, getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
-import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -148,26 +147,21 @@ export function ReadingComprehensionTestClient() {
     return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
-  const sortedTexts = useMemo<ReadingComprehensionText[]>(() => {
-    const categoryOrder = categories.filter((item) => item !== ALL_CATEGORIES);
-    return sortByCategoryAndTitle(allTexts, { categoryOrder });
-  }, [allTexts, categories]);
-
   const resolvedCategory = useMemo(() => {
     return categories.includes(selectedCategory) ? selectedCategory : ALL_CATEGORIES;
   }, [categories, selectedCategory]);
 
   const availableTexts = useMemo(() => {
     if (resolvedCategory === ALL_CATEGORIES) {
-      return sortedTexts;
+      return allTexts;
     }
 
-    return sortedTexts.filter((text) => text.category === resolvedCategory);
-  }, [resolvedCategory, sortedTexts]);
+    return allTexts.filter((text) => text.category === resolvedCategory);
+  }, [allTexts, resolvedCategory]);
 
   const selectedText = useMemo<ReadingComprehensionText>(() => {
-    return sortedTexts.find((text) => text.id === selectedTextId) ?? availableTexts[0] ?? EMPTY_TEXT;
-  }, [availableTexts, selectedTextId, sortedTexts]);
+    return allTexts.find((text) => text.id === selectedTextId) ?? availableTexts[0] ?? EMPTY_TEXT;
+  }, [allTexts, availableTexts, selectedTextId]);
   const totalWords = useMemo(() => countWords(selectedText.text), [selectedText.text]);
   const totalCharacters = useMemo(() => countCharacters(selectedText.text), [selectedText.text]);
   const liveReadingSpeed = calculateReadingSpeed(totalWords, elapsedSeconds);
@@ -411,7 +405,7 @@ export function ReadingComprehensionTestClient() {
         <select value={selectedTextId} onChange={(event) => handleTextChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
           {availableTexts.map((text) => (
             <option key={text.id} value={text.id}>
-              {getDisplayTextTitle(text.title)}
+              {text.title}
             </option>
           ))}
         </select>

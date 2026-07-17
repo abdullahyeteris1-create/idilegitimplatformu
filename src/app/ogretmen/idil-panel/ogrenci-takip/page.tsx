@@ -5,9 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
-import { getStudents, getStudentsWithRemote, removeStudentFromLocalCache } from "@/lib/students/studentStorage";
+import { getStudents, getStudentsWithRemote } from "@/lib/students/studentStorage";
 import type { Student, StudentStatus } from "@/lib/students/types";
 
 type StatusFilter = "all" | StudentStatus;
@@ -46,66 +45,27 @@ function getParentPhone(student: Student): string {
   return student.phone ?? student.parentPhone ?? "-";
 }
 
-function getEducationLevelLabel(student: Student): string {
-  const educationLevel = student.educationLevel;
-  if (!educationLevel) {
-    return "-";
-  }
-
-  return EDUCATION_LEVEL_LABELS[educationLevel] ?? "-";
-}
-
 function getStatusBadgeClass(status: StudentStatus): string {
   return status === "active"
     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
     : "border-slate-200 bg-slate-100 text-slate-600";
 }
 
-function SpinnerIcon() {
+function StudentActions({ studentId }: { studentId: string }) {
   return (
-    <span
-      aria-hidden="true"
-      className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
-    />
-  );
-}
-
-function StudentActions({
-  student,
-  onDelete,
-  isDeleting,
-}: {
-  student: Student;
-  onDelete: (student: Student) => void;
-  isDeleting: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+    <div className="flex flex-col gap-2 sm:flex-row">
       <Link
-        href={`/ogretmen/ogrenciler/${student.id}`}
+        href={`/ogretmen/ogrenciler/${studentId}`}
         className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50"
       >
         Detay
       </Link>
       <Link
-        href={`/ogretmen/ogrenciler/${student.id}/duzenle`}
+        href={`/ogretmen/ogrenciler/${studentId}/duzenle`}
         className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100"
       >
         Düzenle
       </Link>
-      <button
-        type="button"
-        onClick={() => onDelete(student)}
-        disabled={isDeleting}
-        className="inline-flex min-h-[38px] items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {isDeleting ? (
-          <>
-            <SpinnerIcon />
-            Siliniyor...
-          </>
-        ) : "Sil"}
-      </button>
     </div>
   );
 }
@@ -114,11 +74,8 @@ export default function StudentTrackingPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
-  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -182,50 +139,6 @@ export default function StudentTrackingPage() {
       return matchesStatus && (!normalizedSearch || searchableText.includes(normalizedSearch));
     });
   }, [searchText, statusFilter, students]);
-
-  const handleDeleteStart = (student: Student) => {
-    setErrorMessage("");
-    setSuccessMessage("");
-    setStudentToDelete(student);
-  };
-
-  const handleDeleteCancel = () => {
-    if (deletingStudentId) {
-      return;
-    }
-
-    setStudentToDelete(null);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!studentToDelete || deletingStudentId) {
-      return;
-    }
-
-    setDeletingStudentId(studentToDelete.id);
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      const response = await fetch(`/api/admin/students/${encodeURIComponent(studentToDelete.id)}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-      });
-
-      if (!response.ok) {
-        throw new Error("delete-failed");
-      }
-
-      removeStudentFromLocalCache(studentToDelete.id);
-      setStudents((previous) => previous.filter((student) => student.id !== studentToDelete.id));
-      setStudentToDelete(null);
-      setSuccessMessage("Ogrenci basariyla silindi.");
-    } catch {
-      setErrorMessage("Ogrenci silinemedi. Lutfen yeniden deneyin.");
-    } finally {
-      setDeletingStudentId(null);
-    }
-  };
 
   return (
     <AppShell
@@ -325,12 +238,6 @@ export default function StudentTrackingPage() {
             </div>
           ) : null}
 
-          {successMessage ? (
-            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-              {successMessage}
-            </div>
-          ) : null}
-
           {isLoading ? (
             <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-medium text-[var(--muted)]">
               Öğrenciler yükleniyor...
@@ -364,16 +271,11 @@ export default function StudentTrackingPage() {
                       </div>
                       <div className="mt-3 grid gap-1 text-sm text-slate-600">
                         <p>Sınıf: {getClassName(student)}</p>
-                        <p>Egitim Duzeyi: {getEducationLevelLabel(student)}</p>
                         <p>Veli: {student.parentName ?? "-"}</p>
                         <p>Telefon: {getParentPhone(student)}</p>
                       </div>
                       <div className="mt-4">
-                        <StudentActions
-                          student={student}
-                          onDelete={handleDeleteStart}
-                          isDeleting={deletingStudentId === student.id}
-                        />
+                        <StudentActions studentId={student.id} />
                       </div>
                     </article>
                   );
@@ -384,7 +286,7 @@ export default function StudentTrackingPage() {
                 <table className="min-w-[1050px] w-full border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500">
                     <tr>
-                      {["Ad Soyad", "Sınıf", "Egitim Duzeyi", "Veli", "Telefon", "Kullanıcı Adı", "Durum", "İşlemler"].map((column) => (
+                      {["Ad Soyad", "Sınıf", "Veli", "Telefon", "Kullanıcı Adı", "Durum", "İşlemler"].map((column) => (
                         <th key={column} className="border-b border-slate-200 px-3 py-3 font-semibold">
                           {column}
                         </th>
@@ -399,7 +301,6 @@ export default function StudentTrackingPage() {
                         <tr key={student.id} className="border-b border-slate-100 last:border-0">
                           <td className="px-3 py-3 font-semibold text-slate-950">{student.name}</td>
                           <td className="px-3 py-3 text-slate-700">{getClassName(student)}</td>
-                          <td className="px-3 py-3 text-slate-700">{getEducationLevelLabel(student)}</td>
                           <td className="px-3 py-3 text-slate-700">{student.parentName ?? "-"}</td>
                           <td className="px-3 py-3 text-slate-700">{getParentPhone(student)}</td>
                           <td className="px-3 py-3 font-mono text-xs text-slate-800">{student.username}</td>
@@ -409,11 +310,7 @@ export default function StudentTrackingPage() {
                             </span>
                           </td>
                           <td className="px-3 py-3">
-                            <StudentActions
-                              student={student}
-                              onDelete={handleDeleteStart}
-                              isDeleting={deletingStudentId === student.id}
-                            />
+                            <StudentActions studentId={student.id} />
                           </td>
                         </tr>
                       );
@@ -424,44 +321,6 @@ export default function StudentTrackingPage() {
             </>
           ) : null}
         </PanelCard>
-
-        {studentToDelete ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4" role="dialog" aria-modal="true" aria-label="Ogrenci silme onayi">
-            <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-5 shadow-xl">
-              <h3 className="text-lg font-bold text-slate-950">Ogrenciyi silmek istediginize emin misiniz?</h3>
-              <p className="mt-2 text-sm text-slate-700">
-                Bu islem geri alinamaz. Ogrenciye ait ders kayitlari ve egzersiz sonuclari da silinebilir.
-              </p>
-              <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-                Ogrenci: {studentToDelete.name}
-              </p>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleDeleteCancel}
-                  disabled={Boolean(deletingStudentId)}
-                  className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  Vazgec
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteConfirm()}
-                  disabled={Boolean(deletingStudentId)}
-                  className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-rose-300 bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {deletingStudentId ? (
-                    <>
-                      <SpinnerIcon />
-                      Siliniyor...
-                    </>
-                  ) : "Ogrenciyi Sil"}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </TeacherOnly>
     </AppShell>
   );

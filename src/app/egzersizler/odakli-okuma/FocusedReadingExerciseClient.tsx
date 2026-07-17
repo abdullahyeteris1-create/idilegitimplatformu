@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { useExerciseTimer } from "@/hooks/useExerciseTimer";
 import {
   calculateCharacterCount,
   calculateIntervalMs,
@@ -15,10 +14,8 @@ import {
   type ShadowReadingSpeedMode,
 } from "@/lib/exercise-engine/shadowReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
-import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
-import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -53,12 +50,7 @@ type FocusedReadingResult = {
 };
 
 const BLOCK_SIZE_OPTIONS: BlockSize[] = [1, 2, 3, 4, 5];
-const JUMP_SPEED_OPTIONS: JumpSpeedMs[] = [
-  ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
-  1100,
-  2000,
-  5000,
-];
+const JUMP_SPEED_OPTIONS: JumpSpeedMs[] = Array.from({ length: 20 }, (_, index) => (index + 1) * 50);
 const FONT_SIZE_OPTIONS: FontSizePx[] = [20, 24, 28, 32, 36, 40, 44, 48, 56];
 
 const ACTION_BUTTON_CLASS =
@@ -71,7 +63,11 @@ const TOUCH_STYLE: CSSProperties = {
 };
 
 function normalizeWordsPerMinute(value: number): number {
-  return normalizeReadingSpeed(value, 150, 50, 1000);
+  if (!Number.isFinite(value)) {
+    return 150;
+  }
+
+  return Math.min(1000, Math.max(50, Math.round(value)));
 }
 
 export function FocusedReadingExerciseClient() {
@@ -135,22 +131,17 @@ export function FocusedReadingExerciseClient() {
     return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
-  const sortedTexts = useMemo<ReadableText[]>(() => {
-    const categoryOrder = availableCategories.filter((item) => item !== ALL_CATEGORIES);
-    return sortByCategoryAndTitle(availableTexts, { categoryOrder });
-  }, [availableCategories, availableTexts]);
-
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : ALL_CATEGORIES;
   }, [availableCategories, category]);
 
   const textsByCategory = useMemo(() => {
     if (resolvedCategory === ALL_CATEGORIES) {
-      return sortedTexts;
+      return availableTexts;
     }
 
-    return sortedTexts.filter((item) => item.category === resolvedCategory);
-  }, [resolvedCategory, sortedTexts]);
+    return availableTexts.filter((item) => item.category === resolvedCategory);
+  }, [availableTexts, resolvedCategory]);
 
   const resolvedTextId = useMemo(() => {
     if (textsByCategory.length === 0) {
@@ -162,8 +153,8 @@ export function FocusedReadingExerciseClient() {
   }, [textId, textsByCategory]);
 
   const selectedText = useMemo(() => {
-    return sortedTexts.find((item) => item.id === resolvedTextId) ?? null;
-  }, [resolvedTextId, sortedTexts]);
+    return availableTexts.find((item) => item.id === resolvedTextId) ?? null;
+  }, [availableTexts, resolvedTextId]);
 
   const words = useMemo(() => {
     if (!selectedText) {
@@ -181,9 +172,6 @@ export function FocusedReadingExerciseClient() {
   const totalWords = words.length;
   const totalCharacters = selectedText ? calculateCharacterCount(selectedText.text) : 0;
   const safeWordsPerMinute = normalizeWordsPerMinute(wordsPerMinute);
-  const currentBlockWordCount = blocks[currentBlockIndex]
-    ? blocks[currentBlockIndex].split(/\s+/).filter(Boolean).length
-    : blockSize;
 
   const intervalMs = useMemo(() => {
     return calculateIntervalMs({
@@ -193,15 +181,6 @@ export function FocusedReadingExerciseClient() {
       wordsPerMinute: safeWordsPerMinute,
     });
   }, [blockSize, intervalInputMs, safeWordsPerMinute, speedMode]);
-
-  const timerDelayMs = useMemo(() => {
-    return calculateIntervalMs({
-      mode: speedMode,
-      blockSize: currentBlockWordCount,
-      intervalMs: intervalInputMs,
-      wordsPerMinute: safeWordsPerMinute,
-    });
-  }, [currentBlockWordCount, intervalInputMs, safeWordsPerMinute, speedMode]);
 
   const estimatedDurationSeconds = useMemo(() => {
     return calculateReadingDuration({
@@ -339,21 +318,26 @@ export function FocusedReadingExerciseClient() {
     finalizeExercise(false);
   };
 
-  const advanceBlock = useCallback(() => {
-    if (currentBlockIndex >= totalBlocks - 1) {
-      finalizeExercise(true);
+  useEffect(() => {
+    if (phase !== "running" || isPaused || totalBlocks === 0) {
       return;
     }
 
-    setCurrentBlockIndex((current) => Math.min(current + 1, totalBlocks - 1));
-  }, [currentBlockIndex, finalizeExercise, totalBlocks]);
+    const timeoutId = window.setTimeout(() => {
+      setCurrentBlockIndex((prev) => {
+        if (prev >= totalBlocks - 1) {
+          finalizeExercise(true);
+          return prev;
+        }
 
-  useExerciseTimer({
-    running: phase === "running" && totalBlocks > 0,
-    paused: isPaused,
-    delayMs: totalBlocks > 0 ? timerDelayMs : null,
-    onTick: advanceBlock,
-  });
+        return prev + 1;
+      });
+    }, intervalMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [currentBlockIndex, finalizeExercise, intervalMs, isPaused, phase, totalBlocks]);
 
   useEffect(() => {
     if (phase !== "running" || isPaused) {
@@ -407,7 +391,7 @@ export function FocusedReadingExerciseClient() {
         }} className={FULLSCREEN_SELECT_CLASS}>
           {textsByCategory.map((item) => (
             <option key={item.id} value={item.id}>
-              {getDisplayTextTitle(item.title)}
+              {item.title}
             </option>
           ))}
         </select>
@@ -415,9 +399,7 @@ export function FocusedReadingExerciseClient() {
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Sayisi</span>
         <select value={blockSize} onChange={(event) => {
-          const nextBlockSize = Number(event.target.value);
-          if (!Number.isFinite(nextBlockSize)) return;
-          setBlockSize(nextBlockSize as BlockSize);
+          setBlockSize(Number(event.target.value) as BlockSize);
           resetFlowToReady();
         }} className={FULLSCREEN_SELECT_CLASS}>
           {BLOCK_SIZE_OPTIONS.map((value) => (
@@ -431,6 +413,9 @@ export function FocusedReadingExerciseClient() {
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz Modu</span>
         <select value={speedMode} onChange={(event) => {
           setSpeedMode(event.target.value as ShadowReadingSpeedMode);
+          if (isPaused) {
+            resetFlowToReady();
+          }
         }} className={FULLSCREEN_SELECT_CLASS}>
           <option value="interval">Atlama Hizi</option>
           <option value="wpm">Kelime / Dakika</option>
@@ -440,9 +425,10 @@ export function FocusedReadingExerciseClient() {
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hiz</span>
         {speedMode === "interval" ? (
           <select value={intervalInputMs} onChange={(event) => {
-            const nextSpeed = Number(event.target.value);
-            if (!Number.isFinite(nextSpeed)) return;
-            setIntervalInputMs(nextSpeed as JumpSpeedMs);
+            setIntervalInputMs(Number(event.target.value) as JumpSpeedMs);
+            if (isPaused) {
+              resetFlowToReady();
+            }
           }} className={FULLSCREEN_SELECT_CLASS}>
             {JUMP_SPEED_OPTIONS.map((value) => (
               <option key={value} value={value}>
@@ -459,13 +445,10 @@ export function FocusedReadingExerciseClient() {
             inputMode="numeric"
             value={Number.isFinite(wordsPerMinute) ? wordsPerMinute : ""}
             onChange={(event) => {
-              if (event.target.value === "") {
-                setWordsPerMinute(Number.NaN);
-                return;
+              setWordsPerMinute(event.target.value === "" ? Number.NaN : Number(event.target.value));
+              if (isPaused) {
+                resetFlowToReady();
               }
-              const nextSpeed = Number(event.target.value);
-              if (!Number.isFinite(nextSpeed)) return;
-              setWordsPerMinute(nextSpeed);
             }}
             onBlur={() => setWordsPerMinute(safeWordsPerMinute)}
             className={FULLSCREEN_SELECT_CLASS}
@@ -544,10 +527,6 @@ export function FocusedReadingExerciseClient() {
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
             <p className="text-sm font-bold text-red-900">{textLoadError}</p>
           </div>
-        ) : hasActiveTexts && totalBlocks === 0 ? (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 font-bold text-amber-900">
-            Çalıştırılacak içerik bulunamadı.
-          </p>
         ) : hasActiveTexts ? (
           <>
             <div>

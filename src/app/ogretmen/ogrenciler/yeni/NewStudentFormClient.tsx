@@ -3,22 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
-  createStudentWithRemote,
+  createStudent,
   generateStudentPassword,
   generateUsernameFromName,
   isStudentUsernameAvailable,
-  updateStudentWelcomeEmailStatus,
 } from "@/lib/students/studentStorage";
 import type { EducationStatus, StudentStatus } from "@/lib/students/types";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type ResultMessage = {
-  tone: "success" | "warning";
-  text: string;
-};
 
 export function NewStudentFormClient() {
   const router = useRouter();
@@ -28,41 +19,16 @@ export function NewStudentFormClient() {
   const [classLevel, setClassLevel] = useState("");
   const [parentName, setParentName] = useState("");
   const [parentPhone, setParentPhone] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
-  const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
+  const [email, setEmail] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [status, setStatus] = useState<StudentStatus>("active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>("general");
-  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [resultMessage, setResultMessage] = useState<ResultMessage | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCompleted, setIsCompleted] = useState(false);
 
-  const handleCreate = async () => {
-    setError("");
-    setResultMessage(null);
-
+  const handleCreate = () => {
     if (!name.trim() || !username.trim() || !password.trim()) {
       setError("Ad soyad, kullanici adi ve sifre zorunludur.");
-      return;
-    }
-
-    if (!educationLevel) {
-      setError("Egitim duzeyi secimi zorunludur.");
-      return;
-    }
-
-    const normalizedParentEmail = parentEmail.trim();
-
-    if (sendWelcomeEmail && !normalizedParentEmail) {
-      setError("E-posta gönderimi için veli e-posta adresi zorunludur.");
-      return;
-    }
-
-    if (normalizedParentEmail && !EMAIL_PATTERN.test(normalizedParentEmail)) {
-      setError("Geçerli bir veli e-posta adresi girin.");
       return;
     }
 
@@ -71,93 +37,26 @@ export function NewStudentFormClient() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    let created: Awaited<ReturnType<typeof createStudentWithRemote>> = null;
-
-    try {
-      created = await createStudentWithRemote({
-        name,
-        username,
-        password,
-        classLevel,
-        parentName,
-        parentPhone,
-        parentEmail: normalizedParentEmail,
-        birthDate,
-        status,
-        educationStatus,
-        educationLevel: educationLevel || undefined,
-        notes,
-        welcomeEmailStatus: sendWelcomeEmail ? undefined : "not_requested",
-      });
-    } catch {
-      setError("Öğrenci Supabase'e kaydedilemedi. Lütfen tekrar deneyin.");
-      setIsSubmitting(false);
-      return;
-    }
+    const created = createStudent({
+      name,
+      username,
+      password,
+      classLevel,
+      parentName,
+      parentPhone,
+      email,
+      birthDate,
+      status,
+      educationStatus,
+      notes,
+    });
 
     if (!created) {
       setError("Ogrenci olusturulamadi. Kullanici adi kontrol et.");
-      setIsSubmitting(false);
       return;
     }
 
-    if (!sendWelcomeEmail) {
-      setResultMessage({
-        tone: "success",
-        text: "Öğrenci oluşturuldu.",
-      });
-      setIsCompleted(true);
-      setIsSubmitting(false);
-      return;
-    }
-
-    let emailSent = false;
-
-    try {
-      const response = await fetch("/api/admin/send-student-welcome-email", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          studentName: created.name,
-          parentEmail: normalizedParentEmail,
-          username: created.username,
-          temporaryPassword: created.password,
-        }),
-      });
-
-      emailSent = response.ok;
-    } catch {
-      emailSent = false;
-    }
-
-    try {
-      await updateStudentWelcomeEmailStatus(
-        created.id,
-        emailSent ? "sent" : "failed",
-        emailSent ? new Date().toISOString() : undefined,
-      );
-    } catch {
-      // Öğrenci kaydı korunur; e-posta sonucu kullanıcıya yine bildirilir.
-    }
-
-    setResultMessage(
-      emailSent
-        ? {
-            tone: "success",
-            text: "Öğrenci oluşturuldu ve veliye giriş bilgileri gönderildi.",
-          }
-        : {
-            tone: "warning",
-            text: "Öğrenci oluşturuldu ancak e-posta gönderilemedi.",
-          },
-    );
-    setIsCompleted(true);
-    setIsSubmitting(false);
+    router.push("/ogretmen");
   };
 
   return (
@@ -248,29 +147,13 @@ export function NewStudentFormClient() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          Veli E-posta Adresi {sendWelcomeEmail ? "(Zorunlu)" : "(Opsiyonel)"}
+          E-posta (Opsiyonel)
           <input
-            type="email"
-            name="parentEmail"
-            value={parentEmail}
-            onChange={(event) => setParentEmail(event.target.value)}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
-            placeholder="veli@example.com"
-            autoComplete="email"
-            required={sendWelcomeEmail}
+            placeholder="ornek@mail.com"
           />
-        </label>
-
-        <label className="flex min-h-[56px] items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-slate-800 md:col-span-2">
-          <input
-            type="checkbox"
-            name="sendWelcomeEmail"
-            checked={sendWelcomeEmail}
-            onChange={(event) => setSendWelcomeEmail(event.target.checked)}
-            disabled={isSubmitting || isCompleted}
-            className="h-5 w-5 shrink-0 accent-red-600"
-          />
-          <span>Öğrenci oluşturulunca veliye giriş bilgilerini e-posta ile gönder</span>
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
@@ -306,22 +189,6 @@ export function NewStudentFormClient() {
             <option value="speed-reading">Hizli Okuma</option>
           </select>
         </label>
-
-        <label className="flex flex-col gap-2 text-sm font-semibold">
-          Egitim Duzeyi (Zorunlu)
-          <select
-            value={educationLevel}
-            onChange={(event) => setEducationLevel(event.target.value as EducationLevel | "")}
-            className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
-          >
-            <option value="">Seciniz</option>
-            {EDUCATION_LEVELS.map((value) => (
-              <option key={value} value={value}>
-                {EDUCATION_LEVEL_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       <label className="flex flex-col gap-2 text-sm font-semibold">
@@ -336,34 +203,12 @@ export function NewStudentFormClient() {
 
       {error ? <p className="text-sm font-semibold text-[var(--bad)]">{error}</p> : null}
 
-      {resultMessage ? (
-        <p
-          role="status"
-          aria-live="polite"
-          className={
-            resultMessage.tone === "success"
-              ? "rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
-              : "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
-          }
-        >
-          {resultMessage.text}
-        </p>
-      ) : null}
-
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button
-          type="button"
-          onClick={() => void handleCreate()}
-          disabled={isSubmitting || isCompleted}
-        >
-          {isSubmitting ? "Kaydediliyor..." : isCompleted ? "Öğrenci Kaydedildi" : "Ogrenciyi Kaydet"}
+        <Button type="button" onClick={handleCreate}>
+          Ogrenciyi Kaydet
         </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => router.push("/ogretmen/idil-panel/ogrenci-takip")}
-        >
-          Öğrenci Takibine Dön
+        <Button type="button" variant="secondary" onClick={() => router.push("/ogretmen") }>
+          Geri Don
         </Button>
       </div>
     </div>
