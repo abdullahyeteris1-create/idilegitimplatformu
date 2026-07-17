@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useExerciseTimer } from "@/hooks/useExerciseTimer";
 import {
   calculateIntervalMs,
   createWordBlocks,
@@ -11,8 +12,10 @@ import {
   type BlockReadingSpeedMode,
 } from "@/lib/exercise-engine/blockReading";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
+import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
+import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -92,6 +95,8 @@ export function BlockReadingExerciseClient() {
   const [speedMode, setSpeedMode] = useState<BlockReadingSpeedMode>("interval");
   const [intervalInputMs, setIntervalInputMs] = useState(750);
   const [wordsPerMinute, setWordsPerMinute] = useState(150);
+  const [wordsPerMinuteInput, setWordsPerMinuteInput] = useState("150");
+  const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSizePx>(40);
 
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
@@ -136,17 +141,22 @@ export function BlockReadingExerciseClient() {
     return [ALL_CATEGORIES, ...getTextCategories()];
   }, []);
 
+  const sortedTexts = useMemo<ReadableText[]>(() => {
+    const categoryOrder = availableCategories.filter((item) => item !== ALL_CATEGORIES);
+    return sortByCategoryAndTitle(availableTexts, { categoryOrder });
+  }, [availableCategories, availableTexts]);
+
   const resolvedCategory = useMemo(() => {
     return availableCategories.includes(category) ? category : ALL_CATEGORIES;
   }, [availableCategories, category]);
 
   const textsByCategory = useMemo(() => {
     if (resolvedCategory === ALL_CATEGORIES) {
-      return availableTexts;
+      return sortedTexts;
     }
 
-    return availableTexts.filter((item) => item.category === resolvedCategory);
-  }, [availableTexts, resolvedCategory]);
+    return sortedTexts.filter((item) => item.category === resolvedCategory);
+  }, [resolvedCategory, sortedTexts]);
 
   const resolvedTextId = useMemo(() => {
     if (textsByCategory.length === 0) {
@@ -158,8 +168,8 @@ export function BlockReadingExerciseClient() {
   }, [textId, textsByCategory]);
 
   const selectedText = useMemo(() => {
-    return availableTexts.find((item) => item.id === resolvedTextId) ?? null;
-  }, [availableTexts, resolvedTextId]);
+    return sortedTexts.find((item) => item.id === resolvedTextId) ?? null;
+  }, [resolvedTextId, sortedTexts]);
 
   const words = useMemo(() => {
     if (!selectedText) {
@@ -175,22 +185,61 @@ export function BlockReadingExerciseClient() {
 
   const totalBlocks = blocks.length;
   const totalWords = words.length;
+  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 150, 1);
+  const currentBlock = blocks[currentBlockIndex] ?? "";
+  const currentBlockWordCount = currentBlock
+    ? currentBlock.split(/\s+/).filter(Boolean).length
+    : blockSize;
 
   const intervalMs = useMemo(() => {
     return calculateIntervalMs({
       mode: speedMode,
       blockSize,
       intervalMs: intervalInputMs,
-      wordsPerMinute,
+      wordsPerMinute: safeWordsPerMinute,
     });
-  }, [blockSize, intervalInputMs, speedMode, wordsPerMinute]);
+  }, [blockSize, intervalInputMs, safeWordsPerMinute, speedMode]);
+
+  const timerDelayMs = useMemo(() => {
+    return calculateIntervalMs({
+      mode: speedMode,
+      blockSize: currentBlockWordCount,
+      intervalMs: intervalInputMs,
+      wordsPerMinute: safeWordsPerMinute,
+    });
+  }, [currentBlockWordCount, intervalInputMs, safeWordsPerMinute, speedMode]);
 
   const speedLabel =
     speedMode === "interval"
       ? `Atlama hizi: ${intervalMs} ms`
-      : `Hiz: ${wordsPerMinute} kelime/dk (${intervalMs} ms)`;
+      : `Hiz: ${safeWordsPerMinute} kelime/dk (${intervalMs} ms)`;
+  const transitionSeconds = timerDelayMs / 1000;
+  const transitionSecondsLabel = transitionSeconds >= 10
+    ? transitionSeconds.toFixed(0)
+    : transitionSeconds >= 1
+      ? transitionSeconds.toFixed(1)
+      : transitionSeconds.toFixed(2);
 
-  const currentBlock = blocks[currentBlockIndex] ?? "";
+  const commitWordsPerMinuteInput = useCallback((rawValue: string): boolean => {
+    if (rawValue.trim() === "") {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setWordsPerMinuteInput(String(wordsPerMinute));
+      return false;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+      setWordsPerMinuteInput(String(wordsPerMinute));
+      return false;
+    }
+
+    const nextSpeed = Math.max(1, Math.round(parsed));
+    setWordsPerMinute(nextSpeed);
+    setWordsPerMinuteInput(String(nextSpeed));
+    setReadingSpeedError(null);
+    return true;
+  }, [wordsPerMinute]);
 
   const finalizeExercise = useCallback((completed: boolean) => {
     if (!selectedText || totalBlocks === 0 || saveLockRef.current) {
@@ -227,7 +276,7 @@ export function BlockReadingExerciseClient() {
         blockSize,
         speedMode,
         intervalMs,
-        wordsPerMinute: speedMode === "wpm" ? wordsPerMinute : undefined,
+        wordsPerMinute: speedMode === "wpm" ? safeWordsPerMinute : undefined,
         fontSize,
       },
     });
@@ -254,7 +303,7 @@ export function BlockReadingExerciseClient() {
     speedMode,
     totalBlocks,
     totalWords,
-    wordsPerMinute,
+    safeWordsPerMinute,
   ]);
 
   const handleStart = () => {
@@ -269,6 +318,10 @@ export function BlockReadingExerciseClient() {
 
   const handleBeginPlay = () => {
     if (!selectedText || totalBlocks === 0) {
+      return;
+    }
+
+    if (speedMode === "wpm" && !commitWordsPerMinuteInput(wordsPerMinuteInput)) {
       return;
     }
 
@@ -299,26 +352,21 @@ export function BlockReadingExerciseClient() {
     finalizeExercise(false);
   };
 
-  useEffect(() => {
-    if (phase !== "running" || isPaused || totalBlocks === 0) {
+  const advanceBlock = useCallback(() => {
+    if (currentBlockIndex >= totalBlocks - 1) {
+      finalizeExercise(true);
       return;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setCurrentBlockIndex((prev) => {
-        if (prev >= totalBlocks - 1) {
-          finalizeExercise(true);
-          return prev;
-        }
+    setCurrentBlockIndex((current) => Math.min(current + 1, totalBlocks - 1));
+  }, [currentBlockIndex, finalizeExercise, totalBlocks]);
 
-        return prev + 1;
-      });
-    }, intervalMs);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [currentBlockIndex, finalizeExercise, intervalMs, isPaused, phase, totalBlocks]);
+  useExerciseTimer({
+    running: phase === "running" && totalBlocks > 0,
+    paused: isPaused,
+    delayMs: totalBlocks > 0 ? timerDelayMs : null,
+    onTick: advanceBlock,
+  });
 
   useEffect(() => {
     if (phase !== "running" || isPaused) {
@@ -361,7 +409,7 @@ export function BlockReadingExerciseClient() {
         }} className={FULLSCREEN_SELECT_CLASS}>
           {textsByCategory.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.title}
+              {getDisplayTextTitle(item.title)}
             </option>
           ))}
         </select>
@@ -369,7 +417,9 @@ export function BlockReadingExerciseClient() {
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Sayısı</span>
         <select value={blockSize} onChange={(event) => {
-          setBlockSize(Number(event.target.value) as BlockSize);
+          const nextBlockSize = Number(event.target.value);
+          if (!Number.isFinite(nextBlockSize)) return;
+          setBlockSize(nextBlockSize as BlockSize);
           resetFlowToReady();
         }} className={FULLSCREEN_SELECT_CLASS}>
           {[1, 2, 3, 4, 5].map((value) => (
@@ -382,9 +432,11 @@ export function BlockReadingExerciseClient() {
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hız Modu</span>
         <select value={speedMode} onChange={(event) => {
-          setSpeedMode(event.target.value as BlockReadingSpeedMode);
-          if (isPaused) {
-            resetFlowToReady();
+          const nextMode = event.target.value as BlockReadingSpeedMode;
+          setSpeedMode(nextMode);
+          if (nextMode === "wpm") {
+            setWordsPerMinuteInput(String(safeWordsPerMinute));
+            setReadingSpeedError(null);
           }
         }} className={FULLSCREEN_SELECT_CLASS}>
           <option value="interval">Atlama Hızı</option>
@@ -392,21 +444,54 @@ export function BlockReadingExerciseClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hız</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {speedMode === "interval" ? "Hız" : "Okuma Hızı (kelime/dk)"}
+        </span>
         {speedMode === "interval" ? (
           <input type="number" min={100} step={50} value={intervalInputMs} onChange={(event) => {
-            setIntervalInputMs(Number(event.target.value) || 1000);
-            if (isPaused) {
-              resetFlowToReady();
-            }
+            const nextSpeed = Number(event.target.value);
+            if (!Number.isFinite(nextSpeed)) return;
+            setIntervalInputMs(Math.min(60_000, Math.max(100, nextSpeed)));
           }} className={FULLSCREEN_SELECT_CLASS} />
         ) : (
-          <input type="number" min={60} step={10} value={wordsPerMinute} onChange={(event) => {
-            setWordsPerMinute(Number(event.target.value) || 100);
-            if (isPaused) {
-              resetFlowToReady();
-            }
-          }} className={FULLSCREEN_SELECT_CLASS} />
+          <>
+            <input
+              type="number"
+              step={1}
+              inputMode="numeric"
+              value={wordsPerMinuteInput}
+              onChange={(event) => {
+                const rawValue = event.target.value;
+                setWordsPerMinuteInput(rawValue);
+
+                if (rawValue.trim() === "") {
+                  setReadingSpeedError(null);
+                  return;
+                }
+
+                const parsed = Number(rawValue);
+                if (!Number.isFinite(parsed) || parsed < 1) {
+                  setReadingSpeedError("Okuma hızı 1 veya daha büyük bir sayı olmalıdır.");
+                  return;
+                }
+
+                setWordsPerMinute(Math.max(1, Math.round(parsed)));
+                setReadingSpeedError(null);
+              }}
+              onBlur={() => {
+                void commitWordsPerMinuteInput(wordsPerMinuteInput);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void commitWordsPerMinuteInput(wordsPerMinuteInput);
+                }
+              }}
+              className={FULLSCREEN_SELECT_CLASS}
+            />
+            {readingSpeedError ? <p className="text-xs font-semibold text-red-700">{readingSpeedError}</p> : null}
+            <p className="text-[11px] text-slate-500">Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
+            {safeWordsPerMinute > 1500 ? <p className="text-[11px] text-amber-700">Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
+          </>
         )}
       </label>
       <label className="flex min-w-0 flex-col gap-1">
@@ -472,6 +557,7 @@ export function BlockReadingExerciseClient() {
         ]}
         stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
         footer={footerControls}
+        settings={footerControls}
       >
         {isLoadingTexts ? (
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
@@ -481,6 +567,10 @@ export function BlockReadingExerciseClient() {
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
             <p className="text-sm font-bold text-red-900">{textLoadError}</p>
           </div>
+        ) : hasActiveTexts && totalBlocks === 0 ? (
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 font-bold text-amber-900">
+            Çalıştırılacak içerik bulunamadı.
+          </p>
         ) : hasActiveTexts ? (
           <>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
@@ -554,7 +644,7 @@ export function BlockReadingExerciseClient() {
           <p className="mt-1"><strong>Kelime / Blok:</strong> {blockSize}</p>
           <p className="mt-1"><strong>Hiz Modu:</strong> {speedMode === "interval" ? "Atlama Hizi" : "Dakikadaki Kelime Hizi"}</p>
           <p className="mt-1"><strong>Atlama Hizi:</strong> {result.intervalMs} ms</p>
-          {speedMode === "wpm" ? <p className="mt-1"><strong>Kelime / Dakika:</strong> {wordsPerMinute}</p> : null}
+          {speedMode === "wpm" ? <p className="mt-1"><strong>Kelime / Dakika:</strong> {safeWordsPerMinute}</p> : null}
           <p className="mt-1"><strong>Font Boyutu:</strong> {fontSize}px</p>
           <p className="mt-1"><strong>Tamamlandi:</strong> {result.completed ? "Evet" : "Hayir"}</p>
         </div>
@@ -600,6 +690,7 @@ export function BlockReadingExerciseClient() {
         </button>
       }
       footer={footerControls}
+      settings={footerControls}
     >
       <div className="fx-fade-in flex w-full flex-col items-center justify-center text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Bloğu</p>
@@ -611,3 +702,5 @@ export function BlockReadingExerciseClient() {
     </FullscreenExerciseShell>
   );
 }
+
+

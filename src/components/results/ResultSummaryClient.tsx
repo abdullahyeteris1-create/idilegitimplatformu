@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import {
@@ -20,32 +20,32 @@ type ResultSummaryClientProps = {
   exerciseType?: ExerciseType;
 };
 
-const RESULT_TITLES: Record<ExerciseType, string> = {
-  tachistoscope: "Takistoskop Sonuclari",
-  "similar-words": "Benzer Kelimeler Sonuclari",
-  "block-reading": "Blok Okuma Sonuclari",
-  "shadow-reading": "Golgeleme Sonuclari",
-  "focused-reading": "Odaklı Okuma Çalışması Sonuclari",
-  "two-side-focus": "Cift Tarafli Odak Sonuclari",
-  "attention-maze": "Dikkat Labirenti Sonuclari",
-  "memory-game": "Hafiza Gelistirme Sonuclari",
-  "word-finding": "Kelime Bulma Calismasi Sonuclari",
-  "eye-muscle": "Goz Kaslarini Gelistirme Sonuclari",
-  "reading-comprehension": "Anlama Testi Sonuclari",
-  "letter-number-counting-focus": "Harf / Rakam Sayma Odak Sonuclari",
-  "card-matching": "Kart Eslestirme Sonuclari",
-  "visual-puzzle": "Gorsel Puzzle Sonuclari",
-  "eye-brain": "Göz Beyin Çalışması Sonuçları",
-  "word-guess": "Kelime Tahmin Sonuclari",
-  "catch-same": "Ayni Olani Yakala Sonuclari",
-  hangman: "Adam Asmaca Sonuclari",
-  "grouping-reading": "Gruplama Çalışması Sonuçları",
-  "eye-columns": "Kelime Kolonları Sonuçları",
-  "square-vision": "KAREL: Kare Görme Alanı Sonuçları",
-  "number-table": "Sayı Tablosu Sonuçları",
+const EXERCISE_LABELS: Record<string, string> = {
+  tachistoscope: "Takistoskop",
+  "similar-words": "Benzer Kelimeler",
+  "block-reading": "Blok Okuma",
+  "shadow-reading": "Gölgeleme",
+  "focused-reading": "Odaklı Okuma",
+  "two-side-focus": "Çift Taraflı Odak",
+  "attention-maze": "Dikkat Labirenti",
+  "memory-game": "Hafıza Geliştirme",
+  "word-finding": "Kelime Bulma",
+  "eye-muscle": "Göz Kasları",
+  "reading-comprehension": "Anlama Testi",
+  "letter-number-counting-focus": "Harf / Rakam Sayma",
+  "card-matching": "Kart Eşleştirme",
+  "visual-puzzle": "Görsel Puzzle",
+  "eye-brain": "Göz Beyin Çalışması",
+  "word-guess": "Kelime Tahmin",
+  "catch-same": "Aynı Olanı Yakala",
+  hangman: "Adam Asmaca",
+  "grouping-reading": "Gruplama Çalışması",
+  "eye-columns": "Göz Egzersizleri Kolonlar",
+  "square-vision": "Kare Görme Alanı",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
+  "square-vision": "/egzersizler/kare-gorme-alani",
   tachistoscope: "/egzersizler/takistoskop",
   "similar-words": "/egzersizler/benzer-kelimeler",
   "block-reading": "/egzersizler/blok-okuma",
@@ -66,9 +66,29 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   hangman: "/egzersizler/adam-asmaca",
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
-  "square-vision": "/egzersizler/kare-gorme-alani",
-  "number-table": "/egzersizler/sayi-tablosu",
 };
+
+/** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */
+function buildFilterOptions(results: ExerciseResult[]): { value: string; label: string }[] {
+  const seen = new Set<string>();
+  const options: { value: string; label: string }[] = [{ value: "all", label: "Tüm Çalışmalar" }];
+
+  for (const result of results) {
+    const type = result.exerciseType;
+    if (seen.has(type)) continue;
+    seen.add(type);
+    options.push({ value: type, label: EXERCISE_LABELS[type] ?? type });
+  }
+
+  return options;
+}
+
+/** Bilinmeyen slug'ları okunabilir forma çevirir */
+function formatExerciseType(type: string): string {
+  return EXERCISE_LABELS[type] ?? type
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export function ResultSummaryClient({
   correct,
@@ -80,9 +100,10 @@ export function ResultSummaryClient({
   const [isMounted, setIsMounted] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [studentResults, setStudentResults] = useState<ExerciseResult[]>([]);
-  const [latestRelevantResult, setLatestRelevantResult] = useState<ExerciseResult | null>(null);
+  const [historyFilter, setHistoryFilter] = useState<string>("all");
 
-  const resolvedExerciseType: ExerciseType = exerciseType ?? "tachistoscope";
+  // exerciseType URL'den geldiyse (egzersiz tamamlandıktan sonra) üst özet onu göstersin
+  const urlExerciseType: ExerciseType | undefined = exerciseType;
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -101,12 +122,8 @@ export function ResultSummaryClient({
           const mergedResults = nextResults.length > 0 ? nextResults : fallbackResults;
 
           setStudentResults(mergedResults);
-          setLatestRelevantResult(
-            mergedResults.find((result) => result.exerciseType === resolvedExerciseType) ?? null,
-          );
         } else {
           setStudentResults([]);
-          setLatestRelevantResult(null);
         }
 
         setIsMounted(true);
@@ -114,15 +131,28 @@ export function ResultSummaryClient({
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [resolvedExerciseType]);
+  }, []);
 
-  const hasUrlSummary = [correct, wrong, score, successRate].every(
+  // --- ÜST ÖZET KARTI ---
+
+  // URL'den gelen değerler varsa onları kullan
+  const hasUrlSummary = exerciseType !== undefined && [correct, wrong, score, successRate].every(
     (value) => typeof value === "number" && Number.isFinite(value),
   );
 
-  const summary = useMemo(() => {
+  // URL'den gelmediyse, en son tamamlanan sonucu bul
+  const latestResult = useMemo<ExerciseResult | null>(() => {
+    if (studentResults.length === 0) return null;
+    // results zaten tarihe göre descending sıralı (Supabase'den öyle geliyor, localStorage'da da başa ekleniyor)
+    return studentResults[0] ?? null;
+  }, [studentResults]);
+
+  // Üst özet için gösterilecek egzersiz tipi
+  const summaryData = useMemo(() => {
     if (hasUrlSummary) {
       return {
+        type: exerciseType!,
+        title: formatExerciseType(exerciseType!),
         correct: correct ?? 0,
         wrong: wrong ?? 0,
         score: score ?? 0,
@@ -130,129 +160,186 @@ export function ResultSummaryClient({
       };
     }
 
-    if (latestRelevantResult) {
+    if (latestResult) {
       return {
-        correct: latestRelevantResult.correctCount,
-        wrong: latestRelevantResult.wrongCount,
-        score: latestRelevantResult.score,
-        successRate: latestRelevantResult.successRate,
+        type: latestResult.exerciseType,
+        title: latestResult.exerciseTitle || formatExerciseType(latestResult.exerciseType),
+        correct: latestResult.correctCount,
+        wrong: latestResult.wrongCount,
+        score: latestResult.score,
+        successRate: latestResult.successRate,
       };
     }
 
-    return {
-      correct: 0,
-      wrong: 0,
-      score: 0,
-      successRate: 0,
-    };
-  }, [correct, hasUrlSummary, latestRelevantResult, score, successRate, wrong]);
+    return null;
+  }, [hasUrlSummary, exerciseType, correct, wrong, score, successRate, latestResult]);
 
-  const summaryTitle = RESULT_TITLES[resolvedExerciseType];
-  const restartHref = RESTART_HREFS[resolvedExerciseType];
+  // --- FİLTRE SEÇENEKLERİ ---
+  const filterOptions = useMemo(() => buildFilterOptions(studentResults), [studentResults]);
 
-  const filteredStudentResults = useMemo(() => {
-    return studentResults.filter((result) => result.exerciseType === resolvedExerciseType);
-  }, [resolvedExerciseType, studentResults]);
+  // --- FİLTRELENMİŞ GEÇMİŞ SONUÇLAR ---
+  const filteredHistoryResults = useMemo(() => {
+    if (historyFilter === "all") {
+      return studentResults;
+    }
+    return studentResults.filter((result) => result.exerciseType === historyFilter);
+  }, [historyFilter, studentResults]);
+
+  // --- ÜST ÖZET KARTI RENDER ---
+  const showSummaryCard = summaryData !== null;
+
+  const stats = summaryData
+    ? [
+        { label: "Dogru", value: summaryData.correct, color: "text-[var(--ok)]" },
+        { label: "Yanlis", value: summaryData.wrong, color: "text-[var(--bad)]" },
+        { label: "Basari", value: `${summaryData.successRate}%`, color: "text-slate-900" },
+        { label: "Puan", value: summaryData.score, color: "text-[var(--brand)]" },
+      ]
+    : [];
+
+  const summaryRestartHref = summaryData ? RESTART_HREFS[summaryData.type as ExerciseType] ?? "/egzersizler" : "/egzersizler";
 
   const eyeBrainDetails =
-    resolvedExerciseType === "eye-brain" && latestRelevantResult?.details && typeof latestRelevantResult.details === "object"
-      ? (latestRelevantResult.details as Record<string, unknown>)
+    summaryData?.type === "eye-brain" && latestResult?.details && typeof latestResult.details === "object"
+      ? (latestResult.details as Record<string, unknown>)
       : null;
 
-  const stats = [
-    { label: "Dogru", value: summary.correct, color: "text-[var(--ok)]" },
-    { label: "Yanlis", value: summary.wrong, color: "text-[var(--bad)]" },
-    { label: "Basari", value: `${summary.successRate}%`, color: "text-slate-900" },
-    { label: "Puan", value: summary.score, color: "text-[var(--brand)]" },
-  ];
-
+  // --- YÜKLENİYOR ---
   if (!isMounted) {
     return (
       <PanelCard
-        title={summaryTitle}
-        subtitle="Calisma tamamlandi. Sonuclarini asagida gorebilirsin."
+        title="Sonuçlarım"
+        subtitle="Çalışma sonuçlarını görüntüle."
         className="mx-auto w-full max-w-3xl"
       >
-        <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">Sonuc verileri yukleniyor...</p>
+        <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
+          Sonuç verileri yükleniyor...
+        </p>
       </PanelCard>
     );
   }
 
   return (
     <PanelCard
-      title={summaryTitle}
-      subtitle="Calisma tamamlandi. Sonuclarini asagida gorebilirsin."
+      title="Sonuçlarım"
+      subtitle="Tüm çalışma sonuçlarını görüntüle ve filtrele."
       className="mx-auto w-full max-w-3xl"
     >
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((stat) => (
-          <article key={stat.label} className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{stat.label}</p>
-            <p className={`mt-2 text-2xl font-extrabold md:text-3xl ${stat.color}`}>{stat.value}</p>
-          </article>
-        ))}
-      </div>
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Link
-          href={restartHref}
-          className="w-full min-h-[56px] rounded-2xl border border-red-900/30 bg-[var(--brand)] px-4 py-4 text-center text-base font-bold text-white shadow-md shadow-red-200 transition hover:bg-[var(--brand-strong)]"
-        >
-          Yeniden Baslat
-        </Link>
-        <Link
-          href={student ? "/ogrenci" : "/"}
-          className="w-full min-h-[56px] rounded-2xl border border-red-200 bg-white px-4 py-4 text-center text-base font-bold text-red-800 transition hover:bg-red-50"
-        >
-          Ogrenci Paneline Don
-        </Link>
-      </div>
-
-      {resolvedExerciseType === "eye-brain" ? (
-        <div className="mt-6 rounded-2xl border border-red-100 bg-red-50 p-4">
-          <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-red-700">Calisma Ozeti</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="rounded-xl border border-white bg-white p-3">
-              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Gecen Sure</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">{formatSeconds(summary.score)}</p>
-            </article>
-            <article className="rounded-xl border border-white bg-white p-3">
-              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Hiz</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {typeof eyeBrainDetails?.speedMs === "number" ? `${eyeBrainDetails.speedMs} ms` : "-"}
-              </p>
-            </article>
-            <article className="rounded-xl border border-white bg-white p-3">
-              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Simge Sayisi</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {typeof eyeBrainDetails?.symbolCount === "number" ? eyeBrainDetails.symbolCount : "-"}
-              </p>
-            </article>
-            <article className="rounded-xl border border-white bg-white p-3">
-              <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Kural</p>
-              <p className="mt-1 text-sm font-semibold text-slate-950">Sure odakli takip calismasi</p>
-            </article>
+      {/* ----- ÜST ÖZET KARTI ----- */}
+      {showSummaryCard ? (
+        <>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 md:p-5">
+            <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-emerald-800">
+              {summaryData!.title} Sonucu
+            </h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {stats.map((stat) => (
+                <article key={stat.label} className="rounded-2xl border border-emerald-100 bg-white p-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{stat.label}</p>
+                  <p className={`mt-2 text-2xl font-extrabold md:text-3xl ${stat.color}`}>{stat.value}</p>
+                </article>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                href={summaryRestartHref}
+                className="flex min-h-[48px] items-center justify-center rounded-2xl bg-emerald-600 px-4 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                Yeniden Baslat
+              </Link>
+              <Link
+                href={student ? "/ogrenci" : "/"}
+                className="flex min-h-[48px] items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 text-base font-bold text-emerald-800 transition hover:bg-emerald-50"
+              >
+                Ogrenci Paneline Don
+              </Link>
+            </div>
           </div>
-        </div>
+
+          {/* eye-brain özel detayları */}
+          {eyeBrainDetails ? (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
+              <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-red-700">Calisma Ozeti</h3>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <article className="rounded-xl border border-white bg-white p-3">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Gecen Sure</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">{formatSeconds(summaryData!.score)}</p>
+                </article>
+                <article className="rounded-xl border border-white bg-white p-3">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Hiz</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">
+                    {typeof eyeBrainDetails.speedMs === "number" ? `${eyeBrainDetails.speedMs} ms` : "-"}
+                  </p>
+                </article>
+                <article className="rounded-xl border border-white bg-white p-3">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Simge Sayisi</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">
+                    {typeof eyeBrainDetails.symbolCount === "number" ? eyeBrainDetails.symbolCount : "-"}
+                  </p>
+                </article>
+                <article className="rounded-xl border border-white bg-white p-3">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Kural</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">Sure odakli takip calismasi</p>
+                </article>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
 
-      <div className="mt-7">
-        <h3 className="text-lg font-bold">Gecmis Sonuclarim</h3>
+      {/* ----- GEÇMİŞ SONUÇLARIM ----- */}
+      <div className={showSummaryCard ? "mt-7" : "mt-0"}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-lg font-bold">Gecmis Sonuclarim</h3>
+          {filterOptions.length > 1 ? (
+            <select
+              value={historyFilter}
+              onChange={(e) => setHistoryFilter(e.target.value)}
+              className="min-h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 sm:w-auto"
+            >
+              {filterOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </div>
+
         {!student ? (
-          <p className="mt-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
+          <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
             Ogrenci secili degil. Sonuclarini gormek icin once giris ekranindan ogrenci secmelisin.
           </p>
-        ) : null}
-        {student && filteredStudentResults.length === 0 ? (
-          <p className="mt-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
-            Henuz sonuc yok.
+        ) : filteredHistoryResults.length === 0 && historyFilter === "all" ? (
+          <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
+            Henüz tamamlanmış bir çalışmanız bulunmuyor.
           </p>
+        ) : filteredHistoryResults.length === 0 && historyFilter !== "all" ? (
+          <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
+            <p>Bu egzersize ait sonuç bulunamadı.</p>
+            <button
+              type="button"
+              onClick={() => setHistoryFilter("all")}
+              className="mt-2 rounded-xl border border-red-200 bg-white px-4 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50"
+            >
+              Tüm Çalışmalar&apos;a dön
+            </button>
+          </div>
         ) : student ? (
           <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {filteredStudentResults.map((result) => (
+            {filteredHistoryResults.map((result) => (
               <article key={result.id} className="rounded-2xl border border-red-100 bg-white p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-red-700">{result.exerciseTitle}</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">{new Date(result.date).toLocaleString("tr-TR")}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-red-700">
+                    {result.exerciseTitle || formatExerciseType(result.exerciseType)}
+                  </p>
+                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                    {new Date(result.date).toLocaleDateString("tr-TR")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  {new Date(result.date).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
                   <p>
                     Puan: <span className="text-[var(--brand)]">{result.score}</span>
@@ -267,6 +354,11 @@ export function ResultSummaryClient({
                     Yanlis: <span className="text-[var(--bad)]">{result.wrongCount}</span>
                   </p>
                 </div>
+                {result.durationSeconds > 0 ? (
+                  <p className="mt-2 text-[11px] text-slate-400">
+                    Süre: {formatSeconds(result.durationSeconds)}
+                  </p>
+                ) : null}
               </article>
             ))}
           </div>

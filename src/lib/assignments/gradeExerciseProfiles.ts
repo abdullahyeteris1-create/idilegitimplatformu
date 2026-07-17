@@ -33,7 +33,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "ayni-olani-yakala": { level: 1, durationMinutes: 4, difficulty: "easy" },
     "dikkat-labirenti": { level: 1, durationMinutes: 4, difficulty: "easy" },
     "benzer-kelimeler": { level: 1, durationMinutes: 4, difficulty: "easy" },
-    "sayi-tablosu": { level: 1 },
     "goz-kaslari": { level: 1, durationMinutes: 3 },
     "goz-calismasi": { level: 1, durationMinutes: 3 },
     "goz-beyin": { durationMinutes: 3, speedMs: 1100 },
@@ -59,7 +58,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "ayni-olani-yakala": { level: 1, durationMinutes: 5, difficulty: "easy" },
     "dikkat-labirenti": { level: 1, durationMinutes: 5, difficulty: "easy" },
     "benzer-kelimeler": { level: 1, durationMinutes: 5, difficulty: "easy" },
-    "sayi-tablosu": { level: 2 },
     "goz-kaslari": { level: 1, durationMinutes: 4 },
     "goz-calismasi": { level: 1, durationMinutes: 4 },
     "goz-beyin": { durationMinutes: 4, speedMs: 900 },
@@ -68,7 +66,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 70, questionCount: 4 },
   },
   primary_3: {
-    "sayi-tablosu": { level: 3 },
     "takistoskop": { level: 2, speedMs: 650, durationMinutes: 6, targetCorrect: 10 },
     "blok-okuma": { wordsPerMinute: 75, durationMinutes: 6, groupSize: 2 },
     "gruplama-calismasi": { wordsPerMinute: 70, durationMinutes: 6, groupSize: 3 },
@@ -77,7 +74,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 75, questionCount: 5 },
   },
   primary_4: {
-    "sayi-tablosu": { level: 3 },
     "takistoskop": { level: 2, speedMs: 500, durationMinutes: 6, targetCorrect: 10 },
     "blok-okuma": { wordsPerMinute: 100, durationMinutes: 7, groupSize: 3 },
     "gruplama-calismasi": { wordsPerMinute: 95, durationMinutes: 7, groupSize: 3 },
@@ -86,7 +82,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 75, questionCount: 5 },
   },
   middle_5_6: {
-    "sayi-tablosu": { level: 4 },
     "takistoskop": { level: 3, speedMs: 400, durationMinutes: 7, targetCorrect: 10 },
     "blok-okuma": { wordsPerMinute: 140, durationMinutes: 8, groupSize: 3 },
     "gruplama-calismasi": { wordsPerMinute: 130, durationMinutes: 8, groupSize: 4 },
@@ -95,7 +90,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 80, questionCount: 7 },
   },
   middle_7_8: {
-    "sayi-tablosu": { level: 5 },
     "takistoskop": { level: 4, speedMs: 300, durationMinutes: 8, targetCorrect: 10 },
     "blok-okuma": { wordsPerMinute: 180, durationMinutes: 8, groupSize: 4 },
     "gruplama-calismasi": { wordsPerMinute: 170, durationMinutes: 8, groupSize: 4 },
@@ -104,7 +98,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 80, questionCount: 8 },
   },
   high_school: {
-    "sayi-tablosu": { level: 6 },
     "takistoskop": { level: 5, speedMs: 220, durationMinutes: 8, targetCorrect: 12 },
     "blok-okuma": { wordsPerMinute: 230, durationMinutes: 10, groupSize: 4 },
     "gruplama-calismasi": { wordsPerMinute: 220, durationMinutes: 10, groupSize: 5 },
@@ -114,7 +107,6 @@ export const GRADE_EXERCISE_PROFILES: EducationExerciseProfiles = {
     "anlama-testi": { targetSuccessRate: 85, questionCount: 10 },
   },
   adult: {
-    "sayi-tablosu": { level: 6 },
     "takistoskop": { level: 4, speedMs: 250, durationMinutes: 8, targetCorrect: 12 },
     "blok-okuma": { wordsPerMinute: 220, durationMinutes: 10, groupSize: 4 },
     "gruplama-calismasi": { wordsPerMinute: 210, durationMinutes: 10, groupSize: 5 },

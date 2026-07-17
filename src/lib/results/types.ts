@@ -1,4 +1,4 @@
-export type ExerciseType =
+﻿export type ExerciseType =
   | "tachistoscope"
   | "similar-words"
   | "block-reading"
@@ -19,8 +19,7 @@ export type ExerciseType =
   | "hangman"
   | "grouping-reading"
   | "eye-columns"
-  | "square-vision"
-  | "number-table";
+  | "square-vision";
 
 export type ExerciseResult = {
   id: string;
@@ -42,4 +41,5 @@ export type ExerciseResultInput = Omit<ExerciseResult, "id" | "date"> & {
   id?: string;
   date?: string;
 };
+
 

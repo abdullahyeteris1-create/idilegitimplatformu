@@ -42,11 +42,7 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "eye-brain" ||
     value === "word-guess" ||
     value === "catch-same" ||
-    value === "hangman" ||
-    value === "grouping-reading" ||
-    value === "eye-columns" ||
-    value === "square-vision" ||
-    value === "number-table"
+    value === "hangman"
   ) {
     return value;
   }
@@ -63,7 +59,12 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const exerciseType = parseExerciseType(params.exerciseType);
 
   return (
-    <AppShell title="Sonuc" subtitle="Performans ozetini incele ve bir sonraki calisma planini yap." navItems={APP_NAV_ITEMS}>
+    <AppShell
+      title="Sonuçlarım"
+      subtitle="Tüm çalışma sonuçlarını görüntüle ve filtrele."
+      navItems={APP_NAV_ITEMS}
+      headerVariant="student-vibrant"
+    >
       <ResultSummaryClient
         correct={correct}
         wrong={wrong}
@@ -74,3 +75,4 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     </AppShell>
   );
 }
+

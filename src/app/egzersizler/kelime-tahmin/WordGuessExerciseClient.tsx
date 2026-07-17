@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useRouter } from "next/navigation";
+import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 
@@ -130,6 +131,7 @@ function getScore(status: GameStatus, attemptsUsed: number) {
 }
 
 export function WordGuessExerciseClient() {
+  const router = useRouter();
   const [wordLength, setWordLength] = useState(5);
   const [answer, setAnswer] = useState(() => pickWord(5));
   const [currentGuess, setCurrentGuess] = useState("");
@@ -284,50 +286,29 @@ export function WordGuessExerciseClient() {
   const keyboardRows = ["QWERTYUIOP".split(""), "ASDFGHJKL".split(""), "ZXCVBNM".split("")];
 
   return (
-    <main className="min-h-screen bg-emerald-50 px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-3 flex justify-end">
-          <ExerciseNavigationControls compact />
-        </div>
-        <section className="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-8">
-          <div className="mb-6 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-700">Kelime Oyunlari</p>
-            <h1 className="mt-2 text-3xl font-black">Kelime Tahmin</h1>
-            <p className="mt-2 text-sm text-slate-600">Gizli kelimeyi 6 denemede bulmaya calis.</p>
-          </div>
-
-          <div className="mb-5 grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-            <div className="text-center text-sm font-semibold sm:text-left">{message}</div>
-
-            <div className="flex flex-wrap justify-center gap-2">
-              {WORD_LENGTH_OPTIONS.map((length) => (
-                <button
-                  key={length}
-                  type="button"
-                  onClick={() => resetGame(length)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                    wordLength === length
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  {length} Harf
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
+    <FixedExerciseStage
+      title="Kelime Tahmin"
+      subtitle={message}
+      topStats={<><FixedExerciseStat label="Deneme" value={`${guesses.length}/${MAX_ATTEMPTS}`} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+      bottomSettings={<label className="grid gap-1 text-sm font-bold"><span>Kelime uzunluğu</span><select value={wordLength} onChange={(event) => resetGame(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{WORD_LENGTH_OPTIONS.map((length) => <option key={length} value={length}>{length} harf</option>)}</select></label>}
+      controls={<div className="mx-auto grid w-full max-w-4xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"><input value={currentGuess} onChange={(event) => setCurrentGuess(normalizeInput(event.target.value, wordLength))} onKeyDown={(event) => { if (event.key === "Enter") submitGuess(); }} disabled={status !== "playing"} placeholder={`${wordLength} harfli tahmin yaz`} className="min-h-11 rounded-xl border border-slate-300 px-3 text-center font-bold uppercase" /><button type="button" onClick={submitGuess} disabled={status !== "playing"} className="min-h-11 rounded-xl bg-emerald-600 px-4 font-bold text-white disabled:opacity-50">Tahmin Et</button><button type="button" onClick={() => resetGame(wordLength)} className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-bold">Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status !== "playing"} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 font-bold text-emerald-800 disabled:opacity-50">Bitir</button></div>}
+      onExit={() => router.push("/egzersizler")}
+    >
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 overflow-hidden px-1 py-1 md:gap-2">
+        {/* Oyun tahtasi - viewport'a sığacak şekilde */}
+        <section className="flex flex-col items-center rounded-2xl border border-emerald-200 bg-white px-2 py-2 shadow-sm md:rounded-3xl md:px-4 md:py-3">
+          {/* Tahmin kutulari */}
+          <div className="flex flex-col items-center gap-1 md:gap-1.5">
             {rows.map((row, rowIndex) => {
               const isSubmitted = rowIndex < guesses.length;
               const states = isSubmitted ? evaluateGuess(row, answer, wordLength) : Array(wordLength).fill("empty");
 
               return (
-                <div key={rowIndex} className="flex justify-center gap-1.5 sm:gap-2">
+                <div key={rowIndex} className="flex justify-center gap-1 md:gap-1.5">
                   {Array.from({ length: wordLength }).map((_, letterIndex) => (
                     <div
                       key={letterIndex}
-                      className={`flex h-11 w-11 items-center justify-center rounded-lg border-2 text-lg font-black transition sm:h-14 sm:w-14 sm:rounded-xl sm:text-xl md:h-16 md:w-16 md:text-2xl ${cellClass(
+                      className={`flex aspect-square w-[8.5vw] max-w-[48px] items-center justify-center rounded-lg border-2 text-sm font-black transition sm:w-[9vw] sm:max-w-[54px] sm:text-base md:w-[10vw] md:max-w-[60px] md:text-lg lg:w-[11vw] lg:max-w-[66px] lg:text-xl ${cellClass(
                         states[letterIndex]
                       )}`}
                     >
@@ -339,65 +320,15 @@ export function WordGuessExerciseClient() {
             })}
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <input
-              value={currentGuess}
-              onChange={(event) => setCurrentGuess(normalizeInput(event.target.value, wordLength))}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") submitGuess();
-              }}
-              disabled={status !== "playing"}
-              placeholder={`${wordLength} harfli tahmin yaz`}
-              className="min-h-12 flex-1 rounded-2xl border border-slate-300 px-4 text-center text-lg font-bold uppercase outline-none focus:border-emerald-400"
-            />
-
-            <button
-              type="button"
-              onClick={submitGuess}
-              disabled={status !== "playing"}
-              className="min-h-12 rounded-2xl bg-emerald-600 px-6 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
-              Tahmin Et
-            </button>
-
-            <button
-              type="button"
-              onClick={() => resetGame(wordLength)}
-              className="min-h-12 rounded-2xl border border-slate-300 bg-white px-6 font-bold text-slate-800 transition hover:bg-slate-100"
-            >
-              Yeni Oyun
-            </button>
-
-            <button
-              type="button"
-              onClick={finishExercise}
-              disabled={status !== "playing"}
-              className="min-h-12 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Egzersizi Bitir
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-3 rounded-2xl bg-slate-100 p-4 text-sm text-slate-700 sm:grid-cols-3">
-            <div>
-              <span className="font-bold">Kategori:</span> Kelime Oyunlari
-            </div>
-            <div>
-              <span className="font-bold">Deneme:</span> {guesses.length}/{MAX_ATTEMPTS}
-            </div>
-            <div>
-              <span className="font-bold">Skor:</span> {score}
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-2">
+          {/* Klavye */}
+          <div className="mt-1 flex flex-col items-center gap-1 md:mt-2 md:gap-1.5">
             {keyboardRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex justify-center gap-1.5">
+              <div key={rowIndex} className="flex justify-center gap-[2px] md:gap-1">
                 {rowIndex === 2 ? (
                   <button
                     type="button"
                     onClick={deleteLetter}
-                    className="rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                    className="flex items-center justify-center rounded-lg border border-slate-200 bg-white px-1.5 text-[9px] font-bold text-slate-700 hover:bg-slate-100 md:px-2.5 md:text-xs"
                   >
                     Sil
                   </button>
@@ -408,7 +339,7 @@ export function WordGuessExerciseClient() {
                     key={letter}
                     type="button"
                     onClick={() => handleKeyboardClick(letter)}
-                    className={`flex h-10 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold transition ${keyClass(
+                    className={`flex aspect-square w-[6.5vw] max-w-[32px] items-center justify-center rounded-lg border text-[9px] font-bold transition md:w-[7.5vw] md:max-w-[38px] md:text-xs lg:w-[8vw] lg:max-w-[42px] lg:text-sm ${keyClass(
                       keyboardStates[letter]
                     )}`}
                   >
@@ -421,7 +352,7 @@ export function WordGuessExerciseClient() {
                     type="button"
                     onClick={submitGuess}
                     disabled={status !== "playing"}
-                    className="rounded-lg bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700 disabled:bg-slate-300"
+                    className="flex items-center justify-center rounded-lg bg-emerald-600 px-1.5 text-[9px] font-bold text-white hover:bg-emerald-700 disabled:bg-slate-300 md:px-2.5 md:text-xs"
                   >
                     Gir
                   </button>
@@ -430,19 +361,19 @@ export function WordGuessExerciseClient() {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">
-            <p>
-              <strong>Yesil:</strong> Harf dogru yerde.
-            </p>
-            <p>
-              <strong>Sari:</strong> Harf kelimede var ama yeri yanlis.
-            </p>
-            <p>
-              <strong>Gri:</strong> Harf kelimede yok.
-            </p>
+          {/* Bilgi satiri */}
+          <div className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-2 py-1 text-[9px] text-slate-600 md:mt-2 md:gap-3 md:px-3 md:py-1.5 md:text-xs">
+            <span><strong>Deneme:</strong> {guesses.length}/{MAX_ATTEMPTS}</span>
+            <span><strong>Skor:</strong> {score}</span>
+            <span className="hidden sm:inline"><strong>Kategori:</strong> Kelime Oyunlari</span>
+          </div>
+
+          {/* Aciklama - sadece genis ekranda */}
+          <div className="mt-1 hidden rounded-xl bg-slate-100 px-3 py-1 text-[10px] text-slate-600 lg:block">
+            <strong>Yeşil:</strong> Doğru yer &nbsp;·&nbsp; <strong>Sarı:</strong> Var, yanlış yer &nbsp;·&nbsp; <strong>Gri:</strong> Yok
           </div>
         </section>
       </div>
-    </main>
+    </FixedExerciseStage>
   );
 }

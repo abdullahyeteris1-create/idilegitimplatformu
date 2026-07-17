@@ -1,3 +1,5 @@
+import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
+
 export type BlockReadingSpeedMode = "interval" | "wpm";
 
 export type CalculateIntervalOptions = {
@@ -32,14 +34,11 @@ export function calculateIntervalMs(options: CalculateIntervalOptions): number {
     : 1;
 
   if (options.mode === "interval") {
-    const rawInterval = options.intervalMs ?? 1000;
-    return Number.isFinite(rawInterval) ? Math.max(50, Math.round(rawInterval)) : 1000;
+    return normalizeDelayMs(options.intervalMs, 1000);
   }
 
   const wordsPerMinute = options.wordsPerMinute ?? 150;
-  const safeWordsPerMinute = Number.isFinite(wordsPerMinute)
-    ? Math.max(1, Math.round(wordsPerMinute))
-    : 150;
-
-  return Math.round((normalizedBlockSize * 60000) / safeWordsPerMinute);
+  const safeWordsPerMinute = normalizeReadingSpeed(wordsPerMinute, 150, 1);
+  return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedBlockSize);
 }
+

@@ -116,15 +116,6 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["level", "durationMinutes", "difficulty"],
   },
   {
-    slug: "sayi-tablosu",
-    title: "Sayı Tablosu",
-    route: "/egzersizler/sayi-tablosu",
-    resultExerciseType: "number-table",
-    category: "attention",
-    assignmentEnabled: true,
-    supportedSettings: ["level"],
-  },
-  {
     slug: "goz-kaslari",
     title: "Goz Kaslari",
     route: "/egzersizler/goz-kaslari",

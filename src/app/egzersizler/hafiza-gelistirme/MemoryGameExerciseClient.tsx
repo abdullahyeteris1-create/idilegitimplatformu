@@ -83,18 +83,6 @@ function getFontLabel(value: FontSizePx): string {
   return "Çok Büyük";
 }
 
-function getBoxSizeClass(cols: number): string {
-  if (cols <= 5) {
-    return "min-h-[58px] md:min-h-[68px]";
-  }
-
-  if (cols <= 10) {
-    return "min-h-[38px] md:min-h-[48px]";
-  }
-
-  return "min-h-[30px] md:min-h-[38px]";
-}
-
 function generateTargets(totalBoxes: number, targetCount: number): Set<number> {
   const indexes = Array.from({ length: totalBoxes }, (_, index) => index);
 
@@ -182,8 +170,6 @@ export function MemoryGameExerciseClient() {
   const net = levelCorrectCount - levelWrongCount;
   const score = calculateScore(totalCorrectCount, totalWrongCount);
   const successRate = calculateSuccessRate(totalCorrectCount, totalWrongCount);
-  const boxSizeClass = getBoxSizeClass(gridInfo.cols);
-
   const clearRoundTimers = useCallback(() => {
     if (prepareTimerRef.current !== null) {
       window.clearTimeout(prepareTimerRef.current);
@@ -449,7 +435,7 @@ export function MemoryGameExerciseClient() {
   }, [clearRoundTimers]);
 
   const footerControls = (
-    <div className="grid gap-2 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       <label className="flex min-w-0 flex-col gap-1">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
           Kutu Düzeni
@@ -522,7 +508,7 @@ export function MemoryGameExerciseClient() {
         </select>
       </label>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:col-span-2">
+      <div className="col-span-2 grid grid-cols-2 gap-2 sm:col-span-3 lg:col-span-2">
         {phase === "ready" ? (
           <button
             type="button"
@@ -717,11 +703,12 @@ export function MemoryGameExerciseClient() {
         </button>
       }
       footer={footerControls}
+      stageClassName="!mt-2 flex min-h-0 flex-1 overflow-hidden !p-2 md:!p-3"
     >
-      <div className="fx-fade-in w-full">
+      <div className="fx-fade-in flex h-full min-h-0 w-full flex-col">
         {feedbackType ? (
           <div
-            className={`mx-auto mb-4 max-w-2xl rounded-2xl border p-3 text-center text-sm font-bold ${getFeedbackClass(
+            className={`mx-auto mb-2 max-w-2xl shrink-0 rounded-xl border px-3 py-2 text-center text-sm font-bold ${getFeedbackClass(
               feedbackType,
             )}`}
           >
@@ -729,15 +716,16 @@ export function MemoryGameExerciseClient() {
           </div>
         ) : null}
 
-        <div className="mb-3 text-center text-sm font-black text-slate-600">
+        <div className="mb-1.5 shrink-0 text-center text-xs font-black text-slate-600">
           Durum: {getRoundPhaseLabel(roundPhase)}
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-red-100/85 bg-red-50/40 p-2 md:p-3">
+        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-red-100/85 bg-red-50/40 p-1.5 md:p-2">
           <div
-            className="grid gap-1.5 md:gap-2"
+            className="grid h-full min-h-0 w-full gap-1 md:gap-1.5"
             style={{
               gridTemplateColumns: `repeat(${gridInfo.cols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${gridInfo.rows}, minmax(0, 1fr))`,
             }}
           >
             {Array.from({ length: gridInfo.totalBoxes }, (_, index) => {
@@ -765,7 +753,7 @@ export function MemoryGameExerciseClient() {
                 <button
                   key={`memory-cell-${index + 1}`}
                   type="button"
-                  className={`relative z-50 w-full ${boxSizeClass} cursor-pointer select-none touch-manipulation pointer-events-auto rounded-lg border transition active:scale-[0.98] ${boxClass}`}
+                  className={`relative z-10 h-full min-h-0 w-full min-w-0 cursor-pointer select-none touch-manipulation pointer-events-auto rounded-md border transition active:scale-[0.98] ${boxClass}`}
                   style={{
                     ...TOUCH_STYLE,
                     fontSize: `${fontSize}px`,
@@ -780,7 +768,7 @@ export function MemoryGameExerciseClient() {
           </div>
         </div>
 
-        <p className="mt-4 text-center text-sm font-semibold text-slate-600">
+        <p className="mt-1.5 shrink-0 text-center text-xs font-semibold text-slate-600">
           {level}. seviyede {level} kutu yanar. Tümünü doğru seçersen doğru
           sayılır; yanlış kutuya basarsan yanlış sayılır.
         </p>
