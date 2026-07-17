@@ -1,4 +1,5 @@
 import { clearCurrentStudent, getCurrentStudent, getCurrentUser, setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
+import { normalizeEducationLevel, type EducationLevel } from "@/lib/assignments/educationLevels";
 import { DEMO_STUDENT, MOCK_STUDENTS } from "@/lib/students/mockStudents";
 import { supabase } from "@/lib/supabase/client";
 import type { Student } from "@/lib/students/types";
@@ -18,6 +19,7 @@ type StudentInput = {
   profileImageUrl?: string;
   status?: "active" | "passive";
   educationStatus?: "general" | "speed-reading";
+  educationLevel?: EducationLevel | null;
   notes?: string;
 };
 
@@ -80,6 +82,7 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     isActive: status === "active",
     status: status === "passive" ? "passive" : "active",
     educationStatus: student.educationStatus,
+    educationLevel: normalizeEducationLevel(student.educationLevel) ?? null,
     createdAt: normalizeOptional(student.createdAt) ?? new Date().toISOString(),
     notes: normalizeOptional(student.notes),
   };
@@ -135,6 +138,7 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
         : row.educationStatus === "general" || row.educationStatus === "speed-reading"
           ? row.educationStatus
           : undefined,
+    educationLevel: normalizeEducationLevel(row.education_level ?? row.educationLevel) ?? null,
     createdAt:
       typeof row.created_at === "string"
         ? row.created_at
@@ -156,6 +160,7 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
     parent_name: student.parentName ?? null,
     phone: student.phone ?? student.parentPhone ?? null,
     is_active: (student.isActive ?? student.status === "active") === true,
+    education_level: student.educationLevel ?? null,
     notes: student.notes ?? null,
     updated_at: new Date().toISOString(),
   };
@@ -446,6 +451,7 @@ export function createStudent(studentInput: StudentInput): Student | null {
     status: studentInput.status ?? "active",
     isActive: (studentInput.status ?? "active") === "active",
     educationStatus: studentInput.educationStatus,
+    educationLevel: studentInput.educationLevel ?? null,
     createdAt: new Date().toISOString(),
     notes: normalizeOptional(studentInput.notes),
   };

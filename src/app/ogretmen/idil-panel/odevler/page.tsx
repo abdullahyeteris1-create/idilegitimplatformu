@@ -10,7 +10,7 @@ import {
   ASSIGNMENT_EXERCISE_BY_SLUG,
   type AssignmentExerciseDefinition,
 } from "@/lib/assignments/exerciseCatalog";
-import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
+import { EDUCATION_LEVEL_LABELS, isEducationLevel } from "@/lib/assignments/educationLevels";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { getStudentsWithRemote } from "@/lib/students/studentStorage";
 import type { Student } from "@/lib/students/types";
@@ -151,6 +151,10 @@ export default function AssignmentManagementPage() {
     () => students.find((student) => student.id === selectedStudentId) ?? null,
     [selectedStudentId, students],
   );
+  const educationLevel = selectedStudent?.educationLevel;
+  const educationLevelLabel = isEducationLevel(educationLevel)
+    ? EDUCATION_LEVEL_LABELS[educationLevel]
+    : null;
 
   const sortedItems = useMemo(
     () => assignment?.items.slice().sort((left, right) => left.sortOrder - right.sortOrder) ?? [],
@@ -447,9 +451,9 @@ export default function AssignmentManagementPage() {
             </div>
           </div>
 
-          {selectedStudent?.educationLevel ? (
+          {educationLevelLabel ? (
             <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-              Egitim Duzeyi: {EDUCATION_LEVEL_LABELS[selectedStudent.educationLevel]}
+              Egitim Duzeyi: {educationLevelLabel}
             </p>
           ) : (
             <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">

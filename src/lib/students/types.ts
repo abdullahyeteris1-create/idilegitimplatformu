@@ -1,3 +1,5 @@
+import type { EducationLevel } from "@/lib/assignments/educationLevels";
+
 export type StudentStatus = "active" | "passive";
 
 export type EducationStatus = "general" | "speed-reading";
@@ -18,6 +20,7 @@ export type Student = {
   isActive?: boolean;
   status: StudentStatus;
   educationStatus?: EducationStatus;
+  educationLevel?: EducationLevel | null;
   createdAt: string;
   notes?: string;
 };
