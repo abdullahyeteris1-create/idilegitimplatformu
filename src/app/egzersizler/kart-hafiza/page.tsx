@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 
 type GamePhase = "intro" | "memorize" | "question" | "result" | "finished";
 
@@ -146,7 +146,8 @@ export default function CardMemoryGamePage() {
   const [wrongCount, setWrongCount] = useState(0);
   const [lastResult, setLastResult] = useState<"correct" | "wrong" | null>(null);
 
-  const timerRef = useRef<number | null>(null);
+    const memorizeTimerRef = useRef<number | null>(null);
+  const resultTransitionTimerRef = useRef<number | null>(null);
   const answerLockRef = useRef(false);
   const config = LEVEL_CONFIG[level];
   const currentMemorizeCard = seenCards[memorizeIndex];
@@ -157,15 +158,43 @@ export default function CardMemoryGamePage() {
     [correctCount, wrongCount],
   );
 
-  function clearTimer() {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
+  const progressPercent = useMemo(() => {
+    if (phase === "memorize") {
+      return Math.round(((memorizeIndex + 1) / Math.max(seenCards.length, 1)) * 100);
+    }
+
+    if (phase === "question" || phase === "result") {
+      return Math.round(((questionIndex + 1) / Math.max(questions.length, 1)) * 100);
+    }
+
+    if (phase === "finished") {
+      return 100;
+    }
+
+    return 0;
+  }, [memorizeIndex, phase, questionIndex, questions.length, seenCards.length]);
+
+  function clearMemorizeTimer() {
+    if (memorizeTimerRef.current !== null) {
+      window.clearTimeout(memorizeTimerRef.current);
+      memorizeTimerRef.current = null;
     }
   }
 
+  function clearResultTransitionTimer() {
+    if (resultTransitionTimerRef.current !== null) {
+      window.clearTimeout(resultTransitionTimerRef.current);
+      resultTransitionTimerRef.current = null;
+    }
+  }
+
+  function clearAllTimers() {
+    clearMemorizeTimer();
+    clearResultTransitionTimer();
+  }
+
   function startGame(selectedLevel = level) {
-    clearTimer();
+    clearAllTimers();
 
     const nextRound = makeRound(selectedLevel);
 
@@ -178,6 +207,7 @@ export default function CardMemoryGamePage() {
     setWrongCount(0);
     setLastResult(null);
     setIsAnswerLocked(false);
+    answerLockRef.current = false;
     setPhase("memorize");
   }
 
@@ -196,7 +226,7 @@ export default function CardMemoryGamePage() {
   }
 
   function resetGame() {
-    clearTimer();
+    clearAllTimers();
 
     setPhase("intro");
     setSeenCards([]);
@@ -207,16 +237,15 @@ export default function CardMemoryGamePage() {
     setWrongCount(0);
     setLastResult(null);
     setIsAnswerLocked(false);
+    answerLockRef.current = false;
   }
 
   useEffect(() => {
-    clearTimer();
-
     if (phase !== "memorize") {
       return;
     }
 
-    timerRef.current = window.setTimeout(() => {
+    memorizeTimerRef.current = window.setTimeout(() => {
       setMemorizeIndex((previous) => {
         const next = previous + 1;
 
@@ -230,7 +259,7 @@ export default function CardMemoryGamePage() {
     }, config.showMs);
 
     return () => {
-      clearTimer();
+      clearMemorizeTimer();
     };
   }, [config.showMs, memorizeIndex, phase, seenCards.length]);
 
@@ -262,8 +291,8 @@ export default function CardMemoryGamePage() {
 
     setPhase("result");
 
-    timerRef.current = window.setTimeout(() => {
-      timerRef.current = null;
+    resultTransitionTimerRef.current = window.setTimeout(() => {
+      resultTransitionTimerRef.current = null;
       setQuestionIndex((previous) => {
         const next = previous + 1;
 
@@ -283,11 +312,12 @@ export default function CardMemoryGamePage() {
     }, 700);
   }
 
-  useEffect(() => {
-    return () => {
-      clearTimer();
-    };
-  }, []);
+    useEffect(() => {
+      return () => {
+        clearMemorizeTimer();
+        clearResultTransitionTimer();
+      };
+    }, []);
 
   function renderCard(card: CardItem | undefined, options?: { isBack?: boolean }) {
     if (!card && !options?.isBack) {
@@ -316,12 +346,65 @@ export default function CardMemoryGamePage() {
     );
   }
 
-  const content = (
+    const content = (
     <main className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-slate-900 px-2 py-2 text-slate-900 md:px-4 md:py-4">
       <section className="mx-auto h-full min-h-0 min-w-0 max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
-        <div className="relative flex h-full min-h-0 min-w-0 items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
+        <div className="relative flex h-full min-h-0 min-w-0 flex-col items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
+          {/* Progress bar ve skor */}
+          {phase !== "intro" && phase !== "finished" && (
+            <div className="flex w-full max-w-4xl items-center justify-between gap-2 px-4 pt-4">
+              <div className="flex flex-1 items-center gap-2">
+                <span className="text-2xl">❓</span>
+                <div className="flex h-5 w-full max-w-sm overflow-hidden rounded-full border-4 border-slate-500 bg-slate-500">
+                  <div
+                    className="h-full bg-yellow-300 transition-all"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-slate-500 px-4 py-2 text-white shadow-md">
+                <span className="text-2xl">🪙</span>
+                <span className="text-xl font-black">{correctCount}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Oyun başlığı */}
+          {phase !== "intro" && phase !== "finished" && (
+            <div className="w-full px-5 pt-4 text-center">
+              <h1 className="text-xl font-black text-cyan-700">
+                {phase === "memorize" && "Kartları aklında tut"}
+                {phase === "question" && "Bunu daha önce görmüş müydün?"}
+                {phase === "result" &&
+                  (lastResult === "correct" ? "Doğru!" : "Yanlış!")}
+              </h1>
+            </div>
+          )}
+
+          {/* Skor tablosu */}
+          {phase !== "intro" && phase !== "finished" && (
+            <div className="mx-auto mt-3 grid w-full max-w-4xl grid-cols-4 gap-2 px-5 text-center">
+              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
+                <p className="text-xs font-black text-slate-500">Seviye</p>
+                <p className="text-xl font-black text-cyan-700">{level}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
+                <p className="text-xs font-black text-slate-500">Doğru</p>
+                <p className="text-xl font-black text-emerald-600">{correctCount}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
+                <p className="text-xs font-black text-slate-500">Yanlış</p>
+                <p className="text-xl font-black text-rose-600">{wrongCount}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
+                <p className="text-xs font-black text-slate-500">Net</p>
+                <p className="text-xl font-black text-blue-700">{netCount}</p>
+              </div>
+            </div>
+          )}
+
           <section className="flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-3 py-4 md:px-5 md:py-6">
-            {phase === "intro" && (
+                        {phase === "intro" && (
               <div className="w-full max-w-2xl rounded-[2rem] border-4 border-white bg-white/80 p-6 text-center shadow-xl">
                 <h2 className="text-3xl font-black text-slate-900">
                   Hafıza Kartları
@@ -332,6 +415,23 @@ export default function CardMemoryGamePage() {
                   görüp görmediğini seç. Amaç görsel hafızayı ve dikkati
                   geliştirmektir.
                 </p>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-5">
+                  {[1, 2, 3, 4, 5].map((levelNumber) => (
+                    <button
+                      key={levelNumber}
+                      type="button"
+                      onClick={() => setLevel(levelNumber)}
+                      className={`rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${
+                        level === levelNumber
+                          ? "border-cyan-500 bg-cyan-600 text-white"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-cyan-50"
+                      }`}
+                    >
+                      {levelNumber}
+                    </button>
+                  ))}
+                </div>
 
                 <div className="mt-5 rounded-2xl bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-800">
                   {LEVEL_CONFIG[level].label} • Gösterim süresi:{" "}
@@ -482,7 +582,6 @@ export default function CardMemoryGamePage() {
     <FixedExerciseStage
       title="Kart Hafıza"
       subtitle={phase === "intro" ? "Hazırlık modu" : phase === "memorize" ? "Kartları aklında tut" : phase === "finished" ? "Tur tamamlandı" : "Kartı değerlendir"}
-      topStats={<><FixedExerciseStat label="Seviye" value={level} tone="brand" /><FixedExerciseStat label="Doğru" value={correctCount} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrongCount} tone="bad" /><FixedExerciseStat label="Net" value={netCount} /></>}
       bottomSettings={(
         <div className="grid gap-2 sm:grid-cols-2 sm:items-end">
           <label className="grid gap-1 text-sm font-bold text-slate-700">

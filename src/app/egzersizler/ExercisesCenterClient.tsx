@@ -146,6 +146,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Sayma", "Odak"],
       },
       {
+        title: "Sayı Tablosu",
+        description: "Sayıları doğru sırayla bularak odaklanma, dikkat ve görsel tarama becerilerini geliştir.",
+        href: "/egzersizler/sayi-tablosu",
+        icon: "ST",
+        image: "/exercise-visuals/exercises/number-table.svg",
+        tags: ["Sayı", "Odak"],
+      },
+      {
         title: "Ayni Olani Yakala",
         description: "Arka arkaya ayni gelen kelime, harf, sembol veya rakami yakala; dikkat ve tepki hizini guclendir.",
         href: "/egzersizler/ayni-olani-yakala",
@@ -512,16 +520,14 @@ export function ExercisesCenterClient() {
                 type="button"
                 onClick={() => handleCategorySelect(group.id)}
                 aria-pressed={isActive}
-                className={`group flex min-h-[118px] w-full items-start gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition duration-200 ${
-                  isActive
-                    ? groupTheme.menuActive
-                    : `border-slate-200 hover:-translate-y-0.5 hover:shadow-md ${groupTheme.menuInactiveHover}`
-                }`}
+                className={`group flex min-h-[118px] w-full items-start gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition duration-200 ${isActive
+                  ? groupTheme.menuActive
+                  : `border-slate-200 hover:-translate-y-0.5 hover:shadow-md ${groupTheme.menuInactiveHover}`
+                  }`}
               >
                 <span
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${
-                    isActive ? groupTheme.menuActiveIcon : groupTheme.menuInactiveIcon
-                  }`}
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ${isActive ? groupTheme.menuActiveIcon : groupTheme.menuInactiveIcon
+                    }`}
                 >
                   {group.icon}
                 </span>
@@ -529,9 +535,8 @@ export function ExercisesCenterClient() {
                   <span className="block text-[10px] font-semibold tracking-tight text-slate-950">{group.title}</span>
                   <span className="mt-1 block text-sm leading-5 text-slate-600">{group.description}</span>
                   <span
-                    className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                      isActive ? groupTheme.menuCountBadge : groupTheme.headerBadge
-                    }`}
+                    className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${isActive ? groupTheme.menuCountBadge : groupTheme.headerBadge
+                      }`}
                   >
                     {EXERCISE_COUNT_BY_GROUP_ID[group.id] ?? 0} calisma
                   </span>
