@@ -1,12 +1,16 @@
 import type { IconName } from "./icons";
 
 export type Category = {
+  id?: string;
   title: string;
   count: number;
+  countLabel?: "egzersiz";
   progress: number;
   icon: IconName;
   tone: "blue" | "pink" | "green" | "purple" | "orange" | "cyan" | "indigo" | "rose";
   href: string;
+  description?: string;
+  examples?: { title: string; href: string }[];
 };
 
 export const categories: Category[] = [
@@ -14,7 +18,37 @@ export const categories: Category[] = [
   { title: "Göz Algılama", count: 4, progress: 60, icon: "target", tone: "pink", href: "/egzersizler/takistoskop" },
   { title: "Metin Çalışmaları", count: 6, progress: 75, icon: "type", tone: "green", href: "/egzersizler/blok-okuma" },
   { title: "Odaklanma", count: 3, progress: 40, icon: "brain", tone: "purple", href: "/egzersizler/cift-tarafli-odak" },
-  { title: "Kelime Oyunları", count: 5, progress: 70, icon: "puzzle", tone: "orange", href: "/egzersizler/kelime-tahmin" },
+  {
+    id: "brain-exercises",
+    title: "Beyin Egzersizleri",
+    count: 2,
+    countLabel: "egzersiz",
+    progress: 50,
+    icon: "brain",
+    tone: "indigo",
+    href: "/egzersizler?category=brain-exercises",
+    description: "Dikkat, tepki hızı, hafıza ve zihinsel esneklik becerilerini geliştiren çalışmalar.",
+    examples: [
+      { title: "Renk Uyumu", href: "/egzersizler/renk-uyumu" },
+      { title: "Yeni Kartı Bul", href: "/egzersizler/yeni-karti-bul" },
+    ],
+  },
+  {
+    id: "word-games",
+    title: "Akıl ve Zeka Oyunları",
+    count: 4,
+    countLabel: "egzersiz",
+    progress: 70,
+    icon: "puzzle",
+    tone: "orange",
+    href: "/egzersizler?category=word-games",
+    examples: [
+      { title: "Kelime Tahmin", href: "/egzersizler/kelime-tahmin" },
+      { title: "Adam Asmaca", href: "/egzersizler/adam-asmaca" },
+      { title: "Görsel Puzzle", href: "/egzersizler/gorsel-puzzle" },
+      { title: "Dikkat Labirenti", href: "/egzersizler/dikkat-labirenti" },
+    ],
+  },
   { title: "Okuma & Anlama", count: 6, progress: 85, icon: "book", tone: "cyan", href: "/egzersizler/anlama-testi" },
   { title: "Hız & Akıcılık", count: 4, progress: 65, icon: "gauge", tone: "indigo", href: "/egzersizler/golgeleme" },
   { title: "Hafıza Güçlendirme", count: 3, progress: 50, icon: "grid", tone: "rose", href: "/egzersizler/hafiza-gelistirme" },
