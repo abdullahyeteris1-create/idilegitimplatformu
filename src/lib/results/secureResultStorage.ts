@@ -14,6 +14,11 @@ export type SecureExerciseResultInput = {
   date?: string;
   completedAt?: string;
   assignmentItemId?: string | null;
+  details?: Record<string, unknown>;
+};
+
+export type SecureExerciseResultSave = ExerciseResult & {
+  assignmentCompletionStatus: "not-requested" | "completed" | "failed";
 };
 
 type SecureResultResponse = {
@@ -29,6 +34,7 @@ type SecureResultResponse = {
     durationSeconds: number;
     date: string;
     assignmentItemId?: string | null;
+    details?: Record<string, unknown>;
   };
 };
 
@@ -53,20 +59,22 @@ function cacheResult(result: ExerciseResult): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([result, ...current.filter((item) => item.id !== result.id)]));
 }
 
-async function completeAssignmentItem(assignmentItemId: string, resultId: string): Promise<void> {
+async function completeAssignmentItem(assignmentItemId: string, resultId: string): Promise<boolean> {
   try {
-    await fetch(`/api/student/assignment-items/${encodeURIComponent(assignmentItemId)}/complete`, {
+    const response = await fetch(`/api/student/assignment-items/${encodeURIComponent(assignmentItemId)}/complete`, {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resultId }),
     });
+    return response.ok;
   } catch {
     // Sonuç sunucuda başarıyla kaydedildi; completion daha sonra mevcut akıştan tekrar denenebilir.
+    return false;
   }
 }
 
-export async function saveExerciseResultSecure(input: SecureExerciseResultInput): Promise<ExerciseResult> {
+export async function saveExerciseResultSecure(input: SecureExerciseResultInput): Promise<SecureExerciseResultSave> {
   const assignmentItemId = input.assignmentItemId ?? getAssignmentItemIdFromUrl();
   const completedAt = input.completedAt ?? input.date ?? new Date().toISOString();
   const response = await fetch("/api/student/results", {
@@ -84,6 +92,7 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
       durationSeconds: input.durationSeconds,
       completedAt,
       assignmentItemId,
+      ...(input.details ? { details: input.details } : {}),
     }),
   });
   const payload = (await response.json()) as SecureResultResponse;
@@ -105,12 +114,14 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
     wrongCount: payload.result.wrongCount,
     durationSeconds: payload.result.durationSeconds,
     date: payload.result.date,
+    details: payload.result.details,
   };
 
   cacheResult(result);
+  let assignmentCompletionStatus: SecureExerciseResultSave["assignmentCompletionStatus"] = "not-requested";
   if (assignmentItemId) {
-    await completeAssignmentItem(assignmentItemId, result.id);
+    assignmentCompletionStatus = await completeAssignmentItem(assignmentItemId, result.id) ? "completed" : "failed";
   }
 
-  return result;
+  return { ...result, assignmentCompletionStatus };
 }

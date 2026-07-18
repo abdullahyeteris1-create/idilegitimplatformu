@@ -10,8 +10,7 @@ import {
   createWordFindingRound,
   type ClickableWord,
 } from "@/lib/exercise-engine/wordFinding";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -25,6 +24,7 @@ type ExercisePhase = "setup" | "ready" | "running" | "result";
 type DurationMinutes = 1 | 2 | 3 | 4 | 5;
 type TargetWordsPerText = 3 | 4 | 5 | 6;
 type FeedbackType = "correct" | "wrong";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type WordFindingResult = {
   correctCount: number;
@@ -63,6 +63,9 @@ function getTextIndex(seed: number): number {
 export function WordFindingExerciseClient() {
   const router = useRouter();
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<{ payload: SecureExerciseResultInput; result: WordFindingResult } | null>(null);
   const tickRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
@@ -79,6 +82,8 @@ export function WordFindingExerciseClient() {
   const [feedback, setFeedback] = useState<{ wordId: string; type: FeedbackType } | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   const [result, setResult] = useState<WordFindingResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const selectedText = WORD_FINDING_TEXTS[getTextIndex(textSeed)];
 
@@ -102,6 +107,11 @@ export function WordFindingExerciseClient() {
     }
 
     hasSavedResultRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     setTargetIndex(0);
     setFoundInRound(0);
     setCompletedRounds(0);
@@ -114,6 +124,26 @@ export function WordFindingExerciseClient() {
     setResult(null);
     setPhase("ready");
   }, [durationMinutes]);
+
+  const persistResult = useCallback(async (pending: { payload: SecureExerciseResultInput; result: WordFindingResult }) => {
+    if (saveInFlightRef.current || saveCompletedRef.current) return;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(pending.payload);
+      saveCompletedRef.current = true;
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, []);
 
   const finalizeExercise = useCallback(() => {
     if (hasSavedResultRef.current) {
@@ -131,11 +161,7 @@ export function WordFindingExerciseClient() {
     const finalNet = correctCount - wrongCount;
     const finalTotalClicks = correctCount + wrongCount;
     const finalDuration = Math.max(1, elapsedSeconds || configuredDurationSeconds);
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "word-finding",
       exerciseTitle: "Kelime Bulma Calismasi",
       durationSeconds: finalDuration,
@@ -144,16 +170,14 @@ export function WordFindingExerciseClient() {
       score: finalScore,
       successRate: finalSuccessRate,
       details: {
-        durationSeconds: finalDuration,
         targetWordsPerText,
         completedRounds,
         totalClicks: finalTotalClicks,
         net: finalNet,
         scoreRule: "+10 dogru, -5 yanlis",
       },
-    });
-
-    setResult({
+    } satisfies SecureExerciseResultInput;
+    const nextResult = {
       correctCount,
       wrongCount,
       net: finalNet,
@@ -162,10 +186,14 @@ export function WordFindingExerciseClient() {
       completedRounds,
       durationSeconds: finalDuration,
       totalClicks: finalTotalClicks,
-    });
+    } satisfies WordFindingResult;
+    const pending = { payload, result: nextResult };
+    pendingResultRef.current = pending;
+    setResult(nextResult);
     setIsPaused(false);
     setIsResolving(false);
     setPhase("result");
+    void persistResult(pending);
   }, [
     completedRounds,
     configuredDurationSeconds,
@@ -173,10 +201,15 @@ export function WordFindingExerciseClient() {
     elapsedSeconds,
     targetWordsPerText,
     wrongCount,
+    persistResult,
   ]);
 
   const handleStartIntro = () => {
     hasSavedResultRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     setPhase("ready");
     setRemainingSeconds(durationMinutes * 60);
   };
@@ -406,7 +439,8 @@ export function WordFindingExerciseClient() {
     return (
       <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Kelime Bulma Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Calisma tamamlandi.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{saveStatus === "success" ? "Calisma tamamlandi." : saveMessage}</p>
+        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
@@ -439,12 +473,13 @@ export function WordFindingExerciseClient() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
+          <button type="button" disabled={saveStatus !== "success"} className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
             Yeniden Baslat
           </button>
           <button
             type="button"
             className={ACTION_BUTTON_CLASS}
+            disabled={saveStatus !== "success"}
             style={TOUCH_STYLE}
             onClick={() => router.push(`/sonuc?exerciseType=word-finding&correct=${result.correctCount}&wrong=${result.wrongCount}&successRate=${result.successRate}&score=${result.score}`)}
           >
@@ -452,7 +487,7 @@ export function WordFindingExerciseClient() {
           </button>
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end [&>nav>button]:min-h-11">
           <ExerciseNavigationControls />
         </div>
       </section>
@@ -488,7 +523,7 @@ export function WordFindingExerciseClient() {
                 type="button"
                 disabled={phase !== "running" || isPaused || isResolving}
                 onClick={() => handleWordClick(word)}
-                className={`mx-0.5 inline min-h-[34px] cursor-pointer rounded-lg border px-1.5 text-base font-semibold transition duration-150 active:scale-[0.96] disabled:cursor-default md:text-lg ${feedbackClass}`}
+                className={`mx-0.5 inline-flex min-h-11 items-center cursor-pointer rounded-lg border px-1.5 text-base font-semibold transition duration-150 active:scale-[0.96] disabled:cursor-default md:text-lg ${feedbackClass}`}
                 style={FULLSCREEN_TOUCH_STYLE}
               >
                 {word.raw}

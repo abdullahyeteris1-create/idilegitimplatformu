@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { getCurrentStudent } from "@/lib/auth/auth";
 import {
   calculateNet,
   generateCountingRound,
@@ -14,7 +13,7 @@ import {
   type CountingMode,
   type CountingRound,
 } from "@/lib/exercise-engine/letterNumberCountingFocus";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -23,6 +22,7 @@ import {
 
 type ExercisePhase = "setup" | "ready" | "running" | "feedback" | "paused" | "completed";
 type FeedbackTone = "ok" | "bad" | "info";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type FeedbackState = {
   tone: FeedbackTone;
@@ -68,6 +68,9 @@ export function LetterNumberCountingFocusClient() {
   const timerRef = useRef<number | null>(null);
   const feedbackRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
@@ -85,6 +88,8 @@ export function LetterNumberCountingFocusClient() {
   const [levelUpCount, setLevelUpCount] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [result, setResult] = useState<CountingResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const net = calculateNet(correctCount, wrongCount);
   const safeSpeedSeconds = getRoundDurationBySpeed(speedSeconds);
@@ -112,6 +117,11 @@ export function LetterNumberCountingFocusClient() {
     clearTimer();
     clearFeedbackTimer();
     hasSavedResultRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = null;
     setLevel(nextStartLevel);
     setCorrectCount(0);
@@ -246,6 +256,26 @@ export function LetterNumberCountingFocusClient() {
     setPhase("running");
   };
 
+  const persistResult = async (payload: SecureExerciseResultInput) => {
+    if (saveInFlightRef.current || saveCompletedRef.current) return;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      saveCompletedRef.current = true;
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  };
+
   const finishExercise = () => {
     if (hasSavedResultRef.current) return;
     hasSavedResultRef.current = true;
@@ -258,10 +288,7 @@ export function LetterNumberCountingFocusClient() {
     const score = Math.max(0, finalCorrect * 10 - finalWrong * 5);
     const successRate = answered === 0 ? 0 : Math.round((finalCorrect / answered) * 100);
     const durationSeconds = Math.max(1, startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : 1);
-    const student = getCurrentStudent();
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "letter-number-counting-focus",
       exerciseTitle: "Harf / Rakam Sayma Odak Calismasi",
       durationSeconds,
@@ -276,13 +303,15 @@ export function LetterNumberCountingFocusClient() {
         net: finalNet, unansweredCount, levelUpCount,
         scoreRule: "correctCount * 10 - wrongCount * 5", maxLevel: 4,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+    pendingResultRef.current = payload;
     setResult({
       correctCount: finalCorrect, wrongCount: finalWrong,
       unansweredCount, totalRounds, net: finalNet,
       score, successRate, reachedLevel: level, levelUpCount,
     });
     setPhase("completed");
+    void persistResult(payload);
   };
 
   const handleSettingChange = (callback: () => void) => {
@@ -303,7 +332,7 @@ export function LetterNumberCountingFocusClient() {
     <div className="flex flex-wrap items-end gap-1.5">
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Mod</span>
-        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           <option value="letters">Harf</option>
           <option value="numbers">Rakam</option>
           <option value="mixed">Harf+Rakam</option>
@@ -311,35 +340,35 @@ export function LetterNumberCountingFocusClient() {
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Seviye</span>
-        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           {[1, 2, 3, 4].map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Zorluk</span>
-        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           <option value="normal">Normal</option>
           <option value="hard">Zor</option>
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Hiz</span>
-        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
           {SPEED_OPTIONS.map((v) => <option key={v} value={v}>{v}s</option>)}
         </select>
       </label>
       <div className="flex flex-wrap gap-1.5">
         {phase === "ready" ? (
-          <button type="button" className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>Baslat</button>
+          <button type="button" className="min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>Baslat</button>
         ) : (
           <>
             {phase === "paused" ? (
-              <button type="button" className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>Devam</button>
+              <button type="button" className="min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>Devam</button>
             ) : (
-              <button type="button" className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>Duraklat</button>
+              <button type="button" className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>Duraklat</button>
             )}
-            <button type="button" className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>Sifirla</button>
-            <button type="button" className="min-h-9 rounded-xl bg-red-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>Bitir</button>
+            <button type="button" className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>Sifirla</button>
+            <button type="button" className="min-h-11 rounded-xl bg-red-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>Bitir</button>
           </>
         )}
       </div>
@@ -380,7 +409,8 @@ export function LetterNumberCountingFocusClient() {
     return (
       <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Harf / Rakam Sayma Odak Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Calisma sonucu kaydedildi.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{saveStatus === "success" ? "Calisma sonucu kaydedildi." : saveMessage}</p>
+        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
             <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Puan</p>
@@ -408,18 +438,19 @@ export function LetterNumberCountingFocusClient() {
           <p className="mt-1">Seviye Atlama: <span className="text-slate-900">{result.levelUpCount}</span></p>
         </div>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={() => resetToReady()}>
+          <button type="button" disabled={saveStatus !== "success"} className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={() => resetToReady()}>
             Yeniden Baslat
           </button>
           <button
             type="button"
             className={ACTION_BUTTON_CLASS}
+            disabled={saveStatus !== "success"}
             style={TOUCH_STYLE}
             onClick={() => router.push("/sonuc?exerciseType=letter-number-counting-focus&correct=" + result.correctCount + "&wrong=" + result.wrongCount + "&successRate=" + result.successRate + "&score=" + result.score)}
           >
             Ortak Sonuc Ekrani
           </button>
-          <div className="flex justify-end sm:col-span-3">
+          <div className="flex justify-end sm:col-span-3 [&>nav>button]:min-h-11">
             <ExerciseNavigationControls />
           </div>
         </div>

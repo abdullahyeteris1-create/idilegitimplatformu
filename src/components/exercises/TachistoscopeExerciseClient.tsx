@@ -9,9 +9,8 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
-import { getCurrentStudent } from "@/lib/auth/auth";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 
 type ExercisePhase = "ready" | "play";
 type ResponsePhase = "show" | "answer" | "feedback";
@@ -19,6 +18,7 @@ type SpeedMs = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
 type Level = TachistoscopeLevel;
 type WorkMode = "automatic" | "manual";
 type ContentType = "letter" | "number" | "mixed";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type TachistoscopeRound = {
   expected: string;
@@ -60,6 +60,8 @@ export function TachistoscopeExerciseClient() {
   const revealTimerRef = useRef<number | null>(null);
   const autoAdvanceTimerRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const pendingResultRef = useRef<{ payload: SecureExerciseResultInput; resultUrl: string } | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("ready");
   const [responsePhase, setResponsePhase] = useState<ResponsePhase>("show");
@@ -81,6 +83,9 @@ export function TachistoscopeExerciseClient() {
   const [answerLocked, setAnswerLocked] = useState(false);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [savedResultUrl, setSavedResultUrl] = useState("");
 
   const latestSettingsRef = useRef<RoundSettings>({
     level: 1,
@@ -201,6 +206,11 @@ export function TachistoscopeExerciseClient() {
 
   const handleBeginPlay = () => {
     hasSavedResultRef.current = false;
+    saveInFlightRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
+    setSavedResultUrl("");
     setCurrentLevelCorrect(0);
     setCurrentLevelWrong(0);
     setTotalCorrect(0);
@@ -213,12 +223,35 @@ export function TachistoscopeExerciseClient() {
     startNextRound({ level, speedMs, contentType });
   };
 
-  const finishExercise = () => {
-    if (hasSavedResultRef.current) {
+  const persistPendingResult = async (pending: { payload: SecureExerciseResultInput; resultUrl: string }) => {
+    if (saveInFlightRef.current || hasSavedResultRef.current) {
       return;
     }
 
-    hasSavedResultRef.current = true;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+
+    try {
+      const saved = await saveExerciseResultSecure(pending.payload);
+      hasSavedResultRef.current = true;
+      setSaveStatus("success");
+      if (saved.assignmentCompletionStatus === "failed") {
+        setSaveMessage("Sonuç kaydedildi ancak görev tamamlanamadı. Sonuç ekranına devam edebilirsin.");
+        return;
+      }
+      setSaveMessage("Sonuç kaydedildi.");
+      router.push(pending.resultUrl);
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  };
+
+  const finishExercise = () => {
+    if (hasSavedResultRef.current || saveInFlightRef.current || saveStatus !== "idle") return;
 
     if (revealTimerRef.current) {
       window.clearTimeout(revealTimerRef.current);
@@ -228,14 +261,12 @@ export function TachistoscopeExerciseClient() {
       window.clearTimeout(autoAdvanceTimerRef.current);
     }
 
-    const student = getCurrentStudent();
     const durationSeconds = Math.max(1, sessionStartedAt ? Math.round((Date.now() - sessionStartedAt) / 1000) : 1);
     const score = totalCorrect * 10 - totalWrong * 5;
     const successRate = totalAnswered === 0 ? 0 : Math.round((totalCorrect / totalAnswered) * 100);
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const pending = {
+      payload: {
       exerciseType: "tachistoscope",
       exerciseTitle: "Takistoskop",
       durationSeconds,
@@ -252,9 +283,16 @@ export function TachistoscopeExerciseClient() {
         reachedLevel,
         autoLevelUpCount,
       },
-    });
+      },
+      resultUrl: `/sonuc?exerciseType=tachistoscope&correct=${totalCorrect}&wrong=${totalWrong}&successRate=${successRate}&score=${score}`,
+    } satisfies { payload: SecureExerciseResultInput; resultUrl: string };
+    pendingResultRef.current = pending;
+    setSavedResultUrl(pending.resultUrl);
+    void persistPendingResult(pending);
+  };
 
-    router.push(`/sonuc?exerciseType=tachistoscope&correct=${totalCorrect}&wrong=${totalWrong}&successRate=${successRate}&score=${score}`);
+  const retrySave = () => {
+    if (pendingResultRef.current) void persistPendingResult(pendingResultRef.current);
   };
 
   const handleSubmitAnswer = () => {
@@ -431,7 +469,7 @@ export function TachistoscopeExerciseClient() {
         onKeyDown={handleInputKeyDown}
         aria-label="Gordugun kelimeyi yaz"
         disabled={answerLocked}
-        className="min-h-[42px] min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
+        className="min-h-11 min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
         placeholder="Gordugun kelimeyi yaz"
         inputMode="text"
         autoComplete="off"
@@ -447,7 +485,7 @@ export function TachistoscopeExerciseClient() {
       >
         Kontrol Et
       </button>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
     </div>
@@ -456,16 +494,24 @@ export function TachistoscopeExerciseClient() {
       <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleNext}>
         Sonraki
       </button>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
     </div>
   ) : (
     <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
       <p className="min-w-0 text-xs font-semibold text-slate-500">İçerik gösteriliyor...</p>
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
+    </div>
+  );
+
+  const saveNotice = saveStatus === "idle" ? null : (
+    <div className={`mx-auto grid w-full max-w-xl gap-2 rounded-xl border px-3 py-2 text-center text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+      <p>{saveMessage}</p>
+      {saveStatus === "error" ? <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={retrySave}>Yeniden Dene</button> : null}
+      {saveStatus === "success" && savedResultUrl ? <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={() => router.push(savedResultUrl)}>Sonuç Ekranına Devam</button> : null}
     </div>
   );
 
@@ -504,7 +550,7 @@ export function TachistoscopeExerciseClient() {
       subtitle="Odakli calisma modu"
       topStats={topStats}
       bottomSettings={stageSettings}
-      controls={playFooter}
+      controls={<div className="grid gap-2">{saveNotice}{playFooter}</div>}
       onExit={() => router.push("/egzersizler")}
     >
       <div data-testid="tachistoscope-game-frame" className="flex aspect-video max-h-full w-full max-w-5xl min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-2 shadow-sm md:p-4">

@@ -24,11 +24,88 @@ const ALLOWED_BODY_KEYS = new Set([
   "date",
   "completedAt",
   "assignmentItemId",
+  "details",
 ]);
 const MAX_SCORE = 1_000_000;
 const MAX_ANSWER_COUNT = 100_000;
 const MAX_DURATION_SECONDS = 21_600;
 const MAX_FUTURE_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const MAX_DETAILS_BYTES = 8 * 1024;
+const FORBIDDEN_DETAIL_KEYS = new Set([
+  "__proto__", "constructor", "prototype",
+  "durationseconds", "duration_seconds",
+  "assignmentitemid", "assignment_item_id",
+  "studentid", "student_id", "resultid", "id",
+]);
+
+type DetailRule = {
+  type: "boolean" | "integer" | "number" | "string";
+  min?: number;
+  max?: number;
+  maxLength?: number;
+  values?: readonly string[];
+};
+
+const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
+  tachistoscope: {
+    speedMs: { type: "integer", min: 50, max: 5_000 },
+    level: { type: "integer", min: 1, max: 15 },
+    contentType: { type: "string", values: ["letter", "number", "mixed"] },
+    mode: { type: "string", values: ["automatic", "manual"] },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    reachedLevel: { type: "integer", min: 1, max: 15 },
+    autoLevelUpCount: { type: "integer", min: 0, max: 15 },
+  },
+  "similar-words": {
+    boxCount: { type: "integer", min: 1, max: 100 },
+    targetDifferentCount: { type: "integer", min: 0, max: 100 },
+    completedRounds: { type: "integer", min: 0, max: 100_000 },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    totalClicks: { type: "integer", min: 0, max: 100_000 },
+    scoreRule: { type: "string", maxLength: 120 },
+  },
+  "word-finding": {
+    targetWordsPerText: { type: "integer", min: 1, max: 100 },
+    completedRounds: { type: "integer", min: 0, max: 100_000 },
+    totalClicks: { type: "integer", min: 0, max: 100_000 },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    scoreRule: { type: "string", maxLength: 120 },
+  },
+  "catch-same": {
+    category: { type: "string", maxLength: 80 },
+    reason: { type: "string", values: ["finished", "manual"] },
+    mode: { type: "string", values: ["word", "letter", "symbol", "number"] },
+    speed: { type: "integer", min: 50, max: 10_000 },
+    selectedDuration: { type: "integer", min: 1, max: 21_600 },
+    wrong: { type: "integer", min: 0, max: 100_000 },
+    missed: { type: "integer", min: 0, max: 100_000 },
+    roundCount: { type: "integer", min: 0, max: 100_000 },
+  },
+  "letter-number-counting-focus": {
+    mode: { type: "string", values: ["letters", "numbers", "mixed"] },
+    startLevel: { type: "integer", min: 1, max: 4 },
+    reachedLevel: { type: "integer", min: 1, max: 4 },
+    difficulty: { type: "string", values: ["normal", "hard"] },
+    speedSeconds: { type: "number", min: 0.1, max: 60 },
+    totalRounds: { type: "integer", min: 0, max: 100_000 },
+    correctCount: { type: "integer", min: 0, max: 100_000 },
+    wrongCount: { type: "integer", min: 0, max: 100_000 },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    unansweredCount: { type: "integer", min: 0, max: 100_000 },
+    levelUpCount: { type: "integer", min: 0, max: 4 },
+    scoreRule: { type: "string", maxLength: 120 },
+    maxLevel: { type: "integer", min: 1, max: 4 },
+  },
+  "square-vision": {
+    durationMinutes: { type: "integer", min: 1, max: 360 },
+    gridSize: { type: "integer", min: 2, max: 20 },
+    level: { type: "integer", min: 1, max: 20 },
+    soundEnabled: { type: "boolean" },
+    answeredCount: { type: "integer", min: 0, max: 100_000 },
+  },
+  "color-match": {},
+  "memory-game": {},
+};
 
 type ValidatedResultBody = {
   exerciseType: string;
@@ -40,6 +117,7 @@ type ValidatedResultBody = {
   durationSeconds: number;
   completedAt: string;
   assignmentItemId: string | null;
+  details: Record<string, string | number | boolean>;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -64,7 +142,51 @@ function toOptionalString(value: unknown): string | null {
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function validateDetails(exerciseType: string, value: unknown): Record<string, string | number | boolean> | null {
+  if (value === undefined) return {};
+  if (!isPlainObject(value)) return null;
+
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(value);
+  } catch {
+    return null;
+  }
+  if (new TextEncoder().encode(serialized).byteLength > MAX_DETAILS_BYTES) return null;
+
+  const schema = DETAIL_SCHEMAS[exerciseType];
+  if (!schema) return null;
+
+  const cleaned: Record<string, string | number | boolean> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (FORBIDDEN_DETAIL_KEYS.has(key.toLowerCase())) return null;
+    const rule = schema[key];
+    if (!rule) return null;
+
+    if (rule.type === "boolean") {
+      if (typeof raw !== "boolean") return null;
+      cleaned[key] = raw;
+      continue;
+    }
+    if (rule.type === "string") {
+      if (typeof raw !== "string" || raw.length > (rule.maxLength ?? 120)) return null;
+      if (rule.values && !rule.values.includes(raw)) return null;
+      cleaned[key] = raw;
+      continue;
+    }
+    if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+    if (rule.type === "integer" && !Number.isInteger(raw)) return null;
+    if (rule.min !== undefined && raw < rule.min) return null;
+    if (rule.max !== undefined && raw > rule.max) return null;
+    cleaned[key] = raw;
+  }
+
+  return cleaned;
 }
 
 function parseBoundedNumber(value: unknown, maximum: number, integer: boolean): number | null {
@@ -76,6 +198,13 @@ function parseBoundedNumber(value: unknown, maximum: number, integer: boolean): 
     return null;
   }
 
+  return value;
+}
+
+function parseScore(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < -MAX_SCORE || value > MAX_SCORE) {
+    return null;
+  }
   return value;
 }
 
@@ -116,13 +245,14 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
   const exerciseTitle = typeof value.exerciseTitle === "string" ? value.exerciseTitle.trim() : "";
   if (exerciseTitle.length > 160) return null;
 
-  const score = parseBoundedNumber(value.score, MAX_SCORE, false);
+  const score = parseScore(value.score);
   const successRate = parseBoundedNumber(value.successRate, 100, false);
   const correctCount = parseAnswerCount(value, "correctCount", "correct");
   const wrongCount = parseAnswerCount(value, "wrongCount", "wrong");
   const rawDuration = parseBoundedNumber(value.durationSeconds, MAX_DURATION_SECONDS, false);
   const completedAt = parseCompletedAt(value);
-  if (score === null || successRate === null || correctCount === null || wrongCount === null || rawDuration === null || completedAt === null) {
+  const details = validateDetails(exerciseType, value.details);
+  if (score === null || successRate === null || correctCount === null || wrongCount === null || rawDuration === null || completedAt === null || details === null) {
     return null;
   }
 
@@ -144,6 +274,7 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
     durationSeconds: Math.round(rawDuration),
     completedAt,
     assignmentItemId,
+    details,
   };
 }
 
@@ -179,6 +310,7 @@ function mapResult(row: Record<string, unknown>, studentId: string) {
     createdAt,
     completedAt,
     assignmentItemId,
+    details,
   };
 }
 
@@ -303,6 +435,7 @@ export async function POST(request: NextRequest) {
     }
 
     const details = {
+      ...body.details,
       durationSeconds: body.durationSeconds,
       ...(body.assignmentItemId ? { assignmentItemId: body.assignmentItemId } : {}),
     };

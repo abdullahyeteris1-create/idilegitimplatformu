@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -19,6 +18,7 @@ type DurationSeconds = 60 | 120 | 180 | 240 | 300;
 type BoxCount = 12 | 16 | 20 | 24;
 type TargetDifferentCount = 3 | 4 | 5 | 6 | 7 | 8;
 type BoxState = "idle" | "correct" | "wrong";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type SimilarWordPair = {
   leftWord: string;
@@ -199,6 +199,9 @@ function formatDuration(seconds: number): string {
 export function SimilarWordsExerciseClient() {
   const router = useRouter();
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
   const phaseRef = useRef<ExercisePhase>("setup");
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
@@ -214,6 +217,8 @@ export function SimilarWordsExerciseClient() {
   const [foundInCurrentRound, setFoundInCurrentRound] = useState(0);
   const [totalShownTargetCount, setTotalShownTargetCount] = useState(0);
   const [resultDuration, setResultDuration] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -242,6 +247,11 @@ export function SimilarWordsExerciseClient() {
   const resetExercise = useCallback(
     (nextPhase: ExercisePhase) => {
       hasSavedResultRef.current = false;
+      saveInFlightRef.current = false;
+      saveCompletedRef.current = false;
+      pendingResultRef.current = null;
+      setSaveStatus("idle");
+      setSaveMessage("");
       setCorrectCount(0);
       setWrongCount(0);
       setScore(0);
@@ -366,18 +376,35 @@ export function SimilarWordsExerciseClient() {
     setPhase("result");
   };
 
+  const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    if (saveInFlightRef.current || saveCompletedRef.current) return;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      saveCompletedRef.current = true;
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     if (phase !== "result" || hasSavedResultRef.current) {
       return;
     }
 
     hasSavedResultRef.current = true;
-    const student = getCurrentStudent();
     const actualDurationSeconds = Math.max(1, resultDuration || durationSeconds - remainingSeconds);
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "similar-words",
       exerciseTitle: "Benzer Kelimeler",
       durationSeconds: actualDurationSeconds,
@@ -386,7 +413,6 @@ export function SimilarWordsExerciseClient() {
       score,
       successRate: successPercent,
       details: {
-        durationSeconds,
         boxCount,
         targetDifferentCount,
         completedRounds,
@@ -394,7 +420,9 @@ export function SimilarWordsExerciseClient() {
         totalClicks,
         scoreRule: "+10 dogru, -5 yanlis",
       },
-    });
+    } satisfies SecureExerciseResultInput;
+    pendingResultRef.current = payload;
+    void persistResult(payload);
   }, [
     boxCount,
     completedRounds,
@@ -409,6 +437,7 @@ export function SimilarWordsExerciseClient() {
     targetDifferentCount,
     totalClicks,
     wrongCount,
+    persistResult,
   ]);
 
   if (phase === "setup") {
@@ -516,7 +545,8 @@ export function SimilarWordsExerciseClient() {
     return (
       <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Benzer Kelimeler Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Sure tamamlandi veya calisma Bitir ile sonlandirildi.</p>
+        <p className="mt-1 text-sm text-[var(--muted)]">{saveStatus === "success" ? "Sure tamamlandi veya calisma Bitir ile sonlandirildi." : saveMessage}</p>
+        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
@@ -553,12 +583,13 @@ export function SimilarWordsExerciseClient() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRetry}>
+          <button type="button" disabled={saveStatus !== "success"} className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRetry}>
             Tekrar Dene
           </button>
           <button
             type="button"
             className={ACTION_BUTTON_CLASS}
+            disabled={saveStatus !== "success"}
             style={TOUCH_STYLE}
             onClick={() =>
               router.push(
@@ -570,7 +601,7 @@ export function SimilarWordsExerciseClient() {
           </button>
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end [&>nav>button]:min-h-11">
           <ExerciseNavigationControls />
         </div>
       </section>

@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -18,6 +17,7 @@ type DurationMinutes = 1 | 2 | 3 | 4 | 5;
 type GridSize = 7 | 9 | 11 | 13 | 15;
 type Level = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type Answer = "same" | "different";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type Round = {
   letters: string[];
@@ -108,6 +108,9 @@ function createRound(gridSize: GridSize, level: Level): Round {
 export function SquareVisionExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
@@ -121,6 +124,8 @@ export function SquareVisionExerciseClient() {
   const [answeredCount, setAnsweredCount] = useState(0);
   const [lastFeedback, setLastFeedback] = useState<"correct" | "wrong" | null>(null);
   const [result, setResult] = useState<ExerciseResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const totalDurationSeconds = durationMinutes * 60;
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
@@ -193,7 +198,32 @@ export function SquareVisionExerciseClient() {
     setPhase("ready");
     startedAtRef.current = null;
     savedRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, [gridSize, level]);
+
+  const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    if (saveInFlightRef.current || saveCompletedRef.current) return;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      saveCompletedRef.current = true;
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, []);
 
   const finishExercise = useCallback(() => {
     if (savedRef.current) {
@@ -214,11 +244,7 @@ export function SquareVisionExerciseClient() {
         ? Math.round((correctCount / answeredCount) * 100)
         : 0;
     const finalScore = Math.max(0, correctCount * 10 - wrongCount * 3);
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Seçilmemiş Öğrenci",
+    const payload = {
       exerciseType: "square-vision",
       exerciseTitle: "KAREL: Kare Görme Alanı",
       durationSeconds,
@@ -233,7 +259,8 @@ export function SquareVisionExerciseClient() {
         soundEnabled,
         answeredCount,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+    pendingResultRef.current = payload;
 
     setResult({
       durationSeconds,
@@ -244,6 +271,7 @@ export function SquareVisionExerciseClient() {
       score: finalScore,
     });
     setPhase("result");
+    void persistResult(payload);
   }, [
     answeredCount,
     correctCount,
@@ -253,6 +281,7 @@ export function SquareVisionExerciseClient() {
     level,
     soundEnabled,
     wrongCount,
+    persistResult,
   ]);
 
   const answerRound = useCallback(
@@ -333,6 +362,10 @@ export function SquareVisionExerciseClient() {
     setLastFeedback(null);
     setResult(null);
     savedRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = Date.now();
     setPhase("running");
   };
@@ -422,7 +455,7 @@ export function SquareVisionExerciseClient() {
           <button
             type="button"
             onClick={beginExercise}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px]`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Egzersizi Başlat
@@ -470,7 +503,8 @@ export function SquareVisionExerciseClient() {
         <h1 className="text-2xl font-black text-slate-950">
           KAREL: Kare Görme Alanı Sonucu
         </h1>
-        <p className="mt-2 text-sm text-slate-500">Egzersiz tamamlandı.</p>
+        <p className="mt-2 text-sm text-slate-500">{saveStatus === "success" ? "Egzersiz tamamlandı." : saveMessage}</p>
+        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className="rounded-2xl border border-green-100 bg-green-50 p-4 text-center">
@@ -509,18 +543,14 @@ export function SquareVisionExerciseClient() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
+            disabled={saveStatus !== "success"}
             onClick={resetExercise}
             className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Tekrar Çalış
           </button>
-          <Link
-            href="/egzersizler"
-            className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800"
-          >
-            Egzersizlere Dön
-          </Link>
+          {saveStatus === "success" ? <Link href="/egzersizler" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800">Egzersizlere Dön</Link> : <span aria-disabled="true" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-400">Egzersizlere Dön</span>}
         </div>
       </section>
     );
