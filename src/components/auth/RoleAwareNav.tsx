@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { clearCurrentUser, getResolvedCurrentUser, type CurrentUser } from "@/lib/auth/auth";
+import { clearCurrentUser, getResolvedCurrentUser, logoutCurrentStudent, type CurrentUser } from "@/lib/auth/auth";
 import { TEACHER_NAV_ITEMS as SHARED_TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 
 type NavItem = {
@@ -31,6 +31,8 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -48,6 +50,10 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
       : fallbackItems;
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setLogoutError("");
+    setIsLoggingOut(true);
     if (user?.role === "teacher" || pathname.startsWith("/ogretmen")) {
       await fetch("/api/admin-logout", { method: "POST" });
       clearCurrentUser();
@@ -56,9 +62,14 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
       return;
     }
 
-    clearCurrentUser();
-    setUser(null);
-    router.replace("/");
+    try {
+      await logoutCurrentStudent();
+      setUser(null);
+      window.location.replace("/giris");
+    } catch {
+      setLogoutError("Çıkış şu anda tamamlanamadı. Lütfen tekrar deneyin.");
+      setIsLoggingOut(false);
+    }
   };
 
   const isVibrant = variant === "vibrant";
@@ -101,6 +112,7 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
         <button
           type="button"
           onClick={handleLogout}
+          disabled={isLoggingOut}
           className={
             isVibrant
               ? "inline-flex min-h-[40px] max-w-full shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/90 px-3 py-2 text-center text-xs font-black text-red-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md sm:px-4 sm:text-sm"
@@ -108,9 +120,10 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
           }
           style={{ touchAction: "manipulation" }}
         >
-          {isVibrant ? "Çıkış" : "Cikis"}
+          {isLoggingOut ? "Çıkış yapılıyor..." : isVibrant ? "Çıkış" : "Cikis"}
         </button>
       ) : null}
+      {logoutError ? <span role="alert" className={`w-full text-sm font-semibold ${isVibrant ? "text-red-100" : "text-red-700"}`}>{logoutError}</span> : null}
     </nav>
   );
 }

@@ -63,6 +63,12 @@
 .light .recentSectionTitle>a,.light .recentResultCard>a{background:#eef2f8;color:#172033;border-color:#9eacc0}
 .light .resultMetrics b{color:#172033}
 
+.profileMenu>.profileLogout{margin-top:6px;border:1px solid #7f1d1d;background:#7f1d1d33;color:#fecaca}
+.profileMenu>.profileLogout:hover{background:#991b1b66}
+.profileMenu>button:disabled{cursor:wait;opacity:.7}
+.logoutError{position:fixed;right:24px;bottom:24px;max-width:min(420px,calc(100vw - 40px));overflow-wrap:anywhere;background:#7f1d1d;color:#fee2e2;border:1px solid #ef4444;padding:13px 18px;border-radius:12px;box-shadow:0 10px 35px #0008;font-weight:700;z-index:40;animation:rise .25s both}
+.light .profileMenu>.profileLogout{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+
 @media(max-width:1250px){.recentResultsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:900px){.dashboardGrid{gap:12px}.categoriesSection{padding:15px}.categoryCard{padding:16px}.resumePanel{max-width:100%}}
+@media(max-width:900px){.dashboardGrid{gap:12px}.categoriesSection{padding:15px}.categoryCard{padding:16px}.resumePanel{max-width:100%}.logoutError{left:20px;right:20px;bottom:86px;max-width:none;text-align:center}}
 @media(max-width:560px){.recentSection{padding:14px}.recentSectionTitle{align-items:flex-start}.recentSectionTitle>a{width:44px;padding:0;font-size:0}.recentResultsGrid{grid-template-columns:1fr}.resumePanel{padding:10px}.resumeDetails{display:grid}.resumePanel+.heroActions{margin-top:10px}}

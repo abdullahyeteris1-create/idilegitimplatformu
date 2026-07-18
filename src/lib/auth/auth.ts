@@ -111,3 +111,17 @@ export function clearCurrentUser(): void {
   localStorage.removeItem(CURRENT_USER_KEY);
   localStorage.removeItem(CURRENT_STUDENT_KEY);
 }
+
+export async function logoutCurrentStudent(): Promise<void> {
+  const response = await fetch("/api/student-session", {
+    method: "DELETE",
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Öğrenci çıkışı tamamlanamadı.");
+  }
+
+  clearCurrentUser();
+}

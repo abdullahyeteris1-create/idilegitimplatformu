@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 export const STUDENT_SESSION_COOKIE_NAME = "idil_student_session";
 const STUDENT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
-type StudentSessionPayload = {
+export type StudentSessionPayload = {
   studentId: string;
   username: string;
   issuedAt: number;
@@ -43,13 +43,12 @@ export function createStudentSessionToken(studentId: string, username: string): 
   return `${encodedPayload}.${signature}`;
 }
 
-export function readStudentSessionFromRequest(request: NextRequest): StudentSessionPayload | null {
+export function readStudentSessionToken(token: string): StudentSessionPayload | null {
   const secret = getStudentSessionSecret();
   if (!secret) {
     return null;
   }
 
-  const token = request.cookies.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "";
   const [encodedPayload, providedSignature] = token.split(".");
   if (!encodedPayload || !providedSignature) {
     return null;
@@ -70,7 +69,10 @@ export function readStudentSessionFromRequest(request: NextRequest): StudentSess
       !parsed.studentId.trim() ||
       typeof parsed.username !== "string" ||
       !parsed.username.trim() ||
-      typeof parsed.issuedAt !== "number"
+      typeof parsed.issuedAt !== "number" ||
+      !Number.isFinite(parsed.issuedAt) ||
+      parsed.issuedAt > Date.now() ||
+      Date.now() - parsed.issuedAt > STUDENT_SESSION_MAX_AGE_SECONDS * 1000
     ) {
       return null;
     }
@@ -83,6 +85,10 @@ export function readStudentSessionFromRequest(request: NextRequest): StudentSess
   } catch {
     return null;
   }
+}
+
+export function readStudentSessionFromRequest(request: NextRequest): StudentSessionPayload | null {
+  return readStudentSessionToken(request.cookies.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "");
 }
 
 export function getStudentSessionCookieOptions() {
