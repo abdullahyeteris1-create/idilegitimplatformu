@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
@@ -415,11 +415,11 @@ function MobileMenu({ onDemo, onClose }: { onDemo: (message: string) => void; on
   return <nav className={styles.mobileMenuPanel} aria-label="Mobil ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onNavigate={onClose}/>)}</nav>;
 }
 
-function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentName, classLabel }: { panel: Exclude<DemoPanel, "menu" | null>; onDemo: (message: string) => void; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; studentName: string; classLabel: string }) {
+function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentName, classLabel, popoverRef }: { panel: Exclude<DemoPanel, "menu" | null>; onDemo: (message: string) => void; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; studentName: string; classLabel: string; popoverRef?: RefObject<HTMLElement | null> }) {
   return (
-    <section id="preview-demo-panel" className={styles.demoPopover} role="dialog" aria-modal="true" aria-label={panel === "notifications" ? "Bildirimler" : "Profil menüsü"}>
+    <section id="preview-demo-panel" ref={popoverRef} className={styles.demoPopover} role="dialog" aria-modal="true" aria-labelledby="preview-demo-panel-title">
       <div className={styles.popoverTitle}>
-        <div><small>ÖNİZLEME</small><h2>{panel === "notifications" ? "Bildirimler" : studentName}</h2></div>
+        <div><small>ÖNİZLEME</small><h2 id="preview-demo-panel-title">{panel === "notifications" ? "Bildirimler" : studentName}</h2></div>
         <button type="button" onClick={onClose} aria-label="Paneli kapat">×</button>
       </div>
       {panel === "notifications" ? (
@@ -448,6 +448,7 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
   const [resultsState, setResultsState] = useState<PreviewResultsState>({ status: "loading", results: [], readingTests: [] });
   const [dailyTaskState, setDailyTaskState] = useState<DailyTaskState>({ status: "loading" });
   const toastTimer = useRef<number | null>(null);
+  const popoverRef = useRef<HTMLElement | null>(null);
   const studentIdentity = useMemo<PreviewStudentIdentity>(() => ({
     name: authenticatedStudent.name,
     classLabel: authenticatedStudent.classLevel?.trim() || "Sınıf bilgisi yok",
@@ -462,8 +463,16 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
     toastTimer.current = window.setTimeout(() => setToast(""), 2200);
   };
 
-  const togglePanel = (nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel);
+  const closePanel = useCallback(() => {
+    const shouldRestoreFocus = panel === "notifications";
+    const trigger = shouldRestoreFocus
+      ? document.querySelector<HTMLButtonElement>('button[aria-label^="Bildirim"]')
+      : null;
+    setPanel(null);
+    if (shouldRestoreFocus && trigger) window.requestAnimationFrame(() => trigger.focus());
+  }, [panel]);
 
+  const togglePanel = (nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel);
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
@@ -578,12 +587,29 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
   }, [studentIdentity.name, studentIdentity.resolved, studentIdentity.studentId, studentIdentity.username]);
 
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setPanel(null); };
+    if (!panel) return undefined;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") closePanel(); };
     window.addEventListener("keydown", closeOnEscape);
+    const focusFrame = window.requestAnimationFrame(() => {
+      const firstItem = (popoverRef.current ?? document.getElementById("preview-demo-panel"))?.querySelectorAll<HTMLElement>("button")[1];
+      firstItem?.focus();
+    });
     return () => {
       window.removeEventListener("keydown", closeOnEscape);
-      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+      window.cancelAnimationFrame(focusFrame);
     };
+  }, [closePanel, panel]);
+
+  const previousPanelRef = useRef<DemoPanel>(null);
+  useEffect(() => {
+    if (previousPanelRef.current === "notifications" && panel === null) {
+      document.querySelector<HTMLButtonElement>('button[aria-label^="Bildirim"]')?.focus();
+    }
+    previousPanelRef.current = panel;
+  }, [panel]);
+
+  useEffect(() => () => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
   }, []);
 
   const resultsLoading = resultsState.status === "loading";
