@@ -20,9 +20,11 @@
 .categoryCard{height:100%;padding:16px;gap:10px}
 .categoryHead{min-height:68px}
 .categoryHead h3{margin-bottom:4px}
+.categoryTitleLink{display:flex;align-items:center;min-height:44px;width:100%;border-radius:8px;flex-shrink:0}
+.categoryTitleLink h3{margin:0}
 .categoryDescription{min-height:0;margin:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .categoryExamples{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0;max-height:94px;overflow:hidden}
-.categoryExamples a{height:44px;min-height:44px;overflow:hidden}
+.categoryExamples a{height:44px;min-height:44px;overflow:hidden;flex-shrink:0}
 .percent{margin:0}
 .categoryCard>.progress{margin-bottom:0}
 .categoryCard>a{margin-top:auto}

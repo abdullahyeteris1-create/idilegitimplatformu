@@ -1,7 +1,7 @@
 import type { IconName } from "./icons";
 
 export type Category = {
-  id?: string;
+  id: string;
   title: string;
   count: number;
   countLabel?: "egzersiz";
@@ -14,10 +14,64 @@ export type Category = {
 };
 
 export const categories: Category[] = [
-  { title: "Göz Egzersizleri", count: 5, progress: 80, icon: "eye", tone: "blue", href: "/egzersizler/goz-beyin" },
-  { title: "Göz Algılama", count: 4, progress: 60, icon: "target", tone: "pink", href: "/egzersizler/takistoskop" },
-  { title: "Metin Çalışmaları", count: 6, progress: 75, icon: "type", tone: "green", href: "/egzersizler/blok-okuma" },
-  { title: "Odaklanma", count: 3, progress: 40, icon: "brain", tone: "purple", href: "/egzersizler/cift-tarafli-odak" },
+  {
+    id: "eye",
+    title: "Göz Egzersizleri",
+    count: 5,
+    progress: 80,
+    icon: "eye",
+    tone: "blue",
+    href: "/egzersizler?category=eye",
+    examples: [
+      { title: "Göz Beyin", href: "/egzersizler/goz-beyin" },
+      { title: "Göz Kasları", href: "/egzersizler/goz-kaslari" },
+    ],
+  },
+  {
+    id: "attention",
+    title: "Göz Algılama Çalışmaları",
+    count: 4,
+    progress: 60,
+    icon: "target",
+    tone: "pink",
+    href: "/egzersizler?category=attention",
+    examples: [
+      { title: "Takistoskop", href: "/egzersizler/takistoskop" },
+      { title: "Benzer Kelimeler", href: "/egzersizler/benzer-kelimeler" },
+      { title: "Kelime Bulma", href: "/egzersizler/kelime-bulma" },
+      { title: "Kelime Kolonları", href: "/egzersizler/goz-egzersizleri-kolonlar" },
+    ],
+  },
+  {
+    id: "fluency",
+    title: "Metin Çalışmaları",
+    count: 6,
+    progress: 75,
+    icon: "type",
+    tone: "green",
+    href: "/egzersizler?category=fluency",
+    examples: [
+      { title: "Blok Okuma", href: "/egzersizler/blok-okuma" },
+      { title: "Gölgeleme", href: "/egzersizler/golgeleme" },
+      { title: "Odaklı Okuma", href: "/egzersizler/odakli-okuma" },
+      { title: "Gruplama", href: "/egzersizler/gruplama-calismasi" },
+    ],
+  },
+  {
+    id: "focus",
+    title: "Odaklanma",
+    count: 3,
+    progress: 40,
+    icon: "brain",
+    tone: "purple",
+    href: "/egzersizler?category=focus",
+    examples: [
+      { title: "Çift Taraflı Odak", href: "/egzersizler/cift-tarafli-odak" },
+      { title: "Harf / Rakam", href: "/egzersizler/harf-rakam-sayma" },
+      { title: "Sayı Tablosu", href: "/egzersizler/sayi-tablosu" },
+      { title: "Aynı Olanı Yakala", href: "/egzersizler/ayni-olani-yakala" },
+    ],
+  },
   {
     id: "brain-exercises",
     title: "Beyin Egzersizleri",
@@ -49,9 +103,48 @@ export const categories: Category[] = [
       { title: "Dikkat Labirenti", href: "/egzersizler/dikkat-labirenti" },
     ],
   },
-  { title: "Okuma & Anlama", count: 6, progress: 85, icon: "book", tone: "cyan", href: "/egzersizler/anlama-testi" },
-  { title: "Hız & Akıcılık", count: 4, progress: 65, icon: "gauge", tone: "indigo", href: "/egzersizler/golgeleme" },
-  { title: "Hafıza Güçlendirme", count: 3, progress: 50, icon: "grid", tone: "rose", href: "/egzersizler/hafiza-gelistirme" },
+  {
+    id: "assessment",
+    title: "Okuma & Anlama",
+    count: 6,
+    progress: 85,
+    icon: "book",
+    tone: "cyan",
+    href: "/egzersizler?category=assessment",
+    examples: [
+      { title: "Anlama Testi", href: "/egzersizler/anlama-testi" },
+      { title: "Sonuçlar", href: "/sonuc" },
+    ],
+  },
+  {
+    id: "fluency",
+    title: "Hız & Akıcılık",
+    count: 4,
+    progress: 65,
+    icon: "gauge",
+    tone: "indigo",
+    href: "/egzersizler?category=fluency",
+    examples: [
+      { title: "Blok Okuma", href: "/egzersizler/blok-okuma" },
+      { title: "Gölgeleme", href: "/egzersizler/golgeleme" },
+      { title: "Odaklı Okuma", href: "/egzersizler/odakli-okuma" },
+      { title: "Gruplama", href: "/egzersizler/gruplama-calismasi" },
+    ],
+  },
+  {
+    id: "memory",
+    title: "Hafıza Güçlendirme",
+    count: 3,
+    progress: 50,
+    icon: "grid",
+    tone: "rose",
+    href: "/egzersizler?category=memory",
+    examples: [
+      { title: "Hafıza Geliştirme", href: "/egzersizler/hafiza-gelistirme" },
+      { title: "Kart Eşleştirme", href: "/egzersizler/kart-eslestirme" },
+      { title: "Kart Hafıza", href: "/egzersizler/kart-hafiza" },
+    ],
+  },
 ];
 
 export type NavItem = { label: string; icon: IconName; href?: string };

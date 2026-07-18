@@ -75,15 +75,17 @@ function CategoryCard({ category, index }: { category: Category; index: number }
     >
       <div className={styles.categoryHead}>
         <div>
-          <h3>{category.title}</h3>
+          <Link href={category.href} className={styles.categoryTitleLink} aria-label={`${category.title} kategorisini aç`}>
+            <h3>{category.title}</h3>
+          </Link>
           <p>{category.count} {category.countLabel ?? "çalışma"}</p>
         </div>
         <span className={styles.categoryIcon}><Icon name={category.icon}/></span>
       </div>
       {category.description && <p className={styles.categoryDescription}>{category.description}</p>}
-      {category.examples && (
+      {category.examples && category.examples.length > 0 && (
         <div className={styles.categoryExamples} aria-label={`${category.title} örnek egzersizleri`}>
-          {category.examples.map((example) => <Link href={example.href} key={example.href}>{example.title}</Link>)}
+          {category.examples.slice(0, 4).map((example) => <Link href={example.href} key={example.href}>{example.title}</Link>)}
         </div>
       )}
       <div className={styles.percent}>%{category.progress}</div>
