@@ -14,7 +14,7 @@ import styles from "./student-panel-preview.module.css";
 type DemoPanel = "menu" | "notifications" | "profile" | null;
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
 type PreviewResultsState = {
-  status: "loading" | "ready";
+  status: "loading" | "ready" | "error";
   results: ExerciseResult[];
   readingTests: ReadingTestResult[];
 };
@@ -37,6 +37,14 @@ const FALLBACK_STUDENT_IDENTITY: PreviewStudentIdentity = {
   username: null,
   resolved: false,
 };
+
+const ISTANBUL_TIME_ZONE = "Europe/Istanbul";
+const ISTANBUL_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: ISTANBUL_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "square-vision": "/egzersizler/kare-gorme-alani",
@@ -81,6 +89,83 @@ function calculateAverageSuccess(results: ExerciseResult[]): number {
   if (validValues.length === 0) return 0;
 
   return clampPercentage(validValues.reduce((total, value) => total + value, 0) / validValues.length);
+}
+
+function getIstanbulDateKey(date: Date): string | null {
+  if (!Number.isFinite(date.getTime())) return null;
+
+  const parts = ISTANBUL_DATE_FORMATTER.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
+function dateKeyToDayNumber(dateKey: string): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) return null;
+
+  const dayNumber = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86_400_000;
+  return Number.isFinite(dayNumber) ? dayNumber : null;
+}
+
+function getResultDayNumber(result: ExerciseResult): number | null {
+  const dateKey = getIstanbulDateKey(new Date(result.date));
+  return dateKey ? dateKeyToDayNumber(dateKey) : null;
+}
+
+function getUniqueResults(results: ExerciseResult[]): ExerciseResult[] {
+  const seenIds = new Set<string>();
+
+  return results.filter((result) => {
+    if (seenIds.has(result.id)) return false;
+    seenIds.add(result.id);
+    return true;
+  });
+}
+
+function getWeeklyResults(results: ExerciseResult[], now = new Date()): ExerciseResult[] {
+  const todayKey = getIstanbulDateKey(now);
+  const todayDayNumber = todayKey ? dateKeyToDayNumber(todayKey) : null;
+  if (todayDayNumber === null) return [];
+
+  const todayWeekday = new Date(todayDayNumber * 86_400_000).getUTCDay();
+  const mondayDayNumber = todayDayNumber - ((todayWeekday + 6) % 7);
+  const nextMondayDayNumber = mondayDayNumber + 7;
+
+  return getUniqueResults(results).filter((result) => {
+    const resultDayNumber = getResultDayNumber(result);
+    return resultDayNumber !== null
+      && resultDayNumber >= mondayDayNumber
+      && resultDayNumber < nextMondayDayNumber;
+  });
+}
+
+function calculateDailyStreak(results: ExerciseResult[], now = new Date()): number {
+  const todayKey = getIstanbulDateKey(now);
+  const todayDayNumber = todayKey ? dateKeyToDayNumber(todayKey) : null;
+  if (todayDayNumber === null) return 0;
+
+  const activeDays = new Set(
+    getUniqueResults(results)
+      .map(getResultDayNumber)
+      .filter((dayNumber): dayNumber is number => dayNumber !== null && dayNumber <= todayDayNumber),
+  );
+  const startDayNumber = activeDays.has(todayDayNumber)
+    ? todayDayNumber
+    : activeDays.has(todayDayNumber - 1)
+      ? todayDayNumber - 1
+      : null;
+
+  if (startDayNumber === null) return 0;
+
+  let streak = 0;
+  for (let dayNumber = startDayNumber; activeDays.has(dayNumber); dayNumber -= 1) {
+    streak += 1;
+  }
+
+  return streak;
 }
 
 function formatResultDate(value: string): string {
@@ -144,8 +229,8 @@ function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem
   return <button type="button" className={className} onClick={() => { onDemo("Bu özellik önizleme aşamasında."); onNavigate?.(); }}>{content}</button>;
 }
 
-function Sidebar({ onDemo }: { onDemo: (message: string) => void }) {
-  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo}/>)}</nav><LevelCard compact/><div className={styles.streakCard}><span>🔥</span><div><small>Seri</small><strong>7 gün</strong><p>Harika gidiyorsun!</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
+function Sidebar({ onDemo, streakValue, streakNote }: { onDemo: (message: string) => void; streakValue: string; streakNote: string }) {
+  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo}/>)}</nav><LevelCard compact/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
 }
 
 function LevelCard({ compact = false }: { compact?: boolean }) {
@@ -184,7 +269,7 @@ function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget
 }
 
 function StatCard({ stat, index }: { stat: typeof stats[number]; index: number }) {
-  return <article className={`${styles.statCard} ${styles[stat.tone]}`} style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}><div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div><Icon name={stat.icon}/>{stat.icon === "activity" && <div className={styles.sparkline}>⌁⌁⌁</div>}</article>;
+  return <article className={`${styles.statCard} ${styles[stat.tone]}`} data-stat-label={stat.label} style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}><div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div><Icon name={stat.icon}/>{stat.icon === "activity" && <div className={styles.sparkline}>⌁⌁⌁</div>}</article>;
 }
 
 function CategoryCard({ category, index }: { category: Category; index: number }) {
@@ -324,7 +409,7 @@ function MobileMenu({ onDemo, onClose }: { onDemo: (message: string) => void; on
 }
 
 function DemoPopover({ panel, onDemo, onClose, studentName, classLabel }: { panel: Exclude<DemoPanel, "menu" | null>; onDemo: (message: string) => void; onClose: () => void; studentName: string; classLabel: string }) {
-  return <section id="preview-demo-panel" className={styles.demoPopover} role="dialog" aria-modal="true" aria-label={panel === "notifications" ? "Bildirimler" : "Profil menüsü"}><div className={styles.popoverTitle}><div><small>ÖNİZLEME</small><h2>{panel === "notifications" ? "Bildirimler" : studentName}</h2></div><button type="button" onClick={onClose} aria-label="Paneli kapat">×</button></div>{panel === "notifications" ? <div className={styles.notificationList}><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>🚀</span><div><strong>Günlük görevin hazır</strong><small>15 dakikalık odak çalışması</small></div></button><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>⭐</span><div><strong>Yeni rozet kazandın</strong><small>7 günlük seriyi tamamladın</small></div></button></div> : <div className={styles.profileMenu}><div className={styles.profileSummary}><span>👨‍🚀</span><div><strong>{studentName}</strong><small>{classLabel} · Seviye sistemi hazırlanıyor</small></div></div><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="user"/> Profili Gör</button><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="settings"/> Ayarlar</button></div>}</section>;
+  return <section id="preview-demo-panel" className={styles.demoPopover} role="dialog" aria-modal="true" aria-label={panel === "notifications" ? "Bildirimler" : "Profil menüsü"}><div className={styles.popoverTitle}><div><small>ÖNİZLEME</small><h2>{panel === "notifications" ? "Bildirimler" : studentName}</h2></div><button type="button" onClick={onClose} aria-label="Paneli kapat">×</button></div>{panel === "notifications" ? <div className={styles.notificationList}><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>🚀</span><div><strong>Günlük görevin hazır</strong><small>15 dakikalık odak çalışması</small></div></button><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>⭐</span><div><strong>Çalışma serin güncellendi</strong><small>Güncel serini panelden takip edebilirsin</small></div></button></div> : <div className={styles.profileMenu}><div className={styles.profileSummary}><span>👨‍🚀</span><div><strong>{studentName}</strong><small>{classLabel} · Seviye sistemi hazırlanıyor</small></div></div><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="user"/> Profili Gör</button><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="settings"/> Ayarlar</button></div>}</section>;
 }
 
 export function StudentPanelPreview() {
@@ -417,22 +502,32 @@ export function StudentPanelPreview() {
 
       setResultsState({ status: "loading", results: [], readingTests: [] });
       const identityArgs = [studentIdentity.studentId, studentIdentity.name, studentIdentity.username ?? undefined] as const;
-      let results: ExerciseResult[];
-
       try {
         const remoteResults = await getResultsByStudentWithRemote(...identityArgs);
-        results = remoteResults.length > 0 ? remoteResults : getResultsByStudent(...identityArgs);
+        const results = remoteResults.length > 0 ? remoteResults : getResultsByStudent(...identityArgs);
+        if (cancelled) return;
+        const readingTests = getReadingTestsByStudent(...identityArgs);
+        setResultsState({
+          status: "ready",
+          results: sortNewestFirst(results),
+          readingTests: sortNewestFirst(readingTests),
+        });
       } catch {
-        results = getResultsByStudent(...identityArgs);
+        if (cancelled) return;
+        let fallbackResults: ExerciseResult[] = [];
+        let fallbackReadingTests: ReadingTestResult[] = [];
+        try {
+          fallbackResults = getResultsByStudent(...identityArgs);
+          fallbackReadingTests = getReadingTestsByStudent(...identityArgs);
+        } catch {
+          // Metrikler hata durumunda kalırken sayfanın diğer alanları çökmemeli.
+        }
+        setResultsState({
+          status: "error",
+          results: sortNewestFirst(fallbackResults),
+          readingTests: sortNewestFirst(fallbackReadingTests),
+        });
       }
-
-      if (cancelled) return;
-      const readingTests = getReadingTestsByStudent(...identityArgs);
-      setResultsState({
-        status: "ready",
-        results: sortNewestFirst(results),
-        readingTests: sortNewestFirst(readingTests),
-      });
     };
 
     void loadResults();
@@ -449,19 +544,34 @@ export function StudentPanelPreview() {
   }, []);
 
   const resultsLoading = resultsState.status === "loading";
+  const resultsError = resultsState.status === "error";
   const recentResults = useMemo(() => resultsState.results.slice(0, 3), [resultsState.results]);
-  const averageSuccess = useMemo(() => calculateAverageSuccess(resultsState.results), [resultsState.results]);
+  const weeklyResults = useMemo(() => getWeeklyResults(resultsState.results), [resultsState.results]);
+  const weeklyAverageSuccess = useMemo(() => calculateAverageSuccess(weeklyResults), [weeklyResults]);
+  const dailyStreak = useMemo(() => calculateDailyStreak(resultsState.results), [resultsState.results]);
+  const metricPlaceholder = resultsLoading || resultsError ? "—" : null;
+  const streakValue = metricPlaceholder ?? `${dailyStreak} gün`;
+  const streakNote = resultsLoading
+    ? "Sonuçlar yükleniyor"
+    : resultsError
+      ? "Sonuçlar görüntülenemiyor"
+      : dailyStreak > 0
+        ? "Mevcut sonuçlarına göre"
+        : "Henüz aktif seri yok";
   const dashboardStats = useMemo(() => stats.map((stat) => {
-    if (stat.label === "Tamamlanan Egzersiz") {
-      return { ...stat, value: resultsLoading ? "…" : resultsState.results.length.toLocaleString("tr-TR"), note: resultsLoading ? "Sonuçlar yükleniyor" : "Toplam" };
+    if (stat.label === "Bu Haftaki Çalışma") {
+      return { ...stat, value: metricPlaceholder ?? weeklyResults.length.toLocaleString("tr-TR"), note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : stat.note };
     }
-    if (stat.label === "Başarı Oranı") {
-      return { ...stat, value: resultsLoading ? "…" : `%${averageSuccess}`, note: resultsLoading ? "Sonuçlar yükleniyor" : resultsState.results.length > 0 ? "Ortalama" : "Henüz sonuç yok" };
+    if (stat.label === "Haftalık Başarı") {
+      return { ...stat, value: metricPlaceholder ?? `%${weeklyAverageSuccess}`, note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : stat.note };
+    }
+    if (stat.label === "Günlük Seri") {
+      return { ...stat, value: streakValue, note: streakNote };
     }
     return stat;
-  }), [averageSuccess, resultsLoading, resultsState.results.length]);
+  }), [metricPlaceholder, resultsError, resultsLoading, streakNote, streakValue, weeklyAverageSuccess, weeklyResults.length]);
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }

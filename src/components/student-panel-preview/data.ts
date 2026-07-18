@@ -162,8 +162,8 @@ export const navItems: NavItem[] = [
 ];
 
 export const stats: { label: string; value: string; note: string; icon: IconName; tone: string }[] = [
-  { label: "Toplam Çalışma Süresi", value: "2 sa 45 dk", note: "Bu hafta", icon: "sparkles", tone: "cyan" },
-  { label: "Tamamlanan Egzersiz", value: "0", note: "Toplam", icon: "activity", tone: "pink" },
-  { label: "Başarı Oranı", value: "%0", note: "Henüz sonuç yok", icon: "circle", tone: "green" },
-  { label: "Günlük Seri", value: "7 gün", note: "Devam et!", icon: "flame", tone: "orange" },
+  { label: "Çalışma Süresi", value: "Hazırlanıyor", note: "Süre takibi tüm egzersizlerde tamamlandığında gösterilecek", icon: "sparkles", tone: "cyan" },
+  { label: "Bu Haftaki Çalışma", value: "0", note: "Bu hafta tamamladığın egzersiz sayısı", icon: "activity", tone: "pink" },
+  { label: "Haftalık Başarı", value: "%0", note: "Bu haftaki çalışmalarının ortalama başarı oranı", icon: "circle", tone: "green" },
+  { label: "Günlük Seri", value: "0 gün", note: "Henüz aktif seri yok", icon: "flame", tone: "orange" },
 ];
