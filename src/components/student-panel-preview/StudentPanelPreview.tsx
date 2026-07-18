@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
-import { getResultsByStudent, getResultsByStudentWithRemote } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import { categories, navItems, stats, type Category, type NavItem } from "./data";
 import { Icon } from "./icons";
@@ -18,6 +17,18 @@ type PreviewResultsState = {
   status: "loading" | "ready" | "error";
   results: ExerciseResult[];
   readingTests: ReadingTestResult[];
+};
+type StudentResultApiItem = {
+  id: string;
+  studentId: string;
+  exerciseType: ExerciseType;
+  exerciseTitle: string;
+  score: number;
+  correctCount: number;
+  wrongCount: number;
+  successRate: number;
+  durationSeconds: number;
+  date: string;
 };
 type DailyTaskState =
   | { status: "loading" }
@@ -195,6 +206,7 @@ function resolveResumeTarget(taskState: DailyTaskState, resultsState: PreviewRes
   }
 
   if (resultsState.status === "loading") return { status: "loading" };
+  if (resultsState.status === "error") return { status: "error" };
   const latestResult = resultsState.results[0];
   if (latestResult) {
     return { status: "result", result: latestResult, href: EXERCISE_ROUTE_BY_TYPE[latestResult.exerciseType] ?? "/egzersizler" };
@@ -337,7 +349,7 @@ function DailyTask({ taskState }: { taskState: DailyTaskState }) {
   return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="ready"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyTaskTitle}>{selectedItem.exerciseTitle}</p><div className={styles.dailyTaskMeta}><small><b>Durum:</b> {statusLabel}</small>{durationMinutes !== null && <small><b>Süre:</b> {durationMinutes} dakika</small>}{selectedItem.assignedTextTitle && <small><b>Metin:</b> {selectedItem.assignedTextTitle}</small>}{selectedItem.teacherNote && <small><b>Öğretmen notu:</b> {selectedItem.teacherNote}</small>}</div><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><div className={styles.astronaut}>👨‍🚀</div><Link href={itemHref}>Göreve Devam Et <Icon name="arrow"/></Link></section>;
 }
 
-function RecentResults({ results, loading }: { results: ExerciseResult[]; loading: boolean }) {
+function RecentResults({ results, loading, error }: { results: ExerciseResult[]; loading: boolean; error: boolean }) {
   return (
     <section className={styles.recentSection} aria-labelledby="recent-results-title">
       <div className={styles.recentSectionTitle}>
@@ -346,6 +358,8 @@ function RecentResults({ results, loading }: { results: ExerciseResult[]; loadin
       </div>
       {loading ? (
         <p className={styles.resultState}>Sonuçlar yükleniyor...</p>
+      ) : error ? (
+        <p className={styles.resultState}>Sonuçlar şu anda yüklenemiyor.</p>
       ) : results.length === 0 ? (
         <p className={styles.resultState}>Henüz tamamlanmış çalışma yok</p>
       ) : (
@@ -516,12 +530,34 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
       }
 
       setResultsState({ status: "loading", results: [], readingTests: [] });
-      const identityArgs = [studentIdentity.studentId, studentIdentity.name, studentIdentity.username ?? undefined] as const;
       try {
-        const remoteResults = await getResultsByStudentWithRemote(...identityArgs);
-        const results = remoteResults.length > 0 ? remoteResults : getResultsByStudent(...identityArgs);
+        const response = await fetch("/api/student/results", {
+          method: "GET",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as { results?: StudentResultApiItem[] };
+        if (!response.ok || !Array.isArray(payload.results)) {
+          throw new Error("Student results request failed");
+        }
+
+        const results = payload.results.map((result): ExerciseResult => {
+          if (result.studentId !== studentIdentity.studentId) {
+            throw new Error("Student result identity mismatch");
+          }
+
+          return {
+            ...result,
+            studentName: studentIdentity.name,
+            username: studentIdentity.username ?? undefined,
+          };
+        });
         if (cancelled) return;
-        const readingTests = getReadingTestsByStudent(...identityArgs);
+        const readingTests = getReadingTestsByStudent(
+          studentIdentity.studentId,
+          studentIdentity.name,
+          studentIdentity.username ?? undefined,
+        );
         setResultsState({
           status: "ready",
           results: sortNewestFirst(results),
@@ -529,18 +565,10 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
         });
       } catch {
         if (cancelled) return;
-        let fallbackResults: ExerciseResult[] = [];
-        let fallbackReadingTests: ReadingTestResult[] = [];
-        try {
-          fallbackResults = getResultsByStudent(...identityArgs);
-          fallbackReadingTests = getReadingTestsByStudent(...identityArgs);
-        } catch {
-          // Metrikler hata durumunda kalırken sayfanın diğer alanları çökmemeli.
-        }
         setResultsState({
           status: "error",
-          results: sortNewestFirst(fallbackResults),
-          readingTests: sortNewestFirst(fallbackReadingTests),
+          results: [],
+          readingTests: [],
         });
       }
     };
@@ -588,5 +616,5 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }
