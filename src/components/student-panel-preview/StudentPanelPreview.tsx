@@ -3,16 +3,24 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { getCurrentStudent } from "@/lib/auth/auth";
+import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { categories, navItems, stats, type Category, type NavItem } from "./data";
 import { Icon } from "./icons";
 import styles from "./student-panel-preview.module.css";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
-type PreviewStudentIdentity = { name: string; classLabel: string };
+type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; resolved: boolean };
+type DailyTaskState =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "empty" }
+  | { status: "ready"; assignment: DailyAssignment };
 
 const FALLBACK_STUDENT_IDENTITY: PreviewStudentIdentity = {
   name: "Öğrenci",
   classLabel: "Sınıf bilgisi yok",
+  studentId: null,
+  resolved: false,
 };
 
 function Progress({ value, label }: { value: number; label: string }) {
@@ -85,8 +93,93 @@ function CategoryCard({ category, index }: { category: Category; index: number }
   );
 }
 
-function DailyTask() {
-  return <section className={`${styles.sideCard} ${styles.dailyCard}`}><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p>Odaklanma Çalışması</p><small>15 dakika</small><strong>%60</strong><Progress value={60} label="Bugünkü görev yüzde 60 tamamlandı"/><div className={styles.astronaut}>👨‍🚀</div><Link href="/egzersizler/cift-tarafli-odak">Devam Et <Icon name="arrow"/></Link></section>;
+function selectDailyTaskItem(items: DailyAssignmentItem[]): DailyAssignmentItem | null {
+  return items.find((item) => item.status === "started")
+    ?? items.find((item) => item.status === "pending")
+    ?? items.find((item) => item.status !== "completed")
+    ?? null;
+}
+
+function DailyTask({ studentId, studentResolved }: { studentId: string | null; studentResolved: boolean }) {
+  const [taskState, setTaskState] = useState<DailyTaskState>({ status: "loading" });
+
+  useEffect(() => {
+    if (!studentResolved) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadTask = async () => {
+      if (!studentId) {
+        if (!cancelled) setTaskState({ status: "empty" });
+        return;
+      }
+
+      setTaskState({ status: "loading" });
+
+      try {
+        const response = await fetch("/api/student/daily-assignment?readOnly=true", {
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as { ok?: boolean; assignment?: DailyAssignment | null };
+
+        if (cancelled) return;
+        if (!response.ok || !data.ok) {
+          setTaskState({ status: "error" });
+          return;
+        }
+
+        setTaskState(data.assignment ? { status: "ready", assignment: data.assignment } : { status: "empty" });
+      } catch (error) {
+        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) {
+          setTaskState({ status: "error" });
+        }
+      }
+    };
+
+    void loadTask();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [studentId, studentResolved]);
+
+  if (taskState.status === "loading") {
+    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="loading"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Görev yükleniyor...</p></section>;
+  }
+
+  if (taskState.status === "error") {
+    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="error"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Günlük görev şu anda görüntülenemiyor.</p></section>;
+  }
+
+  if (taskState.status === "empty") {
+    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="empty"><span className={styles.cornerSpark}>✦</span><h2>Bugün için atanmış görev yok</h2><p className={styles.dailyStateMessage}>Serbest çalışmalarından birini seçerek devam edebilirsin.</p><Link href="/egzersizler">Egzersizleri Gör <Icon name="arrow"/></Link></section>;
+  }
+
+  const { assignment } = taskState;
+  const selectedItem = selectDailyTaskItem(assignment.items);
+  const completedCount = assignment.items.filter((item) => item.status === "completed").length;
+  const totalCount = assignment.items.length;
+  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  if (!selectedItem) {
+    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="completed"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü görevlerini tamamladın</h2><p className={styles.dailyStateMessage}>Bugünkü tüm çalışmalarını başarıyla tamamladın.</p><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><Link href="/egzersizler">Serbest Çalışmalara Git <Icon name="arrow"/></Link></section>;
+  }
+
+  const durationMinutes = typeof selectedItem.settingsJson.durationMinutes === "number"
+    ? selectedItem.settingsJson.durationMinutes
+    : null;
+  const statusLabel = selectedItem.status === "started"
+    ? "Başlandı"
+    : selectedItem.status === "pending"
+      ? "Bekliyor"
+      : "Atlandı";
+  const itemHref = `/egzersizler/${selectedItem.exerciseSlug}?assignmentItemId=${encodeURIComponent(selectedItem.id)}`;
+
+  return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="ready"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyTaskTitle}>{selectedItem.exerciseTitle}</p><div className={styles.dailyTaskMeta}><small><b>Durum:</b> {statusLabel}</small>{durationMinutes !== null && <small><b>Süre:</b> {durationMinutes} dakika</small>}{selectedItem.assignedTextTitle && <small><b>Metin:</b> {selectedItem.assignedTextTitle}</small>}{selectedItem.teacherNote && <small><b>Öğretmen notu:</b> {selectedItem.teacherNote}</small>}</div><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><div className={styles.astronaut}>👨‍🚀</div><Link href={itemHref}>Göreve Devam Et <Icon name="arrow"/></Link></section>;
 }
 
 function ReadingTest() {
@@ -134,11 +227,16 @@ export function StudentPanelPreview() {
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       const currentStudent = getCurrentStudent();
-      if (!currentStudent) return;
+      if (!currentStudent) {
+        setStudentIdentity({ ...FALLBACK_STUDENT_IDENTITY, resolved: true });
+        return;
+      }
 
       setStudentIdentity({
         name: currentStudent.name?.trim() || FALLBACK_STUDENT_IDENTITY.name,
         classLabel: currentStudent.classLevel?.trim() || currentStudent.className?.trim() || FALLBACK_STUDENT_IDENTITY.classLabel,
+        studentId: currentStudent.id?.trim() || null,
+        resolved: true,
       });
     }, 0);
 
@@ -154,5 +252,5 @@ export function StudentPanelPreview() {
     };
   }, []);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero onDemo={showToast} studentName={studentIdentity.name}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{stats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask/><ReadingTest/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero onDemo={showToast} studentName={studentIdentity.name}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{stats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask studentId={studentIdentity.studentId} studentResolved={studentIdentity.resolved}/><ReadingTest/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }

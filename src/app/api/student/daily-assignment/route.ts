@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   const assignmentDate = request.nextUrl.searchParams.get("date")?.trim() || getAssignmentDateForTimezone("Europe/Istanbul");
+  const readOnly = request.nextUrl.searchParams.get("readOnly")?.trim().toLowerCase() === "true";
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -21,6 +22,10 @@ export async function GET(request: NextRequest) {
   const existing = await getDailyAssignmentByDate(supabase, session.studentId, assignmentDate);
   if (existing) {
     return NextResponse.json({ ok: true, assignment: existing });
+  }
+
+  if (readOnly) {
+    return NextResponse.json({ ok: true, assignment: null });
   }
 
   const assignment = await generateDailyAssignment({
