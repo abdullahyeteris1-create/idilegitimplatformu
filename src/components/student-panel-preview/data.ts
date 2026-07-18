@@ -45,7 +45,7 @@ export const categories: Category[] = [
   {
     id: "fluency",
     title: "Metin Çalışmaları",
-    count: 6,
+    count: 4,
     progress: 75,
     icon: "type",
     tone: "green",
@@ -60,7 +60,7 @@ export const categories: Category[] = [
   {
     id: "focus",
     title: "Odaklanma",
-    count: 3,
+    count: 4,
     progress: 40,
     icon: "brain",
     tone: "purple",
@@ -117,21 +117,6 @@ export const categories: Category[] = [
     ],
   },
   {
-    id: "fluency",
-    title: "Hız & Akıcılık",
-    count: 4,
-    progress: 65,
-    icon: "gauge",
-    tone: "indigo",
-    href: "/egzersizler?category=fluency",
-    examples: [
-      { title: "Blok Okuma", href: "/egzersizler/blok-okuma" },
-      { title: "Gölgeleme", href: "/egzersizler/golgeleme" },
-      { title: "Odaklı Okuma", href: "/egzersizler/odakli-okuma" },
-      { title: "Gruplama", href: "/egzersizler/gruplama-calismasi" },
-    ],
-  },
-  {
     id: "memory",
     title: "Hafıza Güçlendirme",
     count: 3,
@@ -167,3 +152,4 @@ export const stats: { label: string; value: string; note: string; icon: IconName
   { label: "Haftalık Başarı", value: "%0", note: "Bu haftaki çalışmalarının ortalama başarı oranı", icon: "circle", tone: "green" },
   { label: "Günlük Seri", value: "0 gün", note: "Henüz aktif seri yok", icon: "flame", tone: "orange" },
 ];
+
