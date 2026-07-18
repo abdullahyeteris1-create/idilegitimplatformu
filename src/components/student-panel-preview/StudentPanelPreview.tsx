@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
@@ -23,6 +23,12 @@ type DailyTaskState =
   | { status: "error" }
   | { status: "empty" }
   | { status: "ready"; assignment: DailyAssignment };
+type ResumeTarget =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "assignment"; item: DailyAssignmentItem; href: string; actionLabel: string; details: string[] }
+  | { status: "result"; result: ExerciseResult; href: string }
+  | { status: "empty"; href: string };
 
 const FALLBACK_STUDENT_IDENTITY: PreviewStudentIdentity = {
   name: "Öğrenci",
@@ -84,6 +90,41 @@ function formatResultDate(value: string): string {
   return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function resolveResumeTarget(taskState: DailyTaskState, resultsState: PreviewResultsState): ResumeTarget {
+  if (taskState.status === "loading") return { status: "loading" };
+  if (taskState.status === "error") return { status: "error" };
+
+  if (taskState.status === "ready") {
+    const item = selectDailyTaskItem(taskState.assignment.items);
+    if (item) {
+      const durationMinutes = typeof item.settingsJson.durationMinutes === "number" ? item.settingsJson.durationMinutes : null;
+      const statusLabel = item.status === "started" ? "Başlandı" : item.status === "pending" ? "Bekliyor" : "Tamamlanmadı";
+      const details = [
+        `Durum: ${statusLabel}`,
+        ...(durationMinutes !== null ? [`Süre: ${durationMinutes} dakika`] : []),
+        ...(item.assignedTextTitle ? [`Metin: ${item.assignedTextTitle}`] : []),
+        ...(item.teacherNote ? [`Öğretmen notu: ${item.teacherNote}`] : []),
+      ];
+
+      return {
+        status: "assignment",
+        item,
+        href: `/egzersizler/${item.exerciseSlug}?assignmentItemId=${encodeURIComponent(item.id)}`,
+        actionLabel: item.status === "started" ? "Devam Et" : "Başla",
+        details,
+      };
+    }
+  }
+
+  if (resultsState.status === "loading") return { status: "loading" };
+  const latestResult = resultsState.results[0];
+  if (latestResult) {
+    return { status: "result", result: latestResult, href: EXERCISE_ROUTE_BY_TYPE[latestResult.exerciseType] ?? "/egzersizler" };
+  }
+
+  return { status: "empty", href: "/egzersizler" };
+}
+
 function Progress({ value, label }: { value: number; label: string }) {
   return <div className={styles.progress} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}><span style={{ "--progress": `${value}%` } as React.CSSProperties} /></div>;
 }
@@ -119,8 +160,27 @@ function SpaceScene() {
   return <div className={styles.spaceScene} aria-hidden="true"><span className={styles.planet}>◉</span><span className={styles.starOne}>✦</span><span className={styles.starTwo}>✧</span><div className={styles.rocket}><Icon name="rocket"/></div><div className={styles.rocketTrail}/></div>;
 }
 
-function Hero({ onDemo, studentName }: { onDemo: (message: string) => void; studentName: string }) {
-  return <section className={styles.hero}><div className={styles.heroCopy}><h2>Hoş geldin, {studentName}! <span>👋</span></h2><p>Bugün odaklan, öğren, gelişimini bir üst seviyeye taşı.</p><div className={styles.tags}><span>◉ Odak</span><span>✦ Hız</span><span>♢ Anlama</span><span>⊙ Akıcılık</span></div><div className={styles.heroActions}><Link href="/ogrenci">Bugünkü Görevine Başla <Icon name="arrow"/></Link><button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}>Kaldığın Yerden Devam Et <Icon name="arrow"/></button></div></div><SpaceScene/></section>;
+function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget: ResumeTarget }) {
+  let resumeContent: ReactNode;
+  let resumeAction: ReactNode = null;
+
+  if (resumeTarget.status === "loading") {
+    resumeContent = <p className={styles.resumeState}>Devam bilgisi yükleniyor...</p>;
+  } else if (resumeTarget.status === "error") {
+    resumeContent = <p className={styles.resumeState}>Devam bilgisi şu anda görüntülenemiyor.</p>;
+  } else if (resumeTarget.status === "assignment") {
+    resumeContent = <><small className={styles.resumeEyebrow}>Günlük görev</small><strong>{resumeTarget.item.exerciseTitle}</strong><div className={styles.resumeDetails}>{resumeTarget.details.map((detail) => <span key={detail}>{detail}</span>)}</div></>;
+    resumeAction = <Link href={resumeTarget.href} data-resume-action="assignment">{resumeTarget.actionLabel} <Icon name="arrow"/></Link>;
+  } else if (resumeTarget.status === "result") {
+    const title = resumeTarget.result.exerciseTitle?.trim() || "Çalışma";
+    resumeContent = <><small className={styles.resumeEyebrow}>Son çalışmana dön</small><strong>{title}</strong><div className={styles.resumeDetails}><span>{formatResultDate(resumeTarget.result.date)}</span><span>Başarı: %{clampPercentage(resumeTarget.result.successRate)}</span><span>Puan: {Number.isFinite(resumeTarget.result.score) ? resumeTarget.result.score : 0}</span></div></>;
+    resumeAction = <Link href={resumeTarget.href} data-resume-action="result">Bu Çalışmaya Yeniden Başla <Icon name="arrow"/></Link>;
+  } else {
+    resumeContent = <><small className={styles.resumeEyebrow}>Çalışma önerisi</small><strong>Yeni bir çalışmaya başla</strong><p className={styles.resumeDescription}>Egzersizlerden birini seçerek gelişimine devam edebilirsin.</p></>;
+    resumeAction = <Link href={resumeTarget.href} data-resume-action="empty">Egzersizleri Aç <Icon name="arrow"/></Link>;
+  }
+
+  return <section className={styles.hero}><div className={styles.heroCopy}><h2>Hoş geldin, {studentName}! <span>👋</span></h2><p>Bugün odaklan, öğren, gelişimini bir üst seviyeye taşı.</p><div className={styles.tags}><span>◉ Odak</span><span>✦ Hız</span><span>♢ Anlama</span><span>⊙ Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci">Bugünkü Görevine Başla <Icon name="arrow"/></Link>{resumeAction}</div></div><SpaceScene/></section>;
 }
 
 function StatCard({ stat, index }: { stat: typeof stats[number]; index: number }) {
@@ -163,53 +223,7 @@ function selectDailyTaskItem(items: DailyAssignmentItem[]): DailyAssignmentItem 
     ?? null;
 }
 
-function DailyTask({ studentId, studentResolved }: { studentId: string | null; studentResolved: boolean }) {
-  const [taskState, setTaskState] = useState<DailyTaskState>({ status: "loading" });
-
-  useEffect(() => {
-    if (!studentResolved) return;
-
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const loadTask = async () => {
-      if (!studentId) {
-        if (!cancelled) setTaskState({ status: "empty" });
-        return;
-      }
-
-      setTaskState({ status: "loading" });
-
-      try {
-        const response = await fetch("/api/student/daily-assignment?readOnly=true", {
-          credentials: "same-origin",
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const data = (await response.json()) as { ok?: boolean; assignment?: DailyAssignment | null };
-
-        if (cancelled) return;
-        if (!response.ok || !data.ok) {
-          setTaskState({ status: "error" });
-          return;
-        }
-
-        setTaskState(data.assignment ? { status: "ready", assignment: data.assignment } : { status: "empty" });
-      } catch (error) {
-        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) {
-          setTaskState({ status: "error" });
-        }
-      }
-    };
-
-    void loadTask();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [studentId, studentResolved]);
-
+function DailyTask({ taskState }: { taskState: DailyTaskState }) {
   if (taskState.status === "loading") {
     return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="loading"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Görev yükleniyor...</p></section>;
   }
@@ -319,6 +333,7 @@ export function StudentPanelPreview() {
   const [panel, setPanel] = useState<DemoPanel>(null);
   const [studentIdentity, setStudentIdentity] = useState<PreviewStudentIdentity>(FALLBACK_STUDENT_IDENTITY);
   const [resultsState, setResultsState] = useState<PreviewResultsState>({ status: "loading", results: [], readingTests: [] });
+  const [dailyTaskState, setDailyTaskState] = useState<DailyTaskState>({ status: "loading" });
   const toastTimer = useRef<number | null>(null);
 
   const showToast = (message: string) => {
@@ -348,6 +363,47 @@ export function StudentPanelPreview() {
 
     return () => window.clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    if (!studentIdentity.resolved) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const loadDailyTask = async () => {
+      if (!studentIdentity.studentId) {
+        setDailyTaskState({ status: "empty" });
+        return;
+      }
+
+      setDailyTaskState({ status: "loading" });
+      try {
+        const response = await fetch("/api/student/daily-assignment?readOnly=true", {
+          credentials: "same-origin",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as { ok?: boolean; assignment?: DailyAssignment | null };
+
+        if (cancelled) return;
+        if (!response.ok || !data.ok) {
+          setDailyTaskState({ status: "error" });
+          return;
+        }
+
+        setDailyTaskState(data.assignment ? { status: "ready", assignment: data.assignment } : { status: "empty" });
+      } catch (error) {
+        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) {
+          setDailyTaskState({ status: "error" });
+        }
+      }
+    };
+
+    void loadDailyTask();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [studentIdentity.resolved, studentIdentity.studentId]);
 
   useEffect(() => {
     if (!studentIdentity.resolved) return;
@@ -405,6 +461,7 @@ export function StudentPanelPreview() {
     return stat;
   }), [averageSuccess, resultsLoading, resultsState.results.length]);
   const lastReadingTest = resultsState.readingTests[0];
+  const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero onDemo={showToast} studentName={studentIdentity.name}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask studentId={studentIdentity.studentId} studentResolved={studentIdentity.resolved}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }
