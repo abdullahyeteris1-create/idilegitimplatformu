@@ -66,6 +66,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   hangman: "/egzersizler/adam-asmaca",
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
+  "color-match": "/egzersizler/renk-uyumu",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */

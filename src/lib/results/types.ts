@@ -18,8 +18,9 @@
   | "catch-same"
   | "hangman"
   | "grouping-reading"
-  | "eye-columns"
-  | "square-vision";
+    | "eye-columns"
+  | "square-vision"
+  | "color-match";
 
 export type ExerciseResult = {
   id: string;

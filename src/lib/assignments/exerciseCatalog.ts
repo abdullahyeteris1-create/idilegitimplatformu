@@ -221,7 +221,16 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     resultExerciseType: "reading-comprehension",
     category: "comprehension",
     assignmentEnabled: true,
-    supportedSettings: ["textId", "targetSuccessRate", "questionCount"],
+        supportedSettings: ["textId", "targetSuccessRate", "questionCount"],
+  },
+  {
+    slug: "renk-uyumu",
+    title: "Renk Uyumu",
+    route: "/egzersizler/renk-uyumu",
+    resultExerciseType: "color-match",
+    category: "attention",
+    assignmentEnabled: true,
+    supportedSettings: ["level", "durationMinutes", "targetCorrect"],
   },
 ];
 

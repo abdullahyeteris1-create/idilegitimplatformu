@@ -17,6 +17,7 @@ import type { Student } from "@/lib/students/types";
 type IconName =
   | "arrow-right"
   | "book"
+  | "brain"
   | "check"
   | "clock"
   | "eye"
@@ -112,9 +113,10 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "eye-brain": "/egzersizler/goz-beyin",
   "word-guess": "/egzersizler/kelime-tahmin",
   "catch-same": "/egzersizler/ayni-olani-yakala",
-  hangman: "/egzersizler/adam-asmaca",
+    hangman: "/egzersizler/adam-asmaca",
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
+  "color-match": "/egzersizler/renk-uyumu",
 };
 
 const quickLinks = [
@@ -141,7 +143,7 @@ const studyCategories: DashboardCategory[] = [
     spark: "↗",
     trail: "Takip",
     examples: ["Göz Beyin Çalışması", "Göz Kaslarını Geliştirme"],
-    theme: {
+        theme: {
       card: "border-cyan-100/90 hover:border-cyan-200 hover:shadow-cyan-100/80",
       wash: "from-blue-50 via-cyan-50 to-white",
       icon: "bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-blue-200",
@@ -151,6 +153,29 @@ const studyCategories: DashboardCategory[] = [
       scene: "from-cyan-200/70 via-sky-100/80 to-white",
       surface: "bg-white/80 border-white/80",
       label: "text-cyan-800 bg-cyan-100/80 border-cyan-200/80",
+    },
+  },
+  {
+        id: "brain-exercises",
+    title: "Beyin Egzersizleri",
+    description: "Dikkat, tepki hızı, zihinsel esneklik ve hızlı karar verme becerilerini geliştiren çalışmalar.",
+    count: 2,
+    icon: "brain",
+    sticker: "🧠",
+    orbit: "⚙",
+    spark: "⇄",
+    trail: "Zihin",
+    examples: ["Renk Uyumu", "Yeni Kartı Bul"],
+    theme: {
+      card: "border-orange-100 hover:border-orange-200 hover:shadow-orange-100/80",
+      wash: "from-orange-50 via-amber-50 to-white",
+      icon: "bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-orange-200",
+      badge: "border-orange-200 bg-orange-50 text-orange-800",
+      dot: "bg-orange-500",
+      button: "bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700",
+      scene: "from-orange-200/70 via-amber-100/80 to-white",
+      surface: "bg-white/80 border-white/80",
+      label: "text-orange-800 bg-orange-100/80 border-orange-200/80",
     },
   },
   {
@@ -1305,9 +1330,11 @@ function DashboardIcon({ name, className }: { name: IconName; className: string 
     viewBox: "0 0 24 24",
   };
 
-  switch (name) {
+    switch (name) {
     case "arrow-right":
       return <svg {...commonProps}><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
+    case "brain":
+      return <svg {...commonProps}><path d="M12 3a5 5 0 0 0-5 5v2a2 2 0 0 0 2 2h1v-2a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2h1a2 2 0 0 0 2-2V8a5 5 0 0 0-5-5zM12 3v18M10 12v2M14 12v2" /><path d="M7 10.5a5 5 0 0 0 .5 9.5h9a5 5 0 0 0 .5-9.5" /></svg>;
     case "book":
       return <svg {...commonProps}><path d="M4 5.5A2.5 2.5 0 016.5 3H11v16H6.5A2.5 2.5 0 004 21.5v-16zM20 5.5A2.5 2.5 0 0017.5 3H13v16h4.5a2.5 2.5 0 012.5 2.5v-16z" /></svg>;
     case "check":
