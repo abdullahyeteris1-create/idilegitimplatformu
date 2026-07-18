@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 
 type ActiveGameStatus = "memorize" | "ready" | "challenge";
-type GameStatus = "idle" | ActiveGameStatus | "paused" | "feedback" | "finished";
+type GameStatus = "idle" | ActiveGameStatus | "paused" | "feedback" | "saving" | "save-error" | "finished";
 type FeedbackType = "correct" | "wrong" | null;
 
 type MemoryCard = {
@@ -23,6 +24,14 @@ type AnswerRecord = {
   isCorrect: boolean;
   responseTimeMs: number;
   gainedScore: number;
+};
+
+type FinalResultMetrics = {
+  score: number;
+  correctCount: number;
+  wrongCount: number;
+  successRate: number;
+  durationSeconds: number;
 };
 
 const LEVELS: LevelConfig[] = [
@@ -121,11 +130,14 @@ export default function NewCardMemoryExerciseClient() {
   const [answerHistory, setAnswerHistory] = useState<AnswerRecord[]>([]);
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
   const [pausedFrom, setPausedFrom] = useState<ActiveGameStatus | null>(null);
+  const [saveError, setSaveError] = useState("");
 
   const challengeStartedAtRef = useRef(0);
   const pauseStartedAtRef = useRef(0);
   const answerLockedRef = useRef(false);
   const feedbackTimerRef = useRef<number | null>(null);
+  const exerciseStartedAtRef = useRef(0);
+  const pendingResultRef = useRef<FinalResultMetrics | null>(null);
 
   const activeLevel = getLevelConfig(selectedLevel);
 
@@ -206,6 +218,9 @@ export default function NewCardMemoryExerciseClient() {
     setAnswerHistory([]);
     setRoundIndex(0);
     setPausedFrom(null);
+    setSaveError("");
+    pendingResultRef.current = null;
+    exerciseStartedAtRef.current = Date.now();
     prepareRound(0);
   }
 
@@ -222,18 +237,46 @@ export default function NewCardMemoryExerciseClient() {
     });
   }
 
-  function finishExercise() {
+  const persistResult = useCallback(async (metrics: FinalResultMetrics) => {
+    pendingResultRef.current = metrics;
+    setSaveError("");
+    setStatus("saving");
+    try {
+      await saveExerciseResultSecure({
+        exerciseType: "memory-game",
+        exerciseTitle: "Yeni Kartı Bul",
+        ...metrics,
+      });
+      setStatus("finished");
+    } catch {
+      setSaveError("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      setStatus("save-error");
+    }
+  }, []);
+
+  const finishExercise = useCallback((metrics: FinalResultMetrics) => {
     if (feedbackTimerRef.current !== null) {
       window.clearTimeout(feedbackTimerRef.current);
       feedbackTimerRef.current = null;
     }
 
-    setStatus("finished");
     setPausedFrom(null);
     setIsAnswerLocked(true);
     answerLockedRef.current = true;
     setFeedback(null);
-  }
+    void persistResult(metrics);
+  }, [persistResult]);
+
+  const handleManualFinish = useCallback(() => {
+    const answeredCount = correctCount + wrongCount;
+    finishExercise({
+      score: memoryScore,
+      correctCount,
+      wrongCount,
+      successRate: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0,
+      durationSeconds: Math.max(0, Math.round((Date.now() - exerciseStartedAtRef.current) / 1000)),
+    });
+  }, [correctCount, finishExercise, memoryScore, wrongCount]);
 
   function pauseExercise(eventTimestamp: number) {
     if (
@@ -287,6 +330,9 @@ export default function NewCardMemoryExerciseClient() {
     );
     const isCorrect = card.id === addedCard.id;
     const gainedScore = isCorrect ? CORRECT_SCORE : -WRONG_PENALTY;
+    const nextCorrectCount = correctCount + (isCorrect ? 1 : 0);
+    const nextWrongCount = wrongCount + (isCorrect ? 0 : 1);
+    const nextMemoryScore = isCorrect ? memoryScore + CORRECT_SCORE : Math.max(0, memoryScore - WRONG_PENALTY);
 
     setLastResponseTime(responseTimeMs);
     setFeedback(isCorrect ? "correct" : "wrong");
@@ -313,7 +359,13 @@ export default function NewCardMemoryExerciseClient() {
 
     feedbackTimerRef.current = window.setTimeout(() => {
       if (roundIndex + 1 >= TOTAL_ROUNDS) {
-        finishExercise();
+        finishExercise({
+          score: nextMemoryScore,
+          correctCount: nextCorrectCount,
+          wrongCount: nextWrongCount,
+          successRate: Math.round((nextCorrectCount / TOTAL_ROUNDS) * 100),
+          durationSeconds: Math.max(0, Math.round((Date.now() - exerciseStartedAtRef.current) / 1000)),
+        });
         return;
       }
 
@@ -341,8 +393,10 @@ export default function NewCardMemoryExerciseClient() {
     setLastResponseTime(null);
     setAnswerHistory([]);
     setPausedFrom(null);
+    setSaveError("");
     setIsAnswerLocked(false);
     answerLockedRef.current = false;
+    pendingResultRef.current = null;
   }
 
   function changeLevel(level: number) {
@@ -418,7 +472,7 @@ export default function NewCardMemoryExerciseClient() {
                   onClick={() => changeLevel(level.level)}
                   disabled={status !== "idle" && status !== "finished"}
                   className={[
-                    "rounded-xl border px-4 py-2 text-sm font-black transition",
+                    "min-h-11 rounded-xl border px-4 py-2 text-sm font-black transition",
                     selectedLevel === level.level
                       ? "border-indigo-600 bg-indigo-600 text-white shadow"
                       : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50",
@@ -445,7 +499,7 @@ export default function NewCardMemoryExerciseClient() {
                   onClick={() => changeDuration(duration)}
                   disabled={status !== "idle" && status !== "finished"}
                   className={[
-                    "rounded-xl border px-4 py-2 text-sm font-black transition",
+                    "min-h-11 rounded-xl border px-4 py-2 text-sm font-black transition",
                     memoryDuration === duration
                       ? "border-fuchsia-600 bg-fuchsia-600 text-white shadow"
                       : "border-slate-200 bg-white text-slate-700 hover:border-fuchsia-300 hover:bg-fuchsia-50",
@@ -510,7 +564,7 @@ export default function NewCardMemoryExerciseClient() {
                   <button
                     type="button"
                     onClick={(event) => resumeExercise(event.timeStamp)}
-                    className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black text-white shadow transition hover:bg-emerald-700 active:scale-[0.98]"
+                    className="min-h-11 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black text-white shadow transition hover:bg-emerald-700 active:scale-[0.98]"
                   >
                     Devam Et
                   </button>
@@ -521,7 +575,7 @@ export default function NewCardMemoryExerciseClient() {
                     <button
                       type="button"
                       onClick={(event) => pauseExercise(event.timeStamp)}
-                      className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-black text-amber-700 transition hover:bg-amber-100"
+                      className="min-h-11 rounded-xl border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-black text-amber-700 transition hover:bg-amber-100"
                     >
                       Durdur
                     </button>
@@ -530,8 +584,8 @@ export default function NewCardMemoryExerciseClient() {
 
                 <button
                   type="button"
-                  onClick={finishExercise}
-                  className="rounded-xl border border-rose-300 bg-white px-5 py-2.5 text-sm font-black text-rose-600 transition hover:bg-rose-50"
+                  onClick={handleManualFinish}
+                  className="min-h-11 rounded-xl border border-rose-300 bg-white px-5 py-2.5 text-sm font-black text-rose-600 transition hover:bg-rose-50"
                 >
                   Bitir
                 </button>
@@ -679,6 +733,26 @@ export default function NewCardMemoryExerciseClient() {
                     </p>
                   </div>
                 )}
+            </div>
+          </div>
+        )}
+
+        {(status === "saving" || status === "save-error") && (
+          <div className="px-5 py-12 text-center sm:px-7">
+            <div className="mx-auto max-w-xl rounded-3xl border border-indigo-200 bg-indigo-50 p-8">
+              <h2 className="text-2xl font-black text-indigo-900">
+                {status === "saving" ? "Sonuç kaydediliyor..." : "Sonuç kaydedilemedi"}
+              </h2>
+              {saveError && <p className="mt-3 text-sm font-bold text-rose-700" role="alert">{saveError}</p>}
+              {status === "save-error" && (
+                <button
+                  type="button"
+                  onClick={() => { if (pendingResultRef.current) void persistResult(pendingResultRef.current); }}
+                  className="mt-6 min-h-11 rounded-xl bg-indigo-700 px-7 py-3 text-sm font-black text-white shadow transition hover:bg-indigo-800"
+                >
+                  Tekrar Dene
+                </button>
+              )}
             </div>
           </div>
         )}

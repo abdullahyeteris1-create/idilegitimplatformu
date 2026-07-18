@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 
-type GameStatus = "idle" | "running" | "finished";
+type GameStatus = "idle" | "running" | "saving" | "save-error" | "finished";
 type FeedbackType = "correct" | "wrong" | null;
 
 type ColorOption = {
@@ -23,6 +24,14 @@ type AnswerRecord = {
   correctLabel: string;
   isCorrect: boolean;
   responseTimeMs: number;
+};
+
+type FinalResultMetrics = {
+  score: number;
+  correctCount: number;
+  wrongCount: number;
+  successRate: number;
+  durationSeconds: number;
 };
 
 const COLORS: ColorOption[] = [
@@ -86,8 +95,11 @@ export default function RenkUyumuExerciseClient() {
   const [lastResponseTime, setLastResponseTime] = useState<number | null>(null);
   const [answerHistory, setAnswerHistory] = useState<AnswerRecord[]>([]);
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const questionStartedAtRef = useRef(0);
+  const exerciseStartedAtRef = useRef(0);
+  const pendingResultRef = useRef<FinalResultMetrics | null>(null);
   const answerLockedRef = useRef(false);
   const nextQuestionTimerRef = useRef<number | null>(null);
 
@@ -134,12 +146,29 @@ export default function RenkUyumuExerciseClient() {
     [choiceCount],
   );
 
-  const finishExercise = useCallback(() => {
+  const persistResult = useCallback(async (metrics: FinalResultMetrics) => {
+    pendingResultRef.current = metrics;
+    setSaveError("");
+    setStatus("saving");
+    try {
+      await saveExerciseResultSecure({
+        exerciseType: "color-match",
+        exerciseTitle: "Renk Uyumu",
+        ...metrics,
+      });
+      setStatus("finished");
+    } catch {
+      setSaveError("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      setStatus("save-error");
+    }
+  }, []);
+
+  const finishExercise = useCallback((metrics: FinalResultMetrics) => {
     answerLockedRef.current = true;
     setIsAnswerLocked(true);
-    setStatus("finished");
     setFeedback(null);
-  }, []);
+    void persistResult(metrics);
+  }, [persistResult]);
 
   const handleAnswer = useCallback(
     (selectedChoiceIndex: number, eventTimestamp: number) => {
@@ -156,6 +185,9 @@ export default function RenkUyumuExerciseClient() {
         eventTimestamp - questionStartedAtRef.current,
       );
       const isCorrect = selectedChoice.id === question.inkColor.id;
+      const nextCorrectCount = correctCount + (isCorrect ? 1 : 0);
+      const nextWrongCount = wrongCount + (isCorrect ? 0 : 1);
+      const nextScore = isCorrect ? score + CORRECT_SCORE : Math.max(0, score - WRONG_SCORE);
 
       setLastResponseTime(responseTimeMs);
       setFeedback(isCorrect ? "correct" : "wrong");
@@ -180,8 +212,15 @@ export default function RenkUyumuExerciseClient() {
       ]);
 
       if (questionIndex + 1 >= TOTAL_QUESTIONS) {
+        const finalMetrics: FinalResultMetrics = {
+          score: nextScore,
+          correctCount: nextCorrectCount,
+          wrongCount: nextWrongCount,
+          successRate: Math.round((nextCorrectCount / TOTAL_QUESTIONS) * 100),
+          durationSeconds: Math.max(0, Math.round((Date.now() - exerciseStartedAtRef.current) / 1000)),
+        };
         nextQuestionTimerRef.current = window.setTimeout(() => {
-          finishExercise();
+          finishExercise(finalMetrics);
         }, FEEDBACK_DURATION_MS);
         return;
       }
@@ -190,7 +229,7 @@ export default function RenkUyumuExerciseClient() {
         beginQuestion(questionIndex + 1);
       }, FEEDBACK_DURATION_MS);
     },
-    [beginQuestion, finishExercise, question, questionIndex, status],
+    [beginQuestion, correctCount, finishExercise, question, questionIndex, score, status, wrongCount],
   );
 
   useEffect(() => {
@@ -235,10 +274,13 @@ export default function RenkUyumuExerciseClient() {
     setStatus("running");
     setFeedback(null);
     setLastResponseTime(null);
+    setSaveError("");
     setQuestion(createQuestion(choiceCount));
     setQuestionIndex(0);
     answerLockedRef.current = false;
     setIsAnswerLocked(false);
+    pendingResultRef.current = null;
+    exerciseStartedAtRef.current = Date.now();
 
     window.requestAnimationFrame((timestamp) => {
       questionStartedAtRef.current = timestamp;
@@ -278,9 +320,11 @@ export default function RenkUyumuExerciseClient() {
     setAnswerHistory([]);
     setFeedback(null);
     setLastResponseTime(null);
+    setSaveError("");
     setStatus("idle");
     answerLockedRef.current = false;
     setIsAnswerLocked(false);
+    pendingResultRef.current = null;
   }
 
   return (
@@ -322,7 +366,7 @@ export default function RenkUyumuExerciseClient() {
                   onClick={() => changeLevel(level)}
                   disabled={status === "running"}
                   className={[
-                    "rounded-xl border px-4 py-2 text-sm font-black transition",
+                    "min-h-11 rounded-xl border px-4 py-2 text-sm font-black transition",
                     selectedLevel === level
                       ? "border-violet-600 bg-violet-600 text-white shadow"
                       : "border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50",
@@ -447,6 +491,26 @@ export default function RenkUyumuExerciseClient() {
               <p className="mt-3 text-center text-xs text-slate-400">
                 Klavye desteği: 1–{choiceCount} tuşlarını kullanabilirsin.
               </p>
+            </div>
+          </div>
+        )}
+
+        {(status === "saving" || status === "save-error") && (
+          <div className="px-5 py-12 text-center sm:px-7">
+            <div className="mx-auto max-w-xl rounded-3xl border border-violet-200 bg-violet-50 p-8">
+              <h2 className="text-2xl font-black text-violet-900">
+                {status === "saving" ? "Sonuç kaydediliyor..." : "Sonuç kaydedilemedi"}
+              </h2>
+              {saveError && <p className="mt-3 text-sm font-bold text-rose-700" role="alert">{saveError}</p>}
+              {status === "save-error" && (
+                <button
+                  type="button"
+                  onClick={() => { if (pendingResultRef.current) void persistResult(pendingResultRef.current); }}
+                  className="mt-6 min-h-11 rounded-xl bg-violet-700 px-7 py-3 text-sm font-black text-white shadow transition hover:bg-violet-800"
+                >
+                  Tekrar Dene
+                </button>
+              )}
             </div>
           </div>
         )}
