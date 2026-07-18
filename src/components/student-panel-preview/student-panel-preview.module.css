@@ -29,4 +29,28 @@
 .categoryCard>.progress{margin-bottom:0}
 .categoryCard>a{margin-top:auto}
 
+.recentSection{margin-top:12px;border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(160deg,#09152a,#071120)}
+.recentSectionTitle{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.recentSectionTitle h2{font-size:17px;margin:0 0 5px}
+.recentSectionTitle p{font-size:11px;color:var(--muted);margin:0}
+.recentSectionTitle>a,.recentResultCard>a{min-height:44px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:11px;font-weight:700;padding:0 14px;background:#101b30;flex-shrink:0}
+.recentSectionTitle>a:hover,.recentResultCard>a:hover{background:#1a2a47;border-color:#52688c}
+.recentSectionTitle svg,.recentResultCard svg{width:15px}
+.recentResultsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.recentResultCard{min-width:0;border:1px solid #293958;border-radius:14px;padding:14px;background:linear-gradient(145deg,#101b36,#0b1529);display:flex;flex-direction:column;gap:12px}
+.recentResultCard h3{font-size:14px;line-height:1.4;margin:0;overflow-wrap:anywhere}
+.recentResultCard time{display:block;margin-top:5px;color:var(--muted);font-size:10px}
+.resultMetrics{display:flex;flex-wrap:wrap;gap:7px;font-size:10px;color:var(--muted)}
+.resultMetrics span{border:1px solid var(--line);border-radius:999px;padding:5px 8px;background:#ffffff08}
+.resultMetrics b{color:var(--text)}
+.recentResultCard>a{width:100%;margin-top:auto}
+.resultState,.readingEmpty{color:var(--muted);font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.resultState{margin:0;border:1px dashed var(--line);border-radius:13px;padding:16px;text-align:center}
+.readingEmpty{margin:0 0 12px}
+.light .recentSection,.light .recentResultCard{background:#fff;color:#172033}
+.light .recentSectionTitle>a,.light .recentResultCard>a{background:#eef2f8;color:#172033;border-color:#9eacc0}
+.light .resultMetrics b{color:#172033}
+
+@media(max-width:1250px){.recentResultsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.dashboardGrid{gap:12px}.categoriesSection{padding:15px}.categoryCard{padding:16px}}
+@media(max-width:560px){.recentSection{padding:14px}.recentSectionTitle{align-items:flex-start}.recentSectionTitle>a{width:44px;padding:0;font-size:0}.recentResultsGrid{grid-template-columns:1fr}}

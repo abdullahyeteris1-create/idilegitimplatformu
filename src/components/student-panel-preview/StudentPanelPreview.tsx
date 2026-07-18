@@ -1,15 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
+import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
+import { getResultsByStudent, getResultsByStudentWithRemote } from "@/lib/results/resultStorage";
+import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import { categories, navItems, stats, type Category, type NavItem } from "./data";
 import { Icon } from "./icons";
 import styles from "./student-panel-preview.module.css";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
-type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; resolved: boolean };
+type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
+type PreviewResultsState = {
+  status: "loading" | "ready";
+  results: ExerciseResult[];
+  readingTests: ReadingTestResult[];
+};
 type DailyTaskState =
   | { status: "loading" }
   | { status: "error" }
@@ -20,8 +28,61 @@ const FALLBACK_STUDENT_IDENTITY: PreviewStudentIdentity = {
   name: "Öğrenci",
   classLabel: "Sınıf bilgisi yok",
   studentId: null,
+  username: null,
   resolved: false,
 };
+
+const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
+  "square-vision": "/egzersizler/kare-gorme-alani",
+  tachistoscope: "/egzersizler/takistoskop",
+  "similar-words": "/egzersizler/benzer-kelimeler",
+  "block-reading": "/egzersizler/blok-okuma",
+  "shadow-reading": "/egzersizler/golgeleme",
+  "focused-reading": "/egzersizler/odakli-okuma",
+  "two-side-focus": "/egzersizler/cift-tarafli-odak",
+  "attention-maze": "/egzersizler/dikkat-labirenti",
+  "memory-game": "/egzersizler/hafiza-gelistirme",
+  "word-finding": "/egzersizler/kelime-bulma",
+  "eye-muscle": "/egzersizler/goz-kaslari",
+  "reading-comprehension": "/egzersizler/anlama-testi",
+  "letter-number-counting-focus": "/egzersizler/harf-rakam-sayma",
+  "card-matching": "/egzersizler/kart-eslestirme",
+  "visual-puzzle": "/egzersizler/gorsel-puzzle",
+  "eye-brain": "/egzersizler/goz-beyin",
+  "word-guess": "/egzersizler/kelime-tahmin",
+  "catch-same": "/egzersizler/ayni-olani-yakala",
+  hangman: "/egzersizler/adam-asmaca",
+  "grouping-reading": "/egzersizler/gruplama-calismasi",
+  "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
+  "color-match": "/egzersizler/renk-uyumu",
+};
+
+function toTimestamp(value: string): number {
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function sortNewestFirst<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((left, right) => toTimestamp(right.date) - toTimestamp(left.date));
+}
+
+function clampPercentage(value: number): number {
+  return Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
+}
+
+function calculateAverageSuccess(results: ExerciseResult[]): number {
+  const validValues = results.map((result) => result.successRate).filter(Number.isFinite);
+  if (validValues.length === 0) return 0;
+
+  return clampPercentage(validValues.reduce((total, value) => total + value, 0) / validValues.length);
+}
+
+function formatResultDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Tarih bilgisi yok";
+
+  return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
+}
 
 function Progress({ value, label }: { value: number; label: string }) {
   return <div className={styles.progress} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}><span style={{ "--progress": `${value}%` } as React.CSSProperties} /></div>;
@@ -184,8 +245,49 @@ function DailyTask({ studentId, studentResolved }: { studentId: string | null; s
   return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="ready"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyTaskTitle}>{selectedItem.exerciseTitle}</p><div className={styles.dailyTaskMeta}><small><b>Durum:</b> {statusLabel}</small>{durationMinutes !== null && <small><b>Süre:</b> {durationMinutes} dakika</small>}{selectedItem.assignedTextTitle && <small><b>Metin:</b> {selectedItem.assignedTextTitle}</small>}{selectedItem.teacherNote && <small><b>Öğretmen notu:</b> {selectedItem.teacherNote}</small>}</div><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><div className={styles.astronaut}>👨‍🚀</div><Link href={itemHref}>Göreve Devam Et <Icon name="arrow"/></Link></section>;
 }
 
-function ReadingTest() {
-  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><div className={styles.testBody}><div className={styles.scoreRing}><strong>293</strong><span>kelime/dk</span></div><div><p>Anlama <b>%100</b></p><small>16 Tem 2026</small></div></div><Link href="/sonuc" className={styles.subtleButton}>Sonuçları Gör <Icon name="bookOpen"/></Link></section>;
+function RecentResults({ results, loading }: { results: ExerciseResult[]; loading: boolean }) {
+  return (
+    <section className={styles.recentSection} aria-labelledby="recent-results-title">
+      <div className={styles.recentSectionTitle}>
+        <div><h2 id="recent-results-title">Son Çalışmalarım</h2><p>En yeni tamamlanan çalışmaların.</p></div>
+        <Link href="/sonuc">Tüm Sonuçlar <Icon name="arrow"/></Link>
+      </div>
+      {loading ? (
+        <p className={styles.resultState}>Sonuçlar yükleniyor...</p>
+      ) : results.length === 0 ? (
+        <p className={styles.resultState}>Henüz tamamlanmış çalışma yok</p>
+      ) : (
+        <div className={styles.recentResultsGrid}>
+          {results.map((result) => {
+            const title = result.exerciseTitle?.trim() || "Çalışma";
+            const successRate = clampPercentage(result.successRate);
+            const exerciseHref = EXERCISE_ROUTE_BY_TYPE[result.exerciseType] ?? "/egzersizler";
+
+            return (
+              <article className={styles.recentResultCard} key={result.id}>
+                <div><h3>{title}</h3><time dateTime={result.date}>{formatResultDate(result.date)}</time></div>
+                <div className={styles.resultMetrics}><span>Başarı <b>%{successRate}</b></span><span>Puan <b>{Number.isFinite(result.score) ? result.score : 0}</b></span></div>
+                <Link href={exerciseHref}>Tekrar Aç <Icon name="arrow"/></Link>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ReadingTest({ test, loading }: { test?: ReadingTestResult; loading: boolean }) {
+  if (loading) {
+    return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><p className={styles.readingEmpty}>Sonuçlar yükleniyor...</p></section>;
+  }
+
+  if (!test) {
+    return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><p className={styles.readingEmpty}>Henüz tamamlanmış okuma testi yok.</p><Link href="/egzersizler/anlama-testi" className={styles.subtleButton}>Okuma Testine Başla <Icon name="bookOpen"/></Link></section>;
+  }
+
+  const readingSpeed = Number.isFinite(test.readingSpeedWpm) ? Math.max(0, Math.round(test.readingSpeedWpm)) : 0;
+  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><div className={styles.testBody}><div className={styles.scoreRing}><strong>{readingSpeed}</strong><span>kelime/dk</span></div><div><p>Anlama <b>%{clampPercentage(test.comprehensionScore)}</b></p><small>{formatResultDate(test.date)}</small></div></div><Link href="/sonuc" className={styles.subtleButton}>Sonuçları Gör <Icon name="bookOpen"/></Link></section>;
 }
 
 function Badges({ onDemo }: { onDemo: (message: string) => void }) {
@@ -216,6 +318,7 @@ export function StudentPanelPreview() {
   const [toast, setToast] = useState("");
   const [panel, setPanel] = useState<DemoPanel>(null);
   const [studentIdentity, setStudentIdentity] = useState<PreviewStudentIdentity>(FALLBACK_STUDENT_IDENTITY);
+  const [resultsState, setResultsState] = useState<PreviewResultsState>({ status: "loading", results: [], readingTests: [] });
   const toastTimer = useRef<number | null>(null);
 
   const showToast = (message: string) => {
@@ -238,12 +341,47 @@ export function StudentPanelPreview() {
         name: currentStudent.name?.trim() || FALLBACK_STUDENT_IDENTITY.name,
         classLabel: currentStudent.classLevel?.trim() || currentStudent.className?.trim() || FALLBACK_STUDENT_IDENTITY.classLabel,
         studentId: currentStudent.id?.trim() || null,
+        username: currentStudent.username?.trim() || null,
         resolved: true,
       });
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    if (!studentIdentity.resolved) return;
+
+    let cancelled = false;
+    const loadResults = async () => {
+      if (!studentIdentity.studentId) {
+        setResultsState({ status: "ready", results: [], readingTests: [] });
+        return;
+      }
+
+      setResultsState({ status: "loading", results: [], readingTests: [] });
+      const identityArgs = [studentIdentity.studentId, studentIdentity.name, studentIdentity.username ?? undefined] as const;
+      let results: ExerciseResult[];
+
+      try {
+        const remoteResults = await getResultsByStudentWithRemote(...identityArgs);
+        results = remoteResults.length > 0 ? remoteResults : getResultsByStudent(...identityArgs);
+      } catch {
+        results = getResultsByStudent(...identityArgs);
+      }
+
+      if (cancelled) return;
+      const readingTests = getReadingTestsByStudent(...identityArgs);
+      setResultsState({
+        status: "ready",
+        results: sortNewestFirst(results),
+        readingTests: sortNewestFirst(readingTests),
+      });
+    };
+
+    void loadResults();
+    return () => { cancelled = true; };
+  }, [studentIdentity.name, studentIdentity.resolved, studentIdentity.studentId, studentIdentity.username]);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setPanel(null); };
@@ -254,5 +392,19 @@ export function StudentPanelPreview() {
     };
   }, []);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero onDemo={showToast} studentName={studentIdentity.name}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{stats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask studentId={studentIdentity.studentId} studentResolved={studentIdentity.resolved}/><ReadingTest/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  const resultsLoading = resultsState.status === "loading";
+  const recentResults = useMemo(() => resultsState.results.slice(0, 3), [resultsState.results]);
+  const averageSuccess = useMemo(() => calculateAverageSuccess(resultsState.results), [resultsState.results]);
+  const dashboardStats = useMemo(() => stats.map((stat) => {
+    if (stat.label === "Tamamlanan Egzersiz") {
+      return { ...stat, value: resultsLoading ? "…" : resultsState.results.length.toLocaleString("tr-TR"), note: resultsLoading ? "Sonuçlar yükleniyor" : "Toplam" };
+    }
+    if (stat.label === "Başarı Oranı") {
+      return { ...stat, value: resultsLoading ? "…" : `%${averageSuccess}`, note: resultsLoading ? "Sonuçlar yükleniyor" : resultsState.results.length > 0 ? "Ortalama" : "Henüz sonuç yok" };
+    }
+    return stat;
+  }), [averageSuccess, resultsLoading, resultsState.results.length]);
+  const lastReadingTest = resultsState.readingTests[0];
+
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setLight((value) => !value)} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero onDemo={showToast} studentName={studentIdentity.name}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><RecentResults results={recentResults} loading={resultsLoading}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask studentId={studentIdentity.studentId} studentResolved={studentIdentity.resolved}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)}/>}</>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }
