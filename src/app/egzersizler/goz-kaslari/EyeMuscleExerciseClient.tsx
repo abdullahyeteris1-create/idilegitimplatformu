@@ -109,9 +109,10 @@ export default function GozCalismasiPage() {
   const elapsedTimerRef = useRef<number | null>(null);
   const positionRef = useRef<Position>({ x: 50, y: 50 });
 
-  const [isRunning, setIsRunning] = useState(false);
+    const [isRunning, setIsRunning] = useState(false);
   const [speed, setSpeed] = useState(300);
   const [selectedEmoji, setSelectedEmoji] = useState("⭐");
+  const [baseLevel, setBaseLevel] = useState(1);
   const [level, setLevel] = useState(1);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [round, setRound] = useState(0);
@@ -147,14 +148,16 @@ export default function GozCalismasiPage() {
     setRound((previousRound) => previousRound + 1);
   }
 
-  function startExercise(): void {
+    function startExercise(): void {
     clearTimers();
 
     setIsRunning(true);
+    const startLevel = baseLevel;
+    setLevel(startLevel);
     setElapsedSeconds(0);
     setRound(0);
 
-    const startPosition = createRandomPosition(level, {
+    const startPosition = createRandomPosition(startLevel, {
       x: 50,
       y: 50,
     });
@@ -170,7 +173,7 @@ export default function GozCalismasiPage() {
     setIsVisible(false);
   }
 
-  function resetExercise(): void {
+    function resetExercise(): void {
     clearTimers();
 
     const centerPosition = { x: 50, y: 50 };
@@ -178,6 +181,7 @@ export default function GozCalismasiPage() {
     positionRef.current = centerPosition;
 
     setIsRunning(false);
+    setLevel(baseLevel);
     setElapsedSeconds(0);
     setRound(0);
     setPosition(centerPosition);
@@ -202,8 +206,18 @@ export default function GozCalismasiPage() {
       });
     }, speed);
 
-    elapsedTimerRef.current = window.setInterval(() => {
-      setElapsedSeconds((previousSeconds) => previousSeconds + 1);
+        elapsedTimerRef.current = window.setInterval(() => {
+      setElapsedSeconds((previousSeconds) => {
+        const newSeconds = previousSeconds + 1;
+        const newAutoLevel = Math.min(baseLevel + Math.floor(newSeconds / 60), 6);
+        setLevel((currentLevel) => {
+          if (newAutoLevel !== currentLevel) {
+            return newAutoLevel;
+          }
+          return currentLevel;
+        });
+        return newSeconds;
+      });
     }, 1000);
 
     return () => {
@@ -211,7 +225,7 @@ export default function GozCalismasiPage() {
     };
   }, [isRunning, speed, level]);
 
-  useEffect(() => {
+    useEffect(() => {
     return () => {
       clearTimers();
     };
@@ -226,7 +240,7 @@ export default function GozCalismasiPage() {
       settings={(
         <div className="grid gap-2 sm:grid-cols-3">
           <label className="grid gap-2 text-sm font-bold"><span>Hız</span><select value={speed} disabled={isRunning} onChange={(event) => setSpeed(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 px-3">{SPEED_OPTIONS.map((value) => <option key={value} value={value}>{value} ms</option>)}</select></label>
-          <label className="grid gap-2 text-sm font-bold"><span>Seviye</span><select value={level} disabled={isRunning} onChange={(event) => setLevel(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 px-3">{LEVEL_OPTIONS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-bold"><span>Seviye</span><select value={baseLevel} disabled={isRunning} onChange={(event) => { const value = Number(event.target.value); setBaseLevel(value); setLevel(value); }} className="min-h-11 rounded-xl border border-slate-300 px-3">{LEVEL_OPTIONS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
           <label className="grid gap-2 text-sm font-bold"><span>Simge</span><select value={selectedEmoji} disabled={isRunning} onChange={(event) => setSelectedEmoji(event.target.value)} className="min-h-11 rounded-xl border border-slate-300 px-3">{EMOJI_OPTIONS.map((option) => <option key={option.label} value={option.value}>{option.label}</option>)}</select></label>
         </div>
       )}

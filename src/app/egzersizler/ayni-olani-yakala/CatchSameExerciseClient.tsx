@@ -153,13 +153,14 @@ export function CatchSameExerciseClient() {
       }
     }
 
-    setIsChanging(true);
+        setIsChanging(true);
 
     transitionTimeoutRef.current = setTimeout(() => {
       if (statusRef.current !== "running") return;
 
-            previousItemRef.current = oldCurrent === "Hazir" ? null : oldCurrent;
+      previousItemRef.current = oldCurrent === "Hazir" ? null : oldCurrent;
       currentItemRef.current = nextItem;
+      clickedThisRoundRef.current = false;
       setCurrentItem(nextItem);
       setRoundCount((value) => value + 1);
       setItemVersion((value) => value + 1);
