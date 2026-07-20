@@ -5,13 +5,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
-  createStudentWithRemote,
   generateStudentPassword,
   generateUsernameFromName,
   isStudentUsernameAvailable,
-  updateStudentWelcomeEmailStatus,
+  syncStudentInLocalCache,
 } from "@/lib/students/studentStorage";
-import type { EducationStatus, StudentStatus } from "@/lib/students/types";
+import {
+  getIstanbulDateString,
+  isEducationDateRangeValid,
+} from "@/lib/students/studentAccessDates";
+import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,6 +22,20 @@ type ResultMessage = {
   tone: "success" | "warning";
   text: string;
 };
+
+type StudentApiResponse = {
+  ok: boolean;
+  message?: string;
+  student?: Student;
+};
+
+async function readStudentApiResponse(response: Response): Promise<StudentApiResponse> {
+  try {
+    return (await response.json()) as StudentApiResponse;
+  } catch {
+    return { ok: false };
+  }
+}
 
 export function NewStudentFormClient() {
   const router = useRouter();
@@ -31,6 +48,8 @@ export function NewStudentFormClient() {
   const [parentEmail, setParentEmail] = useState("");
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(false);
   const [birthDate, setBirthDate] = useState("");
+  const [educationStartDate, setEducationStartDate] = useState(() => getIstanbulDateString());
+  const [accessEndDate, setAccessEndDate] = useState("");
   const [status, setStatus] = useState<StudentStatus>("active");
   const [educationStatus, setEducationStatus] = useState<EducationStatus>("general");
   const [educationLevel, setEducationLevel] = useState<EducationLevel | "">("");
@@ -41,6 +60,10 @@ export function NewStudentFormClient() {
   const [isCompleted, setIsCompleted] = useState(false);
 
   const handleCreate = async () => {
+    if (isSubmitting || isCompleted) {
+      return;
+    }
+
     setError("");
     setResultMessage(null);
 
@@ -51,6 +74,17 @@ export function NewStudentFormClient() {
 
     if (!educationLevel) {
       setError("Egitim duzeyi secimi zorunludur.");
+      return;
+    }
+
+    if (!educationStartDate || !accessEndDate) {
+      setError("Başlangıç ve bitiş tarihlerini seçin.");
+      return;
+    }
+
+    const dateRange = isEducationDateRangeValid(educationStartDate, accessEndDate);
+    if (!dateRange.valid) {
+      setError(dateRange.message);
       return;
     }
 
@@ -71,34 +105,49 @@ export function NewStudentFormClient() {
       return;
     }
 
+    const submittedPassword = password;
+
     setIsSubmitting(true);
 
-    let created: Awaited<ReturnType<typeof createStudentWithRemote>> = null;
+    let created: Student;
 
     try {
-      created = await createStudentWithRemote({
-        name,
-        username,
-        password,
-        classLevel,
-        parentName,
-        parentPhone,
-        parentEmail: normalizedParentEmail,
-        birthDate,
-        status,
-        educationStatus,
-        educationLevel: educationLevel || undefined,
-        notes,
-        welcomeEmailStatus: sendWelcomeEmail ? undefined : "not_requested",
+      const response = await fetch("/api/admin/students", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          username,
+          password: submittedPassword,
+          classLevel,
+          parentName,
+          parentPhone,
+          parentEmail: normalizedParentEmail,
+          birthDate,
+          status,
+          educationStatus,
+          educationLevel,
+          notes,
+          educationStartDate,
+          accessEndDate,
+          welcomeEmailStatus: sendWelcomeEmail ? undefined : "not_requested",
+        }),
       });
+      const result = await readStudentApiResponse(response);
+
+      if (!response.ok || !result.ok || !result.student) {
+        setError(result.message ?? "Öğrenci Supabase'e kaydedilemedi. Lütfen tekrar deneyin.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      created = result.student;
+      syncStudentInLocalCache(created);
     } catch {
       setError("Öğrenci Supabase'e kaydedilemedi. Lütfen tekrar deneyin.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!created) {
-      setError("Ogrenci olusturulamadi. Kullanici adi kontrol et.");
       setIsSubmitting(false);
       return;
     }
@@ -126,7 +175,7 @@ export function NewStudentFormClient() {
           studentName: created.name,
           parentEmail: normalizedParentEmail,
           username: created.username,
-          temporaryPassword: created.password,
+              temporaryPassword: submittedPassword,
         }),
       });
 
@@ -136,11 +185,21 @@ export function NewStudentFormClient() {
     }
 
     try {
-      await updateStudentWelcomeEmailStatus(
-        created.id,
-        emailSent ? "sent" : "failed",
-        emailSent ? new Date().toISOString() : undefined,
-      );
+      const statusResponse = await fetch(`/api/admin/students/${encodeURIComponent(created.id)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          welcomeEmailStatus: emailSent ? "sent" : "failed",
+          welcomeEmailSentAt: emailSent ? new Date().toISOString() : "",
+        }),
+      });
+      const statusResult = await readStudentApiResponse(statusResponse);
+      if (statusResponse.ok && statusResult.ok && statusResult.student) {
+        syncStudentInLocalCache(statusResult.student);
+      }
     } catch {
       // Öğrenci kaydı korunur; e-posta sonucu kullanıcıya yine bildirilir.
     }
@@ -280,6 +339,29 @@ export function NewStudentFormClient() {
             value={birthDate}
             onChange={(event) => setBirthDate(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
+          Eğitim Başlangıç Tarihi (Zorunlu)
+          <input
+            type="date"
+            value={educationStartDate}
+            onChange={(event) => setEducationStartDate(event.target.value)}
+            required
+            className="min-h-[56px] min-w-0 rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
+          Erişim Bitiş Tarihi (Zorunlu)
+          <input
+            type="date"
+            value={accessEndDate}
+            min={educationStartDate || undefined}
+            onChange={(event) => setAccessEndDate(event.target.value)}
+            required
+            className="min-h-[56px] min-w-0 rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
           />
         </label>
 

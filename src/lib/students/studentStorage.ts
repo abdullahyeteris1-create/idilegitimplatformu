@@ -257,7 +257,7 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
   return payload;
 }
 
-function syncStudentInLocalCache(syncedStudent: Student, previousUsername?: string): void {
+export function syncStudentInLocalCache(syncedStudent: Student, previousUsername?: string): void {
   const normalizedSyncedUsername = normalizeLookup(syncedStudent.username);
   const normalizedPreviousUsername = normalizeLookup(previousUsername);
   const currentStudents = getStudents();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/Button";
 import { EDUCATION_LEVEL_LABELS, EDUCATION_LEVELS, type EducationLevel } from "@/lib/assignments/educationLevels";
 import {
@@ -9,34 +9,87 @@ import {
   generateUsernameFromName,
   getStudentById,
   isStudentUsernameAvailable,
-  updateStudent,
+  syncStudentInLocalCache,
 } from "@/lib/students/studentStorage";
-import type { EducationStatus, StudentStatus } from "@/lib/students/types";
+import { isEducationDateRangeValid } from "@/lib/students/studentAccessDates";
+import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type StudentApiResponse = {
+  ok: boolean;
+  message?: string;
+  student?: Student;
+};
+
+async function readStudentApiResponse(response: Response): Promise<StudentApiResponse> {
+  try {
+    return (await response.json()) as StudentApiResponse;
+  } catch {
+    return { ok: false };
+  }
+}
+
+function subscribeToHydration(): () => void {
+  return () => undefined;
+}
 
 export function EditStudentFormClient() {
   const router = useRouter();
   const params = useParams<{ studentId: string }>();
   const studentId = params.studentId;
+  const isHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
-  const student = useMemo(() => getStudentById(studentId), [studentId]);
+  if (!isHydrated) {
+    return (
+      <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
+        Öğrenci bilgileri yükleniyor...
+      </p>
+    );
+  }
 
-  const [name, setName] = useState(student?.name ?? "");
-  const [username, setUsername] = useState(student?.username ?? "");
-  const [password, setPassword] = useState(student?.password ?? "");
-  const [classLevel, setClassLevel] = useState(student?.classLevel ?? "");
-  const [parentName, setParentName] = useState(student?.parentName ?? "");
-  const [parentPhone, setParentPhone] = useState(student?.parentPhone ?? "");
-  const [parentEmail, setParentEmail] = useState(student?.parentEmail ?? student?.email ?? "");
-  const [birthDate, setBirthDate] = useState(student?.birthDate ?? "");
-  const [status, setStatus] = useState<StudentStatus>(student?.status ?? "active");
-  const [educationStatus, setEducationStatus] = useState<EducationStatus>(student?.educationStatus ?? "general");
-  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">(student?.educationLevel ?? "");
-  const [notes, setNotes] = useState(student?.notes ?? "");
+  const student = getStudentById(studentId);
+  if (!student) {
+    return (
+      <div className="grid gap-3">
+        <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">Ogrenci bulunamadi.</p>
+        <Button type="button" variant="secondary" onClick={() => router.push("/ogretmen") }>
+          Geri Don
+        </Button>
+      </div>
+    );
+  }
+
+  return <EditStudentForm studentId={studentId} student={student} />;
+}
+
+function EditStudentForm({ studentId, student }: { studentId: string; student: Student }) {
+  const router = useRouter();
+
+  const [name, setName] = useState(student.name);
+  const [username, setUsername] = useState(student.username);
+  const [password, setPassword] = useState(student.password);
+  const [classLevel, setClassLevel] = useState(student.classLevel ?? "");
+  const [parentName, setParentName] = useState(student.parentName ?? "");
+  const [parentPhone, setParentPhone] = useState(student.parentPhone ?? "");
+  const [parentEmail, setParentEmail] = useState(student.parentEmail ?? student.email ?? "");
+  const [birthDate, setBirthDate] = useState(student.birthDate ?? "");
+  const [educationStartDate, setEducationStartDate] = useState(student.educationStartDate ?? "");
+  const [accessEndDate, setAccessEndDate] = useState(student.accessEndDate ?? "");
+  const [status, setStatus] = useState<StudentStatus>(student.status ?? "active");
+  const [educationStatus, setEducationStatus] = useState<EducationStatus>(student.educationStatus ?? "general");
+  const [educationLevel, setEducationLevel] = useState<EducationLevel | "">(student.educationLevel ?? "");
+  const [notes, setNotes] = useState(student.notes ?? "");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setError("");
+
     if (!name.trim() || !username.trim() || !password.trim()) {
       setError("Ad soyad, kullanici adi ve sifre zorunludur.");
       return;
@@ -57,39 +110,58 @@ export function EditStudentFormClient() {
       return;
     }
 
-    const updated = updateStudent(studentId, {
-      name,
-      username,
-      password,
-      classLevel,
-      parentName,
-      parentPhone,
-      parentEmail,
-      birthDate,
-      status,
-      educationStatus,
-      educationLevel,
-      notes,
-    });
+    const dateRange = isEducationDateRangeValid(
+      educationStartDate || null,
+      accessEndDate || null,
+    );
+    if (!dateRange.valid) {
+      setError(dateRange.message);
+      return;
+    }
 
-    if (!updated) {
-      setError("Ogrenci guncellenemedi. Kullanici adi veya kayit kontrol et.");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/admin/students/${encodeURIComponent(studentId)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          username,
+          password,
+          classLevel,
+          parentName,
+          parentPhone,
+          parentEmail,
+          birthDate,
+          status,
+          educationStatus,
+          educationLevel,
+          notes,
+          educationStartDate,
+          accessEndDate,
+        }),
+      });
+      const result = await readStudentApiResponse(response);
+
+      if (!response.ok || !result.ok || !result.student) {
+        setError(result.message ?? "Öğrenci güncellenemedi. Lütfen tekrar deneyin.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      syncStudentInLocalCache(result.student, student.username);
+    } catch {
+      setError("Öğrenci güncellenemedi. Lütfen tekrar deneyin.");
+      setIsSubmitting(false);
       return;
     }
 
     router.push("/ogretmen");
   };
-
-  if (!student) {
-    return (
-      <div className="grid gap-3">
-        <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">Ogrenci bulunamadi.</p>
-        <Button type="button" variant="secondary" onClick={() => router.push("/ogretmen") }>
-          Geri Don
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="grid gap-4">
@@ -190,6 +262,27 @@ export function EditStudentFormClient() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
+          Eğitim Başlangıç Tarihi
+          <input
+            type="date"
+            value={educationStartDate}
+            onChange={(event) => setEducationStartDate(event.target.value)}
+            className="min-h-[56px] min-w-0 rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
+          Erişim Bitiş Tarihi
+          <input
+            type="date"
+            value={accessEndDate}
+            min={educationStartDate || undefined}
+            onChange={(event) => setAccessEndDate(event.target.value)}
+            className="min-h-[56px] min-w-0 rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-semibold">
           Durum
           <select
             value={status}
@@ -242,8 +335,8 @@ export function EditStudentFormClient() {
       {error ? <p className="text-sm font-semibold text-[var(--bad)]">{error}</p> : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button type="button" onClick={handleUpdate}>
-          Guncelle
+        <Button type="button" onClick={() => void handleUpdate()} disabled={isSubmitting}>
+          {isSubmitting ? "Kaydediliyor..." : "Guncelle"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/ogretmen") }>
           Geri Don
