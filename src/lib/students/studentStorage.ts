@@ -188,6 +188,30 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
         : row.assignmentMode === "manual" || row.assignmentMode === "ai_assisted" || row.assignmentMode === "automatic"
           ? row.assignmentMode
           : "automatic",
+    educationStartDate:
+      typeof row.education_start_date === "string"
+        ? row.education_start_date
+        : typeof row.educationStartDate === "string"
+          ? row.educationStartDate
+          : null,
+    accessEndDate:
+      typeof row.access_end_date === "string"
+        ? row.access_end_date
+        : typeof row.accessEndDate === "string"
+          ? row.accessEndDate
+          : null,
+    sessionVersion:
+      typeof row.session_version === "number" && Number.isFinite(row.session_version)
+        ? row.session_version
+        : typeof row.sessionVersion === "number" && Number.isFinite(row.sessionVersion)
+          ? row.sessionVersion
+          : 0,
+    lastLoginAt:
+      typeof row.last_login_at === "string"
+        ? row.last_login_at
+        : typeof row.lastLoginAt === "string"
+          ? row.lastLoginAt
+          : null,
     createdAt:
       typeof row.created_at === "string"
         ? row.created_at
@@ -220,6 +244,14 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
 
   if (isUuid(student.id)) {
     payload.id = student.id;
+  }
+
+  if (student.educationStartDate !== undefined) {
+    payload.education_start_date = student.educationStartDate;
+  }
+
+  if (student.accessEndDate !== undefined) {
+    payload.access_end_date = student.accessEndDate;
   }
 
   return payload;

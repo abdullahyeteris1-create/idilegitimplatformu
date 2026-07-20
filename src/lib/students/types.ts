@@ -28,6 +28,10 @@ export type Student = {
   status: StudentStatus;
   educationStatus?: EducationStatus;
   assignmentMode?: AssignmentMode;
+  educationStartDate?: string | null;
+  accessEndDate?: string | null;
+  sessionVersion?: number;
+  lastLoginAt?: string | null;
   createdAt: string;
   notes?: string;
 };
