@@ -1,0 +1,68 @@
+.pageHeadRow{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 0 16px}
+.pageHeadRow h2{font-size:22px;margin:0 0 6px;color:var(--text)}
+.pageHeadRow p{margin:0;font-size:13px;color:var(--muted);max-width:56ch}
+.pageHeadEyebrow{display:block;color:#9a47ff;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+
+.categoryCardGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.categoryCard{--tone:#38a9ff;display:flex;flex-direction:column;min-height:198px;text-align:left;border:1px solid color-mix(in srgb,var(--tone) 55%,#26334a);border-radius:18px;padding:16px;background:linear-gradient(150deg,color-mix(in srgb,var(--tone) 14%,#0b1425),#0a1425 74%);box-shadow:0 0 16px color-mix(in srgb,var(--tone) 16%,transparent);transition:transform .2s,box-shadow .2s,border-color .2s}
+.categoryCard:hover{transform:translateY(-3px);border-color:var(--tone);box-shadow:0 14px 30px -8px color-mix(in srgb,var(--tone) 50%,transparent),0 0 20px color-mix(in srgb,var(--tone) 30%,transparent)}
+.categoryCardActive{border-color:var(--tone);border-width:2px;box-shadow:0 0 0 1px var(--tone),0 14px 32px -8px color-mix(in srgb,var(--tone) 55%,transparent),0 0 24px color-mix(in srgb,var(--tone) 40%,transparent)}
+.categoryCardHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.categoryCardIcon{width:40px;height:40px;flex:0 0 auto;display:grid;place-items:center;border-radius:12px;background:var(--tone);color:#0b1224;box-shadow:0 0 14px var(--tone)}
+.categoryCardIcon svg{width:20px;height:20px}
+.categoryCardCount{flex:0 0 auto;border:1px solid color-mix(in srgb,var(--tone) 55%,transparent);background:color-mix(in srgb,var(--tone) 16%,transparent);color:#f1f4fb;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:800;white-space:nowrap}
+.categoryCard h4{margin:12px 0 8px;font-size:15px;color:#f7f8ff;line-height:1.3}
+.categoryCardTags{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.categoryCardTags span{border:1px solid #26334a;background:#0d1a31cc;color:#c3cbdc;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:600}
+.categoryCardFooter{margin-top:14px;min-height:38px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;border:1px solid var(--tone);background:color-mix(in srgb,var(--tone) 40%,#0b1224);color:#fff;font-size:12px;font-weight:800}
+.categoryCardFooter svg{width:14px;transition:transform .2s}
+.categoryCard:hover .categoryCardFooter svg{transform:translateX(3px)}
+
+.groupHead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.groupHeadIcon{--tone:#38a9ff;width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;border-radius:14px;background:var(--tone);color:#0b1224;box-shadow:0 0 16px var(--tone)}
+.groupHeadIcon svg{width:22px;height:22px}
+.groupHeadText h3{margin:0 0 4px;font-size:19px;color:var(--text)}
+.groupHeadText p{margin:0;font-size:12px;color:var(--muted);max-width:60ch}
+.groupBadge{--tone:#38a9ff;flex:0 0 auto;border:1px solid var(--tone);border-radius:999px;padding:6px 14px;font-size:11px;font-weight:800;color:var(--tone);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+
+.cardGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.exerciseCard{--tone:#38a9ff;display:flex;flex-direction:column;min-height:220px;border:1px solid color-mix(in srgb,var(--tone) 55%,#26334a);border-radius:18px;padding:16px;background:linear-gradient(150deg,color-mix(in srgb,var(--tone) 14%,#0b1425),#0a1425 74%);box-shadow:0 0 16px color-mix(in srgb,var(--tone) 16%,transparent);transition:transform .2s,box-shadow .2s,border-color .2s}
+.exerciseCard:hover{transform:translateY(-3px);border-color:var(--tone);box-shadow:0 14px 30px -8px color-mix(in srgb,var(--tone) 50%,transparent),0 0 20px color-mix(in srgb,var(--tone) 30%,transparent)}
+.exerciseCardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.exerciseIcon{width:38px;height:38px;flex:0 0 auto;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--tone) 28%,transparent);color:var(--tone)}
+.exerciseIcon svg{width:19px;height:19px}
+.exerciseTags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.exerciseTags span{border:1px solid color-mix(in srgb,var(--tone) 55%,transparent);background:color-mix(in srgb,var(--tone) 16%,transparent);color:#f1f4fb;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700}
+.exerciseCard h4{margin:12px 0 6px;font-size:15px;color:#f7f8ff;line-height:1.35}
+.exerciseCard p{margin:0;flex:1;font-size:12px;line-height:1.6;color:#c3cbdc}
+.exerciseCard>a{margin-top:14px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid var(--tone);background:color-mix(in srgb,var(--tone) 40%,#0b1224);color:#fff;font-size:12px;font-weight:800;transition:filter .2s,transform .15s}
+.exerciseCard>a:hover{filter:brightness(1.15)}
+.exerciseCard>a:active{transform:scale(.97)}
+.exerciseCard>a svg{width:14px}
+
+.emptyState{grid-column:1/-1;border:1px dashed #29395c;border-radius:16px;padding:22px;text-align:center;font-size:12px;color:var(--muted)}
+
+.light .categoryCard{background:linear-gradient(150deg,color-mix(in srgb,var(--tone) 10%,#fff),#fff 74%);box-shadow:0 8px 20px color-mix(in srgb,var(--tone) 14%,transparent)}
+.light .categoryCard h4{color:#172033}
+.light .categoryCardTags span{background:#f1f4fa;color:#3a465c;border-color:#c3cbdc}
+.light .exerciseCard{background:linear-gradient(150deg,color-mix(in srgb,var(--tone) 10%,#fff),#fff 74%);box-shadow:0 8px 20px color-mix(in srgb,var(--tone) 14%,transparent)}
+.light .exerciseCard h4{color:#172033}
+.light .exerciseCard p{color:#4b5563}
+.light .groupHeadText h3{color:#172033}
+.light .groupHeadText p{color:#4b5563}
+.light .pageHeadRow h2{color:#172033}
+.light .pageHeadRow p{color:#4b5563}
+
+@media(max-width:1250px){.cardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1024px){.categoryCardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){
+  .cardGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .groupHead{flex-wrap:wrap}
+}
+@media(max-width:560px){
+  .categoryCardGrid{grid-template-columns:1fr;gap:12px}
+  .categoryCard{min-height:0}
+  .cardGrid{grid-template-columns:1fr}
+  .pageHeadRow h2{font-size:19px}
+  .groupBadge{font-size:10px;padding:5px 11px}
+}
