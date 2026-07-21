@@ -1,8 +1,14 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createStudentSessionToken, getStudentSessionCookieOptions, STUDENT_SESSION_COOKIE_NAME } from "@/lib/auth/studentSession";
+import {
+  createStudentSessionToken,
+  getStudentSessionCookieOptions,
+  parseSessionVersion,
+  STUDENT_SESSION_COOKIE_NAME,
+} from "@/lib/auth/studentSession";
+import { isStudentActiveStatus } from "@/lib/auth/verifyStudentAccess";
 import { checkStudentDateAccess } from "@/lib/students/studentAccessDates";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 
@@ -10,6 +16,42 @@ type StudentLoginBody = {
   username?: unknown;
   password?: unknown;
 };
+
+const LOGIN_COMPLETION_FAILED_MESSAGE = "Giriş işlemi tamamlanamadı. Lütfen tekrar deneyin.";
+
+type SessionIncrementResult = {
+  sessionVersion: number;
+  lastLoginAt: string;
+};
+
+function parseSessionIncrementResult(data: unknown): SessionIncrementResult | null {
+  if (!Array.isArray(data) || data.length !== 1) {
+    return null;
+  }
+
+  const row = data[0];
+  if (typeof row !== "object" || row === null || Array.isArray(row)) {
+    return null;
+  }
+
+  const record = row as Record<string, unknown>;
+  const sessionVersion = parseSessionVersion(record.session_version);
+  const lastLoginAt = typeof record.last_login_at === "string" ? record.last_login_at.trim() : "";
+  if (sessionVersion === null || !lastLoginAt || !Number.isFinite(Date.parse(lastLoginAt))) {
+    return null;
+  }
+
+  return { sessionVersion, lastLoginAt };
+}
+
+function logSupabaseError(error: { code?: unknown; message?: unknown; details?: unknown; hint?: unknown }) {
+  console.error({
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+}
 
 function normalizeLookup(value: string): string {
   return value
@@ -40,14 +82,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "Kullanici adi ve sifre zorunludur." }, { status: 400 });
   }
 
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   if (!supabase) {
-    return NextResponse.json({ ok: false, message: "Supabase baglantisi bulunamadi." }, { status: 500 });
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
   }
 
-  const { data, error } = await supabase.from(STUDENTS_TABLE).select("*");
+  let lookupResult;
+  try {
+    lookupResult = await supabase
+      .from(STUDENTS_TABLE)
+      .select(
+        "id,name,username,password,class_name,parent_name,phone,parent_email,is_active,status,education_start_date,access_end_date,education_status,education_level,assignment_mode,created_at,notes",
+      );
+  } catch {
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
+  }
+
+  const { data, error } = lookupResult;
   if (error || !Array.isArray(data)) {
-    return NextResponse.json({ ok: false, message: "Ogrenci oturumu acilamadi." }, { status: 500 });
+    if (error) logSupabaseError(error);
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
   }
 
   const normalizedUsername = normalizeLookup(username);
@@ -61,7 +115,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "Kullanici adi veya sifre hatali." }, { status: 401 });
   }
 
-  const isActive = student.is_active !== false;
+  const isActive = isStudentActiveStatus(student.is_active, student.status);
   if (!isActive) {
     return NextResponse.json({ ok: false, message: "Bu ogrenci hesabi pasif durumda." }, { status: 403 });
   }
@@ -75,9 +129,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: dateAccessCheck.message }, { status: 403 });
   }
 
-  const token = createStudentSessionToken(String(student.id), String(student.username ?? username));
+  let rpcData: unknown;
+  try {
+    const { data: incrementData, error: incrementError } = await supabase.rpc(
+      "increment_student_session_version",
+      { p_student_id: String(student.id) },
+    );
+    if (incrementError) {
+      logSupabaseError(incrementError);
+      return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
+    }
+    rpcData = incrementData;
+  } catch {
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
+  }
+
+  const incrementResult = parseSessionIncrementResult(rpcData);
+  if (!incrementResult) {
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
+  }
+
+  const token = createStudentSessionToken(
+    String(student.id),
+    String(student.username ?? username),
+    incrementResult.sessionVersion,
+  );
   if (!token) {
-    return NextResponse.json({ ok: false, message: "Oturum guvenligi yapilandirilamadi." }, { status: 500 });
+    return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
   }
 
   const response = NextResponse.json({
@@ -87,12 +165,12 @@ export async function POST(request: NextRequest) {
       name: String(student.name ?? ""),
       username: String(student.username ?? username),
       className: typeof student.class_name === "string" ? student.class_name : undefined,
-      classLevel: typeof student.class_level === "string" ? student.class_level : undefined,
+      classLevel: typeof student.class_name === "string" ? student.class_name : undefined,
       parentName: typeof student.parent_name === "string" ? student.parent_name : undefined,
-      parentPhone: typeof student.parent_phone === "string" ? student.parent_phone : typeof student.phone === "string" ? student.phone : undefined,
+      parentPhone: typeof student.phone === "string" ? student.phone : undefined,
       parentEmail: typeof student.parent_email === "string" ? student.parent_email : undefined,
-      status: student.is_active === false ? "passive" : "active",
-      isActive: student.is_active !== false,
+      status: isActive ? "active" : "passive",
+      isActive,
       educationStatus:
         student.education_status === "general" || student.education_status === "speed-reading"
           ? student.education_status

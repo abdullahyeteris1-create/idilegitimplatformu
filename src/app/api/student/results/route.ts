@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { readStudentSessionFromRequest } from "@/lib/auth/studentSession";
+import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
+import { verifyStudentAccess, type StudentAccessFailure } from "@/lib/auth/verifyStudentAccess";
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import { getAssignmentItemById, getDailyAssignmentById } from "@/lib/assignments/assignmentRepository";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -125,6 +126,14 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { "Cache-Control": "private, no-store, max-age=0" },
   });
+}
+
+function studentAccessFailureResponse(access: StudentAccessFailure) {
+  const response = jsonResponse({ message: access.message }, access.status);
+  if (access.clearSessionCookie) {
+    clearStudentSessionCookie(response);
+  }
+  return response;
 }
 
 function hasClientIdentityParameter(request: NextRequest): boolean {
@@ -315,9 +324,9 @@ function mapResult(row: Record<string, unknown>, studentId: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = readStudentSessionFromRequest(request);
-  if (!session?.studentId) {
-    return jsonResponse({ message: "Yetkisiz erişim." }, 401);
+  const access = await verifyStudentAccess(request);
+  if (!access.ok) {
+    return studentAccessFailureResponse(access);
   }
 
   if (hasClientIdentityParameter(request)) {
@@ -334,24 +343,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data: student, error: studentError } = await supabase
-      .from(STUDENTS_TABLE)
-      .select("id,is_active")
-      .eq("id", session.studentId)
-      .maybeSingle();
-
-    if (studentError) {
-      return jsonResponse({ message: "Sonuçlar şu anda yüklenemiyor." }, 500);
-    }
-
-    if (!student || student.is_active === false || String(student.id) !== session.studentId) {
-      return jsonResponse({ message: "Yetkisiz erişim." }, 401);
-    }
-
     const { data, error } = await supabase
       .from(RESULTS_TABLE)
       .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
-      .eq("student_id", session.studentId)
+      .eq("student_id", access.studentId)
       .order("completed_at", { ascending: false });
 
     if (error || !Array.isArray(data)) {
@@ -359,8 +354,8 @@ export async function GET(request: NextRequest) {
     }
 
     const results = data
-      .filter((row) => String(row.student_id ?? "") === session.studentId)
-      .map((row) => mapResult(row as Record<string, unknown>, session.studentId));
+      .filter((row) => String(row.student_id ?? "") === access.studentId)
+      .map((row) => mapResult(row as Record<string, unknown>, access.studentId));
 
     return jsonResponse({ results });
   } catch {
@@ -369,9 +364,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = readStudentSessionFromRequest(request);
-  if (!session?.studentId) {
-    return jsonResponse({ message: "Yetkisiz erişim." }, 401);
+  const access = await verifyStudentAccess(request);
+  if (!access.ok) {
+    return studentAccessFailureResponse(access);
   }
 
   let rawBody: unknown;
@@ -398,8 +393,8 @@ export async function POST(request: NextRequest) {
   try {
     const { data: student, error: studentError } = await supabase
       .from(STUDENTS_TABLE)
-      .select("id,name,username,is_active")
-      .eq("id", session.studentId)
+      .select("id,name,username")
+      .eq("id", access.studentId)
       .maybeSingle();
 
     if (studentError) {
@@ -408,7 +403,7 @@ export async function POST(request: NextRequest) {
 
     const studentName = typeof student?.name === "string" ? student.name.trim() : "";
     const username = typeof student?.username === "string" ? student.username.trim() : "";
-    if (!student || student.is_active === false || String(student.id) !== session.studentId || !studentName) {
+    if (!student || String(student.id) !== access.studentId || !studentName) {
       return jsonResponse({ message: "Öğrenci bulunamadı." }, 404);
     }
 
@@ -423,7 +418,7 @@ export async function POST(request: NextRequest) {
         return jsonResponse({ message: "Ödev bulunamadı." }, 404);
       }
 
-      if (item.studentId !== session.studentId || assignment.studentId !== session.studentId) {
+      if (item.studentId !== access.studentId || assignment.studentId !== access.studentId) {
         return jsonResponse({ message: "Bu ödev adımı öğrenciye ait değil." }, 403);
       }
 
@@ -440,9 +435,9 @@ export async function POST(request: NextRequest) {
       ...(body.assignmentItemId ? { assignmentItemId: body.assignmentItemId } : {}),
     };
     const insertPayload = {
-      student_id: session.studentId,
+      student_id: access.studentId,
       student_name: studentName,
-      username: username || session.username,
+      username: username || access.username,
       exercise_type: body.exerciseType,
       exercise_title: body.exerciseTitle,
       correct_count: body.correctCount,
@@ -458,11 +453,11 @@ export async function POST(request: NextRequest) {
       .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
       .single();
 
-    if (insertError || !inserted || String(inserted.student_id ?? "") !== session.studentId) {
+    if (insertError || !inserted || String(inserted.student_id ?? "") !== access.studentId) {
       return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
     }
 
-    return jsonResponse({ result: mapResult(inserted as Record<string, unknown>, session.studentId) }, 201);
+    return jsonResponse({ result: mapResult(inserted as Record<string, unknown>, access.studentId) }, 201);
   } catch {
     return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
   }

@@ -1,12 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { NextRequest } from "next/server";
+import type { NextResponse } from "next/server";
 
 export const STUDENT_SESSION_COOKIE_NAME = "idil_student_session";
+export const STUDENT_SESSION_EXPIRED_MESSAGE = "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.";
 const STUDENT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
 export type StudentSessionPayload = {
   studentId: string;
   username: string;
+  sessionVersion: number;
   issuedAt: number;
 };
 
@@ -26,9 +28,30 @@ function signPayload(encodedPayload: string, secret: string): string {
   return createHmac("sha256", secret).update(encodedPayload).digest("base64url");
 }
 
-export function createStudentSessionToken(studentId: string, username: string): string | null {
+export function isValidSessionVersion(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+export function parseSessionVersion(value: unknown): number | null {
+  if (isValidSessionVersion(value)) {
+    return value;
+  }
+
+  if (typeof value !== "string" || !/^\d+$/.test(value)) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return isValidSessionVersion(parsed) ? parsed : null;
+}
+
+export function createStudentSessionToken(
+  studentId: string,
+  username: string,
+  sessionVersion: number,
+): string | null {
   const secret = getStudentSessionSecret();
-  if (!secret) {
+  if (!secret || !studentId.trim() || !username.trim() || !isValidSessionVersion(sessionVersion)) {
     return null;
   }
 
@@ -36,6 +59,7 @@ export function createStudentSessionToken(studentId: string, username: string): 
     JSON.stringify({
       studentId,
       username,
+      sessionVersion,
       issuedAt: Date.now(),
     } satisfies StudentSessionPayload),
   );
@@ -69,6 +93,7 @@ export function readStudentSessionToken(token: string): StudentSessionPayload | 
       !parsed.studentId.trim() ||
       typeof parsed.username !== "string" ||
       !parsed.username.trim() ||
+      !isValidSessionVersion(parsed.sessionVersion) ||
       typeof parsed.issuedAt !== "number" ||
       !Number.isFinite(parsed.issuedAt) ||
       parsed.issuedAt > Date.now() ||
@@ -80,15 +105,12 @@ export function readStudentSessionToken(token: string): StudentSessionPayload | 
     return {
       studentId: parsed.studentId.trim(),
       username: parsed.username.trim(),
+      sessionVersion: parsed.sessionVersion,
       issuedAt: parsed.issuedAt,
     };
   } catch {
     return null;
   }
-}
-
-export function readStudentSessionFromRequest(request: NextRequest): StudentSessionPayload | null {
-  return readStudentSessionToken(request.cookies.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "");
 }
 
 export function getStudentSessionCookieOptions() {
@@ -99,4 +121,13 @@ export function getStudentSessionCookieOptions() {
     path: "/",
     maxAge: STUDENT_SESSION_MAX_AGE_SECONDS,
   };
+}
+
+export function clearStudentSessionCookie(response: NextResponse): void {
+  response.cookies.set({
+    name: STUDENT_SESSION_COOKIE_NAME,
+    value: "",
+    ...getStudentSessionCookieOptions(),
+    maxAge: 0,
+  });
 }

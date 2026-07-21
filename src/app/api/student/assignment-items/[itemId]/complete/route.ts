@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { readStudentSessionFromRequest } from "@/lib/auth/studentSession";
+import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
+import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import {
   completeAssignmentItem,
@@ -29,13 +30,18 @@ export async function POST(
     return badRequest("Gecersiz istek govdesi.");
   }
 
-  const session = readStudentSessionFromRequest(request);
-  const studentId = session?.studentId ?? "";
+  const access = await verifyStudentAccess(request);
   const resultId = typeof payload.resultId === "string" ? payload.resultId.trim() : "";
 
-  if (!studentId) {
-    return NextResponse.json({ ok: false, message: "Ogrenci oturumu dogrulanamadi." }, { status: 401 });
+  if (!access.ok) {
+    const response = NextResponse.json({ ok: false, message: access.message }, { status: access.status });
+    if (access.clearSessionCookie) {
+      clearStudentSessionCookie(response);
+    }
+    return response;
   }
+
+  const studentId = access.studentId;
 
   if (!resultId) {
     return badRequest("resultId zorunludur.");

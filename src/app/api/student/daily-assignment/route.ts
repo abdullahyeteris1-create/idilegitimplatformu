@@ -1,14 +1,19 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { readStudentSessionFromRequest } from "@/lib/auth/studentSession";
+import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
+import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { generateDailyAssignment, getAssignmentDateForTimezone } from "@/lib/assignments/generateDailyAssignment";
 import { getDailyAssignmentByDate } from "@/lib/assignments/assignmentRepository";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
-  const session = readStudentSessionFromRequest(request);
-  if (!session?.studentId) {
-    return NextResponse.json({ ok: false, message: "Ogrenci oturumu dogrulanamadi." }, { status: 401 });
+  const access = await verifyStudentAccess(request);
+  if (!access.ok) {
+    const response = NextResponse.json({ ok: false, message: access.message }, { status: access.status });
+    if (access.clearSessionCookie) {
+      clearStudentSessionCookie(response);
+    }
+    return response;
   }
 
   const assignmentDate = request.nextUrl.searchParams.get("date")?.trim() || getAssignmentDateForTimezone("Europe/Istanbul");
@@ -19,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "Supabase baglantisi bulunamadi." }, { status: 500 });
   }
 
-  const existing = await getDailyAssignmentByDate(supabase, session.studentId, assignmentDate);
+  const existing = await getDailyAssignmentByDate(supabase, access.studentId, assignmentDate);
   if (existing) {
     return NextResponse.json({ ok: true, assignment: existing });
   }
@@ -29,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   const assignment = await generateDailyAssignment({
-    studentId: session.studentId,
+    studentId: access.studentId,
     assignmentDate,
   });
 
