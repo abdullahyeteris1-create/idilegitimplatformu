@@ -1,29 +1,16 @@
-import { AppShell } from "@/components/layout/AppShell";
-import { ExercisesCenterClient } from "./ExercisesCenterClient";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { ExercisesCenterShell } from "@/components/exercises-preview/ExercisesCenterShell";
 
-const EXERCISES_NAV_ITEMS = [
-  { href: "/", label: "Ana Sayfa" },
-  { href: "/egzersizler", label: "Egzersizler" },
-  { href: "/sonuc", label: "Sonuclarim" },
-];
-
-type ExercisesPageProps = {
-  searchParams: Promise<{ category?: string | string[] }>;
+export const metadata: Metadata = {
+  title: "Egzersizler | İDİL Hızlı Okuma",
+  description: "Dikkat, okuma, hafıza ve anlama becerilerini geliştiren çalışmalar.",
 };
 
-export default async function ExercisesPage({ searchParams }: ExercisesPageProps) {
-  await searchParams;
-
+export default function ExercisesPage() {
   return (
-    <AppShell
-      title="Egzersizler"
-      subtitle="Dikkat, okuma, hafiza ve anlama calismalarini tek merkezden baslat."
-      navItems={EXERCISES_NAV_ITEMS}
-      compactHeader
-      wide
-      headerVariant="student-vibrant"
-    >
-      <ExercisesCenterClient />
-    </AppShell>
+    <Suspense fallback={null}>
+      <ExercisesCenterShell />
+    </Suspense>
   );
 }

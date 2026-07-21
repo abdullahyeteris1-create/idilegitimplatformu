@@ -12,10 +12,12 @@ import { PreviewNavLinks, PreviewSidebar } from "./PreviewSidebar";
 import { PREVIEW_EXERCISE_GROUPS, resolvePreviewGroupId } from "./exercisePreviewGroups";
 import previewStyles from "./exercises-preview.module.css";
 
-const DEMO_STUDENT_NAME = "Demo Öğrenci";
-const DEMO_CLASS_LABEL = "Önizleme hesabı";
+const STUDENT_NAME = "Öğrenci";
+const CLASS_LABEL = "Hızlı Okuma";
+const COMING_SOON_MESSAGE = "Bu özellik yakında eklenecek.";
+const EXERCISES_HREF = "/egzersizler";
 
-export function ExercisesPreviewShell() {
+export function ExercisesCenterShell() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -69,7 +71,7 @@ export function ExercisesPreviewShell() {
             >
               <Icon name="menu" />
             </button>
-            <button type="button" aria-label="Bildirimler" onClick={() => showToast("Bu özellik önizleme aşamasında.")}>
+            <button type="button" aria-label="Bildirimler" onClick={() => showToast(COMING_SOON_MESSAGE)}>
               <Icon name="bell" />
             </button>
           </div>
@@ -77,10 +79,10 @@ export function ExercisesPreviewShell() {
           <PreviewHeader
             light={light}
             onToggleTheme={() => setLight((value) => !value)}
-            onNotify={() => showToast("Bu özellik önizleme aşamasında.")}
-            onProfile={() => showToast("Bu özellik önizleme aşamasında.")}
-            studentName={DEMO_STUDENT_NAME}
-            classLabel={DEMO_CLASS_LABEL}
+            onNotify={() => showToast(COMING_SOON_MESSAGE)}
+            onProfile={() => showToast(COMING_SOON_MESSAGE)}
+            studentName={STUDENT_NAME}
+            classLabel={CLASS_LABEL}
           />
 
           <div className={previewStyles.pageHeadRow}>
@@ -89,9 +91,6 @@ export function ExercisesPreviewShell() {
               <h2>Kategoriler arasında gezin</h2>
               <p>Göz, dikkat, okuma ve hafıza becerilerini geliştiren çalışmalardan birini seç.</p>
             </div>
-            <Link href="/egzersizler" className={panelStyles.subtleButton}>
-              Klasik Görünüme Dön <Icon name="arrow" />
-            </Link>
           </div>
 
           <CategoryCards groups={PREVIEW_EXERCISE_GROUPS} activeGroupId={activeGroupId} onSelect={handleSelectGroup} />
@@ -104,16 +103,16 @@ export function ExercisesPreviewShell() {
         <Link href="/ogrenci" aria-label="Panel">
           <Icon name="home" />
         </Link>
-        <Link href="/egzersizler-yeni-onizleme" className={panelStyles.mobileActive} aria-label="Egzersizler">
+        <Link href={EXERCISES_HREF} className={panelStyles.mobileActive} aria-label="Egzersizler">
           <Icon name="rocket" />
         </Link>
-        <button type="button" aria-label="Rozetler" onClick={() => showToast("Bu özellik önizleme aşamasında.")}>
+        <button type="button" aria-label="Rozetler" onClick={() => showToast(COMING_SOON_MESSAGE)}>
           <Icon name="badge" />
         </button>
         <Link href="/sonuc" aria-label="Sonuçlar">
           <Icon name="chart" />
         </Link>
-        <button type="button" aria-label="Profil" onClick={() => showToast("Bu özellik önizleme aşamasında.")}>
+        <button type="button" aria-label="Profil" onClick={() => showToast(COMING_SOON_MESSAGE)}>
           <Icon name="user" />
         </button>
       </nav>

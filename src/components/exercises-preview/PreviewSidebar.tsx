@@ -7,6 +7,13 @@ import { Icon } from "@/components/student-panel-preview/icons";
 import panelStyles from "@/components/student-panel-preview/student-panel-preview.module.css";
 
 const ACTIVE_HREF = "/egzersizler";
+const COMING_SOON_MESSAGE = "Bu özellik yakında eklenecek.";
+
+// The shared panel navItems point "Öğrenci Paneli" at the design-preview route.
+// This sidebar lives on the real exercises hub, so it must resolve to the real panel instead.
+const HREF_OVERRIDES: Record<string, string> = {
+  "Öğrenci Paneli": "/ogrenci",
+};
 
 type NavListProps = { onDemo: (message: string) => void; onNavigate?: () => void };
 
@@ -14,7 +21,8 @@ export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
   return (
     <>
       {navItems.map((item) => {
-        const active = item.href === ACTIVE_HREF;
+        const href = HREF_OVERRIDES[item.label] ?? item.href;
+        const active = href === ACTIVE_HREF;
         const content = (
           <>
             <Icon name={item.icon} />
@@ -22,9 +30,9 @@ export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
           </>
         );
 
-        if (item.href) {
+        if (href) {
           return (
-            <Link key={item.label} href={item.href} className={active ? panelStyles.activeNav : undefined} onClick={onNavigate}>
+            <Link key={item.label} href={href} className={active ? panelStyles.activeNav : undefined} onClick={onNavigate}>
               {content}
             </Link>
           );
@@ -35,7 +43,7 @@ export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
             key={item.label}
             type="button"
             onClick={() => {
-              onDemo("Bu özellik önizleme aşamasında.");
+              onDemo(COMING_SOON_MESSAGE);
               onNavigate?.();
             }}
           >
@@ -93,7 +101,7 @@ export function PreviewSidebar({ onDemo }: { onDemo: (message: string) => void }
       <button
         type="button"
         className={panelStyles.support}
-        onClick={() => onDemo("Bu özellik önizleme aşamasında.")}
+        onClick={() => onDemo(COMING_SOON_MESSAGE)}
       >
         <Icon name="help" /> Yardım &amp; Destek
       </button>
