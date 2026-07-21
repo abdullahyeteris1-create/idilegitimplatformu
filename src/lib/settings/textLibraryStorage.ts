@@ -145,7 +145,6 @@ function normalizeCategoryLookup(value: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\u0131/g, "i")
-    .replace(/\([^)]*\)/g, "")
     .replace(/[^a-z0-9]/g, "");
 
   return normalized || normalizeLookup(value);
