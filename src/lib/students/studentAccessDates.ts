@@ -2,6 +2,14 @@ export type EducationDateRangeValidation =
   | { valid: true }
   | { valid: false; message: string };
 
+export type StudentDateAccessCheckResult =
+  | { allowed: true }
+  | {
+      allowed: false;
+      reason: "not_started" | "expired" | "invalid_dates";
+      message: string;
+    };
+
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function isLeapYear(year: number): boolean {
@@ -73,4 +81,77 @@ export function isEducationDateRangeValid(
   }
 
   return { valid: true };
+}
+
+function normalizeDateValue(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue ? trimmedValue : null;
+}
+
+export function checkStudentDateAccess(
+  educationStartDate: string | null | undefined,
+  accessEndDate: string | null | undefined,
+  currentDate?: string,
+): StudentDateAccessCheckResult {
+  const normalizedStartDate = normalizeDateValue(educationStartDate);
+  const normalizedEndDate = normalizeDateValue(accessEndDate);
+
+  if (!normalizedStartDate && !normalizedEndDate) {
+    return { allowed: true };
+  }
+
+  if (!normalizedStartDate || !normalizedEndDate) {
+    return {
+      allowed: false,
+      reason: "invalid_dates",
+      message: "Egitim erisim bilgileriniz dogrulanamadi. Lutfen ogretmeninizle iletisime gecin.",
+    };
+  }
+
+  if (!isValidDateOnlyString(normalizedStartDate) || !isValidDateOnlyString(normalizedEndDate)) {
+    return {
+      allowed: false,
+      reason: "invalid_dates",
+      message: "Egitim erisim bilgileriniz dogrulanamadi. Lutfen ogretmeninizle iletisime gecin.",
+    };
+  }
+
+  if (normalizedStartDate > normalizedEndDate) {
+    return {
+      allowed: false,
+      reason: "invalid_dates",
+      message: "Egitim erisim bilgileriniz dogrulanamadi. Lutfen ogretmeninizle iletisime gecin.",
+    };
+  }
+
+  const normalizedCurrentDate = currentDate ? currentDate.trim() : getIstanbulDateString();
+  if (!isValidDateOnlyString(normalizedCurrentDate)) {
+    return {
+      allowed: false,
+      reason: "invalid_dates",
+      message: "Egitim erisim bilgileriniz dogrulanamadi. Lutfen ogretmeninizle iletisime gecin.",
+    };
+  }
+
+  if (normalizedCurrentDate < normalizedStartDate) {
+    return {
+      allowed: false,
+      reason: "not_started",
+      message: "Eğitim erişiminiz henüz başlamadı.",
+    };
+  }
+
+  if (normalizedCurrentDate > normalizedEndDate) {
+    return {
+      allowed: false,
+      reason: "expired",
+      message: "Eğitim erişim süreniz sona erdi. Lütfen öğretmeninizle iletişime geçin.",
+    };
+  }
+
+  return { allowed: true };
 }

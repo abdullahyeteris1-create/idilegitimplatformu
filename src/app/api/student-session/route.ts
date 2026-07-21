@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { createStudentSessionToken, getStudentSessionCookieOptions, STUDENT_SESSION_COOKIE_NAME } from "@/lib/auth/studentSession";
+import { checkStudentDateAccess } from "@/lib/students/studentAccessDates";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -65,6 +66,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "Bu ogrenci hesabi pasif durumda." }, { status: 403 });
   }
 
+  const dateAccessCheck = checkStudentDateAccess(
+    typeof student.education_start_date === "string" ? student.education_start_date : null,
+    typeof student.access_end_date === "string" ? student.access_end_date : null,
+  );
+
+  if (!dateAccessCheck.allowed) {
+    return NextResponse.json({ ok: false, message: dateAccessCheck.message }, { status: 403 });
+  }
+
   const token = createStudentSessionToken(String(student.id), String(student.username ?? username));
   if (!token) {
     return NextResponse.json({ ok: false, message: "Oturum guvenligi yapilandirilamadi." }, { status: 500 });
@@ -76,7 +86,6 @@ export async function POST(request: NextRequest) {
       id: String(student.id),
       name: String(student.name ?? ""),
       username: String(student.username ?? username),
-      password: String(student.password ?? ""),
       className: typeof student.class_name === "string" ? student.class_name : undefined,
       classLevel: typeof student.class_level === "string" ? student.class_level : undefined,
       parentName: typeof student.parent_name === "string" ? student.parent_name : undefined,
