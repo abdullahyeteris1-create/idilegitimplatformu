@@ -19,7 +19,7 @@ export const TEXT_LIBRARY_CATEGORIES = [
   "Edebiyat",
   "Genel Kültür",
   "Hikayeler",
-  "Hikayeler (Uzun)",
+  "Uzun Metinler",
   "İlkokul Hikayeleri",
   "Makaleler",
   "Ortaokul Hikayeleri",
@@ -176,7 +176,7 @@ const CATEGORY_ALIASES: Record<string, string> = {
   genelkultur: "Genel Kültür",
   kultur: "Genel Kültür",
   hikaye: "Hikayeler",
-  hikayeleruzun: "Hikayeler (Uzun)",
+  hikayeleruzun: "Uzun Metinler",
   ilkokul: "İlkokul Hikayeleri",
   ilkokulhikayeleri: "İlkokul Hikayeleri",
   ortaokul: "Ortaokul Hikayeleri",
@@ -192,7 +192,7 @@ CATEGORY_ALIASES.ilkokul = "\u0130lkokul Hikayeleri";
 CATEGORY_ALIASES.ilkokulhikayeleri = "\u0130lkokul Hikayeleri";
 CATEGORY_ALIASES.cografya = "Co\u011frafya";
 CATEGORY_ALIASES.yasam = "Ya\u015fam";
-CATEGORY_ALIASES.uzunhikayeler = "Hikayeler (Uzun)";
+CATEGORY_ALIASES.uzunhikayeler = "Uzun Metinler";
 
 function isGradeCategoryLookup(lookup: string): boolean {
   if (lookup.includes("sinif")) {
