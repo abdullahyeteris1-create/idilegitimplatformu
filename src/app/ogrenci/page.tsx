@@ -38,6 +38,7 @@ export default async function StudentDashboardPage() {
   return (
     <div className="min-h-screen bg-[var(--idil-page-bg)] text-[var(--idil-text)]">
       <StudentPanelPreview
+        showReadingTestsStatistics={true}
         authenticatedStudent={{
           id: access.studentId,
           name: studentName,
