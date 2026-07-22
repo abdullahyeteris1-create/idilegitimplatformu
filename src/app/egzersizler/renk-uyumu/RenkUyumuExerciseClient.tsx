@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/color-match-theme.module.css";
 
 type GameStatus = "idle" | "running" | "saving" | "save-error" | "finished";
 type FeedbackType = "correct" | "wrong" | null;
@@ -84,6 +86,12 @@ function formatMilliseconds(value: number): string {
 }
 
 export default function RenkUyumuExerciseClient() {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [
+    styles.themeRoot,
+    isLight ? styles.lightTheme : styles.darkTheme,
+  ].join(" ");
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [status, setStatus] = useState<GameStatus>("idle");
   const [question, setQuestion] = useState<Question>(() => createQuestion(4));
@@ -328,15 +336,15 @@ export default function RenkUyumuExerciseClient() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50 px-3 py-4 text-slate-900 sm:px-6">
-      <section className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-        <header className="border-b border-slate-200 px-5 py-5 sm:px-7">
+    <main className={`${themeRootClassName} min-h-screen px-3 py-4 sm:px-6`}>
+      <section className={`mx-auto w-full max-w-5xl overflow-hidden rounded-3xl ${styles.card}`}>
+        <header className={`px-5 py-5 sm:px-7 ${styles.cardHeader}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+              <h1 className={`text-2xl font-black tracking-tight sm:text-3xl ${styles.title}`}>
                 Renk Uyumu
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-slate-500">
+              <p className={`mt-1 max-w-2xl text-sm ${styles.subtitle}`}>
                 Kelimenin anlamını değil, yazının rengini seç. Fareyle tıkla
                 veya klavyeden seçenek numarasına bas.
               </p>
@@ -350,8 +358,8 @@ export default function RenkUyumuExerciseClient() {
           </div>
         </header>
 
-        <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4 sm:px-7">
-          <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">
+        <div className={`px-5 py-4 sm:px-7 ${styles.levelBar}`}>
+          <p className={`mb-2 text-xs font-black uppercase tracking-wider ${styles.levelBarLabel}`}>
             Seviye seç
           </p>
 
@@ -366,10 +374,9 @@ export default function RenkUyumuExerciseClient() {
                   onClick={() => changeLevel(level)}
                   disabled={status === "running"}
                   className={[
-                    "min-h-11 rounded-xl border px-4 py-2 text-sm font-black transition",
-                    selectedLevel === level
-                      ? "border-violet-600 bg-violet-600 text-white shadow"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50",
+                    "min-h-11 rounded-xl px-4 py-2 text-sm font-black transition",
+                    styles.levelButton,
+                    selectedLevel === level ? styles.levelButtonActive : "",
                     status === "running"
                       ? "cursor-not-allowed opacity-55"
                       : "",
@@ -384,19 +391,19 @@ export default function RenkUyumuExerciseClient() {
 
         {status === "idle" && (
           <div className="px-5 py-12 text-center sm:px-7">
-            <div className="mx-auto max-w-xl rounded-3xl border border-violet-200 bg-violet-50 p-8">
+            <div className={`mx-auto max-w-xl rounded-3xl p-8 ${styles.introCard}`}>
               <div className="text-6xl">🎨</div>
-              <h2 className="mt-4 text-2xl font-black text-violet-900">
+              <h2 className={`mt-4 text-2xl font-black ${styles.introTitle}`}>
                 Başlamaya hazır
               </h2>
-              <p className="mt-3 text-sm leading-6 text-violet-700">
+              <p className={`mt-3 text-sm leading-6 ${styles.introBody}`}>
                 Her soruda kelime farklı bir renkle yazılacak. Doğru cevap,
                 kelimenin anlamı değil yazının rengidir.
               </p>
               <button
                 type="button"
                 onClick={startExercise}
-                className="mt-6 rounded-xl bg-emerald-600 px-7 py-3 text-sm font-black text-white shadow-lg transition hover:bg-emerald-700 active:scale-[0.98]"
+                className={`mt-6 rounded-xl px-7 py-3 text-sm font-black transition active:scale-[0.98] ${styles.primaryButton}`}
               >
                 Çalışmayı Başlat
               </button>
@@ -413,9 +420,9 @@ export default function RenkUyumuExerciseClient() {
                 </span>
                 <span>%{Math.min(100, progressPercent)} tamamlandı</span>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+              <div className={`h-3 overflow-hidden rounded-full ${styles.progressTrack}`}>
                 <div
-                  className="h-full rounded-full bg-violet-600 transition-[width] duration-300"
+                  className={`h-full rounded-full transition-[width] duration-300 ${styles.progressFill}`}
                   style={{
                     width: `${Math.min(100, progressPercent)}%`,
                   }}
@@ -423,16 +430,18 @@ export default function RenkUyumuExerciseClient() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-              <p className="text-center text-sm font-bold text-slate-500">
+            <div className={`rounded-3xl p-5 sm:p-8 ${styles.questionCard}`}>
+              <p className={`text-center text-sm font-bold ${styles.questionPrompt}`}>
                 Bu kelimenin rengi ne?
               </p>
 
-              <div
-                className="my-8 text-center text-5xl font-black tracking-wide sm:text-7xl"
-                style={{ color: question.inkColor.value }}
-              >
-                {question.word.label}
+              <div className={`my-8 flex items-center justify-center ${styles.stimulusSurface}`}>
+                <div
+                  className="text-center text-5xl font-black tracking-wide sm:text-7xl"
+                  style={{ color: question.inkColor.value }}
+                >
+                  {question.word.label}
+                </div>
               </div>
 
               <div
@@ -453,9 +462,9 @@ export default function RenkUyumuExerciseClient() {
                       handleAnswer(index, event.timeStamp)
                     }
                     disabled={isAnswerLocked}
-                    className="group rounded-xl border border-slate-200 bg-white px-3 py-4 text-sm font-black shadow-sm transition hover:border-violet-400 hover:bg-violet-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`group rounded-xl px-3 py-4 text-sm font-black transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${styles.choiceButton}`}
                   >
-                    <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-600 group-hover:bg-violet-100 group-hover:text-violet-700">
+                    <span className={`mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-xs ${styles.choiceIndex}`}>
                       {index + 1}
                     </span>
                     {choice.label}
@@ -467,10 +476,8 @@ export default function RenkUyumuExerciseClient() {
                 {feedback !== null && lastResponseTime !== null && (
                   <div
                     className={[
-                      "rounded-2xl border px-4 py-3 text-center",
-                      feedback === "correct"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-rose-200 bg-rose-50 text-rose-700",
+                      "rounded-2xl px-4 py-3 text-center",
+                      feedback === "correct" ? styles.feedbackCorrect : styles.feedbackWrong,
                     ].join(" ")}
                   >
                     <p className="text-lg font-black">
@@ -488,7 +495,7 @@ export default function RenkUyumuExerciseClient() {
                 )}
               </div>
 
-              <p className="mt-3 text-center text-xs text-slate-400">
+              <p className={`mt-3 text-center text-xs ${styles.helperText}`}>
                 Klavye desteği: 1–{choiceCount} tuşlarını kullanabilirsin.
               </p>
             </div>
@@ -497,16 +504,16 @@ export default function RenkUyumuExerciseClient() {
 
         {(status === "saving" || status === "save-error") && (
           <div className="px-5 py-12 text-center sm:px-7">
-            <div className="mx-auto max-w-xl rounded-3xl border border-violet-200 bg-violet-50 p-8">
-              <h2 className="text-2xl font-black text-violet-900">
+            <div className={`mx-auto max-w-xl rounded-3xl p-8 ${styles.introCard}`}>
+              <h2 className={`text-2xl font-black ${styles.introTitle}`}>
                 {status === "saving" ? "Sonuç kaydediliyor..." : "Sonuç kaydedilemedi"}
               </h2>
-              {saveError && <p className="mt-3 text-sm font-bold text-rose-700" role="alert">{saveError}</p>}
+              {saveError && <p className={`mt-3 text-sm font-bold ${styles.errorText}`} role="alert">{saveError}</p>}
               {status === "save-error" && (
                 <button
                   type="button"
                   onClick={() => { if (pendingResultRef.current) void persistResult(pendingResultRef.current); }}
-                  className="mt-6 min-h-11 rounded-xl bg-violet-700 px-7 py-3 text-sm font-black text-white shadow transition hover:bg-violet-800"
+                  className={`mt-6 min-h-11 rounded-xl px-7 py-3 text-sm font-black transition ${styles.retryButton}`}
                 >
                   Tekrar Dene
                 </button>
@@ -517,9 +524,9 @@ export default function RenkUyumuExerciseClient() {
 
         {status === "finished" && (
           <div className="px-5 py-7 sm:px-7">
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-8">
+            <div className={`rounded-3xl p-6 text-center sm:p-8 ${styles.resultCard}`}>
               <div className="text-5xl">🏆</div>
-              <h2 className="mt-3 text-2xl font-black text-emerald-900">
+              <h2 className={`mt-3 text-2xl font-black ${styles.resultTitle}`}>
                 Çalışma tamamlandı
               </h2>
 
@@ -538,28 +545,28 @@ export default function RenkUyumuExerciseClient() {
                 <button
                   type="button"
                   onClick={startExercise}
-                  className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow transition hover:bg-emerald-700"
+                  className={`rounded-xl px-6 py-3 text-sm font-black transition ${styles.primaryButton}`}
                 >
                   Yeniden Başlat
                 </button>
                 <button
                   type="button"
                   onClick={resetExercise}
-                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                  className={`rounded-xl px-6 py-3 text-sm font-black transition ${styles.secondaryButton}`}
                 >
                   Ayarlara Dön
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-              <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                <h3 className="font-black text-slate-800">Yanıt dökümü</h3>
+            <div className={`mt-6 overflow-hidden rounded-2xl ${styles.tableWrapper}`}>
+              <div className={`px-4 py-3 ${styles.tableHeaderBar}`}>
+                <h3 className={`font-black ${styles.tableHeaderTitle}`}>Yanıt dökümü</h3>
               </div>
 
               <div className="max-h-80 overflow-auto">
                 <table className="w-full min-w-[560px] text-left text-sm">
-                  <thead className="sticky top-0 bg-white text-xs uppercase text-slate-500">
+                  <thead className={`sticky top-0 text-xs uppercase ${styles.tableHead}`}>
                     <tr>
                       <th className="px-4 py-3">Soru</th>
                       <th className="px-4 py-3">Seçilen</th>
@@ -572,7 +579,7 @@ export default function RenkUyumuExerciseClient() {
                     {answerHistory.map((answer) => (
                       <tr
                         key={answer.questionNumber}
-                        className="border-t border-slate-100"
+                        className={styles.tableRow}
                       >
                         <td className="px-4 py-3 font-bold">
                           {answer.questionNumber}
@@ -586,9 +593,7 @@ export default function RenkUyumuExerciseClient() {
                         <td
                           className={[
                             "px-4 py-3 font-black",
-                            answer.isCorrect
-                              ? "text-emerald-600"
-                              : "text-rose-600",
+                            answer.isCorrect ? styles.resultCorrect : styles.resultWrong,
                           ].join(" ")}
                         >
                           {answer.isCorrect ? "Doğru" : "Yanlış"}
@@ -617,11 +622,11 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="min-w-20 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
-      <div className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+    <div className={`min-w-20 rounded-xl px-3 py-2 text-center ${styles.statCard}`}>
+      <div className={`text-[10px] font-black uppercase tracking-wide ${styles.statLabel}`}>
         {label}
       </div>
-      <div className="mt-0.5 text-lg font-black text-slate-900">{value}</div>
+      <div className={`mt-0.5 text-lg font-black ${styles.statValue}`}>{value}</div>
     </div>
   );
 }
@@ -634,11 +639,11 @@ function ResultCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-white p-4 text-center shadow-sm">
-      <div className="text-xs font-black uppercase tracking-wide text-slate-500">
+    <div className={`rounded-2xl p-4 text-center ${styles.resultStatCard}`}>
+      <div className={`text-xs font-black uppercase tracking-wide ${styles.resultStatLabel}`}>
         {label}
       </div>
-      <div className="mt-2 text-xl font-black text-emerald-700">{value}</div>
+      <div className={`mt-2 text-xl font-black ${styles.resultStatValue}`}>{value}</div>
     </div>
   );
 }

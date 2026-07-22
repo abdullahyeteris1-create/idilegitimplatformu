@@ -1,0 +1,326 @@
+/*
+ * Theme re-skin for the Renk Uyumu (color-match) exercise screens.
+ * Unlike Takistoskop/Benzer Kelimeler, this exercise never had an approved
+ * dark/neon look — it only had a fixed light Tailwind palette. This module
+ * gives it a real .lightTheme (faithful to the current look) and a new
+ * .darkTheme, both driven by the same --ru-* custom properties defined on
+ * .themeRoot, so every class below only needs to be written once.
+ *
+ * IMPORTANT: .stimulusSurface (the card directly behind the ink-colored
+ * word) intentionally stays a fixed, neutral light surface in BOTH themes.
+ * The word's color is the actual game answer (question.inkColor.value,
+ * including a near-black option), so the surface behind it must never be
+ * dark or theme-tinted — that would make some answers unreadable or bias
+ * their perceived contrast between themes.
+ */
+
+.themeRoot {
+  min-height: 100vh;
+}
+
+.lightTheme {
+  --ru-bg-from: #f8fafc;
+  --ru-bg-via: #ffffff;
+  --ru-bg-to: #f5f3ff;
+  --ru-panel: #ffffff;
+  --ru-panel-2: #f8fbff;
+  --ru-text: #172033;
+  --ru-muted: #526076;
+  --ru-border: #cbd7f3;
+  --ru-purple: #7c3aed;
+  --ru-purple-strong: #6d28d9;
+  --ru-green: #059669;
+  --ru-green-strong: #047857;
+  --ru-red: #dc2626;
+  --ru-shadow: 0 10px 28px rgba(23, 32, 51, 0.08);
+  --ru-shadow-lg: 0 20px 45px rgba(23, 32, 51, 0.12);
+}
+
+.darkTheme {
+  --ru-bg-from: #07111f;
+  --ru-bg-via: #0a1830;
+  --ru-bg-to: #07111f;
+  --ru-panel: #0d1a2d;
+  --ru-panel-2: #111f35;
+  --ru-text: #f5f7ff;
+  --ru-muted: #a9b5ca;
+  --ru-border: rgba(129, 140, 248, 0.34);
+  --ru-purple: #a78bfa;
+  --ru-purple-strong: #8b5cf6;
+  --ru-green: #4ade80;
+  --ru-green-strong: #34d399;
+  --ru-red: #fb7185;
+  --ru-shadow: 0 10px 30px rgba(2, 6, 23, 0.45);
+  --ru-shadow-lg: 0 24px 55px rgba(2, 6, 23, 0.5);
+}
+
+.themeRoot {
+  background: linear-gradient(150deg, var(--ru-bg-from), var(--ru-bg-via), var(--ru-bg-to));
+  color: var(--ru-text);
+}
+
+.card {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  box-shadow: var(--ru-shadow-lg);
+}
+
+.cardHeader {
+  border-bottom: 1px solid var(--ru-border);
+}
+
+.title {
+  color: var(--ru-text);
+}
+
+.subtitle {
+  color: var(--ru-muted);
+}
+
+.statCard {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel-2);
+}
+
+.statLabel {
+  color: var(--ru-muted);
+}
+
+.statValue {
+  color: var(--ru-text);
+}
+
+.levelBar {
+  border-bottom: 1px solid var(--ru-border);
+  background: var(--ru-panel-2);
+}
+
+.levelBarLabel {
+  color: var(--ru-muted);
+}
+
+.levelButton {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  color: var(--ru-text);
+  transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.levelButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ru-purple) 55%, var(--ru-border));
+  background: color-mix(in srgb, var(--ru-purple) 12%, var(--ru-panel));
+}
+
+.levelButtonActive {
+  border-color: var(--ru-purple-strong);
+  background: var(--ru-purple-strong);
+  color: #fff;
+  box-shadow: var(--ru-shadow);
+}
+
+.levelButtonActive:hover:not(:disabled) {
+  border-color: var(--ru-purple-strong);
+  background: var(--ru-purple-strong);
+}
+
+.introCard {
+  border: 1px solid color-mix(in srgb, var(--ru-purple) 45%, var(--ru-border));
+  background: color-mix(in srgb, var(--ru-purple) 10%, var(--ru-panel));
+}
+
+.introTitle {
+  color: color-mix(in srgb, var(--ru-purple-strong) 70%, var(--ru-text));
+}
+
+.introBody {
+  color: var(--ru-muted);
+}
+
+.primaryButton {
+  color: #fff;
+  transition: filter 0.2s, transform 0.15s;
+}
+
+.lightTheme .primaryButton {
+  background: var(--ru-green-strong);
+}
+
+.lightTheme .primaryButton:hover:not(:disabled) {
+  background: #065f46;
+}
+
+.darkTheme .primaryButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%);
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35);
+}
+
+.darkTheme .primaryButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.secondaryButton {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  color: var(--ru-text);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--ru-panel-2);
+}
+
+.retryButton {
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.lightTheme .retryButton {
+  background: var(--ru-purple-strong);
+}
+
+.lightTheme .retryButton:hover:not(:disabled) {
+  background: #5b21b6;
+}
+
+.darkTheme .retryButton {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+
+.darkTheme .retryButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.progressTrack {
+  background: var(--ru-panel-2);
+}
+
+.progressFill {
+  background: var(--ru-purple-strong);
+}
+
+.questionCard {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  box-shadow: var(--ru-shadow);
+}
+
+.questionPrompt {
+  color: var(--ru-muted);
+}
+
+.stimulusSurface {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 10px 20px;
+}
+
+.choiceButton {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  color: var(--ru-text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.choiceButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ru-purple) 55%, var(--ru-border));
+  background: color-mix(in srgb, var(--ru-purple) 10%, var(--ru-panel));
+}
+
+.choiceIndex {
+  background: var(--ru-panel-2);
+  color: var(--ru-muted);
+}
+
+.choiceButton:hover:not(:disabled) .choiceIndex {
+  background: color-mix(in srgb, var(--ru-purple) 22%, var(--ru-panel-2));
+  color: var(--ru-purple-strong);
+}
+
+.feedbackCorrect {
+  border: 1px solid color-mix(in srgb, var(--ru-green) 55%, transparent);
+  background: color-mix(in srgb, var(--ru-green) 14%, var(--ru-panel));
+  color: color-mix(in srgb, var(--ru-green-strong) 80%, var(--ru-text));
+}
+
+.feedbackWrong {
+  border: 1px solid color-mix(in srgb, var(--ru-red) 55%, transparent);
+  background: color-mix(in srgb, var(--ru-red) 14%, var(--ru-panel));
+  color: color-mix(in srgb, var(--ru-red) 80%, var(--ru-text));
+}
+
+.helperText {
+  color: var(--ru-muted);
+}
+
+.errorText {
+  color: color-mix(in srgb, var(--ru-red) 80%, var(--ru-text));
+}
+
+.resultCard {
+  border: 1px solid color-mix(in srgb, var(--ru-green) 45%, var(--ru-border));
+  background: color-mix(in srgb, var(--ru-green) 10%, var(--ru-panel));
+}
+
+.resultTitle {
+  color: color-mix(in srgb, var(--ru-green-strong) 70%, var(--ru-text));
+}
+
+.resultStatCard {
+  border: 1px solid var(--ru-border);
+  background: var(--ru-panel);
+  box-shadow: var(--ru-shadow);
+}
+
+.resultStatLabel {
+  color: var(--ru-muted);
+}
+
+.resultStatValue {
+  color: color-mix(in srgb, var(--ru-green-strong) 75%, var(--ru-text));
+}
+
+.tableWrapper {
+  border: 1px solid var(--ru-border);
+}
+
+.tableHeaderBar {
+  border-bottom: 1px solid var(--ru-border);
+  background: var(--ru-panel-2);
+}
+
+.tableHeaderTitle {
+  color: var(--ru-text);
+}
+
+.tableHead {
+  background: var(--ru-panel);
+  color: var(--ru-muted);
+}
+
+.tableRow {
+  border-top: 1px solid var(--ru-border);
+}
+
+.resultCorrect {
+  color: var(--ru-green);
+}
+
+.resultWrong {
+  color: var(--ru-red);
+}
+
+.levelButton:focus-visible,
+.choiceButton:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.retryButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ru-purple) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
