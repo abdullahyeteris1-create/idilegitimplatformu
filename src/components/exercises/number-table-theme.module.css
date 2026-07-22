@@ -163,6 +163,158 @@
   color: var(--nt-green) !important;
 }
 
+.lightTheme {
+  --nt-bg: #eef4ff;
+  --nt-panel: #ffffff;
+  --nt-panel-2: #f8fbff;
+  --nt-text: #172033;
+  --nt-muted: #526076;
+  --nt-border: #cbd7f3;
+  --nt-purple: #7c3aed;
+  --nt-green: #15803d;
+  --nt-red: #dc2626;
+}
+
+.lightTheme.pageBackground {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .panel {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme .panelHeader {
+  border-color: var(--nt-border) !important;
+}
+
+.lightTheme .title {
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .subtitle {
+  color: var(--nt-muted) !important;
+}
+
+.lightTheme .statCard {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .statCardLabel {
+  color: var(--nt-muted) !important;
+}
+
+.lightTheme .statCardValue {
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .levelBar {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .levelBarLabel {
+  color: var(--nt-muted) !important;
+}
+
+.lightTheme .levelButtonActive {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-purple) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .levelButtonIdle {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .levelButtonIdle:hover {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.lightTheme .cancelButton {
+  border-color: color-mix(in srgb, var(--nt-red) 35%, transparent) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-red) !important;
+}
+
+.lightTheme .cancelButton:hover {
+  background: color-mix(in srgb, var(--nt-red) 8%, var(--nt-panel)) !important;
+}
+
+.lightTheme .statusText {
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .progressTrack {
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .gridFrame {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-bg) !important;
+}
+
+.lightTheme .emptyState {
+  background: var(--nt-panel) !important;
+}
+
+.lightTheme .emptyStateLabel {
+  color: var(--nt-purple) !important;
+}
+
+.lightTheme .emptyStateBody {
+  color: var(--nt-muted) !important;
+}
+
+.lightTheme .numberIdle {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-text) !important;
+}
+
+.lightTheme .numberIdle:hover {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .numberCompleted {
+  border-color: color-mix(in srgb, var(--nt-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--nt-green) 12%, var(--nt-panel)) !important;
+  color: var(--nt-green) !important;
+}
+
+.lightTheme .finishedBanner {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.lightTheme .finishedTitle {
+  color: var(--nt-green) !important;
+}
+
+.lightTheme .resultCard {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+}
+
+.lightTheme .resultCardLabel {
+  color: var(--nt-muted) !important;
+}
+
+.lightTheme .resultCardValue {
+  color: var(--nt-green) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

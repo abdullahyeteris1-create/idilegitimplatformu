@@ -222,6 +222,208 @@
   color: var(--cm-text) !important;
 }
 
+.lightTheme {
+  --cm-bg: #eef4ff;
+  --cm-panel: #ffffff;
+  --cm-panel-2: #f8fbff;
+  --cm-text: #172033;
+  --cm-muted: #526076;
+  --cm-border: #cbd7f3;
+  --cm-purple: #7c3aed;
+  --cm-green: #15803d;
+  --cm-red: #dc2626;
+  --cm-blue: #2563eb;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--cm-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--cm-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--cm-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: var(--cm-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--cm-border) !important;
+}
+
+.lightTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.3) !important;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22) !important;
+}
+
+.lightTheme .secondaryButtonOverride {
+  background: var(--cm-panel-2) !important;
+  border-color: var(--cm-border) !important;
+  color: var(--cm-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme .secondaryButtonOverride:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme .selectOverride {
+  background: var(--cm-panel) !important;
+  border-color: var(--cm-border) !important;
+  color: var(--cm-text) !important;
+}
+
+.lightTheme .stageOverride {
+  background: linear-gradient(150deg, var(--cm-panel), var(--cm-bg)) !important;
+  border-color: var(--cm-border) !important;
+  box-shadow: 0 14px 36px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .themeChip {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: var(--cm-text) !important;
+}
+
+.lightTheme .introEyebrow {
+  color: var(--cm-purple) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--cm-text) !important;
+}
+
+.lightTheme .introBody {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .readyStatTile {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.lightTheme .readyStatLabel {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .readyStatValue {
+  color: var(--cm-purple) !important;
+}
+
+.lightTheme .infoPanel {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.lightTheme .infoPanelLabel {
+  color: var(--cm-purple) !important;
+}
+
+.lightTheme .infoPanelValue {
+  color: var(--cm-text) !important;
+}
+
+.lightTheme .timeChip {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel) !important;
+}
+
+.lightTheme .timeChipLabel {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .timeChipValue {
+  color: var(--cm-purple) !important;
+}
+
+.lightTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--cm-green) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-green) 8%, var(--cm-panel)) !important;
+  color: var(--cm-green) !important;
+}
+
+.lightTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--cm-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-red) 8%, var(--cm-panel)) !important;
+  color: var(--cm-red) !important;
+}
+
+.lightTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--cm-blue) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-blue) 8%, var(--cm-panel)) !important;
+  color: var(--cm-blue) !important;
+}
+
+.lightTheme .boardFrame {
+  border-color: var(--cm-border) !important;
+  background: linear-gradient(180deg, var(--cm-panel) 0%, var(--cm-bg) 100%) !important;
+}
+
+.lightTheme .pausedOverlay {
+  background: rgba(238, 244, 255, 0.75) !important;
+}
+
+.lightTheme .pausedText {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel) !important;
+  color: var(--cm-purple) !important;
+}
+
+.lightTheme .resultCardOverride {
+  background: var(--cm-panel) !important;
+  border: 1px solid var(--cm-border) !important;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.08) !important;
+  color: var(--cm-text) !important;
+}
+
+.lightTheme .resultMuted {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .resultStatTile {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel {
+  color: var(--cm-muted) !important;
+}
+
+.lightTheme .resultDetailCard {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: var(--cm-text) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

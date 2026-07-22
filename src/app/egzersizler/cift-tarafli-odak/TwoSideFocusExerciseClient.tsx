@@ -161,7 +161,7 @@ function clampSpeed(value: number) {
 export function TwoSideFocusExerciseClient() {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const [level, setLevel] = useState<ExerciseLevel>(1);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [isRunning, setIsRunning] = useState(false);

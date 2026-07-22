@@ -117,7 +117,7 @@ function createRound(cardCount: number) {
 export default function NewCardMemoryExerciseClient() {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [memoryDuration, setMemoryDuration] = useState<number>(10);
   const [status, setStatus] = useState<GameStatus>("idle");

@@ -240,6 +240,229 @@
   color: var(--hr-purple) !important;
 }
 
+.lightTheme {
+  --hr-bg: #eef4ff;
+  --hr-panel: #ffffff;
+  --hr-panel-2: #f8fbff;
+  --hr-text: #172033;
+  --hr-muted: #526076;
+  --hr-border: #cbd7f3;
+  --hr-purple: #7c3aed;
+  --hr-indigo: #4f46e5;
+  --hr-red: #dc2626;
+  --hr-green: #15803d;
+  --hr-blue: #2563eb;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--hr-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--hr-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--hr-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: var(--hr-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--hr-border) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme .selectOverride {
+  background: var(--hr-panel) !important;
+  border-color: var(--hr-border) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .startButtonOverride {
+  background: var(--hr-indigo) !important;
+}
+
+.lightTheme .secondaryButtonOverride {
+  background: var(--hr-panel-2) !important;
+  border-color: var(--hr-border) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .secondaryButtonOverride:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme .finishButtonOverride {
+  background: var(--hr-red) !important;
+}
+
+.lightTheme .introEyebrow {
+  color: var(--hr-purple) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .introBody {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme .resultCardOverride {
+  background: var(--hr-panel) !important;
+  border: 1px solid var(--hr-border) !important;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.08) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .resultTitle {
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .resultMuted {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme .noticeInfo {
+  border-color: color-mix(in srgb, var(--hr-blue) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-blue) 8%, var(--hr-panel)) !important;
+  color: var(--hr-blue) !important;
+}
+
+.lightTheme .noticeError {
+  border-color: color-mix(in srgb, var(--hr-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-red) 8%, var(--hr-panel)) !important;
+  color: var(--hr-red) !important;
+}
+
+.lightTheme .retryButtonOverride {
+  background: var(--hr-red) !important;
+}
+
+.lightTheme .resultStatTile {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme .resultStatValue {
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .resultDetailCard {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .targetBanner {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+}
+
+.lightTheme .targetLabel {
+  color: var(--hr-purple) !important;
+}
+
+.lightTheme .targetTitle {
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .targetValue {
+  color: var(--hr-purple) !important;
+}
+
+.lightTheme .timerChip {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+}
+
+.lightTheme .timerLabel {
+  color: var(--hr-muted) !important;
+}
+
+.lightTheme .timerValue {
+  color: var(--hr-purple) !important;
+}
+
+.lightTheme .charDisplayArea {
+  border-color: var(--hr-border) !important;
+  background: linear-gradient(180deg, var(--hr-panel) 0%, var(--hr-bg) 100%) !important;
+}
+
+.lightTheme .charChip {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--hr-green) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-green) 8%, var(--hr-panel)) !important;
+  color: var(--hr-green) !important;
+}
+
+.lightTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--hr-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-red) 8%, var(--hr-panel)) !important;
+  color: var(--hr-red) !important;
+}
+
+.lightTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--hr-blue) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-blue) 8%, var(--hr-panel)) !important;
+  color: var(--hr-blue) !important;
+}
+
+.lightTheme .answerButton {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+  color: var(--hr-text) !important;
+}
+
+.lightTheme .answerButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hr-purple) 10%, var(--hr-panel)) !important;
+}
+
+.lightTheme .pausedOverlay {
+  background: rgba(238, 244, 255, 0.7) !important;
+}
+
+.lightTheme .pausedText {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+  color: var(--hr-purple) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

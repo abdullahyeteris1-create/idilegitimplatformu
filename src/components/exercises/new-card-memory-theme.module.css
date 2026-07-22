@@ -305,6 +305,296 @@
   color: var(--nc-red) !important;
 }
 
+.lightTheme {
+  --nc-bg: #eef4ff;
+  --nc-panel: #ffffff;
+  --nc-panel-2: #f8fbff;
+  --nc-text: #172033;
+  --nc-muted: #526076;
+  --nc-border: #cbd7f3;
+  --nc-purple: #7c3aed;
+  --nc-pink: #db2777;
+  --nc-green: #15803d;
+  --nc-red: #dc2626;
+  --nc-amber: #d97706;
+}
+
+.lightTheme.pageBackground {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .panel {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme .panelHeader {
+  border-color: var(--nc-border) !important;
+}
+
+.lightTheme .title {
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .subtitle {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .statCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .statCardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .statCardValue {
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .settingsBar {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .levelButtonActive {
+  border-color: var(--nc-purple) !important;
+  background: var(--nc-purple) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .durationButtonActive {
+  border-color: var(--nc-pink) !important;
+  background: var(--nc-pink) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .optionButtonIdle {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .optionButtonIdle:hover {
+  border-color: var(--nc-purple) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .idleCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .idleTitle {
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .idleBody {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.lightTheme .progressTrack {
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .progressFill {
+  background: var(--nc-purple) !important;
+}
+
+.lightTheme .pauseButton {
+  border-color: color-mix(in srgb, var(--nc-amber) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-amber) 8%, var(--nc-panel)) !important;
+  color: var(--nc-amber) !important;
+}
+
+.lightTheme .resumeButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.lightTheme .finishButton {
+  border-color: color-mix(in srgb, var(--nc-red) 35%, transparent) !important;
+  background: var(--nc-panel) !important;
+  color: var(--nc-red) !important;
+}
+
+.lightTheme .finishButton:hover {
+  background: color-mix(in srgb, var(--nc-red) 8%, var(--nc-panel)) !important;
+}
+
+.lightTheme .contentCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+}
+
+.lightTheme .phaseHeadingMemorize {
+  color: var(--nc-purple) !important;
+}
+
+.lightTheme .phaseHeadingPaused {
+  color: var(--nc-amber) !important;
+}
+
+.lightTheme .phaseHeadingReady {
+  color: var(--nc-green) !important;
+}
+
+.lightTheme .phaseHeadingChallenge {
+  color: var(--nc-pink) !important;
+}
+
+.lightTheme .phaseBody {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .pausedVisual {
+  background: linear-gradient(135deg, var(--nc-panel) 0%, var(--nc-panel-2) 100%) !important;
+}
+
+.lightTheme .pausedVisualText {
+  color: var(--nc-amber) !important;
+}
+
+.lightTheme .readyVisual {
+  background: linear-gradient(135deg, var(--nc-panel) 0%, var(--nc-panel-2) 100%) !important;
+}
+
+.lightTheme .continueButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+}
+
+.lightTheme .cardTile {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .cardTile:hover {
+  border-color: var(--nc-purple) !important;
+}
+
+.lightTheme .cardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .cardCorrect {
+  border-color: var(--nc-green) !important;
+  background: color-mix(in srgb, var(--nc-green) 12%, var(--nc-panel)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nc-green) 18%, transparent) !important;
+}
+
+.lightTheme .cardWrong {
+  border-color: var(--nc-red) !important;
+  background: color-mix(in srgb, var(--nc-red) 12%, var(--nc-panel)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nc-red) 18%, transparent) !important;
+}
+
+.lightTheme .newBadge {
+  background: var(--nc-green) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .feedbackCorrect {
+  border-color: color-mix(in srgb, var(--nc-green) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-green) 8%, var(--nc-panel)) !important;
+  color: var(--nc-green) !important;
+}
+
+.lightTheme .feedbackWrong {
+  border-color: color-mix(in srgb, var(--nc-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-red) 8%, var(--nc-panel)) !important;
+  color: var(--nc-red) !important;
+}
+
+.lightTheme .savingCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .savingTitle {
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .savingError {
+  color: var(--nc-red) !important;
+}
+
+.lightTheme .retryButton {
+  background: var(--nc-purple) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .finishedBanner {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .finishedTitle {
+  color: var(--nc-green) !important;
+}
+
+.lightTheme .resultCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+}
+
+.lightTheme .resultCardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .resultCardValue {
+  color: var(--nc-green) !important;
+}
+
+.lightTheme .secondaryButton {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .secondaryButton:hover {
+  background: #eef2ff !important;
+}
+
+.lightTheme .tableWrap {
+  border-color: var(--nc-border) !important;
+}
+
+.lightTheme .tableHeaderBar {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.lightTheme .tableHeaderTitle {
+  color: var(--nc-text) !important;
+}
+
+.lightTheme .tableHead {
+  background: var(--nc-panel) !important;
+  color: var(--nc-muted) !important;
+}
+
+.lightTheme .tableRow {
+  border-color: var(--nc-border) !important;
+}
+
+.lightTheme .tableCorrect {
+  color: var(--nc-green) !important;
+}
+
+.lightTheme .tableWrong {
+  color: var(--nc-red) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

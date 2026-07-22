@@ -37,7 +37,7 @@ function formatTime(milliseconds: number): string {
 export default function NumberTableExerciseClient() {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [numbers, setNumbers] = useState<number[]>([]);
   const [nextNumber, setNextNumber] = useState(1);

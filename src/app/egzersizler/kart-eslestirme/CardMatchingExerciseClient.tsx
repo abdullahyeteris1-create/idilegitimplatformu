@@ -120,7 +120,7 @@ export function CardMatchingExerciseClient() {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
 
   const timerRef = useRef<number | null>(null);
   const resolveRef = useRef<number | null>(null);

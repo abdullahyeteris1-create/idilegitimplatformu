@@ -195,6 +195,183 @@
   background: color-mix(in srgb, var(--mg-green) 20%, var(--mg-panel)) !important;
 }
 
+.lightTheme {
+  --mg-bg: #eef4ff;
+  --mg-panel: #ffffff;
+  --mg-panel-2: #f8fbff;
+  --mg-text: #172033;
+  --mg-muted: #526076;
+  --mg-border: #cbd7f3;
+  --mg-purple: #7c3aed;
+  --mg-green: #15803d;
+  --mg-red: #dc2626;
+  --mg-blue: #2563eb;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--mg-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--mg-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--mg-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: var(--mg-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--mg-border) !important;
+}
+
+.lightTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.3) !important;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22) !important;
+}
+
+.lightTheme .secondaryButtonOverride {
+  background: var(--mg-panel-2) !important;
+  border-color: var(--mg-border) !important;
+  color: var(--mg-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme .secondaryButtonOverride:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme .selectOverride {
+  background: var(--mg-panel) !important;
+  border-color: var(--mg-border) !important;
+  color: var(--mg-text) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .introEyebrow {
+  color: var(--mg-purple) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--mg-text) !important;
+}
+
+.lightTheme .introBody {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .resultCardOverride {
+  background: var(--mg-panel) !important;
+  border: 1px solid var(--mg-border) !important;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.08) !important;
+  color: var(--mg-text) !important;
+}
+
+.lightTheme .resultMuted {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .resultStatTile {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .resultDetailCard {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: var(--mg-text) !important;
+}
+
+.lightTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--mg-green) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-green) 8%, var(--mg-panel)) !important;
+  color: var(--mg-green) !important;
+}
+
+.lightTheme .feedbackLevelUp {
+  border-color: color-mix(in srgb, var(--mg-blue) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-blue) 8%, var(--mg-panel)) !important;
+  color: var(--mg-blue) !important;
+}
+
+.lightTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--mg-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-red) 8%, var(--mg-panel)) !important;
+  color: var(--mg-red) !important;
+}
+
+.lightTheme .feedbackInfo {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .helperText {
+  color: var(--mg-muted) !important;
+}
+
+.lightTheme .gridFrame {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-bg) !important;
+}
+
+.lightTheme .boxIdle {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel) !important;
+}
+
+.lightTheme .boxShowing {
+  border-color: #f87171 !important;
+  background: #ef4444 !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35), 0 0 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+.lightTheme .boxCorrect {
+  border-color: #4ade80 !important;
+  background: #22c55e !important;
+}
+
+.lightTheme .boxWrong {
+  border-color: #fb7185 !important;
+  background: #f43f5e !important;
+}
+
+.lightTheme .boxRevealed {
+  border-color: color-mix(in srgb, var(--mg-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-green) 12%, var(--mg-panel)) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;
