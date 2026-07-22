@@ -63,6 +63,26 @@
 .light .recentSectionTitle>a,.light .recentResultCard>a{background:#eef2f8;color:#172033;border-color:#9eacc0}
 .light .resultMetrics b{color:#172033}
 
+.readingCard{position:relative;margin-top:12px;border:1px solid #293958;border-radius:18px;padding:18px;background:linear-gradient(145deg,#101b36,#0b1529);display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px}
+.readingCardHead{flex:1 1 220px;min-width:0}
+.readingCardHead h2{margin:0 0 6px;font-size:17px}
+.readingCardHead p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.readingCardStats{flex:2 1 320px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-width:0}
+.readingCardStats div{min-width:0}
+.readingCardStats span{display:block;color:var(--muted);font-size:10px;overflow-wrap:anywhere}
+.readingCardStats strong{display:block;margin-top:6px;font-size:17px;overflow-wrap:anywhere}
+.readingCardAction{flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:11px;padding:0 16px;font-size:12px;font-weight:700;background:#101b30;transition:.2s}
+.readingCardAction:hover{background:#1a2a47;border-color:#52688c}
+.readingCardAction svg{width:15px;transition:transform .2s}
+.readingCardAction:hover svg{transform:translateX(4px)}
+.light .readingCard{background:#fff;color:#172033}
+.light .readingCardHead p{color:#4b5563}
+.light .readingCardAction{background:#eef2f8;color:#172033;border-color:#9eacc0}
+.light .readingCardAction:hover{background:#dce5f1;border-color:#65748b}
+@media(max-width:900px){.readingCard{padding:16px}}
+@media(max-width:560px){.readingCard{flex-direction:column;align-items:stretch;gap:14px}.readingCardStats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.readingCardAction{width:100%}}
+@media(max-width:360px){.readingCardStats{grid-template-columns:1fr 1fr}}
+
 .profileMenu>.profileLogout{margin-top:6px;border:1px solid #7f1d1d;background:#7f1d1d33;color:#fecaca}
 .profileMenu>.profileLogout:hover{background:#991b1b66}
 .profileMenu>button:disabled{cursor:wait;opacity:.7}

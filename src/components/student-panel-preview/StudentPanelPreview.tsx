@@ -5,11 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
+import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { categories, navItems, stats, type Category, type NavItem } from "./data";
 import { Icon } from "./icons";
-import { ReadingTestsStatistics } from "./ReadingTestsStatistics";
 import styles from "./student-panel-preview.module.css";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
@@ -17,14 +17,14 @@ type PreviewStudentIdentity = { name: string; classLabel: string; studentId: str
 export type AuthenticatedStudent = { id: string; name: string; username?: string; classLevel?: string | null };
 type StudentPanelPreviewProps = {
   authenticatedStudent: AuthenticatedStudent;
-  showReadingTestsStatistics?: boolean;
+  showReadingTestsCard?: boolean;
 };
 type PreviewResultsState = {
   status: "loading" | "ready" | "error";
   results: ExerciseResult[];
   readingTests: ReadingTestResult[];
 };
-type StudentResultApiItem = {
+export type StudentResultApiItem = {
   id: string;
   studentId: string;
   exerciseType: ExerciseType;
@@ -120,6 +120,10 @@ function getResultDetailNumber(result: ExerciseResult, ...keys: string[]): numbe
 function getResultDetailString(result: ExerciseResult, key: string): string | null {
   const value = result.details?.[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function formatNumber(value: number): string {
+  return Math.round(value).toLocaleString("tr-TR");
 }
 
 function formatResultDuration(seconds: number): string {
@@ -427,6 +431,32 @@ function RecentResults({ results, loading, error }: { results: ExerciseResult[];
   );
 }
 
+function ReadingTestsCard({ results, status }: { results: ExerciseResult[]; status: "loading" | "ready" | "error" }) {
+  const summary = useMemo(() => createReadingTestStatistics(results, 10).summary, [results]);
+  const loading = status === "loading";
+  const error = status === "error";
+  const placeholder = loading || error ? "—" : null;
+  const speedValue = placeholder ?? (summary.latestSpeedWpm === null ? "—" : `${formatNumber(summary.latestSpeedWpm)} kelime/dk`);
+  const comprehensionValue = placeholder ?? (summary.latestComprehensionRate === null ? "—" : `%${formatNumber(summary.latestComprehensionRate)}`);
+  const totalValue = placeholder ?? formatNumber(summary.totalTests);
+
+  return (
+    <section className={styles.readingCard} aria-labelledby="reading-tests-card-title">
+      <span className={styles.cornerSpark}>✦</span>
+      <div className={styles.readingCardHead}>
+        <h2 id="reading-tests-card-title">Okuma Testlerim</h2>
+        <p>Okuma hızı ve anlama testi gelişiminizi inceleyin.</p>
+      </div>
+      <div className={styles.readingCardStats}>
+        <div><span>Son Okuma Hızı</span><strong>{speedValue}</strong></div>
+        <div><span>Son Anlama Başarısı</span><strong>{comprehensionValue}</strong></div>
+        <div><span>Toplam Okuma Testi</span><strong>{totalValue}</strong></div>
+      </div>
+      <Link href="/ogrenci/okuma-testlerim" className={styles.readingCardAction}>İstatistikleri Gör <Icon name="arrow"/></Link>
+    </section>
+  );
+}
+
 function ReadingTest({ test, loading }: { test?: ReadingTestResult; loading: boolean }) {
   if (loading) {
     return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><p className={styles.readingEmpty}>Sonuçlar yükleniyor...</p></section>;
@@ -483,7 +513,7 @@ function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentNa
   );
 }
 
-export function StudentPanelPreview({ authenticatedStudent, showReadingTestsStatistics = false }: StudentPanelPreviewProps) {
+export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard = false }: StudentPanelPreviewProps) {
   const { theme, setTheme } = useIdilTheme();
   const light = theme === "light";
   const [toast, setToast] = useState("");
@@ -687,5 +717,5 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsStat
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsStatistics && <ReadingTestsStatistics results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/><Badges onDemo={showToast}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }

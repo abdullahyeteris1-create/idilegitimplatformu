@@ -67,21 +67,21 @@
 
 .sectionHeader h2 {
   margin: 5px 0 7px;
-  font-size: clamp(19px, 2vw, 24px);
-  line-height: 1.2;
+  font-size: clamp(21px, 2.4vw, 28px);
+  line-height: 1.25;
 }
 
 .sectionHeader p {
   max-width: 650px;
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 
 .eyebrow {
   color: var(--purple);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.16em;
 }
@@ -96,7 +96,7 @@
   padding: 0 12px;
   color: var(--muted);
   background: var(--surface-secondary);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -108,7 +108,7 @@
 
 .summaryCard {
   min-width: 0;
-  min-height: 116px;
+  min-height: 132px;
   position: relative;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, currentColor 28%, var(--border));
@@ -139,21 +139,21 @@
 .summaryCard span {
   min-height: 30px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.4;
 }
 
 .summaryCard strong {
   margin-top: 8px;
   color: var(--text);
-  font-size: clamp(17px, 2vw, 23px);
+  font-size: clamp(26px, 3vw, 32px);
   line-height: 1.2;
 }
 
 .summaryCard small {
   margin-top: 5px;
   color: currentColor;
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -180,6 +180,7 @@
 
 .chartCard {
   padding: 16px;
+  min-height: 340px;
 }
 
 .chartHeader,
@@ -196,14 +197,14 @@
 .detailPanel h3 {
   margin: 0;
   color: var(--text);
-  font-size: 14px;
+  font-size: clamp(18px, 1.6vw, 20px);
 }
 
 .chartHeader p,
 .panelHeading p {
   margin: 5px 0 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .axisUnit {
@@ -212,13 +213,13 @@
   border-radius: 999px;
   padding: 5px 8px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .chartViewport {
   width: 100%;
-  min-height: 220px;
+  min-height: 260px;
   margin-top: 8px;
   overflow: hidden;
 }
@@ -227,7 +228,7 @@
   display: block;
   width: 100%;
   height: auto;
-  min-height: 220px;
+  min-height: 260px;
   overflow: visible;
 }
 
@@ -242,12 +243,12 @@
 .pointValue {
   fill: var(--muted);
   font-family: "Segoe UI", Tahoma, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .pointValue {
   fill: var(--text);
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -266,15 +267,16 @@
   stroke: currentColor;
   stroke-linecap: round;
   pointer-events: none;
+  transition: opacity 0.2s, filter 0.2s;
 }
 
 .markerStem {
-  stroke-width: 2;
-  opacity: 0.42;
+  stroke-width: 3.5;
+  opacity: 0.45;
 }
 
 .markerBody {
-  stroke-width: 8;
+  stroke-width: 14;
 }
 
 .markerDot {
@@ -287,10 +289,10 @@
 .markerRing {
   fill: none;
   stroke: currentColor;
-  stroke-width: 3;
-  opacity: 0.8;
+  stroke-width: 4;
+  opacity: 0.85;
   pointer-events: none;
-  filter: drop-shadow(0 0 5px currentColor);
+  filter: drop-shadow(0 0 6px currentColor);
 }
 
 .speedMarker { color: var(--speed); }
@@ -299,7 +301,13 @@
 .marker:hover .markerStem,
 .marker:focus-visible .markerStem,
 .selectedMarker .markerStem {
-  opacity: 0.8;
+  opacity: 0.85;
+}
+
+.marker:hover .markerBody,
+.marker:focus-visible .markerBody,
+.selectedMarker .markerBody {
+  filter: drop-shadow(0 0 6px currentColor);
 }
 
 .marker:focus-visible .markerDot {
@@ -308,7 +316,7 @@
 }
 
 .chartEmpty {
-  min-height: 220px;
+  min-height: 260px;
   display: grid;
   place-items: center;
   margin-top: 8px;
@@ -327,7 +335,7 @@
   flex-wrap: wrap;
   gap: 8px 14px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .legend span {
@@ -337,8 +345,8 @@
 }
 
 .legend i {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 3px;
 }
 
@@ -348,7 +356,7 @@
 .chartNote {
   margin: 7px 0 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -361,45 +369,55 @@
 
 .recordPanel,
 .detailPanel {
-  padding: 16px;
+  padding: 18px;
 }
 
 .panelHeading {
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .panelHeading > span {
-  min-width: 31px;
-  height: 31px;
+  min-width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border-radius: 10px;
   color: var(--purple);
   background: color-mix(in srgb, var(--purple) 12%, var(--surface-raised));
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
 }
 
 .recordList {
   display: grid;
-  gap: 8px;
+  gap: 11px;
   max-height: 520px;
   overflow-y: auto;
-  padding-right: 3px;
-  scrollbar-color: var(--border) transparent;
+  padding-right: 5px;
+  scrollbar-color: var(--purple) transparent;
+  scrollbar-width: thin;
+}
+
+.recordList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.recordList::-webkit-scrollbar-thumb {
+  background: var(--purple);
+  border-radius: 999px;
 }
 
 .recordButton {
   width: 100%;
-  min-height: 76px;
+  min-height: 84px;
   display: grid;
   grid-template-columns: minmax(112px, 0.8fr) minmax(140px, 1.25fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
   border-radius: 13px;
-  padding: 11px 12px;
+  padding: 14px 15px;
   color: var(--text);
   background: color-mix(in srgb, var(--surface-raised) 58%, transparent);
   text-align: left;
@@ -419,8 +437,9 @@
 
 .selectedRecord {
   border-color: var(--purple);
-  background: color-mix(in srgb, var(--purple) 12%, var(--surface-raised));
-  box-shadow: inset 3px 0 var(--purple);
+  border-width: 2px;
+  background: color-mix(in srgb, var(--purple) 16%, var(--surface-raised));
+  box-shadow: inset 4px 0 var(--purple);
 }
 
 .recordDate,
@@ -440,7 +459,7 @@
 .recordIdentity strong {
   overflow: hidden;
   color: var(--text);
-  font-size: 10px;
+  font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -448,13 +467,17 @@
 .recordDate small,
 .recordIdentity small,
 .recordIdentity em {
-  margin-top: 4px;
+  margin-top: 5px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 12.5px;
   font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recordIdentity small {
+  font-size: 13.5px;
 }
 
 .recordIdentity em {
@@ -465,7 +488,7 @@
 .recordMetric {
   justify-self: end;
   color: var(--purple);
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 800;
   text-align: right;
 }
@@ -481,7 +504,7 @@
 
 .detailTopline span {
   color: var(--purple);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
@@ -491,48 +514,48 @@
   padding: 4px 7px;
   color: var(--green);
   background: color-mix(in srgb, var(--green) 11%, transparent);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 800;
 }
 
 .detailPanel h3 {
   margin-top: 12px;
-  font-size: 17px;
+  font-size: clamp(18px, 1.8vw, 22px);
   line-height: 1.35;
 }
 
 .detailDate {
   margin: 6px 0 16px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .detailGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   margin: 0;
 }
 
 .detailItem {
   min-width: 0;
-  min-height: 62px;
+  min-height: 68px;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: 11px;
-  padding: 10px;
+  padding: 12px;
   background: color-mix(in srgb, var(--surface-raised) 58%, transparent);
 }
 
 .detailItem dt {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .detailItem dd {
   margin: 6px 0 0;
   overflow-wrap: anywhere;
   color: var(--text);
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -543,7 +566,7 @@
 }
 
 .loadingState span {
-  min-height: 116px;
+  min-height: 132px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: linear-gradient(100deg, var(--surface-secondary) 25%, var(--surface-raised) 45%, var(--surface-secondary) 65%);
@@ -566,13 +589,13 @@
   display: block;
   margin: 0;
   color: var(--text);
-  font-size: 15px;
+  font-size: 18px;
 }
 
 .messageState p,
 .emptyState p {
   margin: 8px 0 0;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .emptyState > span {
@@ -599,7 +622,7 @@
   padding: 0 15px;
   color: #ffffff;
   background: linear-gradient(90deg, #7c3aed, #2563eb);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 800;
   text-decoration: none;
 }
@@ -646,6 +669,15 @@
 
   .historyGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chartCard {
+    min-height: 300px;
+  }
+
+  .chartViewport,
+  .chart {
+    min-height: 230px;
   }
 
   .recordButton {
@@ -696,7 +728,7 @@
 
   .summaryCard,
   .loadingState span {
-    min-height: 108px;
+    min-height: 122px;
   }
 
   .chartCard,
@@ -705,9 +737,13 @@
     padding: 13px;
   }
 
+  .chartCard {
+    min-height: 280px;
+  }
+
   .chartViewport,
   .chart {
-    min-height: 190px;
+    min-height: 205px;
   }
 
   .recordButton {
@@ -743,7 +779,7 @@
 
   .summaryCard,
   .loadingState span {
-    min-height: 96px;
+    min-height: 108px;
   }
 
   .chartHeader {
@@ -758,7 +794,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loadingState span,
-  .recordButton {
+  .recordButton,
+  .markerStem,
+  .markerBody {
     animation: none;
     transition: none;
   }

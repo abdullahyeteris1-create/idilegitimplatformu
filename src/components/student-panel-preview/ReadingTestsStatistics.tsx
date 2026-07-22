@@ -13,6 +13,7 @@ import styles from "./reading-tests-statistics.module.css";
 type ReadingTestsStatisticsProps = {
   results: ExerciseResult[];
   status: "loading" | "ready" | "error";
+  hideHeader?: boolean;
 };
 
 type ChartMetric = "wpm" | "success";
@@ -109,12 +110,12 @@ function PerformanceChart({
   selectedResultId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const width = 720;
-  const height = 260;
-  const left = 58;
+  const width = 760;
+  const height = 300;
+  const left = 62;
   const right = 20;
-  const top = 24;
-  const bottom = 48;
+  const top = 30;
+  const bottom = 54;
   const chartWidth = width - left - right;
   const chartHeight = height - top - bottom;
   const values = points.map((point) => metric === "wpm" ? point.readingSpeedWpm ?? 0 : point.successRate ?? 0);
@@ -156,7 +157,7 @@ function PerformanceChart({
               return (
                 <g key={ratio} className={styles.gridLine}>
                   <line x1={left} x2={width - right} y1={y} y2={y} />
-                  <text x={left - 10} y={y + 4} textAnchor="end">
+                  <text x={left - 12} y={y + 4} textAnchor="end">
                     {formatNumber(maximum * ratio)}
                   </text>
                 </g>
@@ -186,15 +187,15 @@ function PerformanceChart({
                   onKeyDown={(event) => handleKeyDown(event, point.id)}
                 >
                   <title>{ariaLabel}</title>
-                  <rect className={styles.hitArea} x={x - 22} y={top} width={44} height={chartHeight + 34} />
+                  <rect className={styles.hitArea} x={x - 24} y={top} width={48} height={chartHeight + 40} />
                   <line className={styles.markerStem} x1={x} x2={x} y1={top + chartHeight} y2={y} />
                   <line className={styles.markerBody} x1={x} x2={x} y1={Math.max(top, y - 8)} y2={Math.min(top + chartHeight, y + 8)} />
-                  {selected && <circle className={styles.markerRing} cx={x} cy={y} r={12} />}
-                  <circle className={styles.markerDot} cx={x} cy={y} r={5} />
-                  <text className={styles.pointValue} x={x} y={Math.max(14, y - 15)} textAnchor="middle">
+                  {selected && <circle className={styles.markerRing} cx={x} cy={y} r={13} />}
+                  <circle className={styles.markerDot} cx={x} cy={y} r={6} />
+                  <text className={styles.pointValue} x={x} y={Math.max(18, y - 18)} textAnchor="middle">
                     {formatNumber(value)}
                   </text>
-                  <text className={styles.pointLabel} x={x} y={height - 18} textAnchor="middle">
+                  <text className={styles.pointLabel} x={x} y={height - 20} textAnchor="middle">
                     {points.length > 6 ? index + 1 : date.short}
                   </text>
                 </g>
@@ -320,7 +321,7 @@ function LoadingState() {
   );
 }
 
-export function ReadingTestsStatistics({ results, status }: ReadingTestsStatisticsProps) {
+export function ReadingTestsStatistics({ results, status, hideHeader = false }: ReadingTestsStatisticsProps) {
   const { theme } = useIdilTheme();
   const statistics = useMemo(() => createReadingTestStatistics(results, 10), [results]);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
@@ -331,17 +332,23 @@ export function ReadingTestsStatistics({ results, status }: ReadingTestsStatisti
   const themeClass = theme === "light" ? styles.lightTheme : styles.darkTheme;
 
   return (
-    <section className={`${styles.root} ${themeClass}`} aria-labelledby="reading-tests-statistics-title">
-      <header className={styles.sectionHeader}>
-        <div>
-          <span className={styles.eyebrow}>KİŞİSEL GELİŞİM</span>
-          <h2 id="reading-tests-statistics-title">Okuma Testleri İstatistikleri</h2>
-          <p>Okuma hızınızı ve anlama testlerindeki gelişiminizi tarih sırasına göre takip edin.</p>
-        </div>
-        {status === "ready" && statistics.summary.totalTests > 0 && (
-          <span className={styles.resultCount}>{statistics.summary.totalTests} kayıt</span>
-        )}
-      </header>
+    <section
+      className={`${styles.root} ${themeClass}`}
+      aria-labelledby={hideHeader ? undefined : "reading-tests-statistics-title"}
+      aria-label={hideHeader ? "Okuma testleri istatistikleri" : undefined}
+    >
+      {!hideHeader && (
+        <header className={styles.sectionHeader}>
+          <div>
+            <span className={styles.eyebrow}>KİŞİSEL GELİŞİM</span>
+            <h2 id="reading-tests-statistics-title">Okuma Testleri İstatistikleri</h2>
+            <p>Okuma hızınızı ve anlama testlerindeki gelişiminizi tarih sırasına göre takip edin.</p>
+          </div>
+          {status === "ready" && statistics.summary.totalTests > 0 && (
+            <span className={styles.resultCount}>{statistics.summary.totalTests} kayıt</span>
+          )}
+        </header>
+      )}
 
       {status === "loading" && <LoadingState />}
 

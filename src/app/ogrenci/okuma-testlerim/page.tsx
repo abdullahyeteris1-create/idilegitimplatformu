@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { StudentPanelPreview } from "@/components/student-panel-preview/StudentPanelPreview";
+import { ReadingTestsPageClient } from "./ReadingTestsPageClient";
 import { STUDENT_SESSION_COOKIE_NAME } from "@/lib/auth/studentSession";
 import { verifyStudentAccessToken } from "@/lib/auth/verifyStudentAccess";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Okuma Testlerim | İDİL Hızlı Okuma",
+  description: "Okuma hızı ve anlama testi istatistikleriniz",
+};
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 
@@ -24,7 +30,7 @@ async function getStudentProfile(studentId: string) {
   }
 }
 
-export default async function StudentDashboardPage() {
+export default async function ReadingTestsPage() {
   const cookieStore = await cookies();
   const access = await verifyStudentAccessToken(cookieStore.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "");
   if (!access.ok) redirect("/giris");
@@ -36,16 +42,13 @@ export default async function StudentDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--idil-page-bg)] text-[var(--idil-text)]">
-      <StudentPanelPreview
-        showReadingTestsCard={true}
-        authenticatedStudent={{
-          id: access.studentId,
-          name: studentName,
-          username: typeof student.username === "string" && student.username.trim() ? student.username.trim() : access.username,
-          classLevel: typeof student.class_name === "string" && student.class_name.trim() ? student.class_name.trim() : null,
-        }}
-      />
-    </div>
+    <ReadingTestsPageClient
+      authenticatedStudent={{
+        id: access.studentId,
+        name: studentName,
+        username: typeof student.username === "string" && student.username.trim() ? student.username.trim() : access.username,
+        classLevel: typeof student.class_name === "string" && student.class_name.trim() ? student.class_name.trim() : null,
+      }}
+    />
   );
 }
