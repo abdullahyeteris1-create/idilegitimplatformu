@@ -56,6 +56,14 @@ function formatDayKeyShort(dayKey: string): string {
   return `${day} ${TURKISH_MONTHS_SHORT[month - 1]}`;
 }
 
+function stableColorForLabel(label: string): string {
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) {
+    hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  }
+  return DISTRIBUTION_COLORS[hash % DISTRIBUTION_COLORS.length];
+}
+
 function heatmapLevelClass(count: number): string {
   if (count <= 0) return "";
   if (count === 1) return styles.heatmapLevel1;
@@ -145,7 +153,7 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
   const placeholder = isLoading || isError ? "—" : null;
 
   const maxMonthlyCount = Math.max(1, ...monthlyProgress.map((entry) => entry.count));
-  const donutCircumference = 2 * Math.PI * 52;
+  const donutCircumference = 2 * Math.PI * 80;
   const donutSegments = useMemo(
     () =>
       distribution.map((entry, index) => {
@@ -210,37 +218,45 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
         ) : (
           <>
             <section className={styles.summaryGrid} aria-label="Genel özet">
-              <article className={styles.summaryCard}>
+              <article className={`${styles.summaryCard} ${styles.accentBlue}`}>
                 <div className={styles.summaryCardHead}>
                   <span>Toplam Test</span>
-                  <SummaryIcon name="chart" />
+                  <span className={styles.summaryIconBox} aria-hidden="true">
+                    <SummaryIcon name="chart" />
+                  </span>
                 </div>
                 <strong className={styles.summaryValue}>{placeholder ?? totalTests.toLocaleString("tr-TR")}</strong>
                 <small className={styles.summaryNote}>Seçili dönemde tamamlanan çalışmalar</small>
               </article>
 
-              <article className={styles.summaryCard}>
+              <article className={`${styles.summaryCard} ${styles.accentOrange}`}>
                 <div className={styles.summaryCardHead}>
                   <span>Toplam Çalışma Süresi</span>
-                  <SummaryIcon name="clock" />
+                  <span className={styles.summaryIconBox} aria-hidden="true">
+                    <SummaryIcon name="clock" />
+                  </span>
                 </div>
                 <strong className={styles.summaryValue}>{placeholder ?? formatDurationLabel(totalDurationSeconds)}</strong>
                 <small className={styles.summaryNote}>Geçerli, ölçülmüş sürelerin toplamı</small>
               </article>
 
-              <article className={styles.summaryCard}>
+              <article className={`${styles.summaryCard} ${styles.accentGreen}`}>
                 <div className={styles.summaryCardHead}>
                   <span>Aktif Gün Sayısı</span>
-                  <SummaryIcon name="activity" />
+                  <span className={styles.summaryIconBox} aria-hidden="true">
+                    <SummaryIcon name="activity" />
+                  </span>
                 </div>
                 <strong className={styles.summaryValue}>{placeholder ?? activeDayCount.toLocaleString("tr-TR")}</strong>
                 <small className={styles.summaryNote}>Seçili dönemde en az bir çalışma yapılan gün</small>
               </article>
 
-              <article className={styles.summaryCard}>
+              <article className={`${styles.summaryCard} ${styles.accentPurple}`}>
                 <div className={styles.summaryCardHead}>
                   <span>Çalışma Serisi</span>
-                  <SummaryIcon name="flame" />
+                  <span className={styles.summaryIconBox} aria-hidden="true">
+                    <SummaryIcon name="flame" />
+                  </span>
                 </div>
                 <strong className={styles.summaryValue}>{placeholder ?? `${studyStreak} gün`}</strong>
                 <small className={styles.summaryNote}>Gün üst üste</small>
@@ -270,7 +286,7 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                   <div className={styles.distributionBody}>
                     <svg
                       className={styles.distributionChart}
-                      viewBox="0 0 120 120"
+                      viewBox="0 0 200 200"
                       role="img"
                       aria-labelledby="distribution-chart-title distribution-chart-desc"
                     >
@@ -278,25 +294,25 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                       <desc id="distribution-chart-desc">
                         {distribution.map((entry) => `${entry.title}: yüzde ${entry.percentage}`).join(", ")}
                       </desc>
-                      <g transform="rotate(-90 60 60)">
-                        <circle className={styles.donutTrack} cx="60" cy="60" r="52" />
+                      <g transform="rotate(-90 100 100)">
+                        <circle className={styles.donutTrack} cx="100" cy="100" r="80" />
                         {donutSegments.map(({ entry, index, segmentLength, offset }) => (
                           <circle
                             key={entry.categoryId}
                             className={styles.donutSegment}
-                            cx="60"
-                            cy="60"
-                            r="52"
+                            cx="100"
+                            cy="100"
+                            r="80"
                             stroke={DISTRIBUTION_COLORS[index % DISTRIBUTION_COLORS.length]}
                             strokeDasharray={`${segmentLength} ${donutCircumference - segmentLength}`}
                             strokeDashoffset={-offset}
                           />
                         ))}
                       </g>
-                      <text className={styles.donutCenterValue} x="60" y="56" textAnchor="middle">
+                      <text className={styles.donutCenterValue} x="100" y="95" textAnchor="middle">
                         {totalTests}
                       </text>
-                      <text className={styles.donutCenterLabel} x="60" y="72" textAnchor="middle">
+                      <text className={styles.donutCenterLabel} x="100" y="119" textAnchor="middle">
                         çalışma
                       </text>
                     </svg>
@@ -320,7 +336,7 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                 )}
               </section>
 
-              <section className={styles.card} aria-labelledby="monthly-title">
+              <section className={`${styles.card} ${styles.monthlyCard}`} aria-labelledby="monthly-title">
                 <div className={styles.cardHead}>
                   <div>
                     <h2 id="monthly-title">Aylık Çalışma Gelişimi</h2>
@@ -333,7 +349,7 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                 ) : (
                   <svg
                     className={styles.monthlyChart}
-                    viewBox="0 0 480 220"
+                    viewBox="0 0 600 300"
                     role="img"
                     aria-labelledby="monthly-chart-title monthly-chart-desc"
                   >
@@ -341,31 +357,43 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                     <desc id="monthly-chart-desc">
                       {monthlyProgress.map((entry) => `${entry.label}: ${entry.count} çalışma`).join(", ")}
                     </desc>
+                    <defs>
+                      <linearGradient id="monthlyBarGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style={{ stopColor: "var(--purple)" }} />
+                        <stop offset="100%" style={{ stopColor: "var(--blue)" }} />
+                      </linearGradient>
+                    </defs>
+                    {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+                      <line
+                        key={ratio}
+                        className={styles.monthlyGridLine}
+                        x1="16"
+                        x2="584"
+                        y1={30 + (1 - ratio) * 204}
+                        y2={30 + (1 - ratio) * 204}
+                      />
+                    ))}
                     {monthlyProgress.map((entry, index) => {
-                      const columnWidth = 480 / monthlyProgress.length;
-                      const barWidth = Math.min(46, columnWidth * 0.5);
+                      const columnWidth = 600 / monthlyProgress.length;
+                      const barWidth = Math.min(58, columnWidth * 0.52);
                       const x = columnWidth * index + columnWidth / 2 - barWidth / 2;
-                      const chartTop = 22;
-                      const chartBottom = 176;
+                      const chartTop = 30;
+                      const chartBottom = 234;
                       const chartHeight = chartBottom - chartTop;
-                      const barHeight = entry.count > 0 ? Math.max(6, (entry.count / maxMonthlyCount) * chartHeight) : 2;
+                      const barHeight = entry.count > 0 ? Math.max(8, (entry.count / maxMonthlyCount) * chartHeight) : 10;
                       const y = chartBottom - barHeight;
 
                       return (
                         <g key={entry.monthKey}>
-                          <rect
-                            className={styles.monthlyBar}
-                            x={x}
-                            y={y}
-                            width={barWidth}
-                            height={barHeight}
-                            rx="6"
-                            opacity={entry.count > 0 ? 1 : 0.25}
-                          />
-                          <text className={styles.monthlyBarLabel} x={x + barWidth / 2} y={Math.max(14, y - 8)} textAnchor="middle">
+                          {entry.count > 0 ? (
+                            <rect className={styles.monthlyBar} x={x} y={y} width={barWidth} height={barHeight} rx="8" />
+                          ) : (
+                            <rect className={styles.monthlyBarEmpty} x={x} y={y} width={barWidth} height={barHeight} rx="8" />
+                          )}
+                          <text className={styles.monthlyBarLabel} x={x + barWidth / 2} y={Math.max(20, y - 10)} textAnchor="middle">
                             {entry.count}
                           </text>
-                          <text className={styles.monthlyAxisLabel} x={x + barWidth / 2} y={chartBottom + 18} textAnchor="middle">
+                          <text className={styles.monthlyAxisLabel} x={x + barWidth / 2} y={chartBottom + 26} textAnchor="middle">
                             {entry.label}
                           </text>
                         </g>
@@ -387,61 +415,73 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
               {heatmapWeeks.length === 0 ? (
                 <div className={styles.emptyState}>Henüz çalışma verisi bulunmuyor.</div>
               ) : (
-                <>
-                  <div className={styles.heatmapScroll}>
-                    <div className={styles.heatmapOuter}>
-                      <div className={styles.heatmapWeekdayCol} aria-hidden="true">
-                        {WEEKDAY_LABELS.map((label) => (
-                          <span key={label} className={styles.heatmapWeekdayLabel}>
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                      <div className={styles.heatmapWeeksRow}>
-                        {heatmapWeeks.map((week, weekIndex) => {
-                          const firstCell = week[0];
-                          const previousWeek = heatmapWeeks[weekIndex - 1];
-                          const monthChanged = !previousWeek || previousWeek[0].dayKey.slice(0, 7) !== firstCell.dayKey.slice(0, 7);
-                          const monthLabel = monthChanged ? TURKISH_MONTHS_SHORT[Number(firstCell.dayKey.slice(5, 7)) - 1] : "";
+                <div className={styles.heatmapBody}>
+                  <div className={styles.heatmapMain}>
+                    <div className={styles.heatmapScroll}>
+                      <div className={styles.heatmapOuter}>
+                        <div className={styles.heatmapWeekdayCol} aria-hidden="true">
+                          {WEEKDAY_LABELS.map((label) => (
+                            <span key={label} className={styles.heatmapWeekdayLabel}>
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                        <div className={styles.heatmapWeeksRow}>
+                          {heatmapWeeks.map((week, weekIndex) => {
+                            const firstCell = week[0];
+                            const previousWeek = heatmapWeeks[weekIndex - 1];
+                            const monthChanged = !previousWeek || previousWeek[0].dayKey.slice(0, 7) !== firstCell.dayKey.slice(0, 7);
+                            const monthLabel = monthChanged ? TURKISH_MONTHS_SHORT[Number(firstCell.dayKey.slice(5, 7)) - 1] : "";
 
-                          return (
-                            <div key={firstCell.dayKey} className={styles.heatmapWeekCol}>
-                              <span className={styles.heatmapMonthLabel}>{monthLabel}</span>
-                              {week.map((cell) => (
-                                <button
-                                  key={cell.dayKey}
-                                  type="button"
-                                  className={`${styles.heatmapCell} ${cell.isFuture ? "" : heatmapLevelClass(cell.count)}`}
-                                  aria-label={`${formatDayKeyLong(cell.dayKey)}: ${cell.count} çalışma`}
-                                  aria-pressed={selectedHeatmapDay?.dayKey === cell.dayKey}
-                                  title={`${formatDayKeyShort(cell.dayKey)}: ${cell.count} çalışma`}
-                                  disabled={cell.isFuture}
-                                  onClick={() => setSelectedHeatmapDay({ dayKey: cell.dayKey, count: cell.count })}
-                                />
-                              ))}
-                            </div>
-                          );
-                        })}
+                            return (
+                              <div key={firstCell.dayKey} className={styles.heatmapWeekCol}>
+                                <span className={styles.heatmapMonthLabel}>{monthLabel}</span>
+                                {week.map((cell) => (
+                                  <button
+                                    key={cell.dayKey}
+                                    type="button"
+                                    className={`${styles.heatmapCell} ${cell.isFuture ? "" : heatmapLevelClass(cell.count)}`}
+                                    aria-label={`${formatDayKeyLong(cell.dayKey)}: ${cell.count} çalışma`}
+                                    aria-pressed={selectedHeatmapDay?.dayKey === cell.dayKey}
+                                    title={`${formatDayKeyShort(cell.dayKey)}: ${cell.count} çalışma`}
+                                    disabled={cell.isFuture}
+                                    onClick={() => setSelectedHeatmapDay({ dayKey: cell.dayKey, count: cell.count })}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.heatmapFooter}>
+                      <div className={styles.heatmapLegend} aria-hidden="true">
+                        <span>Az</span>
+                        <span className={styles.heatmapLevel1} />
+                        <span className={styles.heatmapLevel2} />
+                        <span className={styles.heatmapLevel3} />
+                        <span className={styles.heatmapLevel4} />
+                        <span>Çok</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className={styles.heatmapFooter}>
-                    <div className={styles.heatmapLegend} aria-hidden="true">
-                      <span>Az</span>
-                      <span className={styles.heatmapLevel1} />
-                      <span className={styles.heatmapLevel2} />
-                      <span className={styles.heatmapLevel3} />
-                      <span className={styles.heatmapLevel4} />
-                      <span>Çok</span>
-                    </div>
-                    <div className={styles.heatmapDetail} aria-live="polite">
-                      {selectedHeatmapDay
-                        ? `${formatDayKeyLong(selectedHeatmapDay.dayKey)}: ${selectedHeatmapDay.count} çalışma`
-                        : "Detay için bir güne tıklayın"}
-                    </div>
+                  <div className={styles.heatmapSidePanel} aria-live="polite">
+                    <span className={styles.heatmapSideLabel}>Seçili Gün</span>
+                    {selectedHeatmapDay ? (
+                      <>
+                        <span className={styles.heatmapSideDate}>{formatDayKeyLong(selectedHeatmapDay.dayKey)}</span>
+                        <div className={styles.heatmapSideValue}>
+                          <strong>{selectedHeatmapDay.count}</strong>
+                          <span>çalışma</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className={styles.heatmapSideEmpty}>Detayları görmek için soldaki bir güne tıklayın.</p>
+                    )}
                   </div>
-                </>
+                </div>
               )}
             </section>
 
@@ -459,6 +499,7 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                 ) : (
                   <div className={styles.recentList}>
                     {recentTests.map((entry) => {
+                      const accentColor = stableColorForLabel(entry.categoryTitle);
                       const content = (
                         <>
                           <div className={styles.recentInfo}>
@@ -469,19 +510,31 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
                               <span>{entry.categoryTitle}</span>
                             </div>
                           </div>
-                          <div className={styles.recentMetric}>
-                            <span>{entry.metric.label}</span>
-                            <strong>{entry.metric.value}</strong>
+                          <div className={styles.recentMetricGroup}>
+                            <div className={styles.recentMetric}>
+                              <span>{entry.metric.label}</span>
+                              <strong>{entry.metric.value}</strong>
+                            </div>
+                            {entry.href && <Icon name="arrow" className={styles.recentArrow} aria-hidden="true" />}
                           </div>
                         </>
                       );
 
                       return entry.href ? (
-                        <Link key={entry.id} href={entry.href} className={styles.recentRow}>
+                        <Link
+                          key={entry.id}
+                          href={entry.href}
+                          className={styles.recentRow}
+                          style={{ "--row-accent": accentColor } as React.CSSProperties}
+                        >
                           {content}
                         </Link>
                       ) : (
-                        <div key={entry.id} className={`${styles.recentRow} ${styles.recentRowStatic}`}>
+                        <div
+                          key={entry.id}
+                          className={`${styles.recentRow} ${styles.recentRowStatic}`}
+                          style={{ "--row-accent": accentColor } as React.CSSProperties}
+                        >
                           {content}
                         </div>
                       );
@@ -492,6 +545,9 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
 
               <section className={styles.card} aria-labelledby="reading-link-title">
                 <div className={styles.readingCard}>
+                  <span className={styles.readingCardIcon} aria-hidden="true">
+                    <Icon name="bookOpen" />
+                  </span>
                   <h2 id="reading-link-title">Okuma Testlerim</h2>
                   <p>Okuma hızı ve anlama testlerinizin ayrıntılı grafiklerini inceleyin.</p>
                   <Link href="/ogrenci/okuma-testlerim" className={styles.readingCardAction}>
