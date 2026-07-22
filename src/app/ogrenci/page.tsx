@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { IdilThemeProvider } from "@/components/theme/IdilThemeProvider";
 import { StudentPanelPreview } from "@/components/student-panel-preview/StudentPanelPreview";
 import { STUDENT_SESSION_COOKIE_NAME } from "@/lib/auth/studentSession";
 import { verifyStudentAccessToken } from "@/lib/auth/verifyStudentAccess";
@@ -37,7 +36,7 @@ export default async function StudentDashboardPage() {
   }
 
   return (
-    <IdilThemeProvider className="min-h-screen bg-[var(--idil-page-bg)] text-[var(--idil-text)]">
+    <div className="min-h-screen bg-[var(--idil-page-bg)] text-[var(--idil-text)]">
       <StudentPanelPreview
         authenticatedStudent={{
           id: access.studentId,
@@ -46,6 +45,6 @@ export default async function StudentDashboardPage() {
           classLevel: typeof student.class_name === "string" && student.class_name.trim() ? student.class_name.trim() : null,
         }}
       />
-    </IdilThemeProvider>
+    </div>
   );
 }

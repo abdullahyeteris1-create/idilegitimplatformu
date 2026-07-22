@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import panelStyles from "@/components/student-panel-preview/student-panel-preview.module.css";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { CategoryCards } from "./CategoryCards";
 import { ExerciseGroupPanel } from "./ExerciseGroupPanel";
 import { PreviewHeader } from "./PreviewHeader";
@@ -21,7 +22,8 @@ export function ExercisesCenterShell() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [light, setLight] = useState(false);
+  const { theme, setTheme } = useIdilTheme();
+  const light = theme === "light";
   const [toast, setToast] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const toastTimer = useRef<number | null>(null);
@@ -78,7 +80,7 @@ export function ExercisesCenterShell() {
 
           <PreviewHeader
             light={light}
-            onToggleTheme={() => setLight((value) => !value)}
+            onToggleTheme={() => setTheme(light ? "dark" : "light")}
             onNotify={() => showToast(COMING_SOON_MESSAGE)}
             onProfile={() => showToast(COMING_SOON_MESSAGE)}
             studentName={STUDENT_NAME}

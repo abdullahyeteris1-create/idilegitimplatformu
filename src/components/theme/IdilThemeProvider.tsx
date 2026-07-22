@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 
 export type IdilTheme = "light" | "dark";
 export type IdilAccent = "red" | "orange" | "purple" | "blue" | "green";
@@ -36,23 +36,24 @@ export function IdilThemeProvider({ children, className = "" }: IdilThemeProvide
   const [accent, setAccent] = useState<IdilAccent>("purple");
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const nextTheme = window.localStorage.getItem(IDIL_THEME_STORAGE_KEY);
-      const nextAccent = window.localStorage.getItem(IDIL_ACCENT_STORAGE_KEY);
+  useLayoutEffect(() => {
+    try {
+      const storedTheme = window.localStorage.getItem(IDIL_THEME_STORAGE_KEY);
+      const storedAccent = window.localStorage.getItem(IDIL_ACCENT_STORAGE_KEY);
 
-      if (isTheme(nextTheme)) {
-        setTheme(nextTheme);
+      if (isTheme(storedTheme)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage before first paint; localStorage isn't readable during render/SSR.
+        setTheme(storedTheme);
       }
 
-      if (isAccent(nextAccent)) {
-        setAccent(nextAccent);
+      if (isAccent(storedAccent)) {
+        setAccent(storedAccent);
       }
-
+    } catch {
+      // localStorage may be unavailable (privacy mode, blocked storage); keep defaults.
+    } finally {
       setMounted(true);
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
+    }
   }, []);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function IdilThemeProvider({ children, className = "" }: IdilThemeProvide
     }
 
     window.localStorage.setItem(IDIL_THEME_STORAGE_KEY, theme);
+    document.documentElement.setAttribute("data-idil-theme", theme);
   }, [mounted, theme]);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export function IdilThemeProvider({ children, className = "" }: IdilThemeProvide
     }
 
     window.localStorage.setItem(IDIL_ACCENT_STORAGE_KEY, accent);
+    document.documentElement.setAttribute("data-idil-accent", accent);
   }, [accent, mounted]);
 
   const value = useMemo<IdilThemeContextValue>(() => ({
@@ -81,7 +84,12 @@ export function IdilThemeProvider({ children, className = "" }: IdilThemeProvide
 
   return (
     <IdilThemeContext.Provider value={value}>
-      <div suppressHydrationWarning data-idil-theme={theme} data-idil-accent={accent} className={className}>
+      <div
+        suppressHydrationWarning
+        data-idil-theme={mounted ? theme : undefined}
+        data-idil-accent={mounted ? accent : undefined}
+        className={className}
+      >
         {children}
       </div>
     </IdilThemeContext.Provider>
