@@ -244,6 +244,238 @@
   color: var(--rc-red) !important;
 }
 
+.lightTheme {
+  --rc-bg: #eef4ff;
+  --rc-panel: #ffffff;
+  --rc-panel-2: #f8fbff;
+  --rc-text: #172033;
+  --rc-muted: #526076;
+  --rc-border: #cbd7f3;
+  --rc-purple: #7c3aed;
+  --rc-green: #15803d;
+  --rc-red: #dc2626;
+  --rc-amber: #d97706;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--rc-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--rc-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--rc-border) !important;
+}
+
+.lightTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.3) !important;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22) !important;
+}
+
+.lightTheme .secondaryButtonOverride {
+  background: var(--rc-panel-2) !important;
+  border-color: var(--rc-border) !important;
+  color: var(--rc-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme .secondaryButtonOverride:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme .selectOverride {
+  background: var(--rc-panel) !important;
+  border-color: var(--rc-border) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme .noticeInfo {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .noticeInfo p {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .noticeError {
+  border-color: color-mix(in srgb, var(--rc-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--rc-red) 8%, var(--rc-panel)) !important;
+  color: var(--rc-red) !important;
+}
+
+.lightTheme .noticeError p {
+  color: var(--rc-red) !important;
+}
+
+.lightTheme .noticeWarn {
+  border-color: color-mix(in srgb, var(--rc-amber) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--rc-amber) 8%, var(--rc-panel)) !important;
+  color: var(--rc-amber) !important;
+}
+
+.lightTheme .noticeWarn p {
+  color: var(--rc-amber) !important;
+}
+
+.lightTheme .introEyebrow {
+  color: var(--rc-purple) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .infoTile {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+}
+
+.lightTheme .infoTileLabel {
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme .infoTileValue {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .readingArticle {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .readingTitle {
+  color: var(--rc-purple) !important;
+}
+
+.lightTheme .pausedOverlay {
+  background: rgba(238, 244, 255, 0.75) !important;
+}
+
+.lightTheme .pausedText {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel) !important;
+  color: var(--rc-purple) !important;
+}
+
+.lightTheme .questionCard {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel) !important;
+}
+
+.lightTheme .questionTitle {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .optionLabel {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .resultCardOverride {
+  background: var(--rc-panel) !important;
+  border: 1px solid var(--rc-border) !important;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.08) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .resultMuted {
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme .resultStatTile {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel {
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme .resultStatValue {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .resultDetailCard {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .resultDetailHeading {
+  color: var(--rc-purple) !important;
+}
+
+.lightTheme .evalCard {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel) !important;
+}
+
+.lightTheme .evalTitle {
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .emptyChip {
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-muted) !important;
+}
+
+.lightTheme .optionDefault {
+  border-color: var(--rc-border) !important;
+  background: var(--rc-panel-2) !important;
+  color: var(--rc-text) !important;
+}
+
+.lightTheme .optionCorrect {
+  border-color: color-mix(in srgb, var(--rc-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--rc-green) 12%, var(--rc-panel)) !important;
+  color: var(--rc-green) !important;
+}
+
+.lightTheme .optionWrong {
+  border-color: color-mix(in srgb, var(--rc-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--rc-red) 12%, var(--rc-panel)) !important;
+  color: var(--rc-red) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

@@ -194,6 +194,189 @@
   color: var(--pw-muted) !important;
 }
 
+.lightTheme {
+  --pw-bg: #eef4ff;
+  --pw-panel: #ffffff;
+  --pw-panel-2: #f8fbff;
+  --pw-text: #172033;
+  --pw-muted: #526076;
+  --pw-border: #cbd7f3;
+  --pw-purple: #7c3aed;
+  --pw-green: #15803d;
+  --pw-red: #dc2626;
+  --pw-blue: #2563eb;
+  --pw-amber: #d97706;
+}
+
+/* --- Setup (not started) screen --- */
+
+.lightTheme.setupBackground {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .setupPanel {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme .setupEyebrow {
+  color: var(--pw-purple) !important;
+}
+
+.lightTheme .setupTitle {
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .setupBody {
+  color: var(--pw-muted) !important;
+}
+
+.lightTheme .setupCard {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+}
+
+.lightTheme .setupCardLabel {
+  color: var(--pw-muted) !important;
+}
+
+.lightTheme .setupCardBody {
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .setupSelect {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .setupStartButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+}
+
+/* --- Running screen --- */
+
+.lightTheme.runningBackground {
+  background: linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .runningHeader {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.lightTheme .runningEyebrow {
+  color: var(--pw-purple) !important;
+}
+
+.lightTheme .chipNeutral {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .chipOk {
+  border-color: color-mix(in srgb, var(--pw-green) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-green) 8%, var(--pw-panel)) !important;
+  color: var(--pw-green) !important;
+}
+
+.lightTheme .chipBad {
+  border-color: color-mix(in srgb, var(--pw-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-red) 8%, var(--pw-panel)) !important;
+  color: var(--pw-red) !important;
+}
+
+.lightTheme .exitButton {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .exitButton:hover {
+  background: #eef2ff !important;
+}
+
+.lightTheme .messageText {
+  color: var(--pw-muted) !important;
+}
+
+.lightTheme .answerSlotFilled {
+  border-color: var(--pw-purple) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .answerSlotEmpty {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.lightTheme .letterTile {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .letterTile:hover {
+  background: #eef2ff !important;
+}
+
+.lightTheme .hintBanner {
+  border-color: color-mix(in srgb, var(--pw-amber) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-amber) 8%, var(--pw-panel)) !important;
+  color: var(--pw-amber) !important;
+}
+
+.lightTheme .actionAmber {
+  border-color: color-mix(in srgb, var(--pw-amber) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-amber) 8%, var(--pw-panel)) !important;
+  color: var(--pw-amber) !important;
+}
+
+.lightTheme .actionBlue {
+  border-color: color-mix(in srgb, var(--pw-blue) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-blue) 8%, var(--pw-panel)) !important;
+  color: var(--pw-blue) !important;
+}
+
+.lightTheme .actionNeutral {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .actionNeutral:hover {
+  background: #eef2ff !important;
+}
+
+.lightTheme .actionPrimary {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  color: #ffffff !important;
+}
+
+.lightTheme .runningFooter {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.lightTheme .footerLabel {
+  color: var(--pw-muted) !important;
+}
+
+.lightTheme .footerSelect {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.lightTheme .footerInfo {
+  color: var(--pw-muted) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

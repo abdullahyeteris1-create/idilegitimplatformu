@@ -84,7 +84,7 @@ export function BlockReadingExerciseClient() {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const saveLockRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
 
