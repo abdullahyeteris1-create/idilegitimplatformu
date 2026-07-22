@@ -131,6 +131,122 @@
   color: var(--eb-muted) !important;
 }
 
+.lightTheme {
+  --eb-bg: #eef4ff;
+  --eb-panel: #ffffff;
+  --eb-panel-2: #f8fbff;
+  --eb-text: #172033;
+  --eb-muted: #526076;
+  --eb-border: #cbd7f3;
+  --eb-purple: #7c3aed;
+  --eb-cyan: #0891b2;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--eb-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--eb-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--eb-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--eb-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--eb-border) !important;
+  background: var(--eb-panel-2) !important;
+  color: var(--eb-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--eb-border) !important;
+}
+
+.lightTheme .settingsSelect {
+  background: var(--eb-panel) !important;
+  border-color: var(--eb-border) !important;
+  color: var(--eb-text) !important;
+}
+
+.lightTheme .changeTargetButton {
+  border-color: color-mix(in srgb, var(--eb-cyan) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--eb-cyan) 8%, var(--eb-panel)) !important;
+  color: var(--eb-cyan) !important;
+}
+
+.lightTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.lightTheme .stopButton {
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+}
+
+.lightTheme .secondaryButton {
+  background: var(--eb-panel-2) !important;
+  border-color: var(--eb-border) !important;
+  color: var(--eb-text) !important;
+}
+
+.lightTheme .secondaryButton:hover {
+  background: #eef2ff !important;
+}
+
+.lightTheme .stageBackground {
+  border-color: var(--eb-border) !important;
+  background: radial-gradient(circle at center, rgba(8, 145, 178, 0.06), var(--eb-bg) 55%, var(--eb-bg)) !important;
+}
+
+.lightTheme .infoPanel {
+  border-color: var(--eb-border) !important;
+  background: var(--eb-panel-2) !important;
+  color: var(--eb-muted) !important;
+}
+
+.lightTheme .guideLine {
+  background: var(--eb-border) !important;
+}
+
+.lightTheme .guideDot {
+  background: var(--eb-cyan) !important;
+}
+
+.lightTheme .introOverlay {
+  background: rgba(238, 244, 255, 0.75) !important;
+}
+
+.lightTheme .introCard {
+  border-color: var(--eb-border) !important;
+  background: var(--eb-panel) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--eb-text) !important;
+}
+
+.lightTheme .introBody {
+  color: var(--eb-muted) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .themeRoot * {
     transition-duration: 0.01ms !important;

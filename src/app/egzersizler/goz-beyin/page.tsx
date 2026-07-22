@@ -116,7 +116,7 @@ export default function EyeBrainExercisePage() {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const [isRunning, setIsRunning] = useState(false);
   const [speed, setSpeed] = useState(1800);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);

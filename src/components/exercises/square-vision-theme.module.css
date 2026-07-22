@@ -1,0 +1,267 @@
+/*
+ * Theme re-skin for the KAREL: Kare Görme Alanı (square vision) exercise.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). This exercise previously had NO theme wiring at all
+ * (light or dark); the current appearance is the light baseline (matches
+ * the shared open-theme palette used across the platform), and this module
+ * adds a full, symmetric .lightTheme/.darkTheme pair, following the same
+ * pattern already used for Adam Asmaca / Kart Hafıza / Kelime Tahmin.
+ *
+ * IMPORTANT: the letters themselves and the marked-pair amber/red highlight
+ * (which two cells the student must compare) are the exercise's core
+ * perceptual task — only their decorative border/background/idle-cell
+ * chrome is re-themed, the amber "marked" identification stays as-is so the
+ * compare targets remain unambiguous in both themes.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.lightTheme {
+  --sv-bg: #eef4ff;
+  --sv-panel: #ffffff;
+  --sv-panel-2: #f8fbff;
+  --sv-text: #172033;
+  --sv-muted: #526076;
+  --sv-border: #cbd7f3;
+  --sv-purple: #7c3aed;
+  --sv-green: #15803d;
+  --sv-red: #dc2626;
+}
+
+.darkTheme {
+  --sv-bg: #07111f;
+  --sv-panel: #0d1a2d;
+  --sv-panel-2: #111f35;
+  --sv-text: #f5f7ff;
+  --sv-muted: #a9b5ca;
+  --sv-border: rgba(129, 140, 248, 0.34);
+  --sv-purple: #a78bfa;
+  --sv-green: #4ade80;
+  --sv-red: #fb7185;
+}
+
+.lightTheme > div,
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, var(--sv-panel-2) 0%, transparent 32%), linear-gradient(150deg, var(--sv-panel), var(--sv-bg)) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage),
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--sv-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar),
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: var(--sv-panel) !important;
+  border-color: var(--sv-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1,
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--sv-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p,
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button,
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+  color: var(--sv-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom),
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: var(--sv-panel) !important;
+  border-color: var(--sv-border) !important;
+}
+
+.lightTheme .settingsLabel,
+.darkTheme .settingsLabel {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .selectOverride,
+.darkTheme .selectOverride {
+  background: var(--sv-panel-2) !important;
+  border-color: var(--sv-border) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.lightTheme .secondaryButtonOverride,
+.darkTheme .secondaryButtonOverride {
+  background: var(--sv-panel-2) !important;
+  border-color: var(--sv-border) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .stageOverride,
+.darkTheme .stageOverride {
+  background: linear-gradient(150deg, var(--sv-panel), var(--sv-bg)) !important;
+  border-color: var(--sv-border) !important;
+}
+
+.lightTheme .introEyebrow,
+.darkTheme .introEyebrow {
+  color: var(--sv-purple) !important;
+}
+
+.lightTheme .introTitle,
+.darkTheme .introTitle {
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .introBody,
+.darkTheme .introBody {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .helperText,
+.darkTheme .helperText {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .timerText,
+.darkTheme .timerText {
+  color: var(--sv-purple) !important;
+}
+
+.lightTheme .gridFrame,
+.darkTheme .gridFrame {
+  background: var(--sv-bg) !important;
+}
+
+.lightTheme .gridFrameNeutral,
+.darkTheme .gridFrameNeutral {
+  border-color: var(--sv-border) !important;
+}
+
+.lightTheme .cellIdle,
+.darkTheme .cellIdle {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel) !important;
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .pausedText,
+.darkTheme .pausedText {
+  color: var(--sv-red) !important;
+}
+
+.lightTheme .scoreText,
+.darkTheme .scoreText {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .resultCardOverride,
+.darkTheme .resultCardOverride {
+  background: var(--sv-panel) !important;
+  border: 1px solid var(--sv-border) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .resultTitle,
+.darkTheme .resultTitle {
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .resultMuted,
+.darkTheme .resultMuted {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .noticeInfo,
+.darkTheme .noticeInfo {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .noticeError,
+.darkTheme .noticeError {
+  border-color: color-mix(in srgb, var(--sv-red) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--sv-red) 12%, var(--sv-panel)) !important;
+  color: var(--sv-red) !important;
+}
+
+.lightTheme .resultStatCorrect,
+.darkTheme .resultStatCorrect {
+  border-color: color-mix(in srgb, var(--sv-green) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--sv-green) 12%, var(--sv-panel)) !important;
+}
+
+.lightTheme .resultStatCorrectValue,
+.darkTheme .resultStatCorrectValue {
+  color: var(--sv-green) !important;
+}
+
+.lightTheme .resultStatWrong,
+.darkTheme .resultStatWrong {
+  border-color: color-mix(in srgb, var(--sv-red) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--sv-red) 12%, var(--sv-panel)) !important;
+}
+
+.lightTheme .resultStatWrongValue,
+.darkTheme .resultStatWrongValue {
+  color: var(--sv-red) !important;
+}
+
+.lightTheme .resultStatTile,
+.darkTheme .resultStatTile {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel,
+.darkTheme .resultStatLabel {
+  color: var(--sv-muted) !important;
+}
+
+.lightTheme .resultStatValue,
+.darkTheme .resultStatValue {
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .resultDetailCard,
+.darkTheme .resultDetailCard {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .navLinkOverride,
+.darkTheme .navLinkOverride {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+  color: var(--sv-text) !important;
+}
+
+.lightTheme .navLinkDisabled,
+.darkTheme .navLinkDisabled {
+  border-color: var(--sv-border) !important;
+  background: var(--sv-panel-2) !important;
+  color: var(--sv-muted) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -11,6 +11,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/square-vision-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
 type DurationMinutes = 1 | 2 | 3 | 4 | 5;
@@ -106,6 +108,9 @@ function createRound(gridSize: GridSize, level: Level): Round {
 }
 
 export function SquareVisionExerciseClient() {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
   const saveInFlightRef = useRef(false);
@@ -373,7 +378,7 @@ export function SquareVisionExerciseClient() {
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Egzersiz Süresi
         </span>
         <select
@@ -382,7 +387,7 @@ export function SquareVisionExerciseClient() {
             setDurationMinutes(Number(event.target.value) as DurationMinutes);
             resetExercise();
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {DURATION_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -393,7 +398,7 @@ export function SquareVisionExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Kare Boyutu
         </span>
         <select
@@ -404,7 +409,7 @@ export function SquareVisionExerciseClient() {
             setRound(createRound(nextSize, level));
             setPhase("ready");
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {GRID_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -415,7 +420,7 @@ export function SquareVisionExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Seviye
         </span>
         <select
@@ -426,7 +431,7 @@ export function SquareVisionExerciseClient() {
             setRound(createRound(gridSize, nextLevel));
             setPhase("ready");
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {LEVEL_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -437,13 +442,13 @@ export function SquareVisionExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Sesler
         </span>
         <select
           value={soundEnabled ? "on" : "off"}
           onChange={(event) => setSoundEnabled(event.target.value === "on")}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           <option value="on">Açık</option>
           <option value="off">Kapalı</option>
@@ -455,7 +460,7 @@ export function SquareVisionExerciseClient() {
           <button
             type="button"
             onClick={beginExercise}
-            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px]`}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px] ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Egzersizi Başlat
@@ -464,7 +469,7 @@ export function SquareVisionExerciseClient() {
           <button
             type="button"
             onClick={() => setPhase("paused")}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Duraklat
@@ -476,7 +481,7 @@ export function SquareVisionExerciseClient() {
               startedAtRef.current = Date.now() - elapsedSeconds * 1000;
               setPhase("running");
             }}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Devam Et
@@ -488,221 +493,227 @@ export function SquareVisionExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="KAREL: Kare Görme Alanı"
-        description="Merkezdeki odak noktasına bakarken çevrede işaretlenen iki harfi başını oynatmadan algıla ve aynı mı farklı mı olduğuna karar ver."
-        buttonLabel="Eğitime Başla"
-        onStart={resetExercise}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="KAREL: Kare Görme Alanı"
+          description="Merkezdeki odak noktasına bakarken çevrede işaretlenen iki harfi başını oynatmadan algıla ve aynı mı farklı mı olduğuna karar ver."
+          buttonLabel="Eğitime Başla"
+          onStart={resetExercise}
+        />
+      </div>
     );
   }
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
-        <h1 className="text-2xl font-black text-slate-950">
-          KAREL: Kare Görme Alanı Sonucu
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">{saveStatus === "success" ? "Egzersiz tamamlandı." : saveMessage}</p>
-        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
+      <div className={themeRootClassName}>
+        <section className={`idil-card p-5 md:p-7 ${styles.resultCardOverride}`}>
+          <h1 className={`text-2xl font-black text-slate-950 ${styles.resultTitle}`}>
+            KAREL: Kare Görme Alanı Sonucu
+          </h1>
+          <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>{saveStatus === "success" ? "Egzersiz tamamlandı." : saveMessage}</p>
+          {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
 
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-green-100 bg-green-50 p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Doğru</p>
-            <p className="mt-2 text-3xl font-black text-green-700">
-              {result.correctCount}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Yanlış</p>
-            <p className="mt-2 text-3xl font-black text-red-700">
-              {result.wrongCount}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-white p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Başarı</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
-              %{result.successRate}
-            </p>
-          </article>
-          <article className="rounded-2xl border border-red-100 bg-white p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Puan</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
-              {result.score}
-            </p>
-          </article>
-        </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <article className={`rounded-2xl border border-green-100 bg-green-50 p-4 text-center ${styles.resultStatCorrect}`}>
+              <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Doğru</p>
+              <p className={`mt-2 text-3xl font-black text-green-700 ${styles.resultStatCorrectValue}`}>
+                {result.correctCount}
+              </p>
+            </article>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatWrong}`}>
+              <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Yanlış</p>
+              <p className={`mt-2 text-3xl font-black text-red-700 ${styles.resultStatWrongValue}`}>
+                {result.wrongCount}
+              </p>
+            </article>
+            <article className={`rounded-2xl border border-red-100 bg-white p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Başarı</p>
+              <p className={`mt-2 text-3xl font-black text-slate-900 ${styles.resultStatValue}`}>
+                %{result.successRate}
+              </p>
+            </article>
+            <article className={`rounded-2xl border border-red-100 bg-white p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Puan</p>
+              <p className={`mt-2 text-3xl font-black text-slate-900 ${styles.resultStatValue}`}>
+                {result.score}
+              </p>
+            </article>
+          </div>
 
-        <div className="mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm text-slate-700">
-          <p><strong>Süre:</strong> {formatTime(result.durationSeconds)}</p>
-          <p className="mt-1"><strong>Cevap:</strong> {result.answeredCount}</p>
-          <p className="mt-1"><strong>Kare:</strong> {gridSize} x {gridSize}</p>
-          <p className="mt-1"><strong>Seviye:</strong> {level}</p>
-        </div>
+          <div className={`mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm text-slate-700 ${styles.resultDetailCard}`}>
+            <p><strong>Süre:</strong> {formatTime(result.durationSeconds)}</p>
+            <p className="mt-1"><strong>Cevap:</strong> {result.answeredCount}</p>
+            <p className="mt-1"><strong>Kare:</strong> {gridSize} x {gridSize}</p>
+            <p className="mt-1"><strong>Seviye:</strong> {level}</p>
+          </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            disabled={saveStatus !== "success"}
-            onClick={resetExercise}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
-            style={FULLSCREEN_TOUCH_STYLE}
-          >
-            Tekrar Çalış
-          </button>
-          {saveStatus === "success" ? <Link href="/egzersizler" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800">Egzersizlere Dön</Link> : <span aria-disabled="true" className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-400">Egzersizlere Dön</span>}
-        </div>
-      </section>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              disabled={saveStatus !== "success"}
+              onClick={resetExercise}
+              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
+              style={FULLSCREEN_TOUCH_STYLE}
+            >
+              Tekrar Çalış
+            </button>
+            {saveStatus === "success" ? <Link href="/egzersizler" className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800 ${styles.navLinkOverride}`}>Egzersizlere Dön</Link> : <span aria-disabled="true" className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-400 ${styles.navLinkDisabled}`}>Egzersizlere Dön</span>}
+          </div>
+        </section>
+      </div>
     );
   }
 
   return (
-    <FullscreenExerciseShell
-      title="KAREL: Kare Görme Alanı"
-      subtitle="Merkez noktaya odaklan"
-      stats={[
-        { label: "Süre", value: formatTime(remainingSeconds) },
-        { label: "Seviye", value: level, tone: "brand" },
-        { label: "Kare", value: `${gridSize}x${gridSize}` },
-        { label: "Doğru", value: correctCount },
-        { label: "Yanlış", value: wrongCount },
-      ]}
-      finishButton={
-        phase === "running" || phase === "paused" ? (
-          <div className="flex gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                if (phase === "running") {
-                  setPhase("paused");
-                } else {
-                  startedAtRef.current = Date.now() - elapsedSeconds * 1000;
-                  setPhase("running");
-                }
-              }}
-              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
-              style={FULLSCREEN_TOUCH_STYLE}
-            >
-              {phase === "running" ? "Duraklat" : "Devam"}
-            </button>
-            <button type="button" onClick={finishExercise} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
-              Bitir
-            </button>
-          </div>
-        ) : null
-      }
-      stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4"
-      footer={phase === "ready" ? controls : undefined}
-      settings={controls}
-    >
-      <div className="flex h-full min-h-0 w-full flex-col">
-        {phase === "ready" ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">
-              Hazırlık
-            </p>
-            <h2 className="mt-2 text-xl font-black text-slate-950 md:text-3xl">
-              Merkez noktadan bakışını ayırma.
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-5 text-slate-500">
-              İşaretlenen iki harfi başını hareket ettirmeden görmeye çalış.
-              Aynıysa sağdaki, farklıysa soldaki butona bas.
-            </p>
-          </div>
-        ) : (
-          <div className="flex h-full min-h-0 w-full flex-col">
-            <div className="shrink-0">
-              <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                <p className="text-sm font-bold text-slate-700">
-                  Sol ok: Farklı · Sağ ok: Aynı
-                </p>
-                <p className="text-sm font-black text-red-700">
-                  {formatTime(remainingSeconds)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-              <div
-                className={`relative grid aspect-square max-h-full max-w-full overflow-hidden rounded-2xl border-2 bg-slate-50 p-1 shadow-inner transition ${
-                  lastFeedback === "correct"
-                    ? "border-green-400"
-                    : lastFeedback === "wrong"
-                      ? "border-red-500"
-                      : "border-slate-300"
-                }`}
-                style={{
-                  width: "min(100%, 100%)",
-                  height: "min(100%, 100%)",
-                  gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-                  gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
+    <div className={themeRootClassName}>
+      <FullscreenExerciseShell
+        title="KAREL: Kare Görme Alanı"
+        subtitle="Merkez noktaya odaklan"
+        stats={[
+          { label: "Süre", value: formatTime(remainingSeconds) },
+          { label: "Seviye", value: level, tone: "brand" },
+          { label: "Kare", value: `${gridSize}x${gridSize}` },
+          { label: "Doğru", value: correctCount },
+          { label: "Yanlış", value: wrongCount },
+        ]}
+        finishButton={
+          phase === "running" || phase === "paused" ? (
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (phase === "running") {
+                    setPhase("paused");
+                  } else {
+                    startedAtRef.current = Date.now() - elapsedSeconds * 1000;
+                    setPhase("running");
+                  }
                 }}
+                className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`}
+                style={FULLSCREEN_TOUCH_STYLE}
               >
-                {round.letters.map((letter, index) => {
-                  const isMarked =
-                    index === round.firstIndex || index === round.secondIndex;
-                  const centerIndex =
-                    Math.floor(gridSize / 2) * gridSize +
-                    Math.floor(gridSize / 2);
-                  const isCenter = index === centerIndex;
+                {phase === "running" ? "Duraklat" : "Devam"}
+              </button>
+              <button type="button" onClick={finishExercise} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE}>
+                Bitir
+              </button>
+            </div>
+          ) : null
+        }
+        stageClassName={`exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4 ${styles.stageOverride}`}
+        footer={phase === "ready" ? controls : undefined}
+        settings={controls}
+      >
+        <div className="flex h-full min-h-0 w-full flex-col">
+          {phase === "ready" ? (
+            <div className="flex flex-1 flex-col items-center justify-center text-center">
+              <p className={`text-xs font-bold uppercase tracking-[0.2em] text-red-700 ${styles.introEyebrow}`}>
+                Hazırlık
+              </p>
+              <h2 className={`mt-2 text-xl font-black text-slate-950 md:text-3xl ${styles.introTitle}`}>
+                Merkez noktadan bakışını ayırma.
+              </h2>
+              <p className={`mt-2 max-w-2xl text-sm leading-5 text-slate-500 ${styles.introBody}`}>
+                İşaretlenen iki harfi başını hareket ettirmeden görmeye çalış.
+                Aynıysa sağdaki, farklıysa soldaki butona bas.
+              </p>
+            </div>
+          ) : (
+            <div className="flex h-full min-h-0 w-full flex-col">
+              <div className="shrink-0">
+                <div className="mb-1 flex items-center justify-between gap-3 text-xs">
+                  <p className={`text-sm font-bold text-slate-700 ${styles.helperText}`}>
+                    Sol ok: Farklı · Sağ ok: Aynı
+                  </p>
+                  <p className={`text-sm font-black text-red-700 ${styles.timerText}`}>
+                    {formatTime(remainingSeconds)}
+                  </p>
+                </div>
+              </div>
 
-                  return (
-                    <div
-                      key={`${index}-${letter}`}
-                      className={`relative flex min-h-0 min-w-0 items-center justify-center border border-slate-200/70 font-bold leading-none ${
-                        isMarked
-                          ? "z-10 bg-amber-100 text-red-800 ring-2 ring-inset ring-red-500"
-                          : "bg-white text-slate-600"
-                      } ${cellFontSize}`}
-                    >
-                      {letter}
-                      {isCenter ? (
-                        <span
-                          aria-label="Odak noktası"
-                          className="absolute left-1/2 top-1/2 z-20 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-red-600 shadow"
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
+              <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+                <div
+                  className={`relative grid aspect-square max-h-full max-w-full overflow-hidden rounded-2xl border-2 bg-slate-50 p-1 shadow-inner transition ${styles.gridFrame} ${
+                    lastFeedback === "correct"
+                      ? "border-green-400"
+                      : lastFeedback === "wrong"
+                        ? "border-red-500"
+                        : `border-slate-300 ${styles.gridFrameNeutral}`
+                  }`}
+                  style={{
+                    width: "min(100%, 100%)",
+                    height: "min(100%, 100%)",
+                    gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                    gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {round.letters.map((letter, index) => {
+                    const isMarked =
+                      index === round.firstIndex || index === round.secondIndex;
+                    const centerIndex =
+                      Math.floor(gridSize / 2) * gridSize +
+                      Math.floor(gridSize / 2);
+                    const isCenter = index === centerIndex;
+
+                    return (
+                      <div
+                        key={`${index}-${letter}`}
+                        className={`relative flex min-h-0 min-w-0 items-center justify-center border border-slate-200/70 font-bold leading-none ${
+                          isMarked
+                            ? "z-10 bg-amber-100 text-red-800 ring-2 ring-inset ring-red-500"
+                            : `bg-white text-slate-600 ${styles.cellIdle}`
+                        } ${cellFontSize}`}
+                      >
+                        {letter}
+                        {isCenter ? (
+                          <span
+                            aria-label="Odak noktası"
+                            className="absolute left-1/2 top-1/2 z-20 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-red-600 shadow"
+                          />
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => answerRound("different")}
+                    disabled={phase !== "running"}
+                    className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
+                    style={FULLSCREEN_TOUCH_STYLE}
+                  >
+                    Farklı Harfler ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => answerRound("same")}
+                    disabled={phase !== "running"}
+                    className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
+                    style={FULLSCREEN_TOUCH_STYLE}
+                  >
+                    Aynı Harfler →
+                  </button>
+                </div>
+
+                {phase === "paused" ? (
+                  <p className={`mt-3 text-center text-sm font-bold text-red-700 ${styles.pausedText}`}>
+                    Egzersiz duraklatıldı.
+                  </p>
+                ) : null}
+
+                <div className={`mt-1 text-center text-xs font-bold text-slate-600 ${styles.scoreText}`}>
+                  Puan: {score} · Başarı: %{successRate}
+                </div>
               </div>
             </div>
-
-            <div className="shrink-0">
-              <div className="mt-1.5 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => answerRound("different")}
-                  disabled={phase !== "running"}
-                  className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
-                  style={FULLSCREEN_TOUCH_STYLE}
-                >
-                  Farklı Harfler ←
-                </button>
-                <button
-                  type="button"
-                  onClick={() => answerRound("same")}
-                  disabled={phase !== "running"}
-                  className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
-                  style={FULLSCREEN_TOUCH_STYLE}
-                >
-                  Aynı Harfler →
-                </button>
-              </div>
-
-              {phase === "paused" ? (
-                <p className="mt-3 text-center text-sm font-bold text-red-700">
-                  Egzersiz duraklatıldı.
-                </p>
-              ) : null}
-
-              <div className="mt-1 text-center text-xs font-bold text-slate-600">
-                Puan: {score} · Başarı: %{successRate}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </FullscreenExerciseShell>
+          )}
+        </div>
+      </FullscreenExerciseShell>
+    </div>
   );
 }

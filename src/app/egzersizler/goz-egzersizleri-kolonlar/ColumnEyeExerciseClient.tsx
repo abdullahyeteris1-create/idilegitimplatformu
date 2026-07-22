@@ -122,7 +122,7 @@ function getNextIndex(
 export function ColumnEyeExerciseClient() {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
-  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
+  const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
   const finishExerciseRef = useRef<() => void>(() => undefined);
