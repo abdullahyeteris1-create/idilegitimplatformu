@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/eye-brain-theme.module.css";
 
 type SymbolItem = {
   id: number;
@@ -112,6 +114,9 @@ function formatTime(totalSeconds: number) {
 
 export default function EyeBrainExercisePage() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const [isRunning, setIsRunning] = useState(false);
   const [speed, setSpeed] = useState(1800);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -180,24 +185,25 @@ export default function EyeBrainExercisePage() {
   }, [isRunning, speed]);
 
   return (
-    <FixedExerciseStage
-      title="Göz Beyin Çalışması"
-      subtitle="Hedef simgeyi gözlerinle bul ve takip et"
-      topStats={<><FixedExerciseStat label="Süre" value={formatTime(elapsedSeconds)} /><FixedExerciseStat label="Tur" value={round} /><FixedExerciseStat label="Hız" value={`${speed} ms`} tone="brand" /><FixedExerciseStat label="Hedef" value={targetSymbol} /></>}
-      bottomSettings={<div className="grid gap-2 sm:grid-cols-2"><label className="grid gap-1 text-sm font-bold"><span>Ekran değişim hızı</span><select value={speed} disabled={isRunning} onChange={(event) => setSpeed(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">{SPEED_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.value} ms</option>)}</select></label><button type="button" onClick={changeTargetSymbol} disabled={isRunning} className="min-h-11 self-end rounded-xl border border-cyan-300 bg-cyan-50 px-4 font-bold text-cyan-900 disabled:opacity-50">Hedefi Değiştir: {targetSymbol}</button></div>}
-      controls={<div className="flex flex-wrap justify-center gap-2">{!isRunning ? <button type="button" onClick={startExercise} className="min-h-11 rounded-xl bg-emerald-600 px-5 font-bold text-white">Başlat</button> : <button type="button" onClick={stopExercise} className="min-h-11 rounded-xl bg-rose-600 px-5 font-bold text-white">Durdur</button>}<button type="button" onClick={resetExercise} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-bold">Sıfırla</button></div>}
-      onExit={() => router.push("/egzersizler")}
-    >
-        <div className="relative h-full min-h-0 w-full max-w-7xl overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.10),_rgba(255,255,255,1)_55%,_rgba(248,250,252,1))] shadow-2xl">
-          <div className="absolute left-4 top-4 z-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-slate-600 backdrop-blur">
+    <div className={themeRootClassName}>
+      <FixedExerciseStage
+        title="Göz Beyin Çalışması"
+        subtitle="Hedef simgeyi gözlerinle bul ve takip et"
+        topStats={<><FixedExerciseStat label="Süre" value={formatTime(elapsedSeconds)} /><FixedExerciseStat label="Tur" value={round} /><FixedExerciseStat label="Hız" value={`${speed} ms`} tone="brand" /><FixedExerciseStat label="Hedef" value={targetSymbol} /></>}
+        bottomSettings={<div className="grid gap-2 sm:grid-cols-2"><label className="grid gap-1 text-sm font-bold"><span>Ekran değişim hızı</span><select value={speed} disabled={isRunning} onChange={(event) => setSpeed(Number(event.target.value))} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-3 ${styles.settingsSelect}`}>{SPEED_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label} · {option.value} ms</option>)}</select></label><button type="button" onClick={changeTargetSymbol} disabled={isRunning} className={`min-h-11 self-end rounded-xl border border-cyan-300 bg-cyan-50 px-4 font-bold text-cyan-900 disabled:opacity-50 ${styles.changeTargetButton}`}>Hedefi Değiştir: {targetSymbol}</button></div>}
+        controls={<div className="flex flex-wrap justify-center gap-2">{!isRunning ? <button type="button" onClick={startExercise} className={`min-h-11 rounded-xl bg-emerald-600 px-5 font-bold text-white ${styles.startButton}`}>Başlat</button> : <button type="button" onClick={stopExercise} className={`min-h-11 rounded-xl bg-rose-600 px-5 font-bold text-white ${styles.stopButton}`}>Durdur</button>}<button type="button" onClick={resetExercise} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-bold ${styles.secondaryButton}`}>Sıfırla</button></div>}
+        onExit={() => router.push("/egzersizler")}
+      >
+        <div className={`relative h-full min-h-0 w-full max-w-7xl overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.10),_rgba(255,255,255,1)_55%,_rgba(248,250,252,1))] shadow-2xl ${styles.stageBackground}`}>
+          <div className={`absolute left-4 top-4 z-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-xs text-slate-600 backdrop-blur ${styles.infoPanel}`}>
             Hedef simgeyi bul:{" "}
             <span className="ml-1 text-lg font-bold">{targetSymbol}</span>
           </div>
 
           <div className="pointer-events-none absolute inset-0 opacity-20">
-            <div className="absolute left-1/2 top-0 h-full w-px bg-white/30" />
-            <div className="absolute left-0 top-1/2 h-px w-full bg-white/30" />
-            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+            <div className={`absolute left-1/2 top-0 h-full w-px bg-white/30 ${styles.guideLine}`} />
+            <div className={`absolute left-0 top-1/2 h-px w-full bg-white/30 ${styles.guideLine}`} />
+            <div className={`absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ${styles.guideDot}`} />
           </div>
 
           {symbols.map((item) => {
@@ -228,15 +234,15 @@ export default function EyeBrainExercisePage() {
           })}
 
           {!isRunning && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 p-6 text-center backdrop-blur-sm">
-              <div className="max-w-md rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-2xl">
+            <div className={`absolute inset-0 z-30 flex items-center justify-center bg-black/30 p-6 text-center backdrop-blur-sm ${styles.introOverlay}`}>
+              <div className={`max-w-md rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-2xl ${styles.introCard}`}>
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400 text-3xl">
                   {targetSymbol}
                 </div>
 
-                <h2 className="text-xl font-bold">Hedef simgeyi bul</h2>
+                <h2 className={`text-xl font-bold ${styles.introTitle}`}>Hedef simgeyi bul</h2>
 
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className={`mt-2 text-sm leading-6 text-slate-300 ${styles.introBody}`}>
                   Başlat butonuna bastığında bütün simgeler ekranda görünecek.
                   Her turda yerleri değişecek. Sen sadece{" "}
                   <span className="font-bold text-cyan-300">
@@ -278,6 +284,7 @@ export default function EyeBrainExercisePage() {
             }
           }
         `}</style>
-    </FixedExerciseStage>
+      </FixedExerciseStage>
+    </div>
   );
 }

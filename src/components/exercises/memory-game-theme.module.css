@@ -1,0 +1,203 @@
+/*
+ * Theme re-skin for the Hafıza Geliştirme (memory game) exercise.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme matches the current look exactly, so no
+ * light overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended alongside the shared FULLSCREEN_* string constants and
+ * the global .idil-card class (also never edited).
+ *
+ * IMPORTANT: the "lit" / correct / wrong box states are a uniform
+ * highlight indicating WHICH cell is active — the color itself carries no
+ * game information (position is what's memorized, not hue), so it's safe
+ * to re-theme as long as the lit/correct/wrong semantic distinction is
+ * preserved in both themes.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --mg-bg: #07111f;
+  --mg-panel: #0d1a2d;
+  --mg-panel-2: #111f35;
+  --mg-text: #f5f7ff;
+  --mg-muted: #a9b5ca;
+  --mg-border: rgba(129, 140, 248, 0.34);
+  --mg-purple: #a78bfa;
+  --mg-green: #4ade80;
+  --mg-red: #fb7185;
+  --mg-blue: #60a5fa;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--mg-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--mg-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--mg-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--mg-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--mg-panel-2) !important;
+  border-color: var(--mg-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--mg-panel-2) !important;
+  border-color: var(--mg-border) !important;
+  color: var(--mg-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--mg-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--mg-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--mg-panel) !important;
+  border: 1px solid var(--mg-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--mg-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: var(--mg-text) !important;
+}
+
+.darkTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--mg-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-green) 16%, var(--mg-panel)) !important;
+  color: var(--mg-green) !important;
+}
+
+.darkTheme .feedbackLevelUp {
+  border-color: color-mix(in srgb, var(--mg-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-blue) 16%, var(--mg-panel)) !important;
+  color: var(--mg-blue) !important;
+}
+
+.darkTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--mg-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-red) 16%, var(--mg-panel)) !important;
+  color: var(--mg-red) !important;
+}
+
+.darkTheme .feedbackInfo {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel-2) !important;
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .helperText {
+  color: var(--mg-muted) !important;
+}
+
+.darkTheme .gridFrame {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-bg) !important;
+}
+
+.darkTheme .boxIdle {
+  border-color: var(--mg-border) !important;
+  background: var(--mg-panel) !important;
+}
+
+.darkTheme .boxShowing {
+  border-color: #f87171 !important;
+  background: #ef4444 !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.5), 0 0 16px rgba(239, 68, 68, 0.4) !important;
+}
+
+.darkTheme .boxCorrect {
+  border-color: #4ade80 !important;
+  background: #22c55e !important;
+}
+
+.darkTheme .boxWrong {
+  border-color: #fb7185 !important;
+  background: #f43f5e !important;
+}
+
+.darkTheme .boxRevealed {
+  border-color: color-mix(in srgb, var(--mg-green) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--mg-green) 20%, var(--mg-panel)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

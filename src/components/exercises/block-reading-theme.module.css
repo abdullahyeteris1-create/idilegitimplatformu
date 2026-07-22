@@ -1,0 +1,208 @@
+/*
+ * Theme re-skin for the Blok Okuma (block reading) exercise screens.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme is a faithful match of the current
+ * red-branded look (FullscreenExerciseShell's own defaults + this file's
+ * local Tailwind), so no light overrides are needed. Dark theme adds:
+ * (a) the established :global(.fixed-exercise-stage...) shell overrides,
+ * (b) small "override" classes appended alongside the shared
+ * FULLSCREEN_PRIMARY_BUTTON_CLASS / FULLSCREEN_SECONDARY_BUTTON_CLASS /
+ * FULLSCREEN_SELECT_CLASS string constants (FullscreenExerciseShell.tsx is
+ * never edited; these constants are just literal Tailwind strings, so a
+ * second class with !important safely re-skins them for dark only),
+ * (c) an override for the global .idil-card class used by the result
+ * screen (globals.css is never edited either).
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --br-bg: #07111f;
+  --br-panel: #0d1a2d;
+  --br-panel-2: #111f35;
+  --br-text: #f5f7ff;
+  --br-muted: #a9b5ca;
+  --br-border: rgba(129, 140, 248, 0.34);
+  --br-purple: #a78bfa;
+  --br-red: #fb7185;
+  --br-amber: #fbbf24;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--br-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--br-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--br-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--br-border) !important;
+  background: var(--br-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--br-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--br-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--br-panel-2) !important;
+  border-color: var(--br-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--br-panel-2) !important;
+  border-color: var(--br-border) !important;
+  color: var(--br-text) !important;
+}
+
+.darkTheme .stageOverride {
+  background: linear-gradient(150deg, var(--br-panel), var(--br-bg)) !important;
+  border-color: var(--br-border) !important;
+  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.4) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme .noticeInfo {
+  border-color: var(--br-border) !important;
+  background: var(--br-panel-2) !important;
+  color: var(--br-text) !important;
+}
+
+.darkTheme .noticeInfo p {
+  color: var(--br-text) !important;
+}
+
+.darkTheme .noticeError {
+  border-color: color-mix(in srgb, var(--br-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--br-red) 14%, var(--br-panel)) !important;
+  color: var(--br-red) !important;
+}
+
+.darkTheme .noticeError p {
+  color: var(--br-red) !important;
+}
+
+.darkTheme .noticeWarn {
+  border-color: color-mix(in srgb, var(--br-amber) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--br-amber) 14%, var(--br-panel)) !important;
+  color: var(--br-amber) !important;
+}
+
+.darkTheme .noticeWarn p {
+  color: var(--br-amber) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--br-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--br-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme .errorText {
+  color: var(--br-red) !important;
+}
+
+.darkTheme .helperText {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme .warnText {
+  color: var(--br-amber) !important;
+}
+
+.darkTheme .runningWord {
+  color: var(--br-text) !important;
+  text-shadow: 0 0 24px rgba(167, 139, 250, 0.35) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--br-panel) !important;
+  border: 1px solid var(--br-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--br-text) !important;
+}
+
+.darkTheme .resultTitle {
+  color: var(--br-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--br-border) !important;
+  background: var(--br-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--br-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--br-text) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--br-border) !important;
+  background: var(--br-panel-2) !important;
+  color: var(--br-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

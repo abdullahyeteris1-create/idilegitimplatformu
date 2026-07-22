@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
 type AnswerType = "same" | "different";
@@ -157,6 +159,9 @@ function clampSpeed(value: number) {
 }
 
 export function TwoSideFocusExerciseClient() {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const [level, setLevel] = useState<ExerciseLevel>(1);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [isRunning, setIsRunning] = useState(false);
@@ -421,79 +426,81 @@ export function TwoSideFocusExerciseClient() {
   };
 
   return (
-        <ExerciseFullscreenShell
-      title="Çift Taraflı Odak"
-      backHref="/egzersizler"
-      status={<><span className="compact-stat-chip">Seviye: {level}</span><span className="compact-stat-chip">Doğru: {correctCount}</span><span className="compact-stat-chip">Yanlış: {wrongCount}</span><span className="compact-stat-chip">Net: {netCount}/{NET_TARGET}</span><span className="compact-stat-chip">Kelime: {wordCount}</span></>}
-      settings={(
-        <div className="grid gap-2 sm:grid-cols-2">
-          <label className="grid gap-1 text-xs font-bold"><span>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className="min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs">{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
-          <label className="grid gap-1 text-xs font-bold"><span>Hız: {speed} ms</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" /></label>
-        </div>
-      )}
-      footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} className="min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white md:text-sm">{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm">Yeni Kelimeler</button><button type="button" onClick={handleReset} className="min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm">Yeniden Başlat</button></div>}
-    >
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
-        <div className="shrink-0 px-1 md:px-2">
-          <h2 className="text-sm font-black text-slate-950 md:text-base">
-            Aynı mı, Farklı mı?
-          </h2>
-          <p className="text-[10px] font-semibold text-slate-600 md:text-xs">
-            Tüm kelimeler aynıysa Sol. Bir kelime farklıysa Sağ.
-          </p>
-        </div>
-
-        <div className="shrink-0 px-1 md:px-2">
-          <div
-            className={`rounded-lg border px-2 py-1 text-center text-[10px] font-bold md:text-xs ${
-              feedback.type === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : feedback.type === "error"
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                  : "border-blue-200 bg-blue-50 text-blue-700"
-            }`}
-          >
-            {feedback.message}
+    <div className={themeRootClassName}>
+      <ExerciseFullscreenShell
+        title="Çift Taraflı Odak"
+        backHref="/egzersizler"
+        status={<><span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {level}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Doğru: {correctCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Yanlış: {wrongCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Net: {netCount}/{NET_TARGET}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Kelime: {wordCount}</span></>}
+        settings={(
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.levelSelect}`}>{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
+            <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Hız: {speed} ms</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" /></label>
           </div>
-        </div>
+        )}
+        footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button></div>}
+      >
+        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+          <div className="shrink-0 px-1 md:px-2">
+            <h2 className={`text-sm font-black text-slate-950 md:text-base ${styles.headingTitle}`}>
+              Aynı mı, Farklı mı?
+            </h2>
+            <p className={`text-[10px] font-semibold text-slate-600 md:text-xs ${styles.headingBody}`}>
+              Tüm kelimeler aynıysa Sol. Bir kelime farklıysa Sağ.
+            </p>
+          </div>
 
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 md:px-2">
-          <div className="flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-2 md:gap-3">
-            {roundData.words.map((item) => (
-              <div
-                key={item.id}
-                className={`transition-all duration-300 ${getOffsetClass(
-                  item.offset,
-                )}`}
+          <div className="shrink-0 px-1 md:px-2">
+            <div
+              className={`rounded-lg border px-2 py-1 text-center text-[10px] font-bold md:text-xs ${
+                feedback.type === "success"
+                  ? `border-emerald-200 bg-emerald-50 text-emerald-700 ${styles.feedbackSuccess}`
+                  : feedback.type === "error"
+                    ? `border-rose-200 bg-rose-50 text-rose-700 ${styles.feedbackError}`
+                    : `border-blue-200 bg-blue-50 text-blue-700 ${styles.feedbackInfo}`
+              }`}
+            >
+              {feedback.message}
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 md:px-2">
+            <div className="flex w-full max-w-5xl flex-row flex-wrap items-center justify-center gap-2 md:gap-3">
+              {roundData.words.map((item) => (
+                <div
+                  key={item.id}
+                  className={`transition-all duration-300 ${getOffsetClass(
+                    item.offset,
+                  )}`}
+                >
+                  <span className={`flex min-h-[44px] min-w-[90px] items-center justify-center rounded-2xl border-2 border-indigo-200 bg-white px-3 py-2 text-center text-lg font-black text-slate-950 shadow shadow-slate-200/60 sm:min-h-[52px] sm:min-w-[110px] sm:text-xl md:min-h-[60px] md:min-w-[140px] md:px-5 md:py-2 md:text-2xl ${styles.wordTile}`}>
+                    {item.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="shrink-0 px-1 md:px-2">
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleAnswer("same")}
+                className={`min-h-[40px] rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2 text-sm font-black text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-95 md:min-h-[48px] md:text-base ${styles.answerSame}`}
               >
-                <span className="flex min-h-[44px] min-w-[90px] items-center justify-center rounded-2xl border-2 border-indigo-200 bg-white px-3 py-2 text-center text-lg font-black text-slate-950 shadow shadow-slate-200/60 sm:min-h-[52px] sm:min-w-[110px] sm:text-xl md:min-h-[60px] md:min-w-[140px] md:px-5 md:py-2 md:text-2xl">
-                  {item.text}
-                </span>
-              </div>
-            ))}
+                ← SOL / AYNI
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAnswer("different")}
+                className={`min-h-[40px] rounded-xl border-2 border-rose-200 bg-rose-50 px-3 py-2 text-sm font-black text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-95 md:min-h-[48px] md:text-base ${styles.answerDifferent}`}
+              >
+                SAĞ / FARKLI →
+              </button>
+            </div>
           </div>
         </div>
-
-        <div className="shrink-0 px-1 md:px-2">
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => handleAnswer("same")}
-              className="min-h-[40px] rounded-xl border-2 border-blue-200 bg-blue-50 px-3 py-2 text-sm font-black text-blue-800 shadow-sm transition hover:bg-blue-100 active:scale-95 md:min-h-[48px] md:text-base"
-            >
-              ← SOL / AYNI
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAnswer("different")}
-              className="min-h-[40px] rounded-xl border-2 border-rose-200 bg-rose-50 px-3 py-2 text-sm font-black text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-95 md:min-h-[48px] md:text-base"
-            >
-              SAĞ / FARKLI →
-            </button>
-          </div>
-        </div>
-      </div>
-    </ExerciseFullscreenShell>
+      </ExerciseFullscreenShell>
+    </div>
   );
 }
 

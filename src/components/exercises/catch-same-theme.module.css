@@ -1,0 +1,280 @@
+/*
+ * Theme re-skin for the Aynı Olanı Yakala (catch-same) exercise screen.
+ * Renders through the shared FixedExerciseStage (never edited here). Light
+ * theme relies on FixedExerciseStage's own existing light defaults for the
+ * shell chrome (untouched); dark theme adds explicit :global(...) overrides,
+ * same technique as the other themed exercises. The stimulus pool is
+ * words/letters/symbols/numbers (never colors), so no game-content-color
+ * risk here — everything below is safe to re-theme.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.lightTheme {
+  --cs-bg: #f8fafc;
+  --cs-panel: #ffffff;
+  --cs-panel-2: #f1f5f9;
+  --cs-text: #0f172a;
+  --cs-muted: #475569;
+  --cs-border: #e2e8f0;
+  --cs-purple: #7c3aed;
+  --cs-green: #059669;
+  --cs-green-strong: #047857;
+  --cs-red: #dc2626;
+  --cs-red-strong: #b91c1c;
+  --cs-orange: #c2410c;
+  --cs-cyan: #0e7490;
+  --cs-cyan-strong: #0e7490;
+  --cs-amber: #b45309;
+}
+
+.darkTheme {
+  --cs-bg: #07111f;
+  --cs-panel: #0d1a2d;
+  --cs-panel-2: #111f35;
+  --cs-text: #f5f7ff;
+  --cs-muted: #a9b5ca;
+  --cs-border: rgba(129, 140, 248, 0.34);
+  --cs-purple: #a78bfa;
+  --cs-green: #4ade80;
+  --cs-green-strong: #22c55e;
+  --cs-red: #fb7185;
+  --cs-red-strong: #e11d48;
+  --cs-orange: #fb923c;
+  --cs-cyan: #22d3ee;
+  --cs-cyan-strong: #0891b2;
+  --cs-amber: #d97706;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  background: linear-gradient(150deg, var(--cs-panel), var(--cs-bg)) !important;
+  border-color: var(--cs-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--cs-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--cs-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--cs-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--cs-border) !important;
+  background: var(--cs-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--cs-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--cs-border) !important;
+}
+
+.settingsLabel {
+  color: var(--cs-muted);
+}
+
+.select {
+  border: 1px solid var(--cs-border);
+  background: var(--cs-panel);
+  color: var(--cs-text);
+}
+
+.primaryButton {
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.lightTheme .primaryButton {
+  background: var(--cs-green-strong);
+}
+
+.lightTheme .primaryButton:hover:not(:disabled) {
+  background: #065f46;
+}
+
+.darkTheme .primaryButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%);
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35);
+}
+
+.darkTheme .primaryButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+}
+
+.pauseButton {
+  background: var(--cs-amber);
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.pauseButton:hover {
+  filter: brightness(1.08);
+}
+
+.resumeButton {
+  background: var(--cs-cyan-strong);
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.resumeButton:hover {
+  filter: brightness(1.1);
+}
+
+.secondaryButton {
+  border: 1px solid var(--cs-border);
+  background: var(--cs-panel);
+  color: var(--cs-text);
+  transition: background 0.2s;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--cs-panel-2);
+}
+
+.secondaryButton:disabled {
+  opacity: 0.6;
+}
+
+.finishButton {
+  border: 1px solid color-mix(in srgb, var(--cs-green) 45%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-green) 14%, var(--cs-panel));
+  color: var(--cs-green-strong);
+  transition: background 0.2s;
+}
+
+.finishButton:disabled {
+  opacity: 0.6;
+}
+
+.retryButton {
+  background: var(--cs-red-strong);
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.retryButton:hover {
+  filter: brightness(1.1);
+}
+
+.feedbackBar {
+  border: 1px solid var(--cs-border);
+  background: var(--cs-panel-2);
+  color: var(--cs-text);
+}
+
+.stimulusCard {
+  border-color: color-mix(in srgb, var(--cs-cyan) 45%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-cyan) 12%, var(--cs-panel));
+  color: var(--cs-cyan);
+}
+
+.stimulusCard:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cs-cyan) 20%, var(--cs-panel));
+}
+
+.stimulusCardChanging {
+  border-color: color-mix(in srgb, var(--cs-cyan) 65%, var(--cs-border));
+  background: var(--cs-panel);
+  color: color-mix(in srgb, var(--cs-cyan) 45%, var(--cs-muted));
+}
+
+.stimulusPill {
+  background: var(--cs-panel);
+  color: var(--cs-cyan);
+}
+
+.pulseRing {
+  border-color: var(--cs-cyan);
+}
+
+.statLabel {
+  color: var(--cs-muted);
+}
+
+.statOk {
+  border: 1px solid color-mix(in srgb, var(--cs-green) 35%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-green) 14%, var(--cs-panel));
+}
+
+.statValueOk {
+  color: var(--cs-green-strong);
+}
+
+.statBad {
+  border: 1px solid color-mix(in srgb, var(--cs-red) 35%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-red) 14%, var(--cs-panel));
+}
+
+.statValueBad {
+  color: var(--cs-red);
+}
+
+.statWarn {
+  border: 1px solid color-mix(in srgb, var(--cs-orange) 35%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-orange) 14%, var(--cs-panel));
+}
+
+.statValueWarn {
+  color: var(--cs-orange);
+}
+
+.summaryCard {
+  border: 1px solid color-mix(in srgb, var(--cs-cyan) 40%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-cyan) 12%, var(--cs-panel));
+}
+
+.summaryTitle {
+  color: var(--cs-cyan);
+}
+
+.summaryBody {
+  color: var(--cs-text);
+}
+
+.select:focus-visible,
+.primaryButton:focus-visible,
+.pauseButton:focus-visible,
+.resumeButton:focus-visible,
+.secondaryButton:focus-visible,
+.finishButton:focus-visible,
+.retryButton:focus-visible,
+.stimulusCard:focus-visible,
+.stimulusCardChanging:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cs-purple) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

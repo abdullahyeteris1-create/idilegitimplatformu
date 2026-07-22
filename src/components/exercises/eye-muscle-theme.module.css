@@ -1,0 +1,152 @@
+/*
+ * Theme re-skin for the Göz Kasları (eye muscle) exercise.
+ * Renders through ExerciseStage -> FixedExerciseStage (neither ever edited
+ * here). Light theme matches the current look exactly, so no light
+ * overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended alongside this component's own local Tailwind strings
+ * and the global .compact-stat-chip class (globals.css is never edited).
+ *
+ * IMPORTANT: the tracked emoji symbol itself is the exercise's core visual
+ * target and is intentionally left completely untouched in both themes.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --em-bg: #07111f;
+  --em-panel: #0d1a2d;
+  --em-panel-2: #111f35;
+  --em-text: #f5f7ff;
+  --em-muted: #a9b5ca;
+  --em-border: rgba(129, 140, 248, 0.34);
+  --em-purple: #a78bfa;
+  --em-red: #fb7185;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--em-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--em-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--em-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--em-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--em-border) !important;
+  background: var(--em-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--em-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--em-border) !important;
+}
+
+.darkTheme .statChipOverride {
+  border-color: var(--em-border) !important;
+  background: var(--em-panel-2) !important;
+  color: var(--em-text) !important;
+}
+
+.darkTheme .settingsSelect {
+  background: var(--em-panel-2) !important;
+  border-color: var(--em-border) !important;
+  color: var(--em-text) !important;
+}
+
+.darkTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.darkTheme .stopButton {
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+}
+
+.darkTheme .secondaryButton {
+  background: var(--em-panel-2) !important;
+  border-color: var(--em-border) !important;
+  color: #e7ecf7 !important;
+}
+
+.darkTheme .secondaryButton:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .stageBackground {
+  border-color: var(--em-border) !important;
+  background: radial-gradient(circle at center, rgba(167, 139, 250, 0.08), var(--em-bg) 55%, var(--em-bg)) !important;
+}
+
+.darkTheme .infoPanel {
+  border-color: var(--em-border) !important;
+  background: var(--em-panel-2) !important;
+  color: var(--em-muted) !important;
+}
+
+.darkTheme .infoPanelValue {
+  color: var(--em-text) !important;
+}
+
+.darkTheme .infoPanelAccent {
+  color: var(--em-red) !important;
+}
+
+.darkTheme .gridLine {
+  background: var(--em-border) !important;
+}
+
+.darkTheme .introOverlay {
+  background: rgba(7, 17, 31, 0.7) !important;
+}
+
+.darkTheme .introCard {
+  border-color: var(--em-border) !important;
+  background: var(--em-panel) !important;
+}
+
+.darkTheme .introBadge {
+  background: var(--em-panel-2) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--em-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--em-muted) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

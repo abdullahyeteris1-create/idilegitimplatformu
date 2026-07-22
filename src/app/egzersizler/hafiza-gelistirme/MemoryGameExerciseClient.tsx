@@ -20,6 +20,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/memory-game-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
 type RoundPhase = "prepare" | "show" | "select" | "feedback";
@@ -111,18 +113,18 @@ function calculateSuccessRate(totalCorrect: number, totalWrong: number): number 
 
 function getFeedbackClass(type: FeedbackType): string {
   if (type === "correct") {
-    return "fx-glow-green border-green-200 bg-green-50 text-green-700";
+    return `fx-glow-green border-green-200 bg-green-50 text-green-700 ${styles.feedbackOk}`;
   }
 
   if (type === "level-up") {
-    return "border-blue-200 bg-blue-50 text-blue-800";
+    return `border-blue-200 bg-blue-50 text-blue-800 ${styles.feedbackLevelUp}`;
   }
 
   if (type === "wrong") {
-    return "fx-shake border-red-200 bg-red-50 text-red-700";
+    return `fx-shake border-red-200 bg-red-50 text-red-700 ${styles.feedbackBad}`;
   }
 
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  return `border-slate-200 bg-slate-50 text-slate-700 ${styles.feedbackInfo}`;
 }
 
 function getRoundPhaseLabel(roundPhase: RoundPhase): string {
@@ -134,6 +136,9 @@ function getRoundPhaseLabel(roundPhase: RoundPhase): string {
 
 export function MemoryGameExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
 
   const hasSavedResultRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
@@ -437,7 +442,7 @@ export function MemoryGameExerciseClient() {
   const footerControls = (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Kutu Düzeni
         </span>
         <select
@@ -445,7 +450,7 @@ export function MemoryGameExerciseClient() {
           onChange={(event) =>
             setGridLayout(event.target.value as MemoryGridLayout)
           }
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           disabled={phase === "play"}
         >
           <option value="5x5">5 x 5</option>
@@ -455,13 +460,13 @@ export function MemoryGameExerciseClient() {
       </label>
 
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Seviye
         </span>
         <select
           value={level}
           onChange={(event) => setLevel(Number(event.target.value))}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           disabled={phase === "play"}
         >
           {LEVEL_OPTIONS.map((value) => (
@@ -473,13 +478,13 @@ export function MemoryGameExerciseClient() {
       </label>
 
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Gösterim
         </span>
         <select
           value={displayMs}
           onChange={(event) => setDisplayMs(Number(event.target.value) as DisplayMs)}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           disabled={phase === "play"}
         >
           {DISPLAY_OPTIONS.map((value) => (
@@ -491,13 +496,13 @@ export function MemoryGameExerciseClient() {
       </label>
 
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Görünüm
         </span>
         <select
           value={fontSize}
           onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           disabled={phase === "play"}
         >
           {FONT_OPTIONS.map((value) => (
@@ -512,7 +517,7 @@ export function MemoryGameExerciseClient() {
         {phase === "ready" ? (
           <button
             type="button"
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
             onClick={handleBeginPlay}
           >
@@ -522,7 +527,7 @@ export function MemoryGameExerciseClient() {
           <>
             <button
               type="button"
-              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={handleRestart}
             >
@@ -531,7 +536,7 @@ export function MemoryGameExerciseClient() {
 
             <button
               type="button"
-              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={finishExercise}
             >
@@ -545,235 +550,243 @@ export function MemoryGameExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Hafıza Geliştirme"
-        description="Seviye kadar kutu kısa süre yanar. Kutular kapandıktan sonra aklında kalanları bulmaya çalışırsın."
-        buttonLabel="Eğitime Başla"
-        onStart={handleIntroStart}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Hafıza Geliştirme"
+          description="Seviye kadar kutu kısa süre yanar. Kutular kapandıktan sonra aklında kalanları bulmaya çalışırsın."
+          buttonLabel="Eğitime Başla"
+          onStart={handleIntroStart}
+        />
+      </div>
     );
   }
 
   if (phase === "ready") {
     return (
-      <FullscreenExerciseShell
-        title="Hafıza Geliştirme"
-        subtitle="Hazırlık modu"
-        stats={[
-          { label: "Düzen", value: gridInfo.label },
-          { label: "Seviye", value: level },
-          { label: "Yanan Kutu", value: level, tone: "brand" },
-          { label: "Hedef Net", value: NET_TARGET },
-        ]}
-        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[350px]"
-        footer={footerControls}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
-          Hazırlık
-        </p>
+      <div className={themeRootClassName}>
+        <FullscreenExerciseShell
+          title="Hafıza Geliştirme"
+          subtitle="Hazırlık modu"
+          stats={[
+            { label: "Düzen", value: gridInfo.label },
+            { label: "Seviye", value: level },
+            { label: "Yanan Kutu", value: level, tone: "brand" },
+            { label: "Hedef Net", value: NET_TARGET },
+          ]}
+          stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[350px]"
+          footer={footerControls}
+        >
+          <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>
+            Hazırlık
+          </p>
 
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">
-          Seviye kadar kutu yanar.
-        </h2>
+          <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>
+            Seviye kadar kutu yanar.
+          </h2>
 
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-          Seviye 2’de 2 kutu, seviye 3’te 3 kutu, seviye 10’da 10 kutu
-          yanıp söner. Kutular kapandıktan sonra aklında kalanları seç.
-          10 net yapınca seviye otomatik artar.
-        </p>
-      </FullscreenExerciseShell>
+          <p className={`mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 ${styles.introBody}`}>
+            Seviye 2’de 2 kutu, seviye 3’te 3 kutu, seviye 10’da 10 kutu
+            yanıp söner. Kutular kapandıktan sonra aklında kalanları seç.
+            10 net yapınca seviye otomatik artar.
+          </p>
+        </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "result") {
     return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
-        <h2 className="text-2xl font-bold">Hafıza Geliştirme Sonucu</h2>
+      <div className={themeRootClassName}>
+        <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
+          <h2 className="text-2xl font-bold">Hafıza Geliştirme Sonucu</h2>
 
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Çalışma sonucu kaydedildi.
-        </p>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Doğru
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">
-              {totalCorrectCount}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Yanlış
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">
-              {totalWrongCount}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Skor
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">
-              {score}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Başarı
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {successRate}%
-            </p>
-          </article>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm">
-          <p>
-            <strong>Ulaşılan Seviye:</strong> {level}
+          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
+            Çalışma sonucu kaydedildi.
           </p>
-          <p className="mt-1">
-            <strong>Seviye Atlama:</strong> {levelUpCount}
-          </p>
-          <p className="mt-1">
-            <strong>Son Net:</strong> {net}
-          </p>
-          <p className="mt-1">
-            <strong>Düzen:</strong> {gridInfo.label}
-          </p>
-          <p className="mt-1">
-            <strong>Gösterim:</strong> {displayMs} ms
-          </p>
-        </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={handleRestart}
-          >
-            Yeniden Başlat
-          </button>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Doğru
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">
+                {totalCorrectCount}
+              </p>
+            </article>
 
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={() =>
-              router.push(
-                `/sonuc?exerciseType=memory-game&correct=${totalCorrectCount}&wrong=${totalWrongCount}&successRate=${successRate}&score=${score}`,
-              )
-            }
-          >
-            Sonuç Ekranına Git
-          </button>
-        </div>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Yanlış
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">
+                {totalWrongCount}
+              </p>
+            </article>
 
-        <div className="mt-4 flex justify-end">
-          <ExerciseNavigationControls />
-        </div>
-      </section>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Skor
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">
+                {score}
+              </p>
+            </article>
+
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Başarı
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-slate-900">
+                {successRate}%
+              </p>
+            </article>
+          </div>
+
+          <div className={`mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm ${styles.resultDetailCard}`}>
+            <p>
+              <strong>Ulaşılan Seviye:</strong> {level}
+            </p>
+            <p className="mt-1">
+              <strong>Seviye Atlama:</strong> {levelUpCount}
+            </p>
+            <p className="mt-1">
+              <strong>Son Net:</strong> {net}
+            </p>
+            <p className="mt-1">
+              <strong>Düzen:</strong> {gridInfo.label}
+            </p>
+            <p className="mt-1">
+              <strong>Gösterim:</strong> {displayMs} ms
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              style={TOUCH_STYLE}
+              onClick={handleRestart}
+            >
+              Yeniden Başlat
+            </button>
+
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              style={TOUCH_STYLE}
+              onClick={() =>
+                router.push(
+                  `/sonuc?exerciseType=memory-game&correct=${totalCorrectCount}&wrong=${totalWrongCount}&successRate=${successRate}&score=${score}`,
+                )
+              }
+            >
+              Sonuç Ekranına Git
+            </button>
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <ExerciseNavigationControls />
+          </div>
+        </section>
+      </div>
     );
   }
 
   return (
-    <FullscreenExerciseShell
-      title="Hafıza Geliştirme"
-      subtitle="Tam ekran çalışma modu"
-      stats={[
-        { label: "Seviye", value: level },
-        { label: "Yanan Kutu", value: level, tone: "brand" },
-        { label: "Doğru", value: levelCorrectCount, tone: "ok" },
-        { label: "Yanlış", value: levelWrongCount, tone: "bad" },
-        { label: "Net", value: net, tone: "brand" },
-      ]}
-      finishButton={
-        <button
-          type="button"
-          onClick={finishExercise}
-          className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md"
-          style={FULLSCREEN_TOUCH_STYLE}
-        >
-          Bitir
-        </button>
-      }
-      footer={footerControls}
-      stageClassName="!mt-2 flex min-h-0 flex-1 overflow-hidden !p-2 md:!p-3"
-    >
-      <div className="fx-fade-in flex h-full min-h-0 w-full flex-col">
-        {feedbackType ? (
-          <div
-            className={`mx-auto mb-2 max-w-2xl shrink-0 rounded-xl border px-3 py-2 text-center text-sm font-bold ${getFeedbackClass(
-              feedbackType,
-            )}`}
+    <div className={themeRootClassName}>
+      <FullscreenExerciseShell
+        title="Hafıza Geliştirme"
+        subtitle="Tam ekran çalışma modu"
+        stats={[
+          { label: "Seviye", value: level },
+          { label: "Yanan Kutu", value: level, tone: "brand" },
+          { label: "Doğru", value: levelCorrectCount, tone: "ok" },
+          { label: "Yanlış", value: levelWrongCount, tone: "bad" },
+          { label: "Net", value: net, tone: "brand" },
+        ]}
+        finishButton={
+          <button
+            type="button"
+            onClick={finishExercise}
+            className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`}
+            style={FULLSCREEN_TOUCH_STYLE}
           >
-            {feedbackMessage}
+            Bitir
+          </button>
+        }
+        footer={footerControls}
+        stageClassName="!mt-2 flex min-h-0 flex-1 overflow-hidden !p-2 md:!p-3"
+      >
+        <div className="fx-fade-in flex h-full min-h-0 w-full flex-col">
+          {feedbackType ? (
+            <div
+              className={`mx-auto mb-2 max-w-2xl shrink-0 rounded-xl border px-3 py-2 text-center text-sm font-bold ${getFeedbackClass(
+                feedbackType,
+              )}`}
+            >
+              {feedbackMessage}
+            </div>
+          ) : null}
+
+          <div className={`mb-1.5 shrink-0 text-center text-xs font-black text-slate-600 ${styles.helperText}`}>
+            Durum: {getRoundPhaseLabel(roundPhase)}
           </div>
-        ) : null}
 
-        <div className="mb-1.5 shrink-0 text-center text-xs font-black text-slate-600">
-          Durum: {getRoundPhaseLabel(roundPhase)}
-        </div>
+          <div className={`flex min-h-0 flex-1 overflow-hidden rounded-xl border border-red-100/85 bg-red-50/40 p-1.5 md:p-2 ${styles.gridFrame}`}>
+            <div
+              className="grid h-full min-h-0 w-full gap-1 md:gap-1.5"
+              style={{
+                gridTemplateColumns: `repeat(${gridInfo.cols}, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${gridInfo.rows}, minmax(0, 1fr))`,
+              }}
+            >
+              {Array.from({ length: gridInfo.totalBoxes }, (_, index) => {
+                const isShowingTarget =
+                  roundPhase === "show" && activeTargets.has(index);
+                const isFeedbackTarget =
+                  roundPhase === "feedback" && activeTargets.has(index);
+                const isSelectedCorrect = selectedCorrect.has(index);
+                const isSelectedWrong = selectedWrong === index;
 
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-red-100/85 bg-red-50/40 p-1.5 md:p-2">
-          <div
-            className="grid h-full min-h-0 w-full gap-1 md:gap-1.5"
-            style={{
-              gridTemplateColumns: `repeat(${gridInfo.cols}, minmax(0, 1fr))`,
-              gridTemplateRows: `repeat(${gridInfo.rows}, minmax(0, 1fr))`,
-            }}
-          >
-            {Array.from({ length: gridInfo.totalBoxes }, (_, index) => {
-              const isShowingTarget =
-                roundPhase === "show" && activeTargets.has(index);
-              const isFeedbackTarget =
-                roundPhase === "feedback" && activeTargets.has(index);
-              const isSelectedCorrect = selectedCorrect.has(index);
-              const isSelectedWrong = selectedWrong === index;
+                let boxClass = `border-red-200 bg-white ${styles.boxIdle}`;
 
-              let boxClass = "border-red-200 bg-white";
+                if (isShowingTarget) {
+                  boxClass =
+                    `fx-pulse-soft border-red-500 bg-red-500 shadow-[0_0_0_1px_rgba(220,38,38,0.35)] ${styles.boxShowing}`;
+                } else if (isSelectedCorrect) {
+                  boxClass = `fx-glow-green border-green-400 bg-green-400 ${styles.boxCorrect}`;
+                } else if (isSelectedWrong) {
+                  boxClass = `fx-blink-red fx-shake border-red-400 bg-red-300 ${styles.boxWrong}`;
+                } else if (isFeedbackTarget && feedbackType === "wrong") {
+                  boxClass = `border-green-300 bg-green-100 ${styles.boxRevealed}`;
+                }
 
-              if (isShowingTarget) {
-                boxClass =
-                  "fx-pulse-soft border-red-500 bg-red-500 shadow-[0_0_0_1px_rgba(220,38,38,0.35)]";
-              } else if (isSelectedCorrect) {
-                boxClass = "fx-glow-green border-green-400 bg-green-400";
-              } else if (isSelectedWrong) {
-                boxClass = "fx-blink-red fx-shake border-red-400 bg-red-300";
-              } else if (isFeedbackTarget && feedbackType === "wrong") {
-                boxClass = "border-green-300 bg-green-100";
-              }
-
-              return (
-                <button
-                  key={`memory-cell-${index + 1}`}
-                  type="button"
-                  className={`relative z-10 h-full min-h-0 w-full min-w-0 cursor-pointer select-none touch-manipulation pointer-events-auto rounded-md border transition active:scale-[0.98] ${boxClass}`}
-                  style={{
-                    ...TOUCH_STYLE,
-                    fontSize: `${fontSize}px`,
-                  }}
-                  onClick={() => handleSelectBox(index)}
-                  disabled={roundPhase !== "select"}
-                >
-                  <span className="sr-only">Kutu {index + 1}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={`memory-cell-${index + 1}`}
+                    type="button"
+                    className={`relative z-10 h-full min-h-0 w-full min-w-0 cursor-pointer select-none touch-manipulation pointer-events-auto rounded-md border transition active:scale-[0.98] ${boxClass}`}
+                    style={{
+                      ...TOUCH_STYLE,
+                      fontSize: `${fontSize}px`,
+                    }}
+                    onClick={() => handleSelectBox(index)}
+                    disabled={roundPhase !== "select"}
+                  >
+                    <span className="sr-only">Kutu {index + 1}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        <p className="mt-1.5 shrink-0 text-center text-xs font-semibold text-slate-600">
-          {level}. seviyede {level} kutu yanar. Tümünü doğru seçersen doğru
-          sayılır; yanlış kutuya basarsan yanlış sayılır.
-        </p>
-      </div>
-    </FullscreenExerciseShell>
+          <p className={`mt-1.5 shrink-0 text-center text-xs font-semibold text-slate-600 ${styles.helperText}`}>
+            {level}. seviyede {level} kutu yanar. Tümünü doğru seçersen doğru
+            sayılır; yanlış kutuya basarsan yanlış sayılır.
+          </p>
+        </div>
+      </FullscreenExerciseShell>
+    </div>
   );
 }
 

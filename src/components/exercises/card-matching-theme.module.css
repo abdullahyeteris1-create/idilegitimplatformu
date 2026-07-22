@@ -1,0 +1,230 @@
+/*
+ * Theme re-skin for the Kart Eşleştirme (card matching) exercise screens.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme is a faithful match of the current
+ * red-branded look, so no light overrides are needed. Dark theme adds:
+ * (a) the established :global(.fixed-exercise-stage...) shell overrides,
+ * (b) small "override" classes appended alongside the shared FULLSCREEN_*
+ * string constants (FullscreenExerciseShell.tsx is never edited),
+ * (c) an override for the global .idil-card class used by the result
+ * screen (globals.css is never edited either).
+ *
+ * IMPORTANT: the flip-card faces themselves (closed "?" back, open image
+ * front, matched ring, and the image src students memorize) are the core
+ * game content/mechanic and are intentionally left untouched in both
+ * themes, matching the same rule already applied to Kart Hafıza's card
+ * backs/colorClass.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --cm-bg: #07111f;
+  --cm-panel: #0d1a2d;
+  --cm-panel-2: #111f35;
+  --cm-text: #f5f7ff;
+  --cm-muted: #a9b5ca;
+  --cm-border: rgba(129, 140, 248, 0.34);
+  --cm-purple: #a78bfa;
+  --cm-green: #4ade80;
+  --cm-red: #fb7185;
+  --cm-blue: #60a5fa;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--cm-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--cm-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--cm-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--cm-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--cm-panel-2) !important;
+  border-color: var(--cm-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--cm-panel-2) !important;
+  border-color: var(--cm-border) !important;
+  color: var(--cm-text) !important;
+}
+
+.darkTheme .stageOverride {
+  background: linear-gradient(150deg, var(--cm-panel), var(--cm-bg)) !important;
+  border-color: var(--cm-border) !important;
+  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.4) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .themeChip {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: var(--cm-text) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--cm-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--cm-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .readyStatTile {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.darkTheme .readyStatLabel {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .readyStatValue {
+  color: var(--cm-purple) !important;
+}
+
+.darkTheme .infoPanel {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.darkTheme .infoPanelLabel {
+  color: var(--cm-purple) !important;
+}
+
+.darkTheme .infoPanelValue {
+  color: var(--cm-text) !important;
+}
+
+.darkTheme .timeChip {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel) !important;
+}
+
+.darkTheme .timeChipLabel {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .timeChipValue {
+  color: var(--cm-purple) !important;
+}
+
+.darkTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--cm-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-green) 16%, var(--cm-panel)) !important;
+  color: var(--cm-green) !important;
+}
+
+.darkTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--cm-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-red) 16%, var(--cm-panel)) !important;
+  color: var(--cm-red) !important;
+}
+
+.darkTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--cm-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-blue) 16%, var(--cm-panel)) !important;
+  color: var(--cm-blue) !important;
+}
+
+.darkTheme .boardFrame {
+  border-color: var(--cm-border) !important;
+  background: linear-gradient(180deg, var(--cm-panel) 0%, var(--cm-bg) 100%) !important;
+}
+
+.darkTheme .pausedOverlay {
+  background: rgba(7, 17, 31, 0.65) !important;
+}
+
+.darkTheme .pausedText {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel) !important;
+  color: var(--cm-purple) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--cm-panel) !important;
+  border: 1px solid var(--cm-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--cm-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--cm-muted) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--cm-border) !important;
+  background: var(--cm-panel-2) !important;
+  color: var(--cm-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

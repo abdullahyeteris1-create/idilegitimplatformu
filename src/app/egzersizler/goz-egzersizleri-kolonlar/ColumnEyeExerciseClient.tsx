@@ -12,6 +12,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/eye-columns-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
 type DurationMinutes = 1 | 2 | 3 | 4 | 5;
@@ -118,6 +120,9 @@ function getNextIndex(
 }
 
 export function ColumnEyeExerciseClient() {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
   const finishExerciseRef = useRef<() => void>(() => undefined);
@@ -294,7 +299,7 @@ export function ColumnEyeExerciseClient() {
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Çalışma Süresi
         </span>
         <select
@@ -303,7 +308,7 @@ export function ColumnEyeExerciseClient() {
             setDurationMinutes(Number(event.target.value) as DurationMinutes);
             resetExercise();
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {DURATION_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -314,7 +319,7 @@ export function ColumnEyeExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Atlama Hızı
         </span>
         <select
@@ -323,7 +328,7 @@ export function ColumnEyeExerciseClient() {
             setJumpSpeed(Number(event.target.value) as JumpSpeed);
             resetExercise();
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {JUMP_SPEED_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -334,7 +339,7 @@ export function ColumnEyeExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Akış Yönü
         </span>
         <select
@@ -343,7 +348,7 @@ export function ColumnEyeExerciseClient() {
             setFlowDirection(event.target.value as FlowDirection);
             resetExercise();
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           <option value="column">Sütun Şeklinde</option>
           <option value="row">Satır Şeklinde</option>
@@ -351,7 +356,7 @@ export function ColumnEyeExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           Kolon Sayısı
         </span>
         <select
@@ -360,7 +365,7 @@ export function ColumnEyeExerciseClient() {
             setColumnCount(Number(event.target.value) as ColumnCount);
             resetExercise();
           }}
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
           {COLUMN_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -375,7 +380,7 @@ export function ColumnEyeExerciseClient() {
           <button
             type="button"
             onClick={beginExercise}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Egzersizi Başlat
@@ -384,7 +389,7 @@ export function ColumnEyeExerciseClient() {
           <button
             type="button"
             onClick={() => setPhase("paused")}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Duraklat
@@ -396,7 +401,7 @@ export function ColumnEyeExerciseClient() {
               startedAtRef.current = Date.now() - elapsedSeconds * 1000;
               setPhase("running");
             }}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Devam Et
@@ -408,51 +413,54 @@ export function ColumnEyeExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Kelime Kolonları"
-        description="Farklı kelimeler arasında satır veya sütun yönünde ritmik göz hareketi yaparak odak geçişini geliştir."
-        buttonLabel="Eğitime Başla"
-        onStart={resetExercise}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Kelime Kolonları"
+          description="Farklı kelimeler arasında satır veya sütun yönünde ritmik göz hareketi yaparak odak geçişini geliştir."
+          buttonLabel="Eğitime Başla"
+          onStart={resetExercise}
+        />
+      </div>
     );
   }
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card p-5 md:p-7">
-        <h1 className="text-2xl font-black text-slate-950">
+      <div className={themeRootClassName}>
+      <section className={`idil-card p-5 md:p-7 ${styles.resultCardOverride}`}>
+        <h1 className={`text-2xl font-black text-slate-950 ${styles.resultTitle}`}>
           Kelime Kolonları Sonucu
         </h1>
-        <p className="mt-2 text-sm text-slate-500">Çalışma tamamlandı.</p>
+        <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>Çalışma tamamlandı.</p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Başarı</p>
-            <p className="mt-2 text-3xl font-black text-red-700">
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Başarı</p>
+            <p className={`mt-2 text-3xl font-black text-red-700 ${styles.resultStatValue}`}>
               %{result.successRate}
             </p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-white p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Süre</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+          <article className={`rounded-2xl border border-red-100 bg-white p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Süre</p>
+            <p className={`mt-2 text-3xl font-black text-slate-900 ${styles.resultStatValue}`}>
               {formatTime(result.durationSeconds)}
             </p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-white p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Geçiş</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+          <article className={`rounded-2xl border border-red-100 bg-white p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Geçiş</p>
+            <p className={`mt-2 text-3xl font-black text-slate-900 ${styles.resultStatValue}`}>
               {result.completedSteps}
             </p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-white p-4 text-center">
-            <p className="text-xs uppercase text-slate-500">Atlama Hızı</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">
+          <article className={`rounded-2xl border border-red-100 bg-white p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>Atlama Hızı</p>
+            <p className={`mt-2 text-3xl font-black text-slate-900 ${styles.resultStatValue}`}>
               {intervalMs} ms
             </p>
           </article>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm text-slate-700">
+        <div className={`mt-5 rounded-2xl border border-red-100 bg-white p-4 text-sm text-slate-700 ${styles.resultDetailCard}`}>
           <p>
             <strong>Akış:</strong>{" "}
             {flowDirection === "column" ? "Sütun şeklinde" : "Satır şeklinde"}
@@ -466,23 +474,25 @@ export function ColumnEyeExerciseClient() {
           <button
             type="button"
             onClick={resetExercise}
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Tekrar Çalış
           </button>
           <Link
             href="/egzersizler"
-            className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800"
+            className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800 ${styles.secondaryButtonOverride}`}
           >
             Egzersizlere Dön
           </Link>
         </div>
       </section>
+      </div>
     );
   }
 
   return (
+    <div className={themeRootClassName}>
     <FullscreenExerciseShell
       title="Kelime Kolonları"
       subtitle={
@@ -503,14 +513,14 @@ export function ColumnEyeExerciseClient() {
         phase === "running" || phase === "paused" ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
             <label className="flex min-w-0 flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Çalışma Süresi</span>
+              <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Çalışma Süresi</span>
               <select
                 value={durationMinutes}
                 onChange={(event) => {
                   setDurationMinutes(Number(event.target.value) as DurationMinutes);
                   resetExercise();
                 }}
-                className={FULLSCREEN_SELECT_CLASS}
+                className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
               >
                 {DURATION_OPTIONS.map((value) => (
                   <option key={value} value={value}>{value}:00</option>
@@ -518,14 +528,14 @@ export function ColumnEyeExerciseClient() {
               </select>
             </label>
             <label className="flex min-w-0 flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Atlama Hızı</span>
+              <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Atlama Hızı</span>
               <select
                 value={jumpSpeed}
                 onChange={(event) => {
                   setJumpSpeed(Number(event.target.value) as JumpSpeed);
                   resetExercise();
                 }}
-                className={FULLSCREEN_SELECT_CLASS}
+                className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
               >
                 {JUMP_SPEED_OPTIONS.map((value) => (
                   <option key={value} value={value}>{value} ms</option>
@@ -533,28 +543,28 @@ export function ColumnEyeExerciseClient() {
               </select>
             </label>
             <label className="flex min-w-0 flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Akış Yönü</span>
+              <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Akış Yönü</span>
               <select
                 value={flowDirection}
                 onChange={(event) => {
                   setFlowDirection(event.target.value as FlowDirection);
                   resetExercise();
                 }}
-                className={FULLSCREEN_SELECT_CLASS}
+                className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
               >
                 <option value="column">Sütun Şeklinde</option>
                 <option value="row">Satır Şeklinde</option>
               </select>
             </label>
             <label className="flex min-w-0 flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kolon Sayısı</span>
+              <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kolon Sayısı</span>
               <select
                 value={columnCount}
                 onChange={(event) => {
                   setColumnCount(Number(event.target.value) as ColumnCount);
                   resetExercise();
                 }}
-                className={FULLSCREEN_SELECT_CLASS}
+                className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
               >
                 {COLUMN_OPTIONS.map((value) => (
                   <option key={value} value={value}>{value} Kolon</option>
@@ -577,12 +587,12 @@ export function ColumnEyeExerciseClient() {
                   setPhase("running");
                 }
               }}
-              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
             >
               {phase === "running" ? "Duraklat" : "Devam"}
             </button>
-            <button type="button" onClick={finishExercise} className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
+            <button type="button" onClick={finishExercise} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE}>
               Bitir
             </button>
           </div>
@@ -594,13 +604,13 @@ export function ColumnEyeExerciseClient() {
       <div className="flex h-full min-h-0 w-full flex-col">
         {phase === "ready" ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">
+            <p className={`text-xs font-bold uppercase tracking-[0.2em] text-red-700 ${styles.introEyebrow}`}>
               Hazırlık
             </p>
-            <h2 className="mt-2 text-xl font-black text-slate-950 md:text-3xl">
+            <h2 className={`mt-2 text-xl font-black text-slate-950 md:text-3xl ${styles.introTitle}`}>
               Kelimelerin tamamı birbirinden farklıdır.
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-5 text-slate-500">
+            <p className={`mt-2 max-w-2xl text-sm leading-5 text-slate-500 ${styles.introBody}`}>
               Akış yönünü seç. Vurgulanan kelimeyi yalnızca gözlerinle takip et
               ve başını mümkün olduğunca sabit tut.
             </p>
@@ -608,16 +618,16 @@ export function ColumnEyeExerciseClient() {
         ) : (
           <>
             <div className="mb-1.5 flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-slate-700">
+              <p className={`text-sm font-bold text-slate-700 ${styles.helperText}`}>
                 Aktif kelimeyi takip et
               </p>
-              <p className="text-sm font-black text-red-700">
+              <p className={`text-sm font-black text-red-700 ${styles.helperValue}`}>
                 {formatTime(remainingSeconds)}
               </p>
             </div>
 
             <div
-              className="grid min-h-0 flex-1 gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-1.5 md:gap-2 md:p-3"
+              className={`grid min-h-0 flex-1 gap-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-1.5 md:gap-2 md:p-3 ${styles.wordGrid}`}
               style={{
                 gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
                 gridTemplateRows: `repeat(${rowsPerColumn}, minmax(0, 1fr))`,
@@ -631,8 +641,8 @@ export function ColumnEyeExerciseClient() {
                     key={`${word}-${wordIndex}`}
                     className={`flex min-h-0 items-center justify-center overflow-hidden rounded-lg border px-1 py-0.5 text-center text-[clamp(0.65rem,2.5vw,1rem)] font-bold leading-tight transition-all duration-150 ${
                       isActive
-                        ? "border-red-500 bg-red-50 text-red-800 shadow-[0_0_0_3px_rgba(239,68,68,0.16)]"
-                        : "border-white bg-white text-slate-700 shadow-sm"
+                        ? `border-red-500 bg-red-50 text-red-800 shadow-[0_0_0_3px_rgba(239,68,68,0.16)] ${styles.wordCellActive}`
+                        : `border-white bg-white text-slate-700 shadow-sm ${styles.wordCell}`
                     }`}
                   >
                     {word}
@@ -646,16 +656,16 @@ export function ColumnEyeExerciseClient() {
                 <span>{progress}% tamamlandı</span>
                 <span>{completedSteps} geçiş</span>
               </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
+              <div className={`h-2.5 overflow-hidden rounded-full bg-slate-200 ${styles.progressTrack}`}>
                 <div
-                  className="h-full rounded-full bg-red-600 transition-all duration-300"
+                  className={`h-full rounded-full bg-red-600 transition-all duration-300 ${styles.progressFill}`}
                   style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
 
             {phase === "paused" ? (
-              <p className="mt-3 text-center text-sm font-bold text-red-700">
+              <p className={`mt-3 text-center text-sm font-bold text-red-700 ${styles.pausedText}`}>
                 Egzersiz duraklatıldı.
               </p>
             ) : null}
@@ -663,5 +673,6 @@ export function ColumnEyeExerciseClient() {
         )}
       </div>
     </FullscreenExerciseShell>
+    </div>
   );
 }

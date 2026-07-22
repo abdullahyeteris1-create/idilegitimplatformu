@@ -1,0 +1,313 @@
+/*
+ * Theme re-skin for the Yeni Kartı Bul (new card memory) exercise.
+ * Standalone component — no shared exercise shell is used here (matches
+ * the Renk Uyumu / Sayı Tablosu precedent). Light theme matches the
+ * current indigo/fuchsia/emerald look exactly, so no light overrides are
+ * needed.
+ *
+ * IMPORTANT: the emoji card symbols themselves are the exercise's core
+ * memory content and are intentionally left completely untouched in both
+ * themes; only the surrounding tile chrome and correct/wrong highlight
+ * state are re-themed.
+ */
+
+.themeRoot {
+  min-height: 100vh;
+}
+
+.darkTheme {
+  --nc-bg: #07111f;
+  --nc-panel: #0d1a2d;
+  --nc-panel-2: #111f35;
+  --nc-text: #f5f7ff;
+  --nc-muted: #a9b5ca;
+  --nc-border: rgba(129, 140, 248, 0.34);
+  --nc-purple: #a78bfa;
+  --nc-pink: #f472b6;
+  --nc-green: #4ade80;
+  --nc-red: #fb7185;
+  --nc-amber: #fbbf24;
+}
+
+.darkTheme.pageBackground {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .panel {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme .panelHeader {
+  border-color: var(--nc-border) !important;
+}
+
+.darkTheme .title {
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .subtitle {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .statCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .statCardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .statCardValue {
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .settingsBar {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .levelButtonActive {
+  border-color: var(--nc-purple) !important;
+  background: var(--nc-purple) !important;
+  color: #1a1030 !important;
+}
+
+.darkTheme .durationButtonActive {
+  border-color: var(--nc-pink) !important;
+  background: var(--nc-pink) !important;
+  color: #250d1c !important;
+}
+
+.darkTheme .optionButtonIdle {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .optionButtonIdle:hover {
+  border-color: var(--nc-purple) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .idleCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .idleTitle {
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .idleBody {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.darkTheme .progressTrack {
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .progressFill {
+  background: var(--nc-purple) !important;
+}
+
+.darkTheme .pauseButton {
+  border-color: color-mix(in srgb, var(--nc-amber) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-amber) 14%, var(--nc-panel)) !important;
+  color: var(--nc-amber) !important;
+}
+
+.darkTheme .resumeButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.darkTheme .finishButton {
+  border-color: color-mix(in srgb, var(--nc-red) 45%, transparent) !important;
+  background: var(--nc-panel) !important;
+  color: var(--nc-red) !important;
+}
+
+.darkTheme .finishButton:hover {
+  background: color-mix(in srgb, var(--nc-red) 14%, var(--nc-panel)) !important;
+}
+
+.darkTheme .contentCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+}
+
+.darkTheme .phaseHeadingMemorize {
+  color: var(--nc-purple) !important;
+}
+
+.darkTheme .phaseHeadingPaused {
+  color: var(--nc-amber) !important;
+}
+
+.darkTheme .phaseHeadingReady {
+  color: var(--nc-green) !important;
+}
+
+.darkTheme .phaseHeadingChallenge {
+  color: var(--nc-pink) !important;
+}
+
+.darkTheme .phaseBody {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .pausedVisual {
+  background: linear-gradient(135deg, var(--nc-panel) 0%, var(--nc-panel-2) 100%) !important;
+}
+
+.darkTheme .pausedVisualText {
+  color: var(--nc-amber) !important;
+}
+
+.darkTheme .readyVisual {
+  background: linear-gradient(135deg, var(--nc-panel) 0%, var(--nc-panel-2) 100%) !important;
+}
+
+.darkTheme .continueButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+}
+
+.darkTheme .cardTile {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .cardTile:hover {
+  border-color: var(--nc-purple) !important;
+}
+
+.darkTheme .cardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .cardCorrect {
+  border-color: var(--nc-green) !important;
+  background: color-mix(in srgb, var(--nc-green) 20%, var(--nc-panel)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nc-green) 30%, transparent) !important;
+}
+
+.darkTheme .cardWrong {
+  border-color: var(--nc-red) !important;
+  background: color-mix(in srgb, var(--nc-red) 20%, var(--nc-panel)) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nc-red) 30%, transparent) !important;
+}
+
+.darkTheme .newBadge {
+  background: var(--nc-green) !important;
+  color: #06210f !important;
+}
+
+.darkTheme .feedbackCorrect {
+  border-color: color-mix(in srgb, var(--nc-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-green) 16%, var(--nc-panel)) !important;
+  color: var(--nc-green) !important;
+}
+
+.darkTheme .feedbackWrong {
+  border-color: color-mix(in srgb, var(--nc-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--nc-red) 16%, var(--nc-panel)) !important;
+  color: var(--nc-red) !important;
+}
+
+.darkTheme .savingCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .savingTitle {
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .savingError {
+  color: var(--nc-red) !important;
+}
+
+.darkTheme .retryButton {
+  background: var(--nc-purple) !important;
+  color: #1a1030 !important;
+}
+
+.darkTheme .finishedBanner {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .finishedTitle {
+  color: var(--nc-green) !important;
+}
+
+.darkTheme .resultCard {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel) !important;
+}
+
+.darkTheme .resultCardLabel {
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .resultCardValue {
+  color: var(--nc-green) !important;
+}
+
+.darkTheme .secondaryButton {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .secondaryButton:hover {
+  background: #142445 !important;
+}
+
+.darkTheme .tableWrap {
+  border-color: var(--nc-border) !important;
+}
+
+.darkTheme .tableHeaderBar {
+  border-color: var(--nc-border) !important;
+  background: var(--nc-panel-2) !important;
+}
+
+.darkTheme .tableHeaderTitle {
+  color: var(--nc-text) !important;
+}
+
+.darkTheme .tableHead {
+  background: var(--nc-panel) !important;
+  color: var(--nc-muted) !important;
+}
+
+.darkTheme .tableRow {
+  border-color: var(--nc-border) !important;
+}
+
+.darkTheme .tableCorrect {
+  color: var(--nc-green) !important;
+}
+
+.darkTheme .tableWrong {
+  color: var(--nc-red) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

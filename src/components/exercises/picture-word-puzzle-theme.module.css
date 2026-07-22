@@ -1,0 +1,202 @@
+/*
+ * Theme re-skin for the Parçalı Resim Kelime (picture word puzzle) exercise.
+ * Standalone component — no shared exercise shell is used here (matches
+ * the Renk Uyumu / Sayı Tablosu precedent). Light theme matches the
+ * current look exactly (including the running screen's own permanently
+ * dark slate styling — that pre-existing look is the "light theme"
+ * baseline here, unchanged), so no light overrides are needed.
+ *
+ * IMPORTANT: the puzzle tile images (item.color / tileStyle background,
+ * the picture fragments students must recognize) are the exercise's core
+ * visual content and are intentionally left completely untouched in both
+ * themes, matching the same rule already applied to Görsel Puzzle.
+ */
+
+.themeRoot {
+  min-height: 100vh;
+}
+
+.darkTheme {
+  --pw-bg: #07111f;
+  --pw-panel: #0d1a2d;
+  --pw-panel-2: #111f35;
+  --pw-text: #f5f7ff;
+  --pw-muted: #a9b5ca;
+  --pw-border: rgba(129, 140, 248, 0.34);
+  --pw-purple: #a78bfa;
+  --pw-green: #4ade80;
+  --pw-red: #fb7185;
+  --pw-blue: #60a5fa;
+  --pw-amber: #fbbf24;
+}
+
+/* --- Setup (not started) screen --- */
+
+.darkTheme.setupBackground {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .setupPanel {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme .setupEyebrow {
+  color: var(--pw-purple) !important;
+}
+
+.darkTheme .setupTitle {
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .setupBody {
+  color: var(--pw-muted) !important;
+}
+
+.darkTheme .setupCard {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+}
+
+.darkTheme .setupCardLabel {
+  color: var(--pw-muted) !important;
+}
+
+.darkTheme .setupCardBody {
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .setupSelect {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .setupStartButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+}
+
+/* --- Running screen --- */
+
+.darkTheme.runningBackground {
+  background: linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme .runningHeader {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.darkTheme .runningEyebrow {
+  color: var(--pw-purple) !important;
+}
+
+.darkTheme .chipNeutral {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+}
+
+.darkTheme .chipOk {
+  border-color: color-mix(in srgb, var(--pw-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-green) 16%, var(--pw-panel)) !important;
+  color: var(--pw-green) !important;
+}
+
+.darkTheme .chipBad {
+  border-color: color-mix(in srgb, var(--pw-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-red) 16%, var(--pw-panel)) !important;
+  color: var(--pw-red) !important;
+}
+
+.darkTheme .exitButton {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+}
+
+.darkTheme .exitButton:hover {
+  background: #142445 !important;
+}
+
+.darkTheme .messageText {
+  color: var(--pw-muted) !important;
+}
+
+.darkTheme .answerSlotFilled {
+  border-color: var(--pw-purple) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .answerSlotEmpty {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.darkTheme .letterTile {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .letterTile:hover {
+  background: #142445 !important;
+}
+
+.darkTheme .hintBanner {
+  border-color: color-mix(in srgb, var(--pw-amber) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-amber) 14%, var(--pw-panel)) !important;
+  color: var(--pw-amber) !important;
+}
+
+.darkTheme .actionAmber {
+  border-color: color-mix(in srgb, var(--pw-amber) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-amber) 14%, var(--pw-panel)) !important;
+  color: var(--pw-amber) !important;
+}
+
+.darkTheme .actionBlue {
+  border-color: color-mix(in srgb, var(--pw-blue) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--pw-blue) 14%, var(--pw-panel)) !important;
+  color: var(--pw-blue) !important;
+}
+
+.darkTheme .actionNeutral {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+}
+
+.darkTheme .actionNeutral:hover {
+  background: #142445 !important;
+}
+
+.darkTheme .actionPrimary {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+}
+
+.darkTheme .runningFooter {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel) !important;
+}
+
+.darkTheme .footerLabel {
+  color: var(--pw-muted) !important;
+}
+
+.darkTheme .footerSelect {
+  border-color: var(--pw-border) !important;
+  background: var(--pw-panel-2) !important;
+  color: var(--pw-text) !important;
+}
+
+.darkTheme .footerInfo {
+  color: var(--pw-muted) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

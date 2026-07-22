@@ -1,0 +1,186 @@
+/*
+ * Theme re-skin for the Kelime Kolonları (eye-columns) exercise.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme matches the current look exactly, so no
+ * light overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended alongside the shared FULLSCREEN_* string constants and
+ * the global .idil-card class (also never edited).
+ *
+ * The word grid shows distinct vocabulary words (never color-coded game
+ * data), with one "active" cell highlighted for eye-tracking — safe to
+ * re-theme along with the rest of the stage.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --ec-bg: #07111f;
+  --ec-panel: #0d1a2d;
+  --ec-panel-2: #111f35;
+  --ec-text: #f5f7ff;
+  --ec-muted: #a9b5ca;
+  --ec-border: rgba(129, 140, 248, 0.34);
+  --ec-purple: #a78bfa;
+  --ec-red: #fb7185;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--ec-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--ec-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--ec-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--ec-border) !important;
+  background: var(--ec-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--ec-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--ec-panel-2) !important;
+  border-color: var(--ec-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--ec-panel-2) !important;
+  border-color: var(--ec-border) !important;
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--ec-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--ec-panel) !important;
+  border: 1px solid var(--ec-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .resultTitle {
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--ec-border) !important;
+  background: var(--ec-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--ec-border) !important;
+  background: var(--ec-panel-2) !important;
+  color: var(--ec-text) !important;
+}
+
+.darkTheme .helperText {
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .helperValue {
+  color: var(--ec-purple) !important;
+}
+
+.darkTheme .wordGrid {
+  border-color: var(--ec-border) !important;
+  background: var(--ec-bg) !important;
+}
+
+.darkTheme .wordCell {
+  border-color: var(--ec-border) !important;
+  background: var(--ec-panel) !important;
+  color: var(--ec-muted) !important;
+}
+
+.darkTheme .wordCellActive {
+  border-color: var(--ec-purple) !important;
+  background: color-mix(in srgb, var(--ec-purple) 20%, var(--ec-panel)) !important;
+  color: var(--ec-text) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ec-purple) 30%, transparent) !important;
+}
+
+.darkTheme .progressTrack {
+  background: var(--ec-panel-2) !important;
+}
+
+.darkTheme .progressFill {
+  background: var(--ec-purple) !important;
+}
+
+.darkTheme .pausedText {
+  color: var(--ec-purple) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

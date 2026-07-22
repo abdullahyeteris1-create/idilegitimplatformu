@@ -1,0 +1,171 @@
+/*
+ * Theme re-skin for the Sayı Tablosu (number table) exercise.
+ * Standalone component — no shared exercise shell is used here (matches
+ * the Renk Uyumu precedent), so this module defines its own root
+ * background instead of overriding :global(.fixed-exercise-stage...).
+ * Light theme matches the current sky/emerald look exactly, so no light
+ * overrides are needed.
+ */
+
+.themeRoot {
+  min-height: 100vh;
+}
+
+.darkTheme {
+  --nt-bg: #07111f;
+  --nt-panel: #0d1a2d;
+  --nt-panel-2: #111f35;
+  --nt-text: #f5f7ff;
+  --nt-muted: #a9b5ca;
+  --nt-border: rgba(129, 140, 248, 0.34);
+  --nt-purple: #a78bfa;
+  --nt-green: #4ade80;
+  --nt-red: #fb7185;
+}
+
+.darkTheme.pageBackground {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .panel {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme .panelHeader {
+  border-color: var(--nt-border) !important;
+}
+
+.darkTheme .title {
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .subtitle {
+  color: var(--nt-muted) !important;
+}
+
+.darkTheme .statCard {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .statCardLabel {
+  color: var(--nt-muted) !important;
+}
+
+.darkTheme .statCardValue {
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .levelBar {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .levelBarLabel {
+  color: var(--nt-muted) !important;
+}
+
+.darkTheme .levelButtonActive {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-purple) !important;
+  color: #1a1030 !important;
+}
+
+.darkTheme .levelButtonIdle {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .levelButtonIdle:hover {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .startButton {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+}
+
+.darkTheme .cancelButton {
+  border-color: color-mix(in srgb, var(--nt-red) 45%, transparent) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-red) !important;
+}
+
+.darkTheme .cancelButton:hover {
+  background: color-mix(in srgb, var(--nt-red) 14%, var(--nt-panel)) !important;
+}
+
+.darkTheme .statusText {
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .progressTrack {
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .gridFrame {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-bg) !important;
+}
+
+.darkTheme .emptyState {
+  background: var(--nt-panel) !important;
+}
+
+.darkTheme .emptyStateLabel {
+  color: var(--nt-purple) !important;
+}
+
+.darkTheme .emptyStateBody {
+  color: var(--nt-muted) !important;
+}
+
+.darkTheme .numberIdle {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+  color: var(--nt-text) !important;
+}
+
+.darkTheme .numberIdle:hover {
+  border-color: var(--nt-purple) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .numberCompleted {
+  border-color: color-mix(in srgb, var(--nt-green) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--nt-green) 20%, var(--nt-panel)) !important;
+  color: var(--nt-green) !important;
+}
+
+.darkTheme .finishedBanner {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel-2) !important;
+}
+
+.darkTheme .finishedTitle {
+  color: var(--nt-green) !important;
+}
+
+.darkTheme .resultCard {
+  border-color: var(--nt-border) !important;
+  background: var(--nt-panel) !important;
+}
+
+.darkTheme .resultCardLabel {
+  color: var(--nt-muted) !important;
+}
+
+.darkTheme .resultCardValue {
+  color: var(--nt-green) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

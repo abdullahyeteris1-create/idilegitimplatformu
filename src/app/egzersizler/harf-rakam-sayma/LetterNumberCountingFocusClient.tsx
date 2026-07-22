@@ -19,6 +19,8 @@ import {
   FullscreenExerciseShell,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/counting-focus-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "running" | "feedback" | "paused" | "completed";
 type FeedbackTone = "ok" | "bad" | "info";
@@ -58,13 +60,16 @@ function getModeLabel(mode: CountingMode): string {
 }
 
 function getFeedbackClass(tone: FeedbackTone): string {
-  if (tone === "ok") return "border-green-200 bg-green-50 text-green-800";
-  if (tone === "info") return "border-blue-200 bg-blue-50 text-blue-800";
-  return "border-red-200 bg-red-50 text-red-800";
+  if (tone === "ok") return `border-green-200 bg-green-50 text-green-800 ${styles.feedbackOk}`;
+  if (tone === "info") return `border-blue-200 bg-blue-50 text-blue-800 ${styles.feedbackInfo}`;
+  return `border-red-200 bg-red-50 text-red-800 ${styles.feedbackBad}`;
 }
 
 export function LetterNumberCountingFocusClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const timerRef = useRef<number | null>(null);
   const feedbackRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
@@ -331,44 +336,44 @@ export function LetterNumberCountingFocusClient() {
   const footerControls = (
     <div className="flex flex-wrap items-end gap-1.5">
       <label className="flex shrink-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Mod</span>
-        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Mod</span>
+        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           <option value="letters">Harf</option>
           <option value="numbers">Rakam</option>
           <option value="mixed">Harf+Rakam</option>
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Seviye</span>
-        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Seviye</span>
+        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           {[1, 2, 3, 4].map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Zorluk</span>
-        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Zorluk</span>
+        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           <option value="normal">Normal</option>
           <option value="hard">Zor</option>
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Hiz</span>
-        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">
+        <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Hiz</span>
+        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           {SPEED_OPTIONS.map((v) => <option key={v} value={v}>{v}s</option>)}
         </select>
       </label>
       <div className="flex flex-wrap gap-1.5">
         {phase === "ready" ? (
-          <button type="button" className="min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>Baslat</button>
+          <button type="button" className={`min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white ${styles.startButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>Baslat</button>
         ) : (
           <>
             {phase === "paused" ? (
-              <button type="button" className="min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>Devam</button>
+              <button type="button" className={`min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white ${styles.startButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>Devam</button>
             ) : (
-              <button type="button" className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>Duraklat</button>
+              <button type="button" className={`min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handlePause} disabled={phase !== "running"}>Duraklat</button>
             )}
-            <button type="button" className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold" style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>Sifirla</button>
-            <button type="button" className="min-h-11 rounded-xl bg-red-600 px-3 text-xs font-bold text-white" style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>Bitir</button>
+            <button type="button" className={`min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>Sifirla</button>
+            <button type="button" className={`min-h-11 rounded-xl bg-red-600 px-3 text-xs font-bold text-white ${styles.finishButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>Bitir</button>
           </>
         )}
       </div>
@@ -377,17 +382,20 @@ export function LetterNumberCountingFocusClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Harf / Rakam Sayma Odak Calismasi"
-        description="Ekrandaki daginik harf veya rakamlar arasindan hedef karakterin kac tane oldugunu hizlica say."
-        buttonLabel="Egitime Basla"
-        onStart={handleIntroStart}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Harf / Rakam Sayma Odak Calismasi"
+          description="Ekrandaki daginik harf veya rakamlar arasindan hedef karakterin kac tane oldugunu hizlica say."
+          buttonLabel="Egitime Basla"
+          onStart={handleIntroStart}
+        />
+      </div>
     );
   }
 
   if (phase === "ready") {
     return (
+      <div className={themeRootClassName}>
       <FullscreenExerciseShell
         title="Harf / Rakam Sayma Odak Calismasi"
         subtitle="Hazirlik modu"
@@ -396,40 +404,42 @@ export function LetterNumberCountingFocusClient() {
         footer={footerControls}
         settings={footerControls}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+        <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>Hazirlik</p>
+        <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>Ayarlarini sec, hazir oldugunda baslat.</h2>
+        <p className={`mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 ${styles.introBody}`}>
           Mod, seviye, zorluk ve cevap suresini belirle. Baslat dediginde her turda hedef karakteri sayacaksin.
         </p>
       </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "completed" && result) {
     return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
-        <h2 className="text-2xl font-bold">Harf / Rakam Sayma Odak Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">{saveStatus === "success" ? "Calisma sonucu kaydedildi." : saveMessage}</p>
-        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
+      <div className={themeRootClassName}>
+      <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
+        <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Harf / Rakam Sayma Odak Sonucu</h2>
+        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>{saveStatus === "success" ? "Calisma sonucu kaydedildi." : saveMessage}</p>
+        {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Puan</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Puan</p>
             <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">{result.score}</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Basari</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.successRate}%</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Basari</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{result.successRate}%</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Net</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.net}</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Net</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{result.net}</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Seviye</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.reachedLevel}</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Seviye</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{result.reachedLevel}</p>
           </article>
         </div>
-        <div className="mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm font-semibold">
+        <div className={`mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm font-semibold ${styles.resultDetailCard}`}>
           <p>Mod: <span className="text-slate-900">{getModeLabel(mode)}</span></p>
           <p className="mt-1">Toplam Tur: <span className="text-slate-900">{result.totalRounds}</span></p>
           <p className="mt-1">Dogru: <span className="text-[var(--ok)]">{result.correctCount}</span></p>
@@ -455,10 +465,12 @@ export function LetterNumberCountingFocusClient() {
           </div>
         </div>
       </section>
+      </div>
     );
   }
 
   return (
+    <div className={themeRootClassName}>
     <FullscreenExerciseShell
       title="Harf / Rakam Sayma Odak Calismasi"
       subtitle={round ? ("Kac tane " + round.target + " var?") : "Sayma turu"}
@@ -467,21 +479,21 @@ export function LetterNumberCountingFocusClient() {
       settings={footerControls}
     >
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
-        <div className="shrink-0 flex items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left">
+        <div className={`shrink-0 flex items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left ${styles.targetBanner}`}>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-red-700">Hedef</p>
-            <p className="text-sm font-black text-slate-950 md:text-base">Kac tane <span className="text-red-700">{round?.target ?? "?"}</span> var?</p>
+            <p className={`text-[10px] font-black uppercase tracking-[0.14em] text-red-700 ${styles.targetLabel}`}>Hedef</p>
+            <p className={`text-sm font-black text-slate-950 md:text-base ${styles.targetTitle}`}>Kac tane <span className={`text-red-700 ${styles.targetValue}`}>{round?.target ?? "?"}</span> var?</p>
           </div>
-          <div className="rounded-xl border border-white/80 bg-white px-2 py-1 text-center shadow-sm">
-            <p className="text-[10px] font-bold text-slate-500">Sure</p>
-            <p className="text-base font-black text-red-700 md:text-lg">{remainingSeconds}</p>
+          <div className={`rounded-xl border border-white/80 bg-white px-2 py-1 text-center shadow-sm ${styles.timerChip}`}>
+            <p className={`text-[10px] font-bold text-slate-500 ${styles.timerLabel}`}>Sure</p>
+            <p className={`text-base font-black text-red-700 md:text-lg ${styles.timerValue}`}>{remainingSeconds}</p>
           </div>
         </div>
-        <div className={"relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner " + (phase === "paused" ? "blur-sm" : "")}>
+        <div className={`relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff7f7_100%)] shadow-inner ${styles.charDisplayArea} ${phase === "paused" ? "blur-sm" : ""}`}>
           {round?.characters.map((ch) => (
             <span
               key={ch.id}
-              className="fx-fade-in absolute inline-flex h-8 min-w-8 select-none items-center justify-center rounded-xl border border-red-100 bg-white/92 px-1.5 font-black text-slate-950 shadow-[0_4px_12px_rgba(15,23,42,0.08)]"
+              className={`fx-fade-in absolute inline-flex h-8 min-w-8 select-none items-center justify-center rounded-xl border border-red-100 bg-white/92 px-1.5 font-black text-slate-950 shadow-[0_4px_12px_rgba(15,23,42,0.08)] ${styles.charChip}`}
               style={{
                 left: ch.x + "%",
                 top: ch.y + "%",
@@ -493,8 +505,8 @@ export function LetterNumberCountingFocusClient() {
             </span>
           ))}
           {phase === "paused" ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-[2px]">
-              <p className="rounded-xl border border-red-100 bg-white px-4 py-2 text-xs font-bold text-red-700 shadow-sm">
+            <div className={`absolute inset-0 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-[2px] ${styles.pausedOverlay}`}>
+              <p className={`rounded-xl border border-red-100 bg-white px-4 py-2 text-xs font-bold text-red-700 shadow-sm ${styles.pausedText}`}>
                 Duraklatildi. Devam et ile kaldigin yerden devam eder.
               </p>
             </div>
@@ -512,7 +524,7 @@ export function LetterNumberCountingFocusClient() {
               type="button"
               onClick={() => submitAnswer(ans, "answer")}
               disabled={phase !== "running"}
-              className="min-h-8 rounded-lg border border-red-100 bg-white px-0.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-red-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+              className={`min-h-8 rounded-lg border border-red-100 bg-white px-0.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-red-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${styles.answerButton}`}
               style={FULLSCREEN_TOUCH_STYLE}
             >
               {ans}
@@ -521,5 +533,6 @@ export function LetterNumberCountingFocusClient() {
         </div>
       </div>
     </FullscreenExerciseShell>
+    </div>
   );
 }

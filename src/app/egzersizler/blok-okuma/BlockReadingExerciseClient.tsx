@@ -24,6 +24,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/block-reading-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "running" | "result";
 type BlockSize = 1 | 2 | 3 | 4 | 5;
@@ -80,6 +82,9 @@ function getFontLabel(fontSize: FontSizePx): string {
 
 export function BlockReadingExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const saveLockRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
 
@@ -388,12 +393,12 @@ export function BlockReadingExerciseClient() {
   const footerControls = (
     <div className="grid gap-3 lg:grid-cols-7">
       <label className="flex min-w-0 flex-col gap-1 lg:col-span-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kategori</span>
         <select value={resolvedCategory} onChange={(event) => {
           setCategory(event.target.value);
           setTextId("");
           resetFlowToReady();
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {availableCategories.map((item) => (
             <option key={item} value={item}>
               {item === ALL_CATEGORIES ? "Tümü" : item}
@@ -402,11 +407,11 @@ export function BlockReadingExerciseClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1 lg:col-span-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Metin</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Metin</span>
         <select value={resolvedTextId} onChange={(event) => {
           setTextId(event.target.value);
           resetFlowToReady();
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {textsByCategory.map((item) => (
             <option key={item.id} value={item.id}>
               {getDisplayTextTitle(item.title)}
@@ -415,13 +420,13 @@ export function BlockReadingExerciseClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Sayısı</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kelime Sayısı</span>
         <select value={blockSize} onChange={(event) => {
           const nextBlockSize = Number(event.target.value);
           if (!Number.isFinite(nextBlockSize)) return;
           setBlockSize(nextBlockSize as BlockSize);
           resetFlowToReady();
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {[1, 2, 3, 4, 5].map((value) => (
             <option key={value} value={value}>
               {value}
@@ -430,7 +435,7 @@ export function BlockReadingExerciseClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Hız Modu</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Hız Modu</span>
         <select value={speedMode} onChange={(event) => {
           const nextMode = event.target.value as BlockReadingSpeedMode;
           setSpeedMode(nextMode);
@@ -438,13 +443,13 @@ export function BlockReadingExerciseClient() {
             setWordsPerMinuteInput(String(safeWordsPerMinute));
             setReadingSpeedError(null);
           }
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           <option value="interval">Atlama Hızı</option>
           <option value="wpm">Kelime / Dakika</option>
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
           {speedMode === "interval" ? "Hız" : "Okuma Hızı (kelime/dk)"}
         </span>
         {speedMode === "interval" ? (
@@ -452,7 +457,7 @@ export function BlockReadingExerciseClient() {
             const nextSpeed = Number(event.target.value);
             if (!Number.isFinite(nextSpeed)) return;
             setIntervalInputMs(Math.min(60_000, Math.max(100, nextSpeed)));
-          }} className={FULLSCREEN_SELECT_CLASS} />
+          }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`} />
         ) : (
           <>
             <input
@@ -486,22 +491,22 @@ export function BlockReadingExerciseClient() {
                   void commitWordsPerMinuteInput(wordsPerMinuteInput);
                 }
               }}
-              className={FULLSCREEN_SELECT_CLASS}
+              className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
             />
-            {readingSpeedError ? <p className="text-xs font-semibold text-red-700">{readingSpeedError}</p> : null}
-            <p className="text-[11px] text-slate-500">Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
-            {safeWordsPerMinute > 1500 ? <p className="text-[11px] text-amber-700">Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
+            {readingSpeedError ? <p className={`text-xs font-semibold text-red-700 ${styles.errorText}`}>{readingSpeedError}</p> : null}
+            <p className={`text-[11px] text-slate-500 ${styles.helperText}`}>Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
+            {safeWordsPerMinute > 1500 ? <p className={`text-[11px] text-amber-700 ${styles.warnText}`}>Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
           </>
         )}
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Font</span>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Font</span>
         <select value={fontSize} onChange={(event) => {
           setFontSize(Number(event.target.value) as FontSizePx);
           if (isPaused) {
             resetFlowToReady();
           }
-        }} className={FULLSCREEN_SELECT_CLASS}>
+        }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {[24, 32, 40, 48, 56].map((value) => (
             <option key={value} value={value}>
               {getFontLabel(value as FontSizePx)}
@@ -511,19 +516,19 @@ export function BlockReadingExerciseClient() {
       </label>
       <div className="grid gap-2 sm:grid-cols-2 lg:col-span-1 lg:grid-cols-1">
         {phase === "ready" ? (
-          <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay} disabled={!selectedText || totalBlocks === 0}>
+          <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay} disabled={!selectedText || totalBlocks === 0}>
             Başlat
           </button>
         ) : (
           <>
-            <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={() => setIsPaused((prev) => !prev)}>
+            <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={() => setIsPaused((prev) => !prev)}>
               {isPaused ? "Devam Et" : "Duraklat"}
             </button>
             <div className="flex gap-2">
-              <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleRestart}>
+              <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleRestart}>
                 Yeniden Başlat
               </button>
-              <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleFinishEarly}>
+              <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleFinishEarly}>
                 Bitir
               </button>
             </div>
@@ -535,17 +540,20 @@ export function BlockReadingExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Blok Okuma"
-        description="Kelimeleri gruplar halinde görerek okuma alanını genişlet. Eğitime başla ile tam ekran çalışma moduna geçersin."
-        buttonLabel="Eğitime Başla"
-        onStart={handleStart}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Blok Okuma"
+          description="Kelimeleri gruplar halinde görerek okuma alanını genişlet. Eğitime başla ile tam ekran çalışma moduna geçersin."
+          buttonLabel="Eğitime Başla"
+          onStart={handleStart}
+        />
+      </div>
     );
   }
 
   if (phase === "ready") {
     return (
+      <div className={themeRootClassName}>
       <FullscreenExerciseShell
         title="Blok Okuma"
         subtitle="Hazırlık modu"
@@ -555,32 +563,32 @@ export function BlockReadingExerciseClient() {
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px]"
+        stageClassName={`fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px] ${styles.stageOverride}`}
         footer={footerControls}
         settings={footerControls}
       >
         {isLoadingTexts ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center ${styles.noticeInfo}`}>
             <p className="text-sm font-bold text-slate-900">Metinler yükleniyor...</p>
           </div>
         ) : textLoadError ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center ${styles.noticeError}`}>
             <p className="text-sm font-bold text-red-900">{textLoadError}</p>
           </div>
         ) : hasActiveTexts && totalBlocks === 0 ? (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 font-bold text-amber-900">
+          <p className={`rounded-2xl border border-amber-200 bg-amber-50 p-5 font-bold text-amber-900 ${styles.noticeWarn}`}>
             Çalıştırılacak içerik bulunamadı.
           </p>
         ) : hasActiveTexts ? (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazırlık</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarını seç, hazır olduğunda başlat.</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>Hazırlık</p>
+            <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>Ayarlarını seç, hazır olduğunda başlat.</h2>
+            <p className={`mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base ${styles.introBody}`}>
               Kategori, metin, blok boyutu, hız ve font ayarlarını alt bardan yap. Başlat dediğinde bloklar tam ekran sahnede akmaya başlar.
             </p>
           </>
         ) : (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center ${styles.noticeWarn}`}>
             <p className="text-sm font-bold text-amber-900">Metin Kütüphanesinde aktif metin bulunamadı.</p>
             {process.env.NODE_ENV !== "production" && textDiagnostics ? (
               <p className="text-xs text-amber-800">
@@ -604,39 +612,41 @@ export function BlockReadingExerciseClient() {
           </div>
         )}
       </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "result" && selectedText && result) {
     return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
-        <h2 className="text-2xl font-bold">Blok Okuma Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+      <div className={themeRootClassName}>
+      <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
+        <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Blok Okuma Sonucu</h2>
+        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
           {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Puan</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Puan</p>
             <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">{result.score}</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Basari</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.successRate}%</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Basari</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{result.successRate}%</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Blok</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Blok</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>
               {result.completedBlocks}/{result.totalBlocks}
             </p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Sure</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{formatElapsed(result.durationSeconds)}</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Sure</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{formatElapsed(result.durationSeconds)}</p>
           </article>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm">
+        <div className={`mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm ${styles.resultDetailCard}`}>
           <p><strong>Metin:</strong> {selectedText.title}</p>
           <p className="mt-1"><strong>Kategori:</strong> {selectedText.category}</p>
           <p className="mt-1"><strong>Toplam Kelime:</strong> {result.totalWords}</p>
@@ -671,10 +681,12 @@ export function BlockReadingExerciseClient() {
           <ExerciseNavigationControls />
         </div>
       </section>
+      </div>
     );
   }
 
   return (
+    <div className={themeRootClassName}>
     <FullscreenExerciseShell
       title="Blok Okuma"
       subtitle={selectedText?.title ?? "Tam ekran çalışma modu"}
@@ -685,7 +697,7 @@ export function BlockReadingExerciseClient() {
         { label: "Kelime", value: blockSize },
       ]}
       finishButton={
-        <button type="button" onClick={handleFinishEarly} className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md" style={FULLSCREEN_TOUCH_STYLE}>
+        <button type="button" onClick={handleFinishEarly} className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE}>
           Bitir
         </button>
       }
@@ -693,13 +705,14 @@ export function BlockReadingExerciseClient() {
       settings={footerControls}
     >
       <div className="fx-fade-in flex w-full flex-col items-center justify-center text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kelime Bloğu</p>
-        <p key={`block-${currentBlockIndex}`} className="fx-slide-up mt-4 font-extrabold leading-tight text-slate-900 transition-all duration-300" style={{ fontSize: `${fontSize}px`, textShadow: "0 12px 32px rgba(185, 28, 28, 0.12)" }}>
+        <p className={`text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.helperText}`}>Kelime Bloğu</p>
+        <p key={`block-${currentBlockIndex}`} className={`fx-slide-up mt-4 font-extrabold leading-tight text-slate-900 transition-all duration-300 ${styles.runningWord}`} style={{ fontSize: `${fontSize}px`, textShadow: "0 12px 32px rgba(185, 28, 28, 0.12)" }}>
           {currentBlock}
         </p>
-        <p className="mt-4 text-sm font-semibold text-slate-500">İlerleme: %{progressPercent}</p>
+        <p className={`mt-4 text-sm font-semibold text-slate-500 ${styles.helperText}`}>İlerleme: %{progressPercent}</p>
       </div>
     </FullscreenExerciseShell>
+    </div>
   );
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/number-table-theme.module.css";
 
 type GameStatus = "idle" | "running" | "finished";
 
@@ -33,6 +35,9 @@ function formatTime(milliseconds: number): string {
 }
 
 export default function NumberTableExerciseClient() {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [numbers, setNumbers] = useState<number[]>([]);
   const [nextNumber, setNextNumber] = useState(1);
@@ -143,14 +148,14 @@ export default function NumberTableExerciseClient() {
         : "grid-cols-10";
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 px-3 py-4 text-slate-900 sm:px-6">
-      <section className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-        <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
+    <main className={`min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 px-3 py-4 text-slate-900 sm:px-6 ${styles.pageBackground} ${themeRootClassName}`}>
+      <section className={`mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl ${styles.panel}`}>
+        <header className={`flex flex-col gap-4 border-b border-slate-200 px-5 py-5 lg:flex-row lg:items-center lg:justify-between ${styles.panelHeader}`}>
           <div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+            <h1 className={`text-2xl font-black tracking-tight sm:text-3xl ${styles.title}`}>
               Sayı Tablosu
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className={`mt-1 text-sm text-slate-500 ${styles.subtitle}`}>
               Sayıları 1&apos;den başlayarak doğru sırayla bul.
             </p>
           </div>
@@ -162,9 +167,9 @@ export default function NumberTableExerciseClient() {
           </div>
         </header>
 
-        <div className="grid gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className={`grid gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 lg:grid-cols-[1fr_auto] lg:items-end ${styles.levelBar}`}>
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <p className={`mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 ${styles.levelBarLabel}`}>
               Seviye seç
             </p>
 
@@ -178,8 +183,8 @@ export default function NumberTableExerciseClient() {
                   className={[
                     "rounded-xl border px-4 py-2 text-sm font-bold transition",
                     selectedLevel === item.level
-                      ? "border-sky-600 bg-sky-600 text-white shadow"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50",
+                      ? `border-sky-600 bg-sky-600 text-white shadow ${styles.levelButtonActive}`
+                      : `border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:bg-sky-50 ${styles.levelButtonIdle}`,
                     status === "running" ? "cursor-not-allowed opacity-55" : "",
                   ].join(" ")}
                 >
@@ -194,7 +199,7 @@ export default function NumberTableExerciseClient() {
               <button
                 type="button"
                 onClick={startGame}
-                className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg transition hover:bg-emerald-700 active:scale-[0.98]"
+                className={`rounded-xl bg-emerald-600 px-6 py-3 text-sm font-black text-white shadow-lg transition hover:bg-emerald-700 active:scale-[0.98] ${styles.startButton}`}
               >
                 {status === "finished" ? "Yeniden Başlat" : "Çalışmayı Başlat"}
               </button>
@@ -202,7 +207,7 @@ export default function NumberTableExerciseClient() {
               <button
                 type="button"
                 onClick={() => prepareGame(selectedLevel)}
-                className="rounded-xl border border-rose-300 bg-white px-6 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-50"
+                className={`rounded-xl border border-rose-300 bg-white px-6 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-50 ${styles.cancelButton}`}
               >
                 Çalışmayı İptal Et
               </button>
@@ -212,7 +217,7 @@ export default function NumberTableExerciseClient() {
 
         <div className="flex flex-1 flex-col px-4 py-4 sm:px-6">
           <div className="mb-4">
-            <div className="mb-2 flex items-center justify-between gap-3 text-sm font-bold">
+            <div className={`mb-2 flex items-center justify-between gap-3 text-sm font-bold ${styles.statusText}`}>
               <span>
                 {status === "idle" && "Başlamaya hazır"}
                 {status === "running" && "Sayıları sırayla bul"}
@@ -221,7 +226,7 @@ export default function NumberTableExerciseClient() {
               <span>%{progressPercent} tamamlandı</span>
             </div>
 
-            <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+            <div className={`h-3 overflow-hidden rounded-full bg-slate-200 ${styles.progressTrack}`}>
               <div
                 className="h-full rounded-full bg-emerald-500 transition-[width] duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -232,16 +237,17 @@ export default function NumberTableExerciseClient() {
           <div
             className={[
               "grid flex-1 gap-2 rounded-3xl border border-slate-200 bg-slate-100 p-3 sm:gap-3 sm:p-4",
+              styles.gridFrame,
               gridColumns,
             ].join(" ")}
           >
             {numbers.length === 0 ? (
-              <div className="col-span-full flex min-h-[360px] items-center justify-center rounded-2xl bg-white p-8 text-center">
+              <div className={`col-span-full flex min-h-[360px] items-center justify-center rounded-2xl bg-white p-8 text-center ${styles.emptyState}`}>
                 <div>
-                  <div className="text-6xl font-black text-sky-600">
+                  <div className={`text-6xl font-black text-sky-600 ${styles.emptyStateLabel}`}>
                     {activeLevel.label}
                   </div>
-                  <p className="mt-4 max-w-md text-slate-500">
+                  <p className={`mt-4 max-w-md text-slate-500 ${styles.emptyStateBody}`}>
                     Seviyeni seç ve çalışmayı başlat. Önce 1&apos;i, sonra
                     2&apos;yi ve sırayla devam eden sayıları bul.
                   </p>
@@ -260,8 +266,8 @@ export default function NumberTableExerciseClient() {
                     className={[
                       "flex min-h-12 items-center justify-center rounded-xl border text-base font-black shadow-sm transition sm:min-h-14 sm:text-lg",
                       isCompleted
-                        ? "border-emerald-200 bg-emerald-100 text-emerald-700"
-                        : "border-slate-200 bg-white text-slate-800 hover:border-sky-400 hover:bg-sky-50 active:scale-95",
+                        ? `border-emerald-200 bg-emerald-100 text-emerald-700 ${styles.numberCompleted}`
+                        : `border-slate-200 bg-white text-slate-800 hover:border-sky-400 hover:bg-sky-50 active:scale-95 ${styles.numberIdle}`,
 
                     ].join(" ")}
                   >
@@ -274,9 +280,9 @@ export default function NumberTableExerciseClient() {
         </div>
 
         {status === "finished" && (
-          <div className="border-t border-emerald-200 bg-emerald-50 px-5 py-5">
+          <div className={`border-t border-emerald-200 bg-emerald-50 px-5 py-5 ${styles.finishedBanner}`}>
             <div className="mx-auto max-w-4xl">
-              <h2 className="text-center text-xl font-black text-emerald-800">
+              <h2 className={`text-center text-xl font-black text-emerald-800 ${styles.finishedTitle}`}>
                 Tebrikler, çalışmayı tamamladın!
               </h2>
 
@@ -305,11 +311,11 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="min-w-24 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center">
-      <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+    <div className={`min-w-24 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center ${styles.statCard}`}>
+      <div className={`text-[11px] font-bold uppercase tracking-wide text-slate-500 ${styles.statCardLabel}`}>
         {label}
       </div>
-      <div className="mt-0.5 text-base font-black text-slate-900">{value}</div>
+      <div className={`mt-0.5 text-base font-black text-slate-900 ${styles.statCardValue}`}>{value}</div>
     </div>
   );
 }
@@ -322,11 +328,11 @@ function ResultCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl border border-emerald-200 bg-white p-4 text-center shadow-sm">
-      <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
+    <div className={`rounded-2xl border border-emerald-200 bg-white p-4 text-center shadow-sm ${styles.resultCard}`}>
+      <div className={`text-xs font-bold uppercase tracking-wide text-slate-500 ${styles.resultCardLabel}`}>
         {label}
       </div>
-      <div className="mt-2 text-2xl font-black text-emerald-700">{value}</div>
+      <div className={`mt-2 text-2xl font-black text-emerald-700 ${styles.resultCardValue}`}>{value}</div>
     </div>
   );
 }

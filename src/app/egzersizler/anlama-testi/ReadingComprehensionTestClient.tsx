@@ -30,6 +30,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/reading-comprehension-theme.module.css";
 
 type TestPhase = "setup" | "ready" | "reading" | "paused" | "questions" | "result";
 type FontSizePx = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 26 | 28;
@@ -73,22 +75,25 @@ const EMPTY_TEXT: ReadingComprehensionText = {
 
 function getOptionClass(evaluation: AnswerEvaluation | undefined, optionIndex: number): string {
   if (!evaluation) {
-    return "border-red-100 bg-white text-slate-800";
+    return `border-red-100 bg-white text-slate-800 ${styles.optionDefault}`;
   }
 
   if (optionIndex === evaluation.correctAnswerIndex) {
-    return "border-green-300 bg-green-50 text-green-800";
+    return `border-green-300 bg-green-50 text-green-800 ${styles.optionCorrect}`;
   }
 
   if (optionIndex === evaluation.selectedAnswerIndex && !evaluation.isCorrect) {
-    return "border-red-300 bg-red-50 text-red-800";
+    return `border-red-300 bg-red-50 text-red-800 ${styles.optionWrong}`;
   }
 
-  return "border-slate-200 bg-white text-slate-700";
+  return `border-slate-200 bg-white text-slate-700 ${styles.optionDefault}`;
 }
 
 export function ReadingComprehensionTestClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const timerRef = useRef<number | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const saveLockRef = useRef(true);
@@ -397,8 +402,8 @@ export function ReadingComprehensionTestClient() {
   const readyFooter = (
     <div className="grid gap-2 md:grid-cols-[1fr_1fr_140px_180px]">
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Kategori</span>
-        <select value={resolvedCategory} onChange={(event) => handleCategoryChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kategori</span>
+        <select value={resolvedCategory} onChange={(event) => handleCategoryChange(event.target.value)} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category === ALL_CATEGORIES ? "Tümü" : category}
@@ -407,8 +412,8 @@ export function ReadingComprehensionTestClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Metin</span>
-        <select value={selectedTextId} onChange={(event) => handleTextChange(event.target.value)} className={FULLSCREEN_SELECT_CLASS}>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Metin</span>
+        <select value={selectedTextId} onChange={(event) => handleTextChange(event.target.value)} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {availableTexts.map((text) => (
             <option key={text.id} value={text.id}>
               {getDisplayTextTitle(text.title)}
@@ -417,8 +422,8 @@ export function ReadingComprehensionTestClient() {
         </select>
       </label>
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Font</span>
-        <select value={fontSize} onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)} className={FULLSCREEN_SELECT_CLASS}>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Font</span>
+        <select value={fontSize} onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {FONT_SIZE_OPTIONS.map((value) => (
             <option key={value} value={value}>
               {value}px
@@ -426,7 +431,7 @@ export function ReadingComprehensionTestClient() {
           ))}
         </select>
       </label>
-        <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading} disabled={!hasQuestionTexts}>
+        <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStartReading} disabled={!hasQuestionTexts}>
         Baslat
       </button>
     </div>
@@ -435,8 +440,8 @@ export function ReadingComprehensionTestClient() {
   const readingFooter = (
     <div className="grid gap-2 md:grid-cols-[140px_1fr_1fr_1fr]">
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Font</span>
-        <select value={fontSize} onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)} className={FULLSCREEN_SELECT_CLASS}>
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Font</span>
+        <select value={fontSize} onChange={(event) => setFontSize(Number(event.target.value) as FontSizePx)} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
           {FONT_SIZE_OPTIONS.map((value) => (
             <option key={value} value={value}>
               {value}px
@@ -445,23 +450,23 @@ export function ReadingComprehensionTestClient() {
         </select>
       </label>
       {phase === "paused" ? (
-        <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResumeReading}>
+        <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResumeReading}>
           Devam Et
         </button>
       ) : (
-        <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handlePauseReading}>
+        <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handlePauseReading}>
           Durdur
         </button>
       )}
-      <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
+      <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
         Yeniden Baslat
       </button>
       {phase === "reading" ? (
-        <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleGoToQuestions}>
+        <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleGoToQuestions}>
           Sorulara Gec
         </button>
       ) : (
-        <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} disabled>
+        <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} disabled>
           Sorulara Gec
         </button>
       )}
@@ -470,17 +475,20 @@ export function ReadingComprehensionTestClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Anlama Testi"
-        description="Metni oku, hizini olc, ardindan sorulari cevaplayarak anlama oranini gor."
-        buttonLabel="Egitime Basla"
-        onStart={handleIntroStart}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Anlama Testi"
+          description="Metni oku, hizini olc, ardindan sorulari cevaplayarak anlama oranini gor."
+          buttonLabel="Egitime Basla"
+          onStart={handleIntroStart}
+        />
+      </div>
     );
   }
 
   if (phase === "ready") {
     return (
+      <div className={themeRootClassName}>
       <FullscreenExerciseShell
         title="Anlama Testi"
         subtitle="Hazirlik modu"
@@ -494,34 +502,34 @@ export function ReadingComprehensionTestClient() {
         footer={readyFooter}
       >
         {isLoadingTexts ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center ${styles.noticeInfo}`}>
             <p className="text-sm font-bold text-slate-900">Metinler yükleniyor...</p>
           </div>
         ) : textLoadError ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-5 text-center ${styles.noticeError}`}>
             <p className="text-sm font-bold text-red-900">{textLoadError}</p>
           </div>
         ) : hasQuestionTexts ? (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>Hazirlik</p>
+            <h2 className={`mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>Ayarlarini sec, hazir oldugunda baslat.</h2>
             <div className="mt-5 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
-              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                <p className="text-xs text-slate-500">Kategori</p>
-                <p className="mt-1 font-bold text-slate-900">{selectedText.category}</p>
+              <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 ${styles.infoTile}`}>
+                <p className={`text-xs text-slate-500 ${styles.infoTileLabel}`}>Kategori</p>
+                <p className={`mt-1 font-bold text-slate-900 ${styles.infoTileValue}`}>{selectedText.category}</p>
               </article>
-              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                <p className="text-xs text-slate-500">Metin</p>
-                <p className="mt-1 font-bold text-slate-900">{selectedText.title}</p>
+              <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 ${styles.infoTile}`}>
+                <p className={`text-xs text-slate-500 ${styles.infoTileLabel}`}>Metin</p>
+                <p className={`mt-1 font-bold text-slate-900 ${styles.infoTileValue}`}>{selectedText.title}</p>
               </article>
-              <article className="rounded-2xl border border-red-100 bg-red-50 p-4">
-                <p className="text-xs text-slate-500">Soru</p>
-                <p className="mt-1 font-bold text-slate-900">{selectedText.questions.length}</p>
+              <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 ${styles.infoTile}`}>
+                <p className={`text-xs text-slate-500 ${styles.infoTileLabel}`}>Soru</p>
+                <p className={`mt-1 font-bold text-slate-900 ${styles.infoTileValue}`}>{selectedText.questions.length}</p>
               </article>
             </div>
           </>
         ) : (
-          <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+          <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-center ${styles.noticeWarn}`}>
             <p className="text-sm font-bold text-amber-900">Henüz anlama testi için hazırlanmış metin bulunmuyor.</p>
             <p className="text-sm text-amber-800">{isTeacher ? "Metin Kütüphanesi'ndeki aktif metinlere soru ekleyin." : "Bu çalışma için şu anda sorulu metin yok."}</p>
             {isTeacher ? (
@@ -535,11 +543,13 @@ export function ReadingComprehensionTestClient() {
           </div>
         )}
       </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "reading" || phase === "paused") {
     return (
+      <div className={themeRootClassName}>
       <FullscreenExerciseShell
         title="Anlama Testi"
         subtitle={phase === "paused" ? "Calisma duraklatildi" : `${selectedText.category} - ${selectedText.title}`}
@@ -549,28 +559,30 @@ export function ReadingComprehensionTestClient() {
       >
         <div className="relative w-full">
           <article
-            className={`h-[62vh] w-full overflow-y-auto rounded-2xl border border-red-100 bg-white px-4 py-5 text-slate-900 shadow-inner transition duration-200 md:h-[66vh] md:px-7 md:py-6 ${
+            className={`h-[62vh] w-full overflow-y-auto rounded-2xl border border-red-100 bg-white px-4 py-5 text-slate-900 shadow-inner transition duration-200 md:h-[66vh] md:px-7 md:py-6 ${styles.readingArticle} ${
               phase === "paused" ? "select-none blur-sm" : ""
             }`}
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.75 }}
           >
-            <h2 className="mb-4 text-[1.35em] font-black text-red-700">{selectedText.title}</h2>
+            <h2 className={`mb-4 text-[1.35em] font-black text-red-700 ${styles.readingTitle}`}>{selectedText.title}</h2>
             <p className="whitespace-pre-line">{selectedText.text}</p>
           </article>
           {phase === "paused" ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-white/65 px-4 text-center backdrop-blur-[2px]">
-              <p className="max-w-md rounded-2xl border border-red-100 bg-white/95 px-5 py-4 text-sm font-bold text-red-700 shadow-sm">
+            <div className={`absolute inset-0 flex items-center justify-center rounded-2xl bg-white/65 px-4 text-center backdrop-blur-[2px] ${styles.pausedOverlay}`}>
+              <p className={`max-w-md rounded-2xl border border-red-100 bg-white/95 px-5 py-4 text-sm font-bold text-red-700 shadow-sm ${styles.pausedText}`}>
                 Calisma duraklatildi. Devam Et dugmesine basinca kaldigin yerden devam edeceksin.
               </p>
             </div>
           ) : null}
         </div>
       </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "questions") {
     return (
+      <div className={themeRootClassName}>
       <FullscreenExerciseShell
         title="Anlama Testi"
         subtitle="Sorular"
@@ -578,12 +590,12 @@ export function ReadingComprehensionTestClient() {
         stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/92 p-3 text-left shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
         footer={
           <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" className={FULLSCREEN_SECONDARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
+            <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={resetToReady}>
               Yeniden Baslat
             </button>
             <button
               type="button"
-              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={handleFinishTest}
               disabled={selectedText.questions.length === 0}
@@ -595,7 +607,7 @@ export function ReadingComprehensionTestClient() {
       >
         <div className="max-h-[66vh] w-full overflow-y-auto pr-1">
           {selectedText.questions.length === 0 ? (
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
+            <div className={`rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm ${styles.noticeWarn}`}>
               <p className="text-lg font-black text-amber-900">Bu metin icin henuz soru eklenmemis.</p>
               <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-amber-800">
                 Okuma suresi ve hiz olcumu tamamlandi, ancak soru olmadigi icin test sonucu olusturulmaz.
@@ -604,13 +616,13 @@ export function ReadingComprehensionTestClient() {
           ) : (
             <div className="grid gap-4">
               {selectedText.questions.map((question, questionIndex) => (
-                <article key={question.id} className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
-                  <h3 className="font-extrabold text-slate-900" style={{ fontSize: `${Math.min(fontSize, 22)}px`, lineHeight: 1.45 }}>
+                <article key={question.id} className={`rounded-2xl border border-red-100 bg-white p-4 shadow-sm ${styles.questionCard}`}>
+                  <h3 className={`font-extrabold text-slate-900 ${styles.questionTitle}`} style={{ fontSize: `${Math.min(fontSize, 22)}px`, lineHeight: 1.45 }}>
                     {questionIndex + 1}. {question.question}
                   </h3>
                   <div className="mt-3 grid gap-2">
                     {question.options.map((option, optionIndex) => (
-                      <label key={option} className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800" style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
+                      <label key={option} className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800 ${styles.optionLabel}`} style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
                         <input
                           type="radio"
                           name={question.id}
@@ -628,38 +640,40 @@ export function ReadingComprehensionTestClient() {
           )}
         </div>
       </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "result" && result) {
     return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
+      <div className={themeRootClassName}>
+      <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
         <h2 className="text-2xl font-bold">Anlama Testi Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Okuma hizi ve anlama orani kaydedildi.</p>
+        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>Okuma hizi ve anlama orani kaydedildi.</p>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Okuma Hizi</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Okuma Hizi</p>
             <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">{result.readingSpeedWpm}</p>
-            <p className="text-xs text-slate-500">kelime/dk</p>
+            <p className={`text-xs text-slate-500 ${styles.resultStatLabel}`}>kelime/dk</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Sure</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{formatDuration(result.readingDurationSeconds)}</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Sure</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{formatDuration(result.readingDurationSeconds)}</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Kelime</p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">{result.totalWords}</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Kelime</p>
+            <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{result.totalWords}</p>
           </article>
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">Anlama Orani</p>
+          <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+            <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Anlama Orani</p>
             <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">{result.comprehensionScore}</p>
           </article>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <section className="rounded-2xl border border-red-100 bg-white p-4">
-            <h3 className="font-extrabold text-red-700">Okuma Bilgileri</h3>
+          <section className={`rounded-2xl border border-red-100 bg-white p-4 ${styles.resultDetailCard}`}>
+            <h3 className={`font-extrabold text-red-700 ${styles.resultDetailHeading}`}>Okuma Bilgileri</h3>
             <div className="mt-3 grid gap-2 text-sm font-semibold">
               <p>Metin: <span className="text-slate-900">{result.textTitle}</span></p>
               <p>Kategori: <span className="text-slate-900">{result.category}</span></p>
@@ -670,8 +684,8 @@ export function ReadingComprehensionTestClient() {
               <p>Duraklatma: <span className="text-slate-900">{result.pausedCount} kez / {result.totalPausedSeconds} sn</span></p>
             </div>
           </section>
-          <section className="rounded-2xl border border-red-100 bg-white p-4">
-            <h3 className="font-extrabold text-red-700">Anlama Bilgileri</h3>
+          <section className={`rounded-2xl border border-red-100 bg-white p-4 ${styles.resultDetailCard}`}>
+            <h3 className={`font-extrabold text-red-700 ${styles.resultDetailHeading}`}>Anlama Bilgileri</h3>
             <div className="mt-3 grid gap-2 text-sm font-semibold">
               <p>Toplam Soru: <span className="text-slate-900">{result.totalQuestions}</span></p>
               <p>Dogru Cevap: <span className="text-[var(--ok)]">{result.correctAnswers}</span></p>
@@ -689,10 +703,10 @@ export function ReadingComprehensionTestClient() {
               const evaluation = result.evaluations.find((item) => item.questionId === question.id);
 
               return (
-                <article key={question.id} className="rounded-2xl border border-red-100 bg-white p-4">
+                <article key={question.id} className={`rounded-2xl border border-red-100 bg-white p-4 ${styles.evalCard}`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="font-extrabold text-slate-900">{index + 1}. {question.question}</h4>
-                    {evaluation?.isEmpty ? <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">Bos birakildi</span> : null}
+                    <h4 className={`font-extrabold text-slate-900 ${styles.evalTitle}`}>{index + 1}. {question.question}</h4>
+                    {evaluation?.isEmpty ? <span className={`rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 ${styles.emptyChip}`}>Bos birakildi</span> : null}
                   </div>
                   <div className="mt-3 grid gap-2">
                     {question.options.map((option, optionIndex) => (
@@ -719,6 +733,7 @@ export function ReadingComprehensionTestClient() {
           </div>
         </div>
       </section>
+      </div>
     );
   }
 

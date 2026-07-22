@@ -29,6 +29,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/card-matching-theme.module.css";
 
 type ExercisePhase =
   | "setup"
@@ -61,7 +63,7 @@ type CardMatchingResult = {
 const LEVEL_OPTIONS = [1, 2, 3, 4, 5];
 const DELAY_OPTIONS = [500, 750, 1000, 1250, 1500, 2000];
 const PREVIEW_OPTIONS = [2000, 3000, 4000, 5000, 7000, 10000];
-const CARD_MATCHING_SELECT_CLASS = `${FULLSCREEN_SELECT_CLASS} !h-8`;
+const CARD_MATCHING_SELECT_CLASS = `${FULLSCREEN_SELECT_CLASS} !h-8 ${styles.selectOverride}`;
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -84,14 +86,14 @@ function formatSeconds(milliseconds: number): string {
 
 function getFeedbackClass(tone: FeedbackTone): string {
   if (tone === "ok") {
-    return "border-green-200 bg-green-50 text-green-800";
+    return `border-green-200 bg-green-50 text-green-800 ${styles.feedbackOk}`;
   }
 
   if (tone === "bad") {
-    return "border-red-200 bg-red-50 text-red-800";
+    return `border-red-200 bg-red-50 text-red-800 ${styles.feedbackBad}`;
   }
 
-  return "border-blue-200 bg-blue-50 text-blue-800";
+  return `border-blue-200 bg-blue-50 text-blue-800 ${styles.feedbackInfo}`;
 }
 
 function getGridClass(cardCount: number): string {
@@ -116,6 +118,9 @@ function getGridClass(cardCount: number): string {
 
 export function CardMatchingExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
 
   const timerRef = useRef<number | null>(null);
   const resolveRef = useRef<number | null>(null);
@@ -524,7 +529,7 @@ export function CardMatchingExerciseClient() {
   const footerControls = (
     <div className="grid grid-cols-4 gap-1.5 lg:grid-cols-9 lg:gap-2">
       <label className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
+        <span className={`text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500 ${styles.settingsLabel}`}>
           Seviye
         </span>
         <select
@@ -542,7 +547,7 @@ export function CardMatchingExerciseClient() {
       </label>
 
       <label className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
+        <span className={`text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500 ${styles.settingsLabel}`}>
           Bakma
         </span>
         <select
@@ -560,7 +565,7 @@ export function CardMatchingExerciseClient() {
       </label>
 
       <label className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
+        <span className={`text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500 ${styles.settingsLabel}`}>
           Kapanma
         </span>
         <select
@@ -578,11 +583,11 @@ export function CardMatchingExerciseClient() {
       </label>
 
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500">
+        <span className={`text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-slate-500 ${styles.settingsLabel}`}>
           Tema
         </span>
         <div
-          className="flex h-8 items-center truncate rounded-xl border border-red-100 bg-white/95 px-2 text-xs font-semibold text-slate-800 shadow-sm shadow-red-100/55 md:h-9 md:px-3 md:text-sm"
+          className={`flex h-8 items-center truncate rounded-xl border border-red-100 bg-white/95 px-2 text-xs font-semibold text-slate-800 shadow-sm shadow-red-100/55 md:h-9 md:px-3 md:text-sm ${styles.themeChip}`}
           title="Canlı Çocuk Görselleri"
         >
           Canlı
@@ -593,7 +598,7 @@ export function CardMatchingExerciseClient() {
         {phase === "ready" ? (
           <button
             type="button"
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
             onClick={handleStart}
           >
@@ -604,7 +609,7 @@ export function CardMatchingExerciseClient() {
             {phase === "paused" ? (
               <button
                 type="button"
-                className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+                className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
                 style={FULLSCREEN_TOUCH_STYLE}
                 onClick={handleResume}
               >
@@ -613,7 +618,7 @@ export function CardMatchingExerciseClient() {
             ) : (
               <button
                 type="button"
-                className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+                className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`}
                 style={FULLSCREEN_TOUCH_STYLE}
                 onClick={handlePause}
                 disabled={phase !== "playing" && phase !== "preview"}
@@ -624,7 +629,7 @@ export function CardMatchingExerciseClient() {
 
             <button
               type="button"
-              className={FULLSCREEN_SECONDARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={() => resetToReady()}
             >
@@ -633,7 +638,7 @@ export function CardMatchingExerciseClient() {
 
             <button
               type="button"
-              className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={finishExercise}
             >
@@ -647,236 +652,243 @@ export function CardMatchingExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Kart Eşleştirme Çalışması"
-        description="Önce açık kartlara dikkatlice bak. Kartlar kapandıktan sonra aynı görselleri eşleştir."
-        buttonLabel="Eğitime Başla"
-        onStart={handleIntroStart}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Kart Eşleştirme Çalışması"
+          description="Önce açık kartlara dikkatlice bak. Kartlar kapandıktan sonra aynı görselleri eşleştir."
+          buttonLabel="Eğitime Başla"
+          onStart={handleIntroStart}
+        />
+      </div>
     );
   }
 
   if (phase === "ready") {
     return (
-      <FullscreenExerciseShell
-        title="Kart Eşleştirme Çalışması"
-        subtitle="Hazırlık modu"
-        stats={stats}
-        stageClassName="fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[380px]"
-        footer={footerControls}
-      >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">
-          Hazırlık
-        </p>
+      <div className={themeRootClassName}>
+        <FullscreenExerciseShell
+          title="Kart Eşleştirme Çalışması"
+          subtitle="Hazırlık modu"
+          stats={stats}
+          stageClassName={`fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-white/92 px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.1)] backdrop-blur md:min-h-[380px] ${styles.stageOverride}`}
+          footer={footerControls}
+        >
+          <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>
+            Hazırlık
+          </p>
 
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">
-          Önce kartlara bak, sonra eşleri bul.
-        </h2>
+          <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>
+            Önce kartlara bak, sonra eşleri bul.
+          </h2>
 
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-          Başlat dediğinde tüm kartlar önce açık görünecek. Süre bitince kartlar
-          kapanacak ve aklında kalan eşleri bulmaya çalışacaksın.
-        </p>
+          <p className={`mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 ${styles.introBody}`}>
+            Başlat dediğinde tüm kartlar önce açık görünecek. Süre bitince kartlar
+            kapanacak ve aklında kalan eşleri bulmaya çalışacaksın.
+          </p>
 
-        <div className="mt-4 grid w-full max-w-xl grid-cols-3 gap-2">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-3">
-            <p className="text-xs font-bold text-slate-500">Çift</p>
-            <p className="mt-1 text-2xl font-black text-red-700">
-              {getPairCountByLevel(startLevel)}
-            </p>
-          </article>
+          <div className="mt-4 grid w-full max-w-xl grid-cols-3 gap-2">
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-3 ${styles.readyStatTile}`}>
+              <p className={`text-xs font-bold text-slate-500 ${styles.readyStatLabel}`}>Çift</p>
+              <p className={`mt-1 text-2xl font-black text-red-700 ${styles.readyStatValue}`}>
+                {getPairCountByLevel(startLevel)}
+              </p>
+            </article>
 
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-3">
-            <p className="text-xs font-bold text-slate-500">Kart</p>
-            <p className="mt-1 text-2xl font-black text-red-700">
-              {getPairCountByLevel(startLevel) * 2}
-            </p>
-          </article>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-3 ${styles.readyStatTile}`}>
+              <p className={`text-xs font-bold text-slate-500 ${styles.readyStatLabel}`}>Kart</p>
+              <p className={`mt-1 text-2xl font-black text-red-700 ${styles.readyStatValue}`}>
+                {getPairCountByLevel(startLevel) * 2}
+              </p>
+            </article>
 
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-3">
-            <p className="text-xs font-bold text-slate-500">Bakma</p>
-            <p className="mt-1 text-2xl font-black text-red-700">
-              {formatSeconds(previewDurationMs)}
-            </p>
-          </article>
-        </div>
-      </FullscreenExerciseShell>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-3 ${styles.readyStatTile}`}>
+              <p className={`text-xs font-bold text-slate-500 ${styles.readyStatLabel}`}>Bakma</p>
+              <p className={`mt-1 text-2xl font-black text-red-700 ${styles.readyStatValue}`}>
+                {formatSeconds(previewDurationMs)}
+              </p>
+            </article>
+          </div>
+        </FullscreenExerciseShell>
+      </div>
     );
   }
 
   if (phase === "completed" && result) {
     return (
-      <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
-        <h2 className="text-2xl font-bold">Kart Eşleştirme Sonucu</h2>
+      <div className={themeRootClassName}>
+        <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
+          <h2 className="text-2xl font-bold">Kart Eşleştirme Sonucu</h2>
 
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Çalışma sonucu kaydedildi.
-        </p>
-
-        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Puan
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">
-              {result.score}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Başarı
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {result.successRate}%
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Net
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {result.net}
-            </p>
-          </article>
-
-          <article className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-            <p className="text-xs uppercase tracking-[0.1em] text-slate-500">
-              Süre
-            </p>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900">
-              {formatElapsed(result.elapsedSeconds)}
-            </p>
-          </article>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm font-semibold">
-          <p>
-            Ulaşılan Seviye:{" "}
-            <span className="text-slate-900">{result.reachedLevel}</span>
+          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
+            Çalışma sonucu kaydedildi.
           </p>
-          <p className="mt-1">
-            Toplam Hamle:{" "}
-            <span className="text-slate-900">{result.totalMoves}</span>
-          </p>
-          <p className="mt-1">
-            Doğru Eşleşme:{" "}
-            <span className="text-[var(--ok)]">{result.correctCount}</span>
-          </p>
-          <p className="mt-1">
-            Yanlış Eşleşme:{" "}
-            <span className="text-[var(--bad)]">{result.wrongCount}</span>
-          </p>
-          <p className="mt-1">
-            Tamamlanan Deste:{" "}
-            <span className="text-slate-900">{result.completedRounds}</span>
-          </p>
-          <p className="mt-1">
-            Seviye Atlama:{" "}
-            <span className="text-slate-900">{result.levelUpCount}</span>
-          </p>
-        </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={() => resetToReady()}
-          >
-            Yeniden Başlat
-          </button>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Puan
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-[var(--brand)]">
+                {result.score}
+              </p>
+            </article>
 
-          <button
-            type="button"
-            className={ACTION_BUTTON_CLASS}
-            style={TOUCH_STYLE}
-            onClick={() =>
-              router.push(
-                `/sonuc?exerciseType=card-matching&correct=${result.correctCount}&wrong=${result.wrongCount}&successRate=${result.successRate}&score=${result.score}`,
-              )
-            }
-          >
-            Ortak Sonuç Ekranı
-          </button>
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Başarı
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-slate-900">
+                {result.successRate}%
+              </p>
+            </article>
 
-          <div className="flex justify-end sm:col-span-3">
-            <ExerciseNavigationControls />
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Net
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-slate-900">
+                {result.net}
+              </p>
+            </article>
+
+            <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>
+                Süre
+              </p>
+              <p className="mt-2 text-3xl font-extrabold text-slate-900">
+                {formatElapsed(result.elapsedSeconds)}
+              </p>
+            </article>
           </div>
-        </div>
-      </section>
+
+          <div className={`mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm font-semibold ${styles.resultDetailCard}`}>
+            <p>
+              Ulaşılan Seviye:{" "}
+              <span className="text-slate-900">{result.reachedLevel}</span>
+            </p>
+            <p className="mt-1">
+              Toplam Hamle:{" "}
+              <span className="text-slate-900">{result.totalMoves}</span>
+            </p>
+            <p className="mt-1">
+              Doğru Eşleşme:{" "}
+              <span className="text-[var(--ok)]">{result.correctCount}</span>
+            </p>
+            <p className="mt-1">
+              Yanlış Eşleşme:{" "}
+              <span className="text-[var(--bad)]">{result.wrongCount}</span>
+            </p>
+            <p className="mt-1">
+              Tamamlanan Deste:{" "}
+              <span className="text-slate-900">{result.completedRounds}</span>
+            </p>
+            <p className="mt-1">
+              Seviye Atlama:{" "}
+              <span className="text-slate-900">{result.levelUpCount}</span>
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              style={TOUCH_STYLE}
+              onClick={() => resetToReady()}
+            >
+              Yeniden Başlat
+            </button>
+
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              style={TOUCH_STYLE}
+              onClick={() =>
+                router.push(
+                  `/sonuc?exerciseType=card-matching&correct=${result.correctCount}&wrong=${result.wrongCount}&successRate=${result.successRate}&score=${result.score}`,
+                )
+              }
+            >
+              Ortak Sonuç Ekranı
+            </button>
+
+            <div className="flex justify-end sm:col-span-3">
+              <ExerciseNavigationControls />
+            </div>
+          </div>
+        </section>
+      </div>
     );
   }
 
   return (
-    <FullscreenExerciseShell
-      title="Kart Eşleştirme"
-      compactHeader
-      subtitle={
-        phase === "preview"
-          ? "Kartlara bak"
-          : phase === "paused"
-            ? "Duraklatıldı"
-            : "Aynı görselleri eşleştir"
-      }
-      stats={stats}
-      finishButton={
-        <button
-          type="button"
-          onClick={finishExercise}
-          className="min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md"
-          style={FULLSCREEN_TOUCH_STYLE}
-        >
-          Bitir
-        </button>
-      }
-      stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col !overflow-hidden rounded-[20px] border border-white/80 bg-white/94 p-1.5 text-center shadow-[0_10px_28px_rgba(185,28,28,0.09)] backdrop-blur md:rounded-3xl md:p-2.5"
-      footer={footerControls}
-    >
-      <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-1.5 md:gap-2">
-        <div className="flex shrink-0 items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left md:px-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-red-700 md:text-xs">
-              {phase === "preview" ? "Bakma Süresi" : "Hedef"}
-            </p>
-
-            <p className="truncate text-xs font-black text-slate-950 sm:text-sm md:text-base">
-              {phase === "preview"
-                ? "Kartları aklında tut. Birazdan kapanacak."
-                : "Net 10 yap, otomatik seviye atla."}
-            </p>
-          </div>
-
-          <div className="shrink-0 rounded-xl border border-white/80 bg-white px-2.5 py-1 text-center shadow-sm">
-            <p className="text-[10px] font-bold leading-none text-slate-500">Süre</p>
-            <p className="text-base font-black leading-tight text-red-700 md:text-lg">
-              {formatElapsed(elapsedSeconds)}
-            </p>
-          </div>
-        </div>
-
-        {feedback ? (
-          <div
-            className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black md:text-sm ${getFeedbackClass(
-              feedback.tone,
-            )}`}
+    <div className={themeRootClassName}>
+      <FullscreenExerciseShell
+        title="Kart Eşleştirme"
+        compactHeader
+        subtitle={
+          phase === "preview"
+            ? "Kartlara bak"
+            : phase === "paused"
+              ? "Duraklatıldı"
+              : "Aynı görselleri eşleştir"
+        }
+        stats={stats}
+        finishButton={
+          <button
+            type="button"
+            onClick={finishExercise}
+            className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`}
+            style={FULLSCREEN_TOUCH_STYLE}
           >
-            {feedback.message}
-          </div>
-        ) : null}
+            Bitir
+          </button>
+        }
+        stageClassName={`fx-slide-up flex h-full min-h-0 w-full flex-col !overflow-hidden rounded-[20px] border border-white/80 bg-white/94 p-1.5 text-center shadow-[0_10px_28px_rgba(185,28,28,0.09)] backdrop-blur md:rounded-3xl md:p-2.5 ${styles.stageOverride}`}
+        footer={footerControls}
+      >
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-1.5 md:gap-2">
+          <div className={`flex shrink-0 items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left md:px-3 ${styles.infoPanel}`}>
+            <div className="min-w-0">
+              <p className={`text-[10px] font-black uppercase tracking-[0.14em] text-red-700 md:text-xs ${styles.infoPanelLabel}`}>
+                {phase === "preview" ? "Bakma Süresi" : "Hedef"}
+              </p>
 
-        <div
-          className={`relative min-h-0 flex-1 overflow-hidden rounded-[18px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff8f0_100%)] p-1.5 shadow-inner md:rounded-[22px] md:p-2.5 ${
-            phase === "paused" ? "blur-sm" : ""
-          }`}
-        >
+              <p className={`truncate text-xs font-black text-slate-950 sm:text-sm md:text-base ${styles.infoPanelValue}`}>
+                {phase === "preview"
+                  ? "Kartları aklında tut. Birazdan kapanacak."
+                  : "Net 10 yap, otomatik seviye atla."}
+              </p>
+            </div>
+
+            <div className={`shrink-0 rounded-xl border border-white/80 bg-white px-2.5 py-1 text-center shadow-sm ${styles.timeChip}`}>
+              <p className={`text-[10px] font-bold leading-none text-slate-500 ${styles.timeChipLabel}`}>Süre</p>
+              <p className={`text-base font-black leading-tight text-red-700 md:text-lg ${styles.timeChipValue}`}>
+                {formatElapsed(elapsedSeconds)}
+              </p>
+            </div>
+          </div>
+
+          {feedback ? (
+            <div
+              className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black md:text-sm ${getFeedbackClass(
+                feedback.tone,
+              )}`}
+            >
+              {feedback.message}
+            </div>
+          ) : null}
+
           <div
-            className={`grid h-full min-h-0 w-full content-stretch items-stretch justify-items-stretch gap-[clamp(4px,0.8vmin,10px)] ${getGridClass(
-              cards.length,
-            )}`}
+            className={`relative min-h-0 flex-1 overflow-hidden rounded-[18px] border border-red-100 bg-[linear-gradient(180deg,#ffffff_0%,#fff8f0_100%)] p-1.5 shadow-inner md:rounded-[22px] md:p-2.5 ${styles.boardFrame} ${
+              phase === "paused" ? "blur-sm" : ""
+            }`}
           >
-            {cards.map((card) => {
+            <div
+              className={`grid h-full min-h-0 w-full content-stretch items-stretch justify-items-stretch gap-[clamp(4px,0.8vmin,10px)] ${getGridClass(
+                cards.length,
+              )}`}
+            >
+              {cards.map((card) => {
               const isOpen =
                 phase === "preview" ||
                 openedCardIds.includes(card.id) ||
@@ -937,19 +949,20 @@ export function CardMatchingExerciseClient() {
                   </span>
                 </button>
               );
-            })}
-          </div>
-
-          {phase === "paused" ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-[26px] bg-white/60 backdrop-blur-[2px]">
-              <p className="rounded-2xl border border-red-100 bg-white px-5 py-4 text-sm font-bold text-red-700 shadow-sm">
-                Duraklatıldı. Devam Et ile kart eşleştirme kaldığı yerden sürer.
-              </p>
+              })}
             </div>
-          ) : null}
+
+            {phase === "paused" ? (
+              <div className={`absolute inset-0 flex items-center justify-center rounded-[26px] bg-white/60 backdrop-blur-[2px] ${styles.pausedOverlay}`}>
+                <p className={`rounded-2xl border border-red-100 bg-white px-5 py-4 text-sm font-bold text-red-700 shadow-sm ${styles.pausedText}`}>
+                  Duraklatıldı. Devam Et ile kart eşleştirme kaldığı yerden sürer.
+                </p>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </FullscreenExerciseShell>
+      </FullscreenExerciseShell>
+    </div>
   );
 }
 

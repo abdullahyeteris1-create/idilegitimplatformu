@@ -1,0 +1,210 @@
+/*
+ * Theme re-skin for the Adam Asmaca (hangman) exercise screen.
+ * Renders through the shared FixedExerciseStage (never edited here); its
+ * own Tailwind defaults are already the current, approved light look, so
+ * .lightTheme only needs to supply the --hm-* tokens for THIS component's
+ * own markup (gallows, word panel, letter grid). .darkTheme additionally
+ * overrides FixedExerciseStage's shell chrome via scoped :global(...)
+ * selectors, exactly like the Takistoskop/Benzer Kelimeler/Renk Uyumu
+ * exercises already do.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.lightTheme {
+  --hm-bg: #f8fafc;
+  --hm-panel: #ffffff;
+  --hm-panel-2: #f8fafc;
+  --hm-text: #0f172a;
+  --hm-muted: #475569;
+  --hm-border: #e2e8f0;
+  --hm-purple: #7c3aed;
+  --hm-green: #059669;
+  --hm-green-strong: #047857;
+  --hm-red: #dc2626;
+}
+
+.darkTheme {
+  --hm-bg: #07111f;
+  --hm-panel: #0d1a2d;
+  --hm-panel-2: #111f35;
+  --hm-text: #f5f7ff;
+  --hm-muted: #a9b5ca;
+  --hm-border: rgba(129, 140, 248, 0.34);
+  --hm-purple: #a78bfa;
+  --hm-green: #4ade80;
+  --hm-green-strong: #34d399;
+  --hm-red: #fb7185;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  background: linear-gradient(150deg, var(--hm-panel), var(--hm-bg)) !important;
+  border-color: var(--hm-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--hm-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--hm-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--hm-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--hm-border) !important;
+  background: var(--hm-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--hm-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--hm-border) !important;
+}
+
+.card {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel);
+}
+
+.panel {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel-2);
+}
+
+.panelInner {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel);
+}
+
+.gallowsLine {
+  background: var(--hm-text);
+}
+
+.gallowsHead {
+  border-color: var(--hm-text);
+}
+
+.wordDisplay {
+  background: var(--hm-panel-2);
+}
+
+.wordText {
+  color: var(--hm-text);
+}
+
+.feedbackWon {
+  background: color-mix(in srgb, var(--hm-green) 16%, var(--hm-panel));
+  color: var(--hm-green-strong);
+}
+
+.feedbackLost {
+  background: color-mix(in srgb, var(--hm-red) 16%, var(--hm-panel));
+  color: var(--hm-red);
+}
+
+.helperText {
+  color: var(--hm-muted);
+}
+
+.usedLettersLabel {
+  color: var(--hm-text);
+}
+
+.usedLettersBox {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel-2);
+  color: var(--hm-muted);
+}
+
+.letterButton {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel);
+  color: var(--hm-text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.letterButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--hm-green) 55%, var(--hm-border));
+  background: color-mix(in srgb, var(--hm-green) 14%, var(--hm-panel));
+}
+
+.letterButton:disabled {
+  cursor: not-allowed;
+  background: var(--hm-panel-2);
+  color: var(--hm-muted);
+  opacity: 0.7;
+}
+
+.primaryButton {
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.lightTheme .primaryButton {
+  background: var(--hm-green-strong);
+}
+
+.lightTheme .primaryButton:hover:not(:disabled) {
+  background: #065f46;
+}
+
+.darkTheme .primaryButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%);
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35);
+}
+
+.darkTheme .primaryButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.secondaryButton {
+  border: 1px solid var(--hm-border);
+  background: var(--hm-panel-2);
+  color: var(--hm-text);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.6;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hm-green) 12%, var(--hm-panel-2));
+  border-color: color-mix(in srgb, var(--hm-green) 45%, var(--hm-border));
+}
+
+.letterButton:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hm-purple) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

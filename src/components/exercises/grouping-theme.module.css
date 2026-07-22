@@ -1,0 +1,145 @@
+/*
+ * Theme re-skin for the Gruplama Çalışması exercise chrome.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme matches the current look exactly, so no
+ * light overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended alongside the shared FULLSCREEN_* string constants and
+ * the global .idil-card class (also never edited).
+ *
+ * IMPORTANT: the reading stage itself (the word-group "shadow reveal"
+ * effect in the running phase, and the matching ready-phase instructions)
+ * is left completely untouched in both themes. Its shading/silhouette
+ * effect is calibrated against a fixed white surface and is a core part of
+ * the exercise's visual mechanic, not decorative theme chrome — changing
+ * its background would break the intended reading effect.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --gr-bg: #07111f;
+  --gr-panel: #0d1a2d;
+  --gr-panel-2: #111f35;
+  --gr-text: #f5f7ff;
+  --gr-muted: #a9b5ca;
+  --gr-border: rgba(129, 140, 248, 0.34);
+  --gr-red: #fb7185;
+  --gr-amber: #fbbf24;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--gr-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--gr-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--gr-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--gr-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--gr-border) !important;
+  background: var(--gr-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--gr-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--gr-panel-2) !important;
+  border-color: var(--gr-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--gr-panel-2) !important;
+  border-color: var(--gr-border) !important;
+  color: var(--gr-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--gr-muted) !important;
+}
+
+.darkTheme .errorText {
+  color: var(--gr-red) !important;
+}
+
+.darkTheme .helperText {
+  color: var(--gr-muted) !important;
+}
+
+.darkTheme .warnText {
+  color: var(--gr-amber) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--gr-panel) !important;
+  border: 1px solid var(--gr-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--gr-text) !important;
+}
+
+.darkTheme .resultTitle {
+  color: var(--gr-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--gr-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--gr-border) !important;
+  background: var(--gr-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--gr-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--gr-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

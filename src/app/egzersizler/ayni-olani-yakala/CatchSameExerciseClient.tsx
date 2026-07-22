@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/catch-same-theme.module.css";
 
 type GameMode = "word" | "letter" | "symbol" | "number";
 type GameStatus = "ready" | "running" | "paused" | "finished";
@@ -39,6 +41,12 @@ function formatSpeed(speed: SpeedOption) {
 
 export function CatchSameExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [
+    styles.themeRoot,
+    isLight ? styles.lightTheme : styles.darkTheme,
+  ].join(" ");
   const [mode, setMode] = useState<GameMode>("word");
   const [speed, setSpeed] = useState<SpeedOption>(1000);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(60);
@@ -327,64 +335,66 @@ export function CatchSameExerciseClient() {
   const statusLabel = status === "ready" ? "Hazir" : status === "running" ? "Calisiyor" : status === "paused" ? "Duraklatildi" : "Bitti";
 
   return (
-    <FixedExerciseStage
-      title="Aynı Olanı Yakala"
-      subtitle={statusLabel}
-      topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
-      bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs"><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className="min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs">{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
-      controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className="min-h-11 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white disabled:opacity-60">Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className="min-h-11 rounded-xl bg-amber-500 px-3 text-xs font-bold text-white">Duraklat</button> : <button type="button" onClick={resumeGame} className="min-h-11 rounded-xl bg-cyan-600 px-3 text-xs font-bold text-white">Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold disabled:opacity-60">Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800 disabled:opacity-60">Bitir</button>{saveStatus === "error" ? <button type="button" className="min-h-11 rounded-xl bg-red-700 px-3 text-xs font-bold text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
-      onExit={() => router.push("/egzersizler")}
-        >
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
-        <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-center text-xs font-semibold text-slate-700">{feedback}</div>
+    <div className={themeRootClassName}>
+      <FixedExerciseStage
+        title="Aynı Olanı Yakala"
+        subtitle={statusLabel}
+        topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+        bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
+        controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}>Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button> : <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>{saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
+        onExit={() => router.push("/egzersizler")}
+      >
+        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
+          <div className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center text-xs font-semibold ${styles.feedbackBar}`}>{feedback}</div>
 
-        <button
-          type="button"
-          onClick={handleCardClick}
-          disabled={status !== "running" || isChanging}
-          className={`relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
-            isChanging ? "scale-[0.98] border-cyan-300 bg-white text-cyan-300" : "scale-100 border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
-          }`}
-        >
-          <div key={itemVersion} className={`flex flex-col items-center justify-center transition-all duration-200 ${isChanging ? "scale-90 opacity-20" : "scale-100 opacity-100"}`}>
-            <span className="mb-2 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500 shadow-sm">
-              {status === "running" ? "Yeni Öge" : "Hazır"}
-            </span>
-            <span className="text-5xl font-black sm:text-6xl">{isChanging ? "..." : currentItem}</span>
+          <button
+            type="button"
+            onClick={handleCardClick}
+            disabled={status !== "running" || isChanging}
+            className={`relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
+              isChanging ? `scale-[0.98] ${styles.stimulusCardChanging}` : `scale-100 ${styles.stimulusCard}`
+            }`}
+          >
+            <div key={itemVersion} className={`flex flex-col items-center justify-center transition-all duration-200 ${isChanging ? "scale-90 opacity-20" : "scale-100 opacity-100"}`}>
+              <span className={`mb-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] shadow-sm ${styles.stimulusPill}`}>
+                {status === "running" ? "Yeni Öge" : "Hazır"}
+              </span>
+              <span className="text-5xl font-black sm:text-6xl">{isChanging ? "..." : currentItem}</span>
+            </div>
+
+            {status === "running" && (
+              <span
+                key={`pulse-${itemVersion}`}
+                className={`pointer-events-none absolute inset-3 rounded-2xl border-4 opacity-0 animate-[ping_0.45s_ease-out_1] ${styles.pulseRing}`}
+              />
+            )}
+          </button>
+
+          <div className="shrink-0 grid grid-cols-3 gap-1.5">
+            <div className={`rounded-xl px-2 py-1.5 text-center ${styles.statOk}`}>
+              <p className={`text-[10px] font-bold ${styles.statLabel}`}>Doğru</p>
+              <p className={`text-sm font-black ${styles.statValueOk}`}>{correct}</p>
+            </div>
+            <div className={`rounded-xl px-2 py-1.5 text-center ${styles.statBad}`}>
+              <p className={`text-[10px] font-bold ${styles.statLabel}`}>Yanlış</p>
+              <p className={`text-sm font-black ${styles.statValueBad}`}>{wrong}</p>
+            </div>
+            <div className={`rounded-xl px-2 py-1.5 text-center ${styles.statWarn}`}>
+              <p className={`text-[10px] font-bold ${styles.statLabel}`}>Kaçırılan</p>
+              <p className={`text-sm font-black ${styles.statValueWarn}`}>{missed}</p>
+            </div>
           </div>
 
-          {status === "running" && (
-            <span
-              key={`pulse-${itemVersion}`}
-              className="pointer-events-none absolute inset-3 rounded-2xl border-4 border-cyan-300 opacity-0 animate-[ping_0.45s_ease-out_1]"
-            />
-          )}
-        </button>
-
-        <div className="shrink-0 grid grid-cols-3 gap-1.5">
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Doğru</p>
-            <p className="text-sm font-black text-emerald-700">{correct}</p>
-          </div>
-          <div className="rounded-xl border border-red-100 bg-red-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Yanlış</p>
-            <p className="text-sm font-black text-red-700">{wrong}</p>
-          </div>
-          <div className="rounded-xl border border-orange-100 bg-orange-50 px-2 py-1.5 text-center">
-            <p className="text-[10px] font-bold text-slate-500">Kaçırılan</p>
-            <p className="text-sm font-black text-orange-700">{missed}</p>
-          </div>
+          {status === "finished" ? (
+            <div className={`shrink-0 rounded-2xl p-3 text-center ${styles.summaryCard}`}>
+              <p className={`text-base font-black ${styles.summaryTitle}`}>Oyun Bitti</p>
+              <p className={`mt-1 text-xs ${styles.summaryBody}`}>
+                Skor: <strong>{score}</strong> | Doğru: <strong>{correct}</strong> | Yanlış: <strong>{wrong}</strong> | Kaçırılan: <strong>{missed}</strong>
+              </p>
+            </div>
+          ) : null}
         </div>
-
-        {status === "finished" ? (
-          <div className="shrink-0 rounded-2xl border border-cyan-200 bg-cyan-50 p-3 text-center">
-            <p className="text-base font-black text-cyan-800">Oyun Bitti</p>
-            <p className="mt-1 text-xs text-slate-700">
-              Skor: <strong>{score}</strong> | Doğru: <strong>{correct}</strong> | Yanlış: <strong>{wrong}</strong> | Kaçırılan: <strong>{missed}</strong>
-            </p>
-          </div>
-        ) : null}
-      </div>
-    </FixedExerciseStage>
+      </FixedExerciseStage>
+    </div>
   );
 }

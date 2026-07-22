@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/picture-word-puzzle-theme.module.css";
 
 type PuzzleItem = {
   id: string;
@@ -142,6 +144,9 @@ function tileStyle(
 
 export function PictureWordPuzzleClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const [level, setLevel] = useState(1);
   const [round, setRound] = useState(0);
   const [item, setItem] = useState<PuzzleItem>(ITEMS[0]);
@@ -290,30 +295,30 @@ export function PictureWordPuzzleClient() {
 
   if (!started) {
     return (
-      <main className="min-h-dvh bg-[var(--background)] px-3 py-4 md:px-6">
-        <section className="mx-auto max-w-5xl rounded-3xl border border-red-100 bg-white p-5 shadow-xl shadow-red-100/40 md:p-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-red-600">
+      <main className={`min-h-dvh bg-[var(--background)] px-3 py-4 md:px-6 ${styles.setupBackground} ${themeRootClassName}`}>
+        <section className={`mx-auto max-w-5xl rounded-3xl border border-red-100 bg-white p-5 shadow-xl shadow-red-100/40 md:p-8 ${styles.setupPanel}`}>
+          <p className={`text-xs font-black uppercase tracking-[0.22em] text-red-600 ${styles.setupEyebrow}`}>
             Görsel Kelime Bulmaca
           </p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950">
+          <h1 className={`mt-2 text-3xl font-black text-slate-950 ${styles.setupTitle}`}>
             Parçalı Resimden Kelimeyi Bul
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className={`mt-3 max-w-3xl text-sm leading-6 text-slate-600 ${styles.setupBody}`}>
             Resmin açılan parçalarını incele, aşağıdaki harfleri doğru sıraya koy ve
             kelimeyi bul. Seviye yükseldikçe resim daha fazla parçaya ayrılır ve
             yanıltıcı harfler artar.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <label className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <label className={`rounded-2xl border border-slate-200 bg-slate-50 p-4 ${styles.setupCard}`}>
+              <span className={`text-xs font-bold uppercase tracking-wider text-slate-500 ${styles.setupCardLabel}`}>
                 Başlangıç Seviyesi
               </span>
               <select
                 value={level}
                 onChange={(event) => setLevel(Number(event.target.value))}
                 style={{ colorScheme: "light" }}
-                className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-900 opacity-100 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20"
+                className={`mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-900 opacity-100 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 ${styles.setupSelect}`}
               >
                 {LEVELS.map((entry) => (
                   <option
@@ -327,20 +332,20 @@ export function PictureWordPuzzleClient() {
               </select>
             </label>
 
-            <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <article className={`rounded-2xl border border-slate-200 bg-slate-50 p-4 ${styles.setupCard}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider text-slate-500 ${styles.setupCardLabel}`}>
                 Seviye Sistemi
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className={`mt-2 text-sm leading-6 text-slate-700 ${styles.setupCardBody}`}>
                 Her 5 doğru cevapta otomatik olarak bir üst seviyeye geçilir.
               </p>
             </article>
 
-            <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <article className={`rounded-2xl border border-slate-200 bg-slate-50 p-4 ${styles.setupCard}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider text-slate-500 ${styles.setupCardLabel}`}>
                 İpucu Sistemi
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
+              <p className={`mt-2 text-sm leading-6 text-slate-700 ${styles.setupCardBody}`}>
                 Önce bir resim parçası açabilir, sonra metin ipucunu görebilirsin.
               </p>
             </article>
@@ -352,7 +357,7 @@ export function PictureWordPuzzleClient() {
               setStarted(true);
               startRound(1, level);
             }}
-            className="mt-6 min-h-12 w-full rounded-2xl bg-red-600 px-5 font-black text-white transition hover:bg-red-700 active:scale-[0.99]"
+            className={`mt-6 min-h-12 w-full rounded-2xl bg-red-600 px-5 font-black text-white transition hover:bg-red-700 active:scale-[0.99] ${styles.setupStartButton}`}
           >
             Çalışmayı Başlat
           </button>
@@ -362,29 +367,29 @@ export function PictureWordPuzzleClient() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col overflow-hidden bg-slate-950 text-white">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-900 px-3 py-2 md:px-5">
+    <main className={`flex min-h-dvh flex-col overflow-hidden bg-slate-950 text-white ${styles.runningBackground} ${themeRootClassName}`}>
+      <header className={`flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-900 px-3 py-2 md:px-5 ${styles.runningHeader}`}>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] text-red-400 ${styles.runningEyebrow}`}>
             Parçalı Resim
           </p>
           <h1 className="text-base font-black md:text-lg">Kelimeyi Bul</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+          <span className={`rounded-full border border-white/10 bg-white/5 px-3 py-1.5 ${styles.chipNeutral}`}>
             Seviye {level}
           </span>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-300">
+          <span className={`rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-300 ${styles.chipOk}`}>
             Doğru {correct}
           </span>
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-red-300">
+          <span className={`rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-red-300 ${styles.chipBad}`}>
             Yanlış {wrong}
           </span>
           <button
             type="button"
             onClick={() => router.push("/egzersizler")}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 hover:bg-white/10"
+            className={`min-h-10 rounded-xl border border-white/15 bg-white/5 px-3 hover:bg-white/10 ${styles.exitButton}`}
           >
             Egzersizlere Dön
           </button>
@@ -393,7 +398,7 @@ export function PictureWordPuzzleClient() {
 
       <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-auto px-3 py-3 md:px-6">
         <div className="w-full max-w-3xl text-center">
-          <p className="text-sm font-semibold text-slate-300">{message}</p>
+          <p className={`text-sm font-semibold text-slate-300 ${styles.messageText}`}>{message}</p>
         </div>
 
         <div
@@ -452,8 +457,8 @@ export function PictureWordPuzzleClient() {
               key={`answer-${index}`}
               className={`flex h-11 min-w-11 items-center justify-center rounded-xl border text-lg font-black ${
                 answer[index]
-                  ? "border-amber-400 bg-white text-slate-950"
-                  : "border-white/20 bg-white/5 text-white/30"
+                  ? `border-amber-400 bg-white text-slate-950 ${styles.answerSlotFilled}`
+                  : `border-white/20 bg-white/5 text-white/30 ${styles.answerSlotEmpty}`
               }`}
             >
               {answer[index] ?? ""}
@@ -468,7 +473,7 @@ export function PictureWordPuzzleClient() {
               type="button"
               disabled={used}
               onClick={() => chooseLetter(letter, index)}
-              className="flex h-11 min-w-11 items-center justify-center rounded-xl border border-white/15 bg-slate-700 px-3 text-lg font-black shadow transition hover:-translate-y-0.5 hover:bg-slate-600 disabled:cursor-default disabled:opacity-20"
+              className={`flex h-11 min-w-11 items-center justify-center rounded-xl border border-white/15 bg-slate-700 px-3 text-lg font-black shadow transition hover:-translate-y-0.5 hover:bg-slate-600 disabled:cursor-default disabled:opacity-20 ${styles.letterTile}`}
             >
               {letter}
             </button>
@@ -476,7 +481,7 @@ export function PictureWordPuzzleClient() {
         </div>
 
         {hintVisible ? (
-          <div className="max-w-2xl rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-center text-sm text-amber-100">
+          <div className={`max-w-2xl rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-center text-sm text-amber-100 ${styles.hintBanner}`}>
             İpucu: {item.hint}
           </div>
         ) : null}
@@ -485,50 +490,50 @@ export function PictureWordPuzzleClient() {
           <button
             type="button"
             onClick={revealOneTile}
-            className="min-h-10 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 text-sm font-bold text-amber-200 hover:bg-amber-400/20"
+            className={`min-h-10 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 text-sm font-bold text-amber-200 hover:bg-amber-400/20 ${styles.actionAmber}`}
           >
             Resim İpucu
           </button>
           <button
             type="button"
             onClick={showTextHint}
-            className="min-h-10 rounded-xl border border-blue-400/40 bg-blue-400/10 px-4 text-sm font-bold text-blue-200 hover:bg-blue-400/20"
+            className={`min-h-10 rounded-xl border border-blue-400/40 bg-blue-400/10 px-4 text-sm font-bold text-blue-200 hover:bg-blue-400/20 ${styles.actionBlue}`}
           >
             Kelime İpucu
           </button>
           <button
             type="button"
             onClick={removeLast}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10"
+            className={`min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10 ${styles.actionNeutral}`}
           >
             Son Harfi Sil
           </button>
           <button
             type="button"
             onClick={clearAnswer}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10"
+            className={`min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10 ${styles.actionNeutral}`}
           >
             Temizle
           </button>
           <button
             type="button"
             onClick={checkAnswer}
-            className="min-h-10 rounded-xl bg-red-600 px-5 text-sm font-black text-white hover:bg-red-700"
+            className={`min-h-10 rounded-xl bg-red-600 px-5 text-sm font-black text-white hover:bg-red-700 ${styles.actionPrimary}`}
           >
             Kontrol Et
           </button>
         </div>
       </section>
 
-      <footer className="shrink-0 border-t border-white/10 bg-slate-900 px-3 py-2">
+      <footer className={`shrink-0 border-t border-white/10 bg-slate-900 px-3 py-2 ${styles.runningFooter}`}>
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <label className="flex min-w-fit items-center gap-2 text-xs font-bold text-slate-300">
+          <label className={`flex min-w-fit items-center gap-2 text-xs font-bold text-slate-300 ${styles.footerLabel}`}>
             Seviye
             <select
               value={level}
               onChange={(event) => setLevelAndRestart(Number(event.target.value))}
               style={{ colorScheme: "dark" }}
-              className="min-h-10 min-w-[140px] rounded-xl border border-white/20 bg-slate-800 px-3 text-sm font-bold text-white opacity-100 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 disabled:opacity-60"
+              className={`min-h-10 min-w-[140px] rounded-xl border border-white/20 bg-slate-800 px-3 text-sm font-bold text-white opacity-100 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/20 disabled:opacity-60 ${styles.footerSelect}`}
             >
               {LEVELS.map((entry) => (
                 <option
@@ -542,14 +547,14 @@ export function PictureWordPuzzleClient() {
             </select>
           </label>
 
-          <div className="text-xs text-slate-400">
+          <div className={`text-xs text-slate-400 ${styles.footerInfo}`}>
             Tur {round} · {config.rows * config.cols} parça · {config.extraLetters} yanıltıcı harf
           </div>
 
           <button
             type="button"
             onClick={() => startRound(round + 1, level)}
-            className="min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10"
+            className={`min-h-10 rounded-xl border border-white/15 bg-white/5 px-4 text-sm font-bold hover:bg-white/10 ${styles.actionNeutral}`}
           >
             Yeni Kelime
           </button>

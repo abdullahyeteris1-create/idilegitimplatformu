@@ -1,0 +1,161 @@
+/*
+ * Theme re-skin for the Çift Taraflı Odak (two side focus) exercise.
+ * Renders through ExerciseFullscreenShell -> ExerciseStage -> FixedExerciseStage
+ * (none of the three are ever edited here). Light theme matches the current
+ * look exactly, so no light overrides are needed. Dark theme adds the
+ * established :global(.fixed-exercise-stage...) shell overrides plus small
+ * "override" classes appended alongside this component's own local Tailwind
+ * strings (this component does not use the FULLSCREEN_* shared constants)
+ * and the global .compact-stat-chip class (globals.css is never edited).
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --tf-bg: #07111f;
+  --tf-panel: #0d1a2d;
+  --tf-panel-2: #111f35;
+  --tf-text: #f5f7ff;
+  --tf-muted: #a9b5ca;
+  --tf-border: rgba(129, 140, 248, 0.34);
+  --tf-purple: #a78bfa;
+  --tf-green: #4ade80;
+  --tf-red: #fb7185;
+  --tf-blue: #60a5fa;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--tf-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--tf-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--tf-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--tf-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--tf-border) !important;
+  background: var(--tf-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--tf-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--tf-border) !important;
+}
+
+.darkTheme .statChipOverride {
+  border-color: var(--tf-border) !important;
+  background: var(--tf-panel-2) !important;
+  color: var(--tf-text) !important;
+}
+
+.darkTheme .levelSelect {
+  background: var(--tf-panel-2) !important;
+  border-color: var(--tf-border) !important;
+  color: var(--tf-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--tf-muted) !important;
+}
+
+.darkTheme .startButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButton {
+  background: var(--tf-panel-2) !important;
+  border-color: var(--tf-border) !important;
+  color: #e7ecf7 !important;
+}
+
+.darkTheme .secondaryButton:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .headingTitle {
+  color: var(--tf-text) !important;
+}
+
+.darkTheme .headingBody {
+  color: var(--tf-muted) !important;
+}
+
+.darkTheme .feedbackSuccess {
+  border-color: color-mix(in srgb, var(--tf-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--tf-green) 16%, var(--tf-panel)) !important;
+  color: var(--tf-green) !important;
+}
+
+.darkTheme .feedbackError {
+  border-color: color-mix(in srgb, var(--tf-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--tf-red) 16%, var(--tf-panel)) !important;
+  color: var(--tf-red) !important;
+}
+
+.darkTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--tf-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--tf-blue) 16%, var(--tf-panel)) !important;
+  color: var(--tf-blue) !important;
+}
+
+.darkTheme .wordTile {
+  border-color: var(--tf-border) !important;
+  background: var(--tf-panel) !important;
+  color: var(--tf-text) !important;
+}
+
+.darkTheme .answerSame {
+  border-color: color-mix(in srgb, var(--tf-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--tf-blue) 16%, var(--tf-panel)) !important;
+  color: var(--tf-blue) !important;
+}
+
+.darkTheme .answerSame:hover {
+  background: color-mix(in srgb, var(--tf-blue) 24%, var(--tf-panel)) !important;
+}
+
+.darkTheme .answerDifferent {
+  border-color: color-mix(in srgb, var(--tf-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--tf-red) 16%, var(--tf-panel)) !important;
+  color: var(--tf-red) !important;
+}
+
+.darkTheme .answerDifferent:hover {
+  background: color-mix(in srgb, var(--tf-red) 24%, var(--tf-panel)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

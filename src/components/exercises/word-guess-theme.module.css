@@ -1,0 +1,254 @@
+/*
+ * Theme re-skin for the Kelime Tahmin (word-guess, Wordle-style) exercise.
+ * Renders through the shared FixedExerciseStage (never edited here). Light
+ * theme relies on FixedExerciseStage's own existing light defaults for the
+ * shell chrome (untouched); dark theme adds explicit :global(...) overrides,
+ * same technique as Takistoskop/Benzer Kelimeler/Adam Asmaca.
+ *
+ * IMPORTANT: correct/present/absent letter-state colors follow the
+ * universal Wordle convention (green/amber/gray) in BOTH themes — only the
+ * concrete shade and surrounding surface change, the semantic meaning
+ * (correct = green, present = amber, absent = gray/muted) never does.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.lightTheme {
+  --wg-bg: #f8fafc;
+  --wg-panel: #ffffff;
+  --wg-panel-2: #f1f5f9;
+  --wg-text: #0f172a;
+  --wg-muted: #475569;
+  --wg-border: #e2e8f0;
+  --wg-purple: #7c3aed;
+  --wg-green: #059669;
+  --wg-green-strong: #047857;
+  --wg-amber: #f59e0b;
+  --wg-gray: #94a3b8;
+}
+
+.darkTheme {
+  --wg-bg: #07111f;
+  --wg-panel: #0d1a2d;
+  --wg-panel-2: #111f35;
+  --wg-text: #f5f7ff;
+  --wg-muted: #a9b5ca;
+  --wg-border: rgba(129, 140, 248, 0.34);
+  --wg-purple: #a78bfa;
+  --wg-green: #4ade80;
+  --wg-green-strong: #34d399;
+  --wg-amber: #fbbf24;
+  --wg-gray: #64748b;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  background: linear-gradient(150deg, var(--wg-panel), var(--wg-bg)) !important;
+  border-color: var(--wg-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--wg-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--wg-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--wg-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--wg-border) !important;
+  background: var(--wg-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--wg-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--wg-border) !important;
+}
+
+.select {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-panel);
+  color: var(--wg-text);
+}
+
+.textInput {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-panel);
+  color: var(--wg-text);
+}
+
+.primaryButton {
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.lightTheme .primaryButton {
+  background: var(--wg-green-strong);
+}
+
+.lightTheme .primaryButton:hover:not(:disabled) {
+  background: #065f46;
+}
+
+.darkTheme .primaryButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%);
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35);
+}
+
+.darkTheme .primaryButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.primaryButton:disabled {
+  opacity: 0.5;
+}
+
+.secondaryButton {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-panel);
+  color: var(--wg-text);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--wg-panel-2);
+}
+
+.finishButton {
+  border: 1px solid color-mix(in srgb, var(--wg-green) 45%, var(--wg-border));
+  background: color-mix(in srgb, var(--wg-green) 14%, var(--wg-panel));
+  color: var(--wg-green-strong);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.finishButton:disabled {
+  opacity: 0.5;
+}
+
+.card {
+  border: 1px solid color-mix(in srgb, var(--wg-green) 40%, var(--wg-border));
+  background: var(--wg-panel);
+  box-shadow: 0 10px 26px rgba(23, 32, 51, 0.06);
+}
+
+.cellCorrect {
+  border-color: var(--wg-green);
+  background: var(--wg-green);
+  color: #fff;
+}
+
+.cellPresent {
+  border-color: var(--wg-amber);
+  background: var(--wg-amber);
+  color: #fff;
+}
+
+.cellAbsent {
+  border-color: var(--wg-gray);
+  background: var(--wg-gray);
+  color: #fff;
+}
+
+.cellEmpty {
+  border-color: var(--wg-border);
+  background: var(--wg-panel);
+  color: var(--wg-text);
+}
+
+.keyCorrect {
+  background: var(--wg-green);
+  color: #fff;
+  border-color: var(--wg-green);
+}
+
+.keyPresent {
+  background: var(--wg-amber);
+  color: #fff;
+  border-color: var(--wg-amber);
+}
+
+.keyAbsent {
+  background: var(--wg-gray);
+  color: #fff;
+  border-color: var(--wg-gray);
+}
+
+.keyDefault {
+  background: var(--wg-panel);
+  color: var(--wg-text);
+  border-color: var(--wg-border);
+}
+
+.keyDefault:hover {
+  background: var(--wg-panel-2);
+}
+
+.keyActionButton {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-panel);
+  color: var(--wg-text);
+}
+
+.keyActionButton:hover {
+  background: var(--wg-panel-2);
+}
+
+.keySubmitButton {
+  background: var(--wg-green-strong);
+  color: #fff;
+}
+
+.keySubmitButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.keySubmitButton:disabled {
+  background: var(--wg-gray);
+}
+
+.infoBar,
+.legendBar {
+  background: var(--wg-panel-2);
+  color: var(--wg-muted);
+}
+
+.select:focus-visible,
+.textInput:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.finishButton:focus-visible,
+.keyDefault:focus-visible,
+.keyActionButton:focus-visible,
+.keySubmitButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wg-purple) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

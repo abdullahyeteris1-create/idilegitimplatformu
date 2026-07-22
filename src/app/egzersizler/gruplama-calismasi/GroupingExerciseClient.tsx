@@ -18,6 +18,8 @@ import {
   FULLSCREEN_SELECT_CLASS,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/grouping-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "result";
 type GroupSize = 2 | 3 | 4 | 5;
@@ -53,6 +55,9 @@ function groupWords(words: string[], size: GroupSize): string[][] {
 
 export function GroupingExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [styles.themeRoot, isLight ? "" : styles.darkTheme].join(" ");
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
   const areaRef = useRef<HTMLDivElement | null>(null);
@@ -323,9 +328,9 @@ export function GroupingExerciseClient() {
   const controls = (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9">
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Kategori</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Kategori</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={category}
           disabled={phase === "running" && !paused}
           onChange={(event) => {
@@ -343,9 +348,9 @@ export function GroupingExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Metin</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Metin</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={resolvedTextId}
           disabled={phase === "running" && !paused}
           onChange={(event) => {
@@ -362,9 +367,9 @@ export function GroupingExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Grup</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Grup</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={groupSize}
           disabled={phase === "running" && !paused}
           onChange={(event) => {
@@ -383,9 +388,9 @@ export function GroupingExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Hiz Menusu</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Hiz Menusu</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={speedMode}
           onChange={(event) => {
             const nextMode = event.target.value as SpeedMode;
@@ -403,9 +408,9 @@ export function GroupingExerciseClient() {
 
       {speedMode === "milliseconds" ? (
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-semibold uppercase text-slate-500">Milisaniye</span>
+          <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Milisaniye</span>
           <input
-            className={FULLSCREEN_SELECT_CLASS}
+            className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
             type="number"
             min={50}
             max={10000}
@@ -419,9 +424,9 @@ export function GroupingExerciseClient() {
         </label>
       ) : (
         <label className="flex flex-col gap-1">
-          <span className="text-[11px] font-semibold uppercase text-slate-500">Okuma Hizi (kelime/dk)</span>
+          <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Okuma Hizi (kelime/dk)</span>
           <input
-            className={FULLSCREEN_SELECT_CLASS}
+            className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
             type="number"
             step={1}
             inputMode="numeric"
@@ -453,16 +458,16 @@ export function GroupingExerciseClient() {
               }
             }}
           />
-          {readingSpeedError ? <p className="text-xs font-semibold text-red-700">{readingSpeedError}</p> : null}
-          <p className="text-[11px] text-slate-500">Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
-          {safeWordsPerMinute > 1500 ? <p className="text-[11px] text-amber-700">Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
+          {readingSpeedError ? <p className={`text-xs font-semibold text-red-700 ${styles.errorText}`}>{readingSpeedError}</p> : null}
+          <p className={`text-[11px] text-slate-500 ${styles.helperText}`}>Geçiş süresi: {transitionSecondsLabel.replace(".", ",")} saniye</p>
+          {safeWordsPerMinute > 1500 ? <p className={`text-[11px] text-amber-700 ${styles.warnText}`}>Çok yüksek hızlarda kelimeler çok kısa süre görünür.</p> : null}
         </label>
       )}
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Gorunum</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Gorunum</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={displayMode}
           disabled={phase === "running" && !paused}
           onChange={(event) => {
@@ -476,9 +481,9 @@ export function GroupingExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Kaydirma</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Kaydirma</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={scrollMode}
           disabled={phase === "running" && !paused}
           onChange={(event) => setScrollMode(event.target.value as ScrollMode)}
@@ -489,9 +494,9 @@ export function GroupingExerciseClient() {
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] font-semibold uppercase text-slate-500">Font</span>
+        <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Font</span>
         <select
-          className={FULLSCREEN_SELECT_CLASS}
+          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={fontSize}
           disabled={phase === "running" && !paused}
           onChange={(event) => setFontSize(Number(event.target.value) as FontSize)}
@@ -507,7 +512,7 @@ export function GroupingExerciseClient() {
       <div className="sm:col-span-2 lg:col-span-4 xl:col-span-1 grid gap-2">
         {phase === "ready" ? (
           <button
-            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[42px]`}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[42px] ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
             onClick={startExercise}
           >
@@ -516,17 +521,17 @@ export function GroupingExerciseClient() {
         ) : (
           <>
             <button
-              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[42px]`}
+              className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[42px] ${styles.primaryButtonOverride}`}
               style={FULLSCREEN_TOUCH_STYLE}
               onClick={() => setPaused((value) => !value)}
             >
               {paused ? "Devam Et" : "Duraklat"}
             </button>
             <div className="flex gap-2">
-              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1`} onClick={reset}>
+              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={reset}>
                 Yeniden
               </button>
-              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1`} onClick={() => finish(false)}>
+              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={() => finish(false)}>
                 Bitir
               </button>
             </div>
@@ -538,23 +543,26 @@ export function GroupingExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <FullscreenExerciseIntro
-        title="Gruplama Calismasi"
-        description="Kelime gruplarini tek bakista algilama ve okuma alanini gelistirme calismasi."
-        buttonLabel="Egitime Basla"
-        onStart={() => {
-          savedRef.current = false;
-          setPhase("ready");
-        }}
-      />
+      <div className={themeRootClassName}>
+        <FullscreenExerciseIntro
+          title="Gruplama Calismasi"
+          description="Kelime gruplarini tek bakista algilama ve okuma alanini gelistirme calismasi."
+          buttonLabel="Egitime Basla"
+          onStart={() => {
+            savedRef.current = false;
+            setPhase("ready");
+          }}
+        />
+      </div>
     );
   }
 
   if (phase === "result" && result && selected) {
     return (
-      <section className="idil-card p-5 md:p-7">
-        <h2 className="text-2xl font-bold">Gruplama Calismasi Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
+      <div className={themeRootClassName}>
+      <section className={`idil-card p-5 md:p-7 ${styles.resultCardOverride}`}>
+        <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Gruplama Calismasi Sonucu</h2>
+        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
           {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
         </p>
 
@@ -565,19 +573,19 @@ export function GroupingExerciseClient() {
             ["Kelime", result.totalWords],
             ["Sure", formatDuration(result.durationSeconds)],
           ].map(([label, value]) => (
-            <article key={String(label)} className="rounded-2xl border border-red-100 bg-red-50 p-4 text-center">
-              <p className="text-xs uppercase text-slate-500">{label}</p>
-              <p className="mt-2 text-3xl font-extrabold text-slate-900">{value}</p>
+            <article key={String(label)} className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
+              <p className={`text-xs uppercase text-slate-500 ${styles.resultStatLabel}`}>{label}</p>
+              <p className={`mt-2 text-3xl font-extrabold text-slate-900 ${styles.resultStatValue}`}>{value}</p>
             </article>
           ))}
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button className={FULLSCREEN_PRIMARY_BUTTON_CLASS} onClick={reset}>
+          <button className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} onClick={reset}>
             Yeniden Baslat
           </button>
           <button
-            className={FULLSCREEN_PRIMARY_BUTTON_CLASS}
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             onClick={() =>
               router.push(
                 `/sonuc?exerciseType=grouping-reading&correct=0&wrong=0&successRate=${result.successRate}&score=${result.score}`,
@@ -590,15 +598,17 @@ export function GroupingExerciseClient() {
 
         <Link
           href="/egzersizler"
-          className="mt-3 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white font-bold text-red-800"
+          className={`mt-3 inline-flex min-h-[56px] w-full items-center justify-center rounded-2xl border border-red-200 bg-white font-bold text-red-800 ${styles.secondaryButtonOverride}`}
         >
           Egzersizlere Don
         </Link>
       </section>
+      </div>
     );
   }
 
   return (
+    <div className={themeRootClassName}>
     <FullscreenExerciseShell
       title="Gruplama Calismasi"
       subtitle={phase === "ready" ? "Hazirlik modu" : (selected?.title ?? "Calisma")}
@@ -694,5 +704,6 @@ export function GroupingExerciseClient() {
         </div>
       )}
     </FullscreenExerciseShell>
+    </div>
   );
 }

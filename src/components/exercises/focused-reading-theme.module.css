@@ -1,0 +1,215 @@
+/*
+ * Theme re-skin for the Odaklı Okuma (focused reading) exercise screens.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme is a faithful match of the current
+ * red-branded look, so no light overrides are needed. Dark theme adds:
+ * (a) the established :global(.fixed-exercise-stage...) shell overrides,
+ * (b) small "override" classes appended alongside the shared FULLSCREEN_*
+ * string constants (FullscreenExerciseShell.tsx is never edited),
+ * (c) an override for the global .idil-card class used by the result
+ * screen (globals.css is never edited either).
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --fr-bg: #07111f;
+  --fr-panel: #0d1a2d;
+  --fr-panel-2: #111f35;
+  --fr-text: #f5f7ff;
+  --fr-muted: #a9b5ca;
+  --fr-border: rgba(129, 140, 248, 0.34);
+  --fr-purple: #a78bfa;
+  --fr-red: #fb7185;
+  --fr-amber: #fbbf24;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--fr-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--fr-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--fr-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--fr-bg) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--fr-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--fr-panel-2) !important;
+  border-color: var(--fr-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--fr-panel-2) !important;
+  border-color: var(--fr-border) !important;
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .stageOverride {
+  background: linear-gradient(150deg, var(--fr-panel), var(--fr-bg)) !important;
+  border-color: var(--fr-border) !important;
+  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.4) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .infoChip {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel-2) !important;
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .infoChipAccent {
+  border-color: color-mix(in srgb, var(--fr-red) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--fr-red) 14%, var(--fr-panel)) !important;
+  color: var(--fr-red) !important;
+}
+
+.darkTheme .noticeInfo {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel-2) !important;
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .noticeError {
+  border-color: color-mix(in srgb, var(--fr-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--fr-red) 14%, var(--fr-panel)) !important;
+  color: var(--fr-red) !important;
+}
+
+.darkTheme .noticeWarn {
+  border-color: color-mix(in srgb, var(--fr-amber) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--fr-amber) 14%, var(--fr-panel)) !important;
+  color: var(--fr-amber) !important;
+}
+
+.darkTheme .noticeWarn p {
+  color: var(--fr-amber) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--fr-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .helperText {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .runningPanel {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel) !important;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.4) !important;
+}
+
+.darkTheme .runningLabel {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .runningBlock {
+  background: color-mix(in srgb, var(--fr-red) 22%, var(--fr-panel)) !important;
+  color: #ffe4e6 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fr-red) 45%, transparent), 0 22px 60px rgba(2, 6, 23, 0.45) !important;
+}
+
+.darkTheme .progressText {
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .progressTrack {
+  background: var(--fr-panel-2) !important;
+}
+
+.darkTheme .pausedText {
+  color: var(--fr-red) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--fr-panel) !important;
+  border: 1px solid var(--fr-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--fr-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--fr-muted) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--fr-border) !important;
+  background: var(--fr-panel-2) !important;
+  color: var(--fr-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,301 @@
+/*
+ * Theme re-skin for the Kart Hafıza (card memory) exercise screen.
+ * Renders through the shared FixedExerciseStage (never edited here). Light
+ * theme is a faithful match of the current "card game board" look
+ * (pastel green board, cyan headers); dark theme redesigns the surrounding
+ * chrome using the platform's established dark palette, plus explicit
+ * :global(.fixed-exercise-stage...) overrides for the shell, same
+ * technique as the other themed exercises.
+ *
+ * IMPORTANT: the animal/object cards themselves (card back, per-card
+ * colorClass pastel variety, name tag) are left completely untouched in
+ * both themes — they're physical-prop decoration, not theme chrome, and
+ * colorClass is data embedded in ALL_CARDS that must not be edited.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.lightTheme {
+  --kh-board: #dceee7;
+  --kh-panel: #ffffff;
+  --kh-tile-bg: rgba(255, 255, 255, 0.7);
+  --kh-track: #64748b;
+  --kh-text: #0f172a;
+  --kh-muted: #64748b;
+  --kh-border: #e2e8f0;
+  --kh-purple: #7c3aed;
+  --kh-cyan: #0e7490;
+  --kh-cyan-strong: #0891b2;
+  --kh-green: #059669;
+  --kh-green-strong: #047857;
+  --kh-red: #e11d48;
+}
+
+.darkTheme {
+  --kh-board: #0d1a2d;
+  --kh-panel: #111f35;
+  --kh-tile-bg: rgba(255, 255, 255, 0.06);
+  --kh-track: #1e293b;
+  --kh-text: #f5f7ff;
+  --kh-muted: #a9b5ca;
+  --kh-border: rgba(129, 140, 248, 0.34);
+  --kh-purple: #a78bfa;
+  --kh-cyan: #22d3ee;
+  --kh-cyan-strong: #0891b2;
+  --kh-green: #4ade80;
+  --kh-green-strong: #22c55e;
+  --kh-red: #fb7185;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--kh-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--kh-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--kh-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--kh-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--kh-border) !important;
+  background: var(--kh-track) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__area) {
+  background: var(--kh-board) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--kh-border) !important;
+}
+
+.settingsLabel {
+  color: var(--kh-text);
+}
+
+.select {
+  border: 1px solid var(--kh-border);
+  background: var(--kh-panel);
+  color: var(--kh-text);
+}
+
+.darkSolidButton {
+  background: var(--kh-track);
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.darkSolidButton:hover {
+  filter: brightness(1.15);
+}
+
+.primaryButton {
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.lightTheme .primaryButton {
+  background: var(--kh-green-strong);
+}
+
+.lightTheme .primaryButton:hover:not(:disabled) {
+  background: #065f46;
+}
+
+.darkTheme .primaryButton {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%);
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35);
+}
+
+.darkTheme .primaryButton:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.outerFrame {
+  background: #0f172a;
+}
+
+.board {
+  background: var(--kh-board);
+}
+
+.progressTrack {
+  border-color: var(--kh-track);
+  background: var(--kh-track);
+}
+
+.progressFill {
+  background: #fde047;
+}
+
+.coinChip {
+  background: var(--kh-track);
+  color: #fff;
+}
+
+.phaseTitle {
+  color: var(--kh-cyan);
+}
+
+.scoreTile {
+  background: var(--kh-tile-bg);
+}
+
+.scoreLabel {
+  color: var(--kh-muted);
+}
+
+.scoreLevel {
+  color: var(--kh-cyan);
+}
+
+.scoreOk {
+  color: var(--kh-green);
+}
+
+.scoreBad {
+  color: var(--kh-red);
+}
+
+.scoreNet {
+  color: var(--kh-cyan-strong);
+}
+
+.introCard {
+  border: 4px solid var(--kh-border);
+  background: var(--kh-tile-bg);
+}
+
+.introTitle {
+  color: var(--kh-text);
+}
+
+.introBody {
+  color: var(--kh-muted);
+}
+
+.levelButton {
+  border-color: var(--kh-border);
+  background: var(--kh-panel);
+  color: var(--kh-text);
+}
+
+.levelButton:hover {
+  background: color-mix(in srgb, var(--kh-cyan) 14%, var(--kh-panel));
+}
+
+.levelButtonActive {
+  border-color: var(--kh-cyan-strong);
+  background: var(--kh-cyan-strong);
+  color: #fff;
+}
+
+.levelInfoChip {
+  background: color-mix(in srgb, var(--kh-cyan) 14%, var(--kh-panel));
+  color: var(--kh-cyan);
+}
+
+.memorizeCounter {
+  background: var(--kh-tile-bg);
+  color: var(--kh-cyan);
+}
+
+.feedbackCorrect {
+  background: color-mix(in srgb, var(--kh-green) 20%, var(--kh-panel));
+  color: var(--kh-green-strong);
+}
+
+.feedbackWrong {
+  background: color-mix(in srgb, var(--kh-red) 20%, var(--kh-panel));
+  color: var(--kh-red);
+}
+
+.seenButton {
+  border-color: color-mix(in srgb, var(--kh-green-strong) 70%, black);
+  background: var(--kh-green);
+  color: #fff;
+}
+
+.notSeenButton {
+  border-color: color-mix(in srgb, var(--kh-red) 70%, black);
+  background: var(--kh-red);
+  color: #fff;
+}
+
+.secondaryButton {
+  border-color: var(--kh-border);
+  background: var(--kh-panel);
+  color: var(--kh-text);
+  transition: background 0.2s;
+}
+
+.secondaryButton:hover {
+  background: var(--kh-tile-bg);
+}
+
+.cyanButton {
+  background: var(--kh-cyan-strong);
+  color: #fff;
+  transition: filter 0.2s;
+}
+
+.cyanButton:hover {
+  filter: brightness(1.1);
+}
+
+.finishedStatOk {
+  background: color-mix(in srgb, var(--kh-green) 16%, var(--kh-panel));
+  color: var(--kh-green-strong);
+}
+
+.finishedStatBad {
+  background: color-mix(in srgb, var(--kh-red) 16%, var(--kh-panel));
+  color: var(--kh-red);
+}
+
+.finishedStatNet {
+  background: color-mix(in srgb, var(--kh-cyan) 16%, var(--kh-panel));
+  color: var(--kh-cyan-strong);
+}
+
+.select:focus-visible,
+.darkSolidButton:focus-visible,
+.primaryButton:focus-visible,
+.levelButton:focus-visible,
+.secondaryButton:focus-visible,
+.cyanButton:focus-visible,
+.seenButton:focus-visible,
+.notSeenButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kh-purple) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

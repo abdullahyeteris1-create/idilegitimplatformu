@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import styles from "@/components/exercises/card-memory-theme.module.css";
 
 type GamePhase = "intro" | "memorize" | "question" | "result" | "finished";
 
@@ -132,6 +134,12 @@ function getNet(correct: number, wrong: number) {
 
 export default function CardMemoryGamePage() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = [
+    styles.themeRoot,
+    isLight ? styles.lightTheme : styles.darkTheme,
+  ].join(" ");
   const [level, setLevel] = useState(1);
   const [phase, setPhase] = useState<GamePhase>("intro");
   const [isAnswerLocked, setIsAnswerLocked] = useState(false);
@@ -347,22 +355,22 @@ export default function CardMemoryGamePage() {
   }
 
     const content = (
-    <main className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-slate-900 px-2 py-2 text-slate-900 md:px-4 md:py-4">
-      <section className="mx-auto h-full min-h-0 min-w-0 max-w-6xl overflow-hidden rounded-[2rem] bg-[#dceee7] shadow-2xl">
+    <main className={`h-full min-h-0 min-w-0 max-w-full overflow-hidden px-2 py-2 md:px-4 md:py-4 ${styles.outerFrame}`}>
+      <section className={`mx-auto h-full min-h-0 min-w-0 max-w-6xl overflow-hidden rounded-[2rem] shadow-2xl ${styles.board}`}>
         <div className="relative flex h-full min-h-0 min-w-0 flex-col items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.55)_0,rgba(255,255,255,0.55)_5%,transparent_6%),radial-gradient(circle_at_70%_40%,rgba(255,255,255,0.35)_0,rgba(255,255,255,0.35)_5%,transparent_6%)]">
           {/* Progress bar ve skor */}
           {phase !== "intro" && phase !== "finished" && (
             <div className="flex w-full max-w-4xl items-center justify-between gap-2 px-4 pt-4">
               <div className="flex flex-1 items-center gap-2">
                 <span className="text-2xl">❓</span>
-                <div className="flex h-5 w-full max-w-sm overflow-hidden rounded-full border-4 border-slate-500 bg-slate-500">
+                <div className={`flex h-5 w-full max-w-sm overflow-hidden rounded-full border-4 ${styles.progressTrack}`}>
                   <div
-                    className="h-full bg-yellow-300 transition-all"
+                    className={`h-full transition-all ${styles.progressFill}`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-2 rounded-xl bg-slate-500 px-4 py-2 text-white shadow-md">
+              <div className={`flex items-center gap-2 rounded-xl px-4 py-2 shadow-md ${styles.coinChip}`}>
                 <span className="text-2xl">🪙</span>
                 <span className="text-xl font-black">{correctCount}</span>
               </div>
@@ -372,7 +380,7 @@ export default function CardMemoryGamePage() {
           {/* Oyun başlığı */}
           {phase !== "intro" && phase !== "finished" && (
             <div className="w-full px-5 pt-4 text-center">
-              <h1 className="text-xl font-black text-cyan-700">
+              <h1 className={`text-xl font-black ${styles.phaseTitle}`}>
                 {phase === "memorize" && "Kartları aklında tut"}
                 {phase === "question" && "Bunu daha önce görmüş müydün?"}
                 {phase === "result" &&
@@ -384,33 +392,33 @@ export default function CardMemoryGamePage() {
           {/* Skor tablosu */}
           {phase !== "intro" && phase !== "finished" && (
             <div className="mx-auto mt-3 grid w-full max-w-4xl grid-cols-4 gap-2 px-5 text-center">
-              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
-                <p className="text-xs font-black text-slate-500">Seviye</p>
-                <p className="text-xl font-black text-cyan-700">{level}</p>
+              <div className={`rounded-2xl px-3 py-2 shadow-sm ${styles.scoreTile}`}>
+                <p className={`text-xs font-black ${styles.scoreLabel}`}>Seviye</p>
+                <p className={`text-xl font-black ${styles.scoreLevel}`}>{level}</p>
               </div>
-              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
-                <p className="text-xs font-black text-slate-500">Doğru</p>
-                <p className="text-xl font-black text-emerald-600">{correctCount}</p>
+              <div className={`rounded-2xl px-3 py-2 shadow-sm ${styles.scoreTile}`}>
+                <p className={`text-xs font-black ${styles.scoreLabel}`}>Doğru</p>
+                <p className={`text-xl font-black ${styles.scoreOk}`}>{correctCount}</p>
               </div>
-              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
-                <p className="text-xs font-black text-slate-500">Yanlış</p>
-                <p className="text-xl font-black text-rose-600">{wrongCount}</p>
+              <div className={`rounded-2xl px-3 py-2 shadow-sm ${styles.scoreTile}`}>
+                <p className={`text-xs font-black ${styles.scoreLabel}`}>Yanlış</p>
+                <p className={`text-xl font-black ${styles.scoreBad}`}>{wrongCount}</p>
               </div>
-              <div className="rounded-2xl bg-white/70 px-3 py-2 shadow-sm">
-                <p className="text-xs font-black text-slate-500">Net</p>
-                <p className="text-xl font-black text-blue-700">{netCount}</p>
+              <div className={`rounded-2xl px-3 py-2 shadow-sm ${styles.scoreTile}`}>
+                <p className={`text-xs font-black ${styles.scoreLabel}`}>Net</p>
+                <p className={`text-xl font-black ${styles.scoreNet}`}>{netCount}</p>
               </div>
             </div>
           )}
 
           <section className="flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden px-3 py-4 md:px-5 md:py-6">
                         {phase === "intro" && (
-              <div className="w-full max-w-2xl rounded-[2rem] border-4 border-white bg-white/80 p-6 text-center shadow-xl">
-                <h2 className="text-3xl font-black text-slate-900">
+              <div className={`w-full max-w-2xl rounded-[2rem] p-6 text-center shadow-xl ${styles.introCard}`}>
+                <h2 className={`text-3xl font-black ${styles.introTitle}`}>
                   Hafıza Kartları
                 </h2>
 
-                <p className="mt-3 text-base font-bold leading-7 text-slate-600">
+                <p className={`mt-3 text-base font-bold leading-7 ${styles.introBody}`}>
                   Önce kartları dikkatlice izle. Sonra gelen kartı daha önce
                   görüp görmediğini seç. Amaç görsel hafızayı ve dikkati
                   geliştirmektir.
@@ -423,9 +431,7 @@ export default function CardMemoryGamePage() {
                       type="button"
                       onClick={() => setLevel(levelNumber)}
                       className={`rounded-2xl border-2 px-4 py-3 text-sm font-black transition ${
-                        level === levelNumber
-                          ? "border-cyan-500 bg-cyan-600 text-white"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-cyan-50"
+                        level === levelNumber ? styles.levelButtonActive : styles.levelButton
                       }`}
                     >
                       {levelNumber}
@@ -433,7 +439,7 @@ export default function CardMemoryGamePage() {
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-2xl bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-800">
+                <div className={`mt-5 rounded-2xl px-4 py-3 text-sm font-black ${styles.levelInfoChip}`}>
                   {LEVEL_CONFIG[level].label} • Gösterim süresi:{" "}
                   {LEVEL_CONFIG[level].showMs}ms
                 </div>
@@ -445,7 +451,7 @@ export default function CardMemoryGamePage() {
               <div className="flex flex-col items-center">
                 {renderCard(currentMemorizeCard)}
 
-                <p className="mt-5 rounded-full bg-white/70 px-5 py-2 text-sm font-black text-cyan-800 shadow-sm">
+                <p className={`mt-5 rounded-full px-5 py-2 text-sm font-black shadow-sm ${styles.memorizeCounter}`}>
                   {memorizeIndex + 1} / {seenCards.length}
                 </p>
               </div>
@@ -461,9 +467,7 @@ export default function CardMemoryGamePage() {
 
                     <div
                       className={`mt-4 rounded-2xl px-5 py-3 text-lg font-black shadow-md ${
-                        lastResult === "correct"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-rose-100 text-rose-700"
+                        lastResult === "correct" ? styles.feedbackCorrect : styles.feedbackWrong
                       }`}
                     >
                       {lastResult === "correct"
@@ -481,7 +485,7 @@ export default function CardMemoryGamePage() {
     type="button"
     onClick={() => answerQuestion(true)}
     disabled={phase !== "question" || isAnswerLocked}
-    className="relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 border-emerald-900 bg-emerald-500 text-4xl font-black text-white shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl"
+    className={`relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 text-4xl font-black shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl ${styles.seenButton}`}
     title="Gördüm"
     aria-label="Gördüm"
   >
@@ -492,7 +496,7 @@ export default function CardMemoryGamePage() {
     type="button"
     onClick={() => answerQuestion(false)}
     disabled={phase !== "question" || isAnswerLocked}
-    className="relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 border-rose-900 bg-rose-600 text-4xl font-black text-white shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl"
+    className={`relative z-50 flex h-20 w-20 touch-manipulation select-none items-center justify-center rounded-full border-4 text-4xl font-black shadow-xl transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-24 sm:w-24 sm:text-5xl ${styles.notSeenButton}`}
     title="Görmedim"
     aria-label="Görmedim"
   >
@@ -504,29 +508,29 @@ export default function CardMemoryGamePage() {
             )}
 
             {phase === "finished" && (
-              <div className="w-full max-w-2xl rounded-[2rem] border-4 border-white bg-white/80 p-6 text-center shadow-xl">
-                <h2 className="text-3xl font-black text-slate-900">
+              <div className={`w-full max-w-2xl rounded-[2rem] p-6 text-center shadow-xl ${styles.introCard}`}>
+                <h2 className={`text-3xl font-black ${styles.introTitle}`}>
                   Tur Tamamlandı
                 </h2>
 
                 <div className="mt-5 grid grid-cols-3 gap-3">
-                  <div className="rounded-2xl bg-emerald-50 px-4 py-4">
-                    <p className="text-xs font-black text-emerald-700">Doğru</p>
-                    <p className="text-3xl font-black text-emerald-700">
+                  <div className={`rounded-2xl px-4 py-4 ${styles.finishedStatOk}`}>
+                    <p className="text-xs font-black">Doğru</p>
+                    <p className="text-3xl font-black">
                       {correctCount}
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-rose-50 px-4 py-4">
-                    <p className="text-xs font-black text-rose-700">Yanlış</p>
-                    <p className="text-3xl font-black text-rose-700">
+                  <div className={`rounded-2xl px-4 py-4 ${styles.finishedStatBad}`}>
+                    <p className="text-xs font-black">Yanlış</p>
+                    <p className="text-3xl font-black">
                       {wrongCount}
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-blue-50 px-4 py-4">
-                    <p className="text-xs font-black text-blue-700">Net</p>
-                    <p className="text-3xl font-black text-blue-700">
+                  <div className={`rounded-2xl px-4 py-4 ${styles.finishedStatNet}`}>
+                    <p className="text-xs font-black">Net</p>
+                    <p className="text-3xl font-black">
                       {netCount}
                     </p>
                   </div>
@@ -536,7 +540,7 @@ export default function CardMemoryGamePage() {
                   <button
                     type="button"
                     onClick={restartSameLevel}
-                    className="rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                    className={`rounded-2xl border-2 px-6 py-3 text-sm font-black transition ${styles.secondaryButton}`}
                   >
                     Aynı Seviyeyi Tekrarla
                   </button>
@@ -545,7 +549,7 @@ export default function CardMemoryGamePage() {
                     <button
                       type="button"
                       onClick={goPreviousLevel}
-                      className="rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                      className={`rounded-2xl border-2 px-6 py-3 text-sm font-black transition ${styles.secondaryButton}`}
                     >
                       Önceki Seviye
                     </button>
@@ -555,7 +559,7 @@ export default function CardMemoryGamePage() {
                     <button
                       type="button"
                       onClick={goNextLevel}
-                      className="rounded-2xl bg-cyan-600 px-6 py-3 text-sm font-black text-white transition hover:bg-cyan-700"
+                      className={`rounded-2xl px-6 py-3 text-sm font-black transition ${styles.cyanButton}`}
                     >
                       Sonraki Seviye
                     </button>
@@ -564,7 +568,7 @@ export default function CardMemoryGamePage() {
                   <button
                     type="button"
                     onClick={resetGame}
-                    className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                    className={`rounded-2xl px-6 py-3 text-sm font-black transition ${styles.darkSolidButton}`}
                   >
                     Ana Ekran
                   </button>
@@ -579,24 +583,26 @@ export default function CardMemoryGamePage() {
   );
 
   return (
-    <FixedExerciseStage
-      title="Kart Hafıza"
-      subtitle={phase === "intro" ? "Hazırlık modu" : phase === "memorize" ? "Kartları aklında tut" : phase === "finished" ? "Tur tamamlandı" : "Kartı değerlendir"}
-      bottomSettings={(
-        <div className="grid gap-2 sm:grid-cols-2 sm:items-end">
-          <label className="grid gap-1 text-sm font-bold text-slate-700">
-            <span>Seviye</span>
-            <select value={level} onChange={(event) => phase === "intro" ? setLevel(Number(event.target.value)) : startGame(Number(event.target.value))} className="min-h-11 rounded-xl border border-slate-300 bg-white px-3">
-              {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}. seviye</option>)}
-            </select>
-          </label>
-          {phase !== "intro" ? <button type="button" onClick={resetGame} className="min-h-11 rounded-xl bg-slate-900 px-4 font-bold text-white">Ayarlara dön</button> : null}
-        </div>
-      )}
-      controls={phase === "intro" ? <button type="button" onClick={() => startGame(level)} className="mx-auto block min-h-12 w-full max-w-md rounded-2xl bg-emerald-600 px-8 font-black text-white shadow-lg transition hover:bg-emerald-700">Çalışmayı Başlat</button> : undefined}
-      onExit={() => router.push("/egzersizler")}
-    >
-      {content}
-    </FixedExerciseStage>
+    <div className={themeRootClassName}>
+      <FixedExerciseStage
+        title="Kart Hafıza"
+        subtitle={phase === "intro" ? "Hazırlık modu" : phase === "memorize" ? "Kartları aklında tut" : phase === "finished" ? "Tur tamamlandı" : "Kartı değerlendir"}
+        bottomSettings={(
+          <div className="grid gap-2 sm:grid-cols-2 sm:items-end">
+            <label className={`grid gap-1 text-sm font-bold ${styles.settingsLabel}`}>
+              <span>Seviye</span>
+              <select value={level} onChange={(event) => phase === "intro" ? setLevel(Number(event.target.value)) : startGame(Number(event.target.value))} className={`min-h-11 rounded-xl px-3 ${styles.select}`}>
+                {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}. seviye</option>)}
+              </select>
+            </label>
+            {phase !== "intro" ? <button type="button" onClick={resetGame} className={`min-h-11 rounded-xl px-4 font-bold ${styles.darkSolidButton}`}>Ayarlara dön</button> : null}
+          </div>
+        )}
+        controls={phase === "intro" ? <button type="button" onClick={() => startGame(level)} className={`mx-auto block min-h-12 w-full max-w-md rounded-2xl px-8 font-black shadow-lg transition ${styles.primaryButton}`}>Çalışmayı Başlat</button> : undefined}
+        onExit={() => router.push("/egzersizler")}
+      >
+        {content}
+      </FixedExerciseStage>
+    </div>
   );
 }

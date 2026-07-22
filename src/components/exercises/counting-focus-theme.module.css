@@ -1,0 +1,248 @@
+/*
+ * Theme re-skin for the Harf / Rakam Sayma Odak Çalışması exercise.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme matches the current look exactly, so no
+ * light overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended to this file's own local Tailwind (no FULLSCREEN_*
+ * shared constants are used here) and the global .idil-card class (also
+ * never edited).
+ *
+ * IMPORTANT: the scattered letters/numbers shown during a round are text
+ * content, not color-coded game data — safe to re-theme along with the
+ * rest of the stage.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --hr-bg: #07111f;
+  --hr-panel: #0d1a2d;
+  --hr-panel-2: #111f35;
+  --hr-text: #f5f7ff;
+  --hr-muted: #a9b5ca;
+  --hr-border: rgba(129, 140, 248, 0.34);
+  --hr-purple: #a78bfa;
+  --hr-indigo: #818cf8;
+  --hr-red: #fb7185;
+  --hr-green: #4ade80;
+  --hr-blue: #60a5fa;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--hr-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--hr-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--hr-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--hr-border) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--hr-panel-2) !important;
+  border-color: var(--hr-border) !important;
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .startButtonOverride {
+  background: var(--hr-indigo) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--hr-panel-2) !important;
+  border-color: var(--hr-border) !important;
+  color: #e7ecf7 !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .finishButtonOverride {
+  background: var(--hr-red) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--hr-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--hr-panel) !important;
+  border: 1px solid var(--hr-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .resultTitle {
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme .noticeInfo {
+  border-color: color-mix(in srgb, var(--hr-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-blue) 14%, var(--hr-panel)) !important;
+  color: var(--hr-blue) !important;
+}
+
+.darkTheme .noticeError {
+  border-color: color-mix(in srgb, var(--hr-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-red) 14%, var(--hr-panel)) !important;
+  color: var(--hr-red) !important;
+}
+
+.darkTheme .retryButtonOverride {
+  background: var(--hr-red) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .targetBanner {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+}
+
+.darkTheme .targetLabel {
+  color: var(--hr-purple) !important;
+}
+
+.darkTheme .targetTitle {
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .targetValue {
+  color: var(--hr-purple) !important;
+}
+
+.darkTheme .timerChip {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+}
+
+.darkTheme .timerLabel {
+  color: var(--hr-muted) !important;
+}
+
+.darkTheme .timerValue {
+  color: var(--hr-purple) !important;
+}
+
+.darkTheme .charDisplayArea {
+  border-color: var(--hr-border) !important;
+  background: linear-gradient(180deg, var(--hr-panel) 0%, var(--hr-bg) 100%) !important;
+}
+
+.darkTheme .charChip {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel-2) !important;
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--hr-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-green) 16%, var(--hr-panel)) !important;
+  color: var(--hr-green) !important;
+}
+
+.darkTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--hr-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-red) 16%, var(--hr-panel)) !important;
+  color: var(--hr-red) !important;
+}
+
+.darkTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--hr-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--hr-blue) 16%, var(--hr-panel)) !important;
+  color: var(--hr-blue) !important;
+}
+
+.darkTheme .answerButton {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+  color: var(--hr-text) !important;
+}
+
+.darkTheme .answerButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hr-purple) 16%, var(--hr-panel)) !important;
+}
+
+.darkTheme .pausedOverlay {
+  background: rgba(7, 17, 31, 0.6) !important;
+}
+
+.darkTheme .pausedText {
+  border-color: var(--hr-border) !important;
+  background: var(--hr-panel) !important;
+  color: var(--hr-purple) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

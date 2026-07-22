@@ -1,0 +1,214 @@
+/*
+ * Theme re-skin for the Görsel Puzzle exercise chrome.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). Light theme matches the current look exactly, so no
+ * light overrides are needed. Dark theme adds the established
+ * :global(.fixed-exercise-stage...) shell overrides plus small "override"
+ * classes appended alongside the shared FULLSCREEN_* string constants and
+ * the global .idil-card class (also never edited).
+ *
+ * IMPORTANT: the puzzle board itself (tile grid, tile background images,
+ * selection ring, correct-piece outline, paused overlay, and the
+ * ready-phase full-image preview) is left completely untouched in both
+ * themes. The tiles render actual image fragments (never raw color
+ * values), and the board's neutral white/cream surface is calibrated so
+ * those images read correctly — it is not decorative theme chrome.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --vp-bg: #07111f;
+  --vp-panel: #0d1a2d;
+  --vp-panel-2: #111f35;
+  --vp-text: #f5f7ff;
+  --vp-muted: #a9b5ca;
+  --vp-border: rgba(129, 140, 248, 0.34);
+  --vp-purple: #a78bfa;
+  --vp-red: #fb7185;
+  --vp-green: #4ade80;
+  --vp-blue: #60a5fa;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--vp-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--vp-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--vp-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--vp-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--vp-panel-2) !important;
+  border-color: var(--vp-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--vp-panel-2) !important;
+  border-color: var(--vp-border) !important;
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--vp-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .introBody {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .infoTile {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel-2) !important;
+}
+
+.darkTheme .infoTileLabel {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .infoTileValue {
+  color: var(--vp-purple) !important;
+}
+
+.darkTheme .instructionBanner {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel-2) !important;
+}
+
+.darkTheme .instructionEyebrow {
+  color: var(--vp-purple) !important;
+}
+
+.darkTheme .instructionTitle {
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .instructionBody {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .helpPreview {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel) !important;
+}
+
+.darkTheme .helpPreviewLabel {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .helpPreviewValue {
+  color: var(--vp-purple) !important;
+}
+
+.darkTheme .feedbackOk {
+  border-color: color-mix(in srgb, var(--vp-green) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--vp-green) 16%, var(--vp-panel)) !important;
+  color: var(--vp-green) !important;
+}
+
+.darkTheme .feedbackBad {
+  border-color: color-mix(in srgb, var(--vp-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--vp-red) 16%, var(--vp-panel)) !important;
+  color: var(--vp-red) !important;
+}
+
+.darkTheme .feedbackInfo {
+  border-color: color-mix(in srgb, var(--vp-blue) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--vp-blue) 16%, var(--vp-panel)) !important;
+  color: var(--vp-blue) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--vp-panel) !important;
+  border: 1px solid var(--vp-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .resultTitle {
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--vp-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--vp-text) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--vp-border) !important;
+  background: var(--vp-panel-2) !important;
+  color: var(--vp-text) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
