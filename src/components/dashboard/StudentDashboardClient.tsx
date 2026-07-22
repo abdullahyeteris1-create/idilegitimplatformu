@@ -117,6 +117,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
   "color-match": "/egzersizler/renk-uyumu",
+  "reading-speed-test": "/egzersizler/okuma-hizi-testi",
 };
 
 const quickLinks = [

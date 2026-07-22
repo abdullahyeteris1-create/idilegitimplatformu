@@ -113,6 +113,7 @@ export const categories: Category[] = [
     href: "/egzersizler?category=assessment",
     examples: [
       { title: "Anlama Testi", href: "/egzersizler/anlama-testi" },
+      { title: "Okuma Hızı Testi", href: "/egzersizler/okuma-hizi-testi" },
       { title: "Sonuçlar", href: "/sonuc" },
     ],
   },

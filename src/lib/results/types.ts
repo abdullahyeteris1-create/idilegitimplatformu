@@ -20,7 +20,8 @@
   | "grouping-reading"
     | "eye-columns"
   | "square-vision"
-  | "color-match";
+  | "color-match"
+  | "reading-speed-test";
 
 export type ExerciseResult = {
   id: string;

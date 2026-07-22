@@ -233,6 +233,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
         supportedSettings: ["textId", "targetSuccessRate", "questionCount"],
   },
   {
+    slug: "okuma-hizi-testi",
+    title: "Okuma Hızı Testi",
+    route: "/egzersizler/okuma-hizi-testi",
+    resultExerciseType: "reading-speed-test",
+    category: "speed",
+    assignmentEnabled: true,
+    supportedSettings: ["textId", "fontSize"],
+  },
+  {
     slug: "renk-uyumu",
     title: "Renk Uyumu",
     route: "/egzersizler/renk-uyumu",

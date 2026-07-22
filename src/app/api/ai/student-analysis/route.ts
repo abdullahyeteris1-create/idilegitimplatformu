@@ -37,6 +37,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "eye-columns": "Göz Egzersizleri: Kolonlar",
   "square-vision": "KAREL: Kare Görme Alanı",
   "color-match": "Renk Uyumu",
+  "reading-speed-test": "Okuma Hızı Testi",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);
@@ -76,9 +77,9 @@ type AnonymousResult = {
   exerciseTitle: string;
   date: string;
   durationSeconds: number;
-  correctCount: number;
-  wrongCount: number;
-  score: number;
+  correctCount: number | null;
+  wrongCount: number | null;
+  score: number | null;
   successRate: number | null;
   details?: Record<string, unknown>;
 };
@@ -178,7 +179,8 @@ function mapAnonymousResult(row: Record<string, unknown>): AnonymousResult | nul
   const details = sanitizeDetails(rawDetails);
   const correctCount = finiteNumber(row.correct_count);
   const wrongCount = finiteNumber(row.wrong_count);
-  const storedSuccessRate = optionalFiniteNumber(row.success_rate);
+  const isReadingSpeedTest = exerciseType === "reading-speed-test";
+  const storedSuccessRate = isReadingSpeedTest ? null : optionalFiniteNumber(row.success_rate);
   const totalAnswers = correctCount + wrongCount;
   const successRate = storedSuccessRate ?? (
     totalAnswers > 0 ? Math.round((correctCount / totalAnswers) * 100) : null
@@ -189,9 +191,9 @@ function mapAnonymousResult(row: Record<string, unknown>): AnonymousResult | nul
     exerciseTitle: EXERCISE_TITLES[exerciseType],
     date: String(row.completed_at ?? ""),
     durationSeconds: readDurationSeconds(rawDetails),
-    correctCount,
-    wrongCount,
-    score: finiteNumber(row.score),
+    correctCount: isReadingSpeedTest ? null : correctCount,
+    wrongCount: isReadingSpeedTest ? null : wrongCount,
+    score: isReadingSpeedTest ? null : finiteNumber(row.score),
     successRate,
     ...(details ? { details } : {}),
   };

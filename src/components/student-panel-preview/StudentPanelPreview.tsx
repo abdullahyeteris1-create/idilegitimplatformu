@@ -30,6 +30,7 @@ type StudentResultApiItem = {
   successRate: number;
   durationSeconds: number;
   date: string;
+  details?: Record<string, unknown>;
 };
 type DailyTaskState =
   | { status: "loading" }
@@ -74,6 +75,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
   "color-match": "/egzersizler/renk-uyumu",
+  "reading-speed-test": "/egzersizler/okuma-hizi-testi",
 };
 
 function toTimestamp(value: string): number {
@@ -89,11 +91,37 @@ function clampPercentage(value: number): number {
   return Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
 }
 
-function calculateAverageSuccess(results: ExerciseResult[]): number {
-  const validValues = results.map((result) => result.successRate).filter(Number.isFinite);
-  if (validValues.length === 0) return 0;
+function calculateAverageSuccess(results: ExerciseResult[]): number | null {
+  const validValues = results
+    .filter((result) => result.exerciseType !== "reading-speed-test")
+    .map((result) => result.successRate)
+    .filter(Number.isFinite);
+  if (validValues.length === 0) {
+    return results.some((result) => result.exerciseType === "reading-speed-test") ? null : 0;
+  }
 
   return clampPercentage(validValues.reduce((total, value) => total + value, 0) / validValues.length);
+}
+
+function getResultDetailNumber(result: ExerciseResult, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const value = result.details?.[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+
+  return null;
+}
+
+function getResultDetailString(result: ExerciseResult, key: string): string | null {
+  const value = result.details?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function formatResultDuration(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function getIstanbulDateKey(date: Date): string | null {
@@ -264,7 +292,9 @@ function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget
     resumeAction = <Link href={resumeTarget.href} data-resume-action="assignment">{resumeTarget.actionLabel} <Icon name="arrow"/></Link>;
   } else if (resumeTarget.status === "result") {
     const title = resumeTarget.result.exerciseTitle?.trim() || "Çalışma";
-    resumeContent = <><small className={styles.resumeEyebrow}>Son çalışmana dön</small><strong>{title}</strong><div className={styles.resumeDetails}><span>{formatResultDate(resumeTarget.result.date)}</span><span>Başarı: %{clampPercentage(resumeTarget.result.successRate)}</span><span>Puan: {Number.isFinite(resumeTarget.result.score) ? resumeTarget.result.score : 0}</span></div></>;
+    const isReadingSpeedTest = resumeTarget.result.exerciseType === "reading-speed-test";
+    const readingSpeedWpm = getResultDetailNumber(resumeTarget.result, "readingSpeedWpm");
+    resumeContent = <><small className={styles.resumeEyebrow}>Son çalışmana dön</small><strong>{title}</strong><div className={styles.resumeDetails}><span>{formatResultDate(resumeTarget.result.date)}</span>{isReadingSpeedTest ? <><span>Okuma Hızı: {readingSpeedWpm !== null ? `${readingSpeedWpm} kelime/dk` : "-"}</span><span>Süre: {formatResultDuration(resumeTarget.result.durationSeconds)}</span></> : <><span>Başarı: %{clampPercentage(resumeTarget.result.successRate)}</span><span>Puan: {Number.isFinite(resumeTarget.result.score) ? resumeTarget.result.score : 0}</span></>}</div></>;
     resumeAction = <Link href={resumeTarget.href} data-resume-action="result">Bu Çalışmaya Yeniden Başla <Icon name="arrow"/></Link>;
   } else {
     resumeContent = <><small className={styles.resumeEyebrow}>Çalışma önerisi</small><strong>Yeni bir çalışmaya başla</strong><p className={styles.resumeDescription}>Egzersizlerden birini seçerek gelişimine devam edebilirsin.</p></>;
@@ -369,11 +399,19 @@ function RecentResults({ results, loading, error }: { results: ExerciseResult[];
             const title = result.exerciseTitle?.trim() || "Çalışma";
             const successRate = clampPercentage(result.successRate);
             const exerciseHref = EXERCISE_ROUTE_BY_TYPE[result.exerciseType] ?? "/egzersizler";
+            const isReadingSpeedTest = result.exerciseType === "reading-speed-test";
+            const readingSpeedWpm = getResultDetailNumber(result, "readingSpeedWpm");
+            const wordCount = getResultDetailNumber(result, "wordCount", "totalWords");
+            const textTitle = getResultDetailString(result, "textTitle");
 
             return (
               <article className={styles.recentResultCard} key={result.id}>
                 <div><h3>{title}</h3><time dateTime={result.date}>{formatResultDate(result.date)}</time></div>
-                <div className={styles.resultMetrics}><span>Başarı <b>%{successRate}</b></span><span>Puan <b>{Number.isFinite(result.score) ? result.score : 0}</b></span></div>
+                {isReadingSpeedTest ? (
+                  <div className={styles.resultMetrics}><span>Okuma Hızı <b>{readingSpeedWpm !== null ? `${readingSpeedWpm} kelime/dk` : "-"}</b></span><span>Süre <b>{formatResultDuration(result.durationSeconds)}</b></span><span>Kelime <b>{wordCount ?? "-"}</b></span><span>Metin <b>{textTitle ?? "-"}</b></span></div>
+                ) : (
+                  <div className={styles.resultMetrics}><span>Başarı <b>%{successRate}</b></span><span>Puan <b>{Number.isFinite(result.score) ? result.score : 0}</b></span></div>
+                )}
                 <Link href={exerciseHref}>Tekrar Aç <Icon name="arrow"/></Link>
               </article>
             );
@@ -634,7 +672,7 @@ export function StudentPanelPreview({ authenticatedStudent }: { authenticatedStu
       return { ...stat, value: metricPlaceholder ?? weeklyResults.length.toLocaleString("tr-TR"), note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : stat.note };
     }
     if (stat.label === "Haftalık Başarı") {
-      return { ...stat, value: metricPlaceholder ?? `%${weeklyAverageSuccess}`, note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : stat.note };
+      return { ...stat, value: metricPlaceholder ?? (weeklyAverageSuccess === null ? "—" : `%${weeklyAverageSuccess}`), note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : weeklyAverageSuccess === null ? "Puanlı çalışma bulunmuyor" : stat.note };
     }
     if (stat.label === "Günlük Seri") {
       return { ...stat, value: streakValue, note: streakNote };

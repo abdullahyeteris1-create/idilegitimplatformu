@@ -43,6 +43,7 @@ const EXERCISE_LABELS: Record<string, string> = {
   "grouping-reading": "Gruplama Çalışması",
   "eye-columns": "Göz Egzersizleri Kolonlar",
   "square-vision": "Kare Görme Alanı",
+  "reading-speed-test": "Okuma Hızı Testi",
 };
 
 const RESTART_HREFS: Record<ExerciseType, string> = {
@@ -68,6 +69,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
   "color-match": "/egzersizler/renk-uyumu",
+  "reading-speed-test": "/egzersizler/okuma-hizi-testi",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */
@@ -90,6 +92,31 @@ function formatExerciseType(type: string): string {
   return EXERCISE_LABELS[type] ?? type
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function getDetailNumber(result: ExerciseResult, ...keys: string[]): number | null {
+  for (const key of keys) {
+    const value = result.details?.[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+
+  return null;
+}
+
+function getDetailString(result: ExerciseResult, key: string): string | null {
+  const value = result.details?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function getReadingSpeedMetrics(result: ExerciseResult | null) {
+  if (!result || result.exerciseType !== "reading-speed-test") return null;
+
+  return {
+    readingSpeedWpm: getDetailNumber(result, "readingSpeedWpm"),
+    durationSeconds: result.durationSeconds,
+    wordCount: getDetailNumber(result, "wordCount", "totalWords"),
+    textTitle: getDetailString(result, "textTitle"),
+  };
 }
 
 export function ResultSummaryClient({
@@ -146,8 +173,10 @@ export function ResultSummaryClient({
   const latestResult = useMemo<ExerciseResult | null>(() => {
     if (studentResults.length === 0) return null;
     // results zaten tarihe göre descending sıralı (Supabase'den öyle geliyor, localStorage'da da başa ekleniyor)
-    return studentResults[0] ?? null;
-  }, [studentResults]);
+    return exerciseType
+      ? studentResults.find((result) => result.exerciseType === exerciseType) ?? null
+      : studentResults[0] ?? null;
+  }, [exerciseType, studentResults]);
 
   // Üst özet için gösterilecek egzersiz tipi
   const summaryData = useMemo(() => {
@@ -159,6 +188,7 @@ export function ResultSummaryClient({
         wrong: wrong ?? 0,
         score: score ?? 0,
         successRate: successRate ?? 0,
+        result: latestResult,
       };
     }
 
@@ -170,6 +200,7 @@ export function ResultSummaryClient({
         wrong: latestResult.wrongCount,
         score: latestResult.score,
         successRate: latestResult.successRate,
+        result: latestResult,
       };
     }
 
@@ -190,8 +221,16 @@ export function ResultSummaryClient({
   // --- ÜST ÖZET KARTI RENDER ---
   const showSummaryCard = summaryData !== null;
 
+  const readingSpeedSummary = getReadingSpeedMetrics(summaryData?.result ?? null);
   const stats = summaryData
-    ? [
+    ? readingSpeedSummary
+      ? [
+          { label: "Okuma Hızı", value: readingSpeedSummary.readingSpeedWpm !== null ? `${readingSpeedSummary.readingSpeedWpm} kelime/dk` : "-", tone: styles.statBrand },
+          { label: "Süre", value: readingSpeedSummary.durationSeconds > 0 ? formatSeconds(readingSpeedSummary.durationSeconds) : "-", tone: styles.statNeutral },
+          { label: "Kelime Sayısı", value: readingSpeedSummary.wordCount ?? "-", tone: styles.statOk },
+          { label: "Metin Başlığı", value: readingSpeedSummary.textTitle ?? "-", tone: styles.statNeutral },
+        ]
+      : [
         { label: "Dogru", value: summaryData.correct, tone: styles.statOk },
         { label: "Yanlis", value: summaryData.wrong, tone: styles.statBad },
         { label: "Basari", value: `${summaryData.successRate}%`, tone: styles.statNeutral },
@@ -323,8 +362,11 @@ export function ResultSummaryClient({
               </div>
             ) : student ? (
               <div className={styles.historyGrid}>
-                {filteredHistoryResults.map((result) => (
-                  <article key={result.id} className={styles.historyCard}>
+                {filteredHistoryResults.map((result) => {
+                  const readingSpeedMetrics = getReadingSpeedMetrics(result);
+
+                  return (
+                    <article key={result.id} className={styles.historyCard}>
                     <div className={styles.historyCardHead}>
                       <p className={styles.historyCardTitle}>
                         {result.exerciseTitle || formatExerciseType(result.exerciseType)}
@@ -336,25 +378,29 @@ export function ResultSummaryClient({
                     <p className={styles.historyCardTime}>
                       {new Date(result.date).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
                     </p>
-                    <div className={styles.historyMetrics}>
-                      <p>
-                        Puan: <b>{result.score}</b>
-                      </p>
-                      <p>
-                        Basari: <b>{result.successRate}%</b>
-                      </p>
-                      <p>
-                        Dogru: <b>{result.correctCount}</b>
-                      </p>
-                      <p>
-                        Yanlis: <b>{result.wrongCount}</b>
-                      </p>
-                    </div>
-                    {result.durationSeconds > 0 ? (
-                      <p className={styles.historyDuration}>Süre: {formatSeconds(result.durationSeconds)}</p>
-                    ) : null}
-                  </article>
-                ))}
+                      {readingSpeedMetrics ? (
+                        <div className={styles.historyMetrics}>
+                          <p>Okuma Hızı: <b>{readingSpeedMetrics.readingSpeedWpm !== null ? `${readingSpeedMetrics.readingSpeedWpm} kelime/dk` : "-"}</b></p>
+                          <p>Süre: <b>{readingSpeedMetrics.durationSeconds > 0 ? formatSeconds(readingSpeedMetrics.durationSeconds) : "-"}</b></p>
+                          <p>Kelime Sayısı: <b>{readingSpeedMetrics.wordCount ?? "-"}</b></p>
+                          <p>Metin Başlığı: <b>{readingSpeedMetrics.textTitle ?? "-"}</b></p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={styles.historyMetrics}>
+                            <p>Puan: <b>{result.score}</b></p>
+                            <p>Basari: <b>{result.successRate}%</b></p>
+                            <p>Dogru: <b>{result.correctCount}</b></p>
+                            <p>Yanlis: <b>{result.wrongCount}</b></p>
+                          </div>
+                          {result.durationSeconds > 0 ? (
+                            <p className={styles.historyDuration}>Süre: {formatSeconds(result.durationSeconds)}</p>
+                          ) : null}
+                        </>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             ) : null}
           </div>

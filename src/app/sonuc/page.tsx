@@ -46,7 +46,8 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "eye-brain" ||
     value === "word-guess" ||
     value === "catch-same" ||
-    value === "hangman"
+    value === "hangman" ||
+    value === "reading-speed-test"
   ) {
     return value;
   }

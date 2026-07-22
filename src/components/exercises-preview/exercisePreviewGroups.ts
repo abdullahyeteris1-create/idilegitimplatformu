@@ -48,7 +48,7 @@ const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
   "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti"],
-  assessment: ["anlama-testi"],
+  assessment: ["anlama-testi", "okuma-hizi-testi"],
   memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme", "parcali-resim-kelime"],
 };
 
@@ -77,6 +77,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "gorsel-puzzle": { description: "Parçalara ayrılmış görselleri tamamlayarak parça-bütün algını geliştir.", tags: ["Puzzle", "Görsel"] },
   "dikkat-labirenti": { description: "Yolu gözlerinle takip et, doğru çıkışı bularak dikkatini güçlendir.", tags: ["Takip", "Odak"] },
   "anlama-testi": { description: "Metni oku, hızını ölç ve sorularla anlama oranını gör.", tags: ["Anlama", "Hız"] },
+  "okuma-hizi-testi": { description: "Okuma sürenizi ve dakikadaki kelime hızınızı ölçün.", tags: ["Hız", "Okuma"] },
   "kart-hafiza": { description: "Gördüğün kartları aklında tut, tekrar edeni doğru seç.", tags: ["Hafıza", "Odak"] },
   "kart-eslestirme": { description: "Aynı görselleri bularak görsel hafızanı güçlendir.", tags: ["Eşleştirme", "Hafıza"] },
   "parcali-resim-kelime": { description: "Parçalı görseli tamamlayarak kelime ve görsel hafızanı birlikte çalıştır.", tags: ["Hafıza", "Görsel"] },

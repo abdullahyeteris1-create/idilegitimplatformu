@@ -1,0 +1,389 @@
+/*
+ * Theme re-skin for the Okuma Hızı Testi (reading speed test) exercise.
+ * Renders through FullscreenExerciseShell -> FixedExerciseStage (neither
+ * ever edited here). This is the question/evaluation-free subset of
+ * reading-comprehension-theme.module.css (Anlama Testi) — this exercise
+ * has no questions phase, so questionCard/optionLabel/evalCard/emptyChip
+ * style classes are intentionally not defined here.
+ */
+
+.themeRoot {
+  height: 100%;
+}
+
+.darkTheme {
+  --rst-bg: #07111f;
+  --rst-panel: #0d1a2d;
+  --rst-panel-2: #111f35;
+  --rst-text: #f5f7ff;
+  --rst-muted: #a9b5ca;
+  --rst-border: rgba(129, 140, 248, 0.34);
+  --rst-purple: #a78bfa;
+  --rst-green: #4ade80;
+  --rst-red: #fb7185;
+  --rst-amber: #fbbf24;
+}
+
+.darkTheme > div {
+  background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage) {
+  border-color: var(--rst-border) !important;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--rst-border) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--rst-text) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--rst-muted) !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(9, 16, 32, 0.92) !important;
+  border-color: var(--rst-border) !important;
+}
+
+.darkTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.4) !important;
+  box-shadow: 0 10px 26px rgba(192, 38, 211, 0.35) !important;
+}
+
+.darkTheme .secondaryButtonOverride {
+  background: var(--rst-panel-2) !important;
+  border-color: var(--rst-border) !important;
+  color: #e7ecf7 !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .secondaryButtonOverride:hover {
+  background: #142445 !important;
+  border-color: #4d6388 !important;
+}
+
+.darkTheme .selectOverride {
+  background: var(--rst-panel-2) !important;
+  border-color: var(--rst-border) !important;
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .settingsLabel {
+  color: var(--rst-muted) !important;
+}
+
+.darkTheme .noticeInfo {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .noticeInfo p {
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .noticeError {
+  border-color: color-mix(in srgb, var(--rst-red) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--rst-red) 14%, var(--rst-panel)) !important;
+  color: var(--rst-red) !important;
+}
+
+.darkTheme .noticeError p {
+  color: var(--rst-red) !important;
+}
+
+.darkTheme .noticeWarn {
+  border-color: color-mix(in srgb, var(--rst-amber) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--rst-amber) 14%, var(--rst-panel)) !important;
+  color: var(--rst-amber) !important;
+}
+
+.darkTheme .noticeWarn p {
+  color: var(--rst-amber) !important;
+}
+
+.darkTheme .introEyebrow {
+  color: var(--rst-purple) !important;
+}
+
+.darkTheme .introTitle {
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .infoTile {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+}
+
+.darkTheme .infoTileLabel {
+  color: var(--rst-muted) !important;
+}
+
+.darkTheme .infoTileValue {
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .readingArticle {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel) !important;
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .readingTitle {
+  color: var(--rst-purple) !important;
+}
+
+.darkTheme .pausedOverlay {
+  background: rgba(7, 17, 31, 0.65) !important;
+}
+
+.darkTheme .pausedText {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel) !important;
+  color: var(--rst-purple) !important;
+}
+
+.darkTheme .resultCardOverride {
+  background: var(--rst-panel) !important;
+  border: 1px solid var(--rst-border) !important;
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.4) !important;
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .resultMuted {
+  color: var(--rst-muted) !important;
+}
+
+.darkTheme .resultStatTile {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+}
+
+.darkTheme .resultStatLabel {
+  color: var(--rst-muted) !important;
+}
+
+.darkTheme .resultStatValue {
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .resultDetailCard {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: var(--rst-text) !important;
+}
+
+.darkTheme .resultDetailHeading {
+  color: var(--rst-purple) !important;
+}
+
+.lightTheme {
+  --rst-bg: #eef4ff;
+  --rst-panel: #ffffff;
+  --rst-panel-2: #f8fbff;
+  --rst-text: #172033;
+  --rst-muted: #526076;
+  --rst-border: #cbd7f3;
+  --rst-purple: #7c3aed;
+  --rst-green: #15803d;
+  --rst-red: #dc2626;
+  --rst-amber: #d97706;
+}
+
+.lightTheme > div {
+  background: radial-gradient(circle at 80% 0, #e3ebff 0%, transparent 32%), linear-gradient(150deg, #eef4ff, #f8fbff) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage) {
+  border-color: var(--rst-border) !important;
+  box-shadow: 0 18px 44px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--rst-border) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) h1 {
+  color: var(--rst-text) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) p {
+  color: var(--rst-muted) !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: var(--rst-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__topbar) button:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme :global(.fixed-exercise-stage__bottom) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--rst-border) !important;
+}
+
+.lightTheme .primaryButtonOverride {
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 48%, #ec4899 100%) !important;
+  border-color: rgba(192, 38, 211, 0.3) !important;
+  box-shadow: 0 10px 22px rgba(124, 58, 237, 0.22) !important;
+}
+
+.lightTheme .secondaryButtonOverride {
+  background: var(--rst-panel-2) !important;
+  border-color: var(--rst-border) !important;
+  color: var(--rst-text) !important;
+  box-shadow: none !important;
+}
+
+.lightTheme .secondaryButtonOverride:hover {
+  background: #eef2ff !important;
+  border-color: #b9c8f2 !important;
+}
+
+.lightTheme .selectOverride {
+  background: var(--rst-panel) !important;
+  border-color: var(--rst-border) !important;
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .settingsLabel {
+  color: var(--rst-muted) !important;
+}
+
+.lightTheme .noticeInfo {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .noticeInfo p {
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .noticeError {
+  border-color: color-mix(in srgb, var(--rst-red) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--rst-red) 8%, var(--rst-panel)) !important;
+  color: var(--rst-red) !important;
+}
+
+.lightTheme .noticeError p {
+  color: var(--rst-red) !important;
+}
+
+.lightTheme .noticeWarn {
+  border-color: color-mix(in srgb, var(--rst-amber) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--rst-amber) 8%, var(--rst-panel)) !important;
+  color: var(--rst-amber) !important;
+}
+
+.lightTheme .noticeWarn p {
+  color: var(--rst-amber) !important;
+}
+
+.lightTheme .introEyebrow {
+  color: var(--rst-purple) !important;
+}
+
+.lightTheme .introTitle {
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .infoTile {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+}
+
+.lightTheme .infoTileLabel {
+  color: var(--rst-muted) !important;
+}
+
+.lightTheme .infoTileValue {
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .readingArticle {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel) !important;
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .readingTitle {
+  color: var(--rst-purple) !important;
+}
+
+.lightTheme .pausedOverlay {
+  background: rgba(238, 244, 255, 0.75) !important;
+}
+
+.lightTheme .pausedText {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel) !important;
+  color: var(--rst-purple) !important;
+}
+
+.lightTheme .resultCardOverride {
+  background: var(--rst-panel) !important;
+  border: 1px solid var(--rst-border) !important;
+  box-shadow: 0 16px 40px rgba(23, 32, 51, 0.08) !important;
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .resultMuted {
+  color: var(--rst-muted) !important;
+}
+
+.lightTheme .resultStatTile {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+}
+
+.lightTheme .resultStatLabel {
+  color: var(--rst-muted) !important;
+}
+
+.lightTheme .resultStatValue {
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .resultDetailCard {
+  border-color: var(--rst-border) !important;
+  background: var(--rst-panel-2) !important;
+  color: var(--rst-text) !important;
+}
+
+.lightTheme .resultDetailHeading {
+  color: var(--rst-purple) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeRoot * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
