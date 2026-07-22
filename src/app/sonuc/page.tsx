@@ -1,7 +1,11 @@
-import { AppShell } from "@/components/layout/AppShell";
+import type { Metadata } from "next";
 import { ResultSummaryClient } from "@/components/results/ResultSummaryClient";
-import { APP_NAV_ITEMS } from "@/lib/constants/navigation";
 import type { ExerciseType } from "@/lib/results/types";
+
+export const metadata: Metadata = {
+  title: "Sonuçlarım | İDİL Hızlı Okuma",
+  description: "Tüm çalışma sonuçlarını görüntüle ve filtrele.",
+};
 
 type ResultPageProps = {
   searchParams: Promise<{
@@ -59,20 +63,13 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const exerciseType = parseExerciseType(params.exerciseType);
 
   return (
-    <AppShell
-      title="Sonuçlarım"
-      subtitle="Tüm çalışma sonuçlarını görüntüle ve filtrele."
-      navItems={APP_NAV_ITEMS}
-      headerVariant="student-vibrant"
-    >
-      <ResultSummaryClient
-        correct={correct}
-        wrong={wrong}
-        successRate={successRate}
-        score={score}
-        exerciseType={exerciseType}
-      />
-    </AppShell>
+    <ResultSummaryClient
+      correct={correct}
+      wrong={wrong}
+      successRate={successRate}
+      score={score}
+      exerciseType={exerciseType}
+    />
   );
 }
 

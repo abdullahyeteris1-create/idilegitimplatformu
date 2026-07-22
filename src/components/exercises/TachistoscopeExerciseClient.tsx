@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FULLSCREEN_PRIMARY_BUTTON_CLASS,
-  FULLSCREEN_SECONDARY_BUTTON_CLASS,
-  FULLSCREEN_SELECT_CLASS,
-  FULLSCREEN_TOUCH_STYLE,
-} from "@/components/exercises/FullscreenExerciseShell";
-import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExerciseShell";
+import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
 type ExercisePhase = "ready" | "play";
 type ResponsePhase = "show" | "answer" | "feedback";
@@ -53,6 +49,33 @@ function generateContent(level: Level, previousWord?: string): string {
   const normalizedLevel = normalizeTachistoscopeLevel(level);
   return getRandomTachistoscopeWord(normalizedLevel, previousWord).toLocaleUpperCase("tr-TR");
 }
+
+const STAT_TONE_CLASS = {
+  default: tkStyles.statNeutral,
+  ok: tkStyles.statOk,
+  bad: tkStyles.statBad,
+  brand: tkStyles.statBrand,
+  level: tkStyles.statLevel,
+} as const;
+
+function TkStat({ label, value, tone = "default" }: { label: string; value: ReactNode; tone?: keyof typeof STAT_TONE_CLASS }) {
+  return (
+    <span className={`${tkStyles.statChip} ${STAT_TONE_CLASS[tone]}`}>
+      {label}: {value}
+    </span>
+  );
+}
+
+function CategoryTag() {
+  return <span className={tkStyles.categoryTag}>◎ Algı ve Dikkat</span>;
+}
+
+const FEEDBACK_TONE_CLASS = {
+  ok: tkStyles.feedbackOk,
+  bad: tkStyles.feedbackBad,
+  brand: tkStyles.feedbackBrand,
+  neutral: tkStyles.feedbackNeutral,
+} as const;
 
 export function TachistoscopeExerciseClient() {
   const router = useRouter();
@@ -442,21 +465,22 @@ export function TachistoscopeExerciseClient() {
 
   const stageSettings = (
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 landscape:grid-cols-4 landscape:gap-1.5">
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Hız</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Seviye</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>Çalışma şekli</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
-      <label className="grid min-w-0 gap-1 text-xs font-bold"><span>İçerik türü</span><select className={`${FULLSCREEN_SELECT_CLASS} h-11`} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Hız</span><select className={tkStyles.select} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Seviye</span><select className={tkStyles.select} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Çalışma şekli</span><select className={tkStyles.select} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>İçerik türü</span><select className={tkStyles.select} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
     </div>
   );
 
   const topStats = (
     <>
-      <FixedExerciseStat label="Seviye" value={level} />
-      <FixedExerciseStat label="Skor" value={liveScore} tone="brand" />
-      <FixedExerciseStat label="Doğru" value={totalCorrect} tone="ok" />
-      <FixedExerciseStat label="Yanlış" value={totalWrong} tone="bad" />
-      <FixedExerciseStat label="Net" value={totalNet} tone={totalNet < 0 ? "bad" : "brand"} />
-      <FixedExerciseStat label="Süre" value={formatElapsed(elapsedSeconds)} />
+      <CategoryTag />
+      <TkStat label="Seviye" value={level} tone="level" />
+      <TkStat label="Skor" value={liveScore} tone="brand" />
+      <TkStat label="Doğru" value={totalCorrect} tone="ok" />
+      <TkStat label="Yanlış" value={totalWrong} tone="bad" />
+      <TkStat label="Net" value={totalNet} tone={totalNet < 0 ? "bad" : "brand"} />
+      <TkStat label="Süre" value={formatElapsed(elapsedSeconds)} />
     </>
   );
 
@@ -469,7 +493,7 @@ export function TachistoscopeExerciseClient() {
         onKeyDown={handleInputKeyDown}
         aria-label="Gordugun kelimeyi yaz"
         disabled={answerLocked}
-        className="min-h-11 min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-200"
+        className={tkStyles.answerInput}
         placeholder="Gordugun kelimeyi yaz"
         inputMode="text"
         autoComplete="off"
@@ -478,133 +502,137 @@ export function TachistoscopeExerciseClient() {
       />
       <button
         type="button"
-        className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} sm:w-auto sm:min-w-32`}
+        className={`${tkStyles.primaryButton} sm:w-auto sm:min-w-32`}
         style={FULLSCREEN_TOUCH_STYLE}
         onClick={handleSubmitAnswer}
         disabled={answerLocked || !currentInput.trim()}
       >
         Kontrol Et
       </button>
-      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
     </div>
   ) : responsePhase === "feedback" ? (
     <div className="mx-auto grid w-full max-w-xl grid-cols-2 gap-2">
-      <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={handleNext}>
+      <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={handleNext}>
         Sonraki
       </button>
-      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
     </div>
   ) : (
     <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
-      <p className="min-w-0 text-xs font-semibold text-slate-500">İçerik gösteriliyor...</p>
-      <button type="button" disabled={saveStatus !== "idle"} className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      <p className={`min-w-0 text-xs font-semibold ${tkStyles.helperText}`}>İçerik gösteriliyor...</p>
+      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
       </button>
     </div>
   );
 
   const saveNotice = saveStatus === "idle" ? null : (
-    <div className={`mx-auto grid w-full max-w-xl gap-2 rounded-xl border px-3 py-2 text-center text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+    <div className={`mx-auto grid w-full max-w-xl gap-2 rounded-xl border px-3 py-2 text-center text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? tkStyles.noticeError : tkStyles.noticeInfo}`}>
       <p>{saveMessage}</p>
-      {saveStatus === "error" ? <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px]`} style={FULLSCREEN_TOUCH_STYLE} onClick={retrySave}>Yeniden Dene</button> : null}
-      {saveStatus === "success" && savedResultUrl ? <button type="button" className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE} onClick={() => router.push(savedResultUrl)}>Sonuç Ekranına Devam</button> : null}
+      {saveStatus === "error" ? <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={retrySave}>Yeniden Dene</button> : null}
+      {saveStatus === "success" && savedResultUrl ? <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={() => router.push(savedResultUrl)}>Sonuç Ekranına Devam</button> : null}
     </div>
   );
 
   if (phase === "ready") {
     return (
-      <FixedExerciseStage
-        title="Takistoskop"
-        subtitle="Hazirlik modu"
-        topStats={topStats}
-        bottomSettings={stageSettings}
-        controls={
-          <div className="mx-auto w-full max-w-sm">
-            <button type="button" onClick={handleBeginPlay} className={FULLSCREEN_PRIMARY_BUTTON_CLASS} style={FULLSCREEN_TOUCH_STYLE}>
-              Çalışmayı Başlat
-            </button>
+      <div className={tkStyles.themeRoot}>
+        <FixedExerciseStage
+          title="Takistoskop"
+          subtitle="Hazirlik modu"
+          topStats={topStats}
+          bottomSettings={stageSettings}
+          controls={
+            <div className="mx-auto w-full max-w-sm">
+              <button type="button" onClick={handleBeginPlay} className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE}>
+                Egzersizi Başlat
+              </button>
+            </div>
+          }
+          onExit={() => router.push("/egzersizler")}
+        >
+          <div data-testid="tachistoscope-game-frame" className={`flex aspect-video max-h-full w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl p-3 ${tkStyles.gameFrame}`}>
+            <div className={`fx-slide-up flex w-full max-w-xl flex-col items-center justify-center rounded-2xl border px-4 py-5 text-center md:px-6 md:py-7 ${tkStyles.introCard}`}>
+              <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${tkStyles.introEyebrow}`}>Hazırlık</p>
+              <h2 className={`mt-2 text-xl font-black tracking-tight md:text-3xl ${tkStyles.introTitle}`}>Ayarlarını seç, hazır olduğunda başlat.</h2>
+              <p className={`mx-auto mt-2 max-w-lg text-sm leading-5 ${tkStyles.introBody}`}>
+                Hız, seviye, çalışma şekli ve içerik türünü alt şeritten seç. Kısa süreliğine gösterilen kelimeyi/rakamı doğru yazarak seviyeni yükseltebilirsin.
+              </p>
+            </div>
           </div>
-        }
-        onExit={() => router.push("/egzersizler")}
-      >
-        <div data-testid="tachistoscope-game-frame" className="flex aspect-video max-h-full w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
-          <div className="fx-slide-up flex w-full max-w-xl flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50/60 px-4 py-5 text-center shadow-sm md:px-6 md:py-7">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Hazirlik</p>
-            <h2 className="mt-2 text-xl font-black tracking-tight text-slate-950 md:text-3xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
-            <p className="mx-auto mt-2 max-w-lg text-sm leading-5 text-slate-500">
-              Hiz, seviye, calisma sekli ve icerik turunu alt seritten sec.
-            </p>
-          </div>
-        </div>
-      </FixedExerciseStage>
+        </FixedExerciseStage>
+      </div>
     );
   }
 
   return (
-    <FixedExerciseStage
-      title="Takistoskop"
-      subtitle="Odakli calisma modu"
-      topStats={topStats}
-      bottomSettings={stageSettings}
-      controls={<div className="grid gap-2">{saveNotice}{playFooter}</div>}
-      onExit={() => router.push("/egzersizler")}
-    >
-      <div data-testid="tachistoscope-game-frame" className="flex aspect-video max-h-full w-full max-w-5xl min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white p-2 shadow-sm md:p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Gosterim Alani</p>
+    <div className={tkStyles.themeRoot}>
+      <FixedExerciseStage
+        title="Takistoskop"
+        subtitle="Odakli calisma modu"
+        topStats={topStats}
+        bottomSettings={stageSettings}
+        controls={<div className="grid gap-2">{saveNotice}{playFooter}</div>}
+        onExit={() => router.push("/egzersizler")}
+      >
+        <div data-testid="tachistoscope-game-frame" className={`flex aspect-video max-h-full w-full max-w-5xl min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl p-2 md:p-4 ${tkStyles.gameFrame}`}>
+              <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${tkStyles.wordLabel}`}>Gösterim Alanı</p>
 
-            <div className="mt-1 flex h-full min-h-[120px] w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-red-50 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-3 py-3 md:mt-2 md:px-5">
-              {responsePhase === "show" && currentRound ? (
-                <div
-                  data-testid="tachistoscope-word"
-                  className={`${WORD_FONT_CLASS} max-w-full break-words px-4 text-center font-black leading-tight tracking-normal text-slate-950`}
-                  style={{
-                    animation: "none",
-                    transform: "none",
-                    transition: "none",
-                    overflowWrap: "anywhere",
-                    textShadow: "0 8px 20px rgba(185, 28, 28, 0.12)",
-                  }}
-                >
-                  {currentRound.content}
-                </div>
-              ) : (
-                <div className="text-lg font-semibold text-slate-300">Sonraki kelime icin Sonraki butonuna bas.</div>
-              )}
-            </div>
-
-            {responsePhase !== "show" ? (
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500 md:text-sm">
-                {responsePhase === "answer"
-                  ? "Gordugun kelimeyi yaz. Buyuk kucuk harf fark etmez, bosluklar temizlenir."
-                  : "Kontrol edildi. Manuel modda Sonraki ile bir sonraki icerige gecebilirsin."}
-              </p>
-            ) : null}
-
-            {responsePhase === "feedback" ? (
-              <div className="mt-2 max-h-[45%] w-full max-w-2xl overflow-y-auto overscroll-contain">
-                {currentFeedback ? (
+              <div className={`mt-1 flex h-full min-h-[120px] w-full flex-1 items-center justify-center overflow-hidden rounded-[18px] border px-3 py-3 md:mt-2 md:px-5 ${tkStyles.wordStage}`}>
+                {responsePhase === "show" && currentRound ? (
                   <div
-                    className={`mx-auto max-w-2xl rounded-3xl border px-4 py-3 text-left text-sm font-semibold leading-6 shadow-lg whitespace-pre-line break-words md:px-5 ${
-                      currentFeedbackTone === "ok"
-                        ? "fx-glow-green border-green-200 bg-green-50/95 text-green-700 shadow-green-100/70"
-                        : currentFeedbackTone === "bad"
-                          ? "fx-shake border-red-200 bg-red-50/95 text-red-700 shadow-red-100/80"
-                          : currentFeedbackTone === "brand"
-                            ? "fx-pulse-soft border-red-200 bg-white/95 text-[var(--brand)] shadow-red-100/70"
-                            : "border-slate-200 bg-white/95 text-slate-700 shadow-slate-100/70"
-                    }`}
+                    data-testid="tachistoscope-word"
+                    className={`${WORD_FONT_CLASS} ${tkStyles.wordText} max-w-full break-words px-4 text-center font-black leading-tight tracking-normal`}
+                    style={{
+                      animation: "none",
+                      transform: "none",
+                      transition: "none",
+                      overflowWrap: "anywhere",
+                      textShadow: "0 0 24px rgba(201, 79, 255, 0.35)",
+                    }}
                   >
-                    {currentFeedback}
+                    {currentRound.content}
                   </div>
-                ) : null}
-
+                ) : (
+                  <div className={`text-lg font-semibold ${tkStyles.wordPlaceholder}`}>Sonraki kelime icin Sonraki butonuna bas.</div>
+                )}
               </div>
-            ) : null}
-      </div>
-    </FixedExerciseStage>
+
+              {responsePhase !== "show" ? (
+                <p className={`mt-2 max-w-2xl text-xs leading-5 md:text-sm ${tkStyles.helperText}`}>
+                  {responsePhase === "answer"
+                    ? "Gordugun kelimeyi yaz. Buyuk kucuk harf fark etmez, bosluklar temizlenir."
+                    : "Kontrol edildi. Manuel modda Sonraki ile bir sonraki icerige gecebilirsin."}
+                </p>
+              ) : null}
+
+              {responsePhase === "feedback" ? (
+                <div className="mt-2 max-h-[45%] w-full max-w-2xl overflow-y-auto overscroll-contain">
+                  {currentFeedback ? (
+                    <div
+                      className={`mx-auto max-w-2xl rounded-3xl border px-4 py-3 text-left text-sm font-semibold leading-6 whitespace-pre-line break-words md:px-5 ${
+                        currentFeedbackTone === "ok"
+                          ? `fx-glow-green ${FEEDBACK_TONE_CLASS.ok}`
+                          : currentFeedbackTone === "bad"
+                            ? `fx-shake ${FEEDBACK_TONE_CLASS.bad}`
+                            : currentFeedbackTone === "brand"
+                              ? `fx-pulse-soft ${FEEDBACK_TONE_CLASS.brand}`
+                              : FEEDBACK_TONE_CLASS.neutral
+                      }`}
+                    >
+                      {currentFeedback}
+                    </div>
+                  ) : null}
+
+                </div>
+              ) : null}
+        </div>
+      </FixedExerciseStage>
+    </div>
   );
 }

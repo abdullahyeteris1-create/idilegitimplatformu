@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { PanelCard } from "@/components/ui/PanelCard";
+import { useEffect, useMemo, useState } from "react";
 import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
 import {
   getExerciseResultsForCurrentUser,
@@ -11,6 +10,7 @@ import {
 } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import type { Student } from "@/lib/students/types";
+import styles from "./result-summary-theme.module.css";
 
 type ResultSummaryClientProps = {
   correct?: number;
@@ -103,9 +103,6 @@ export function ResultSummaryClient({
   const [studentResults, setStudentResults] = useState<ExerciseResult[]>([]);
   const [historyFilter, setHistoryFilter] = useState<string>("all");
 
-  // exerciseType URL'den geldiyse (egzersiz tamamlandıktan sonra) üst özet onu göstersin
-  const urlExerciseType: ExerciseType | undefined = exerciseType;
-
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void (async () => {
@@ -191,10 +188,10 @@ export function ResultSummaryClient({
 
   const stats = summaryData
     ? [
-        { label: "Dogru", value: summaryData.correct, color: "text-[var(--ok)]" },
-        { label: "Yanlis", value: summaryData.wrong, color: "text-[var(--bad)]" },
-        { label: "Basari", value: `${summaryData.successRate}%`, color: "text-slate-900" },
-        { label: "Puan", value: summaryData.score, color: "text-[var(--brand)]" },
+        { label: "Dogru", value: summaryData.correct, tone: styles.statOk },
+        { label: "Yanlis", value: summaryData.wrong, tone: styles.statBad },
+        { label: "Basari", value: `${summaryData.successRate}%`, tone: styles.statNeutral },
+        { label: "Puan", value: summaryData.score, tone: styles.statBrand },
       ]
     : [];
 
@@ -208,164 +205,158 @@ export function ResultSummaryClient({
   // --- YÜKLENİYOR ---
   if (!isMounted) {
     return (
-      <PanelCard
-        title="Sonuçlarım"
-        subtitle="Çalışma sonuçlarını görüntüle."
-        className="mx-auto w-full max-w-3xl"
-      >
-        <p className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
-          Sonuç verileri yükleniyor...
-        </p>
-      </PanelCard>
+      <div className={styles.page}>
+        <div className={styles.shell}>
+          <div className={styles.card}>
+            <div className={styles.cardAccent} aria-hidden="true" />
+            <h2 className={styles.cardTitle}>Sonuçlarım</h2>
+            <p className={styles.cardSubtitle}>Çalışma sonuçlarını görüntüle.</p>
+            <p className={styles.loadingNotice}>Sonuç verileri yükleniyor...</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <PanelCard
-      title="Sonuçlarım"
-      subtitle="Tüm çalışma sonuçlarını görüntüle ve filtrele."
-      className="mx-auto w-full max-w-3xl"
-    >
-      {/* ----- ÜST ÖZET KARTI ----- */}
-      {showSummaryCard ? (
-        <>
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 md:p-5">
-            <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-emerald-800">
-              {summaryData!.title} Sonucu
-            </h2>
-            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {stats.map((stat) => (
-                <article key={stat.label} className="rounded-2xl border border-emerald-100 bg-white p-4 text-center">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{stat.label}</p>
-                  <p className={`mt-2 text-2xl font-extrabold md:text-3xl ${stat.color}`}>{stat.value}</p>
-                </article>
-              ))}
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Link
-                href={summaryRestartHref}
-                className="flex min-h-[48px] items-center justify-center rounded-2xl bg-emerald-600 px-4 text-base font-bold text-white shadow-sm transition hover:bg-emerald-700"
-              >
-                Yeniden Baslat
-              </Link>
-              <Link
-                href={student ? "/ogrenci" : "/"}
-                className="flex min-h-[48px] items-center justify-center rounded-2xl border border-emerald-200 bg-white px-4 text-base font-bold text-emerald-800 transition hover:bg-emerald-50"
-              >
-                Ogrenci Paneline Don
-              </Link>
-            </div>
-          </div>
-
-          {/* eye-brain özel detayları */}
-          {eyeBrainDetails ? (
-            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
-              <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-red-700">Calisma Ozeti</h3>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <article className="rounded-xl border border-white bg-white p-3">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Gecen Sure</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">{formatSeconds(summaryData!.score)}</p>
-                </article>
-                <article className="rounded-xl border border-white bg-white p-3">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Hiz</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">
-                    {typeof eyeBrainDetails.speedMs === "number" ? `${eyeBrainDetails.speedMs} ms` : "-"}
-                  </p>
-                </article>
-                <article className="rounded-xl border border-white bg-white p-3">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Simge Sayisi</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">
-                    {typeof eyeBrainDetails.symbolCount === "number" ? eyeBrainDetails.symbolCount : "-"}
-                  </p>
-                </article>
-                <article className="rounded-xl border border-white bg-white p-3">
-                  <p className="text-[11px] uppercase tracking-[0.1em] text-slate-500">Kural</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950">Sure odakli takip calismasi</p>
-                </article>
-              </div>
-            </div>
-          ) : null}
-        </>
-      ) : null}
-
-      {/* ----- GEÇMİŞ SONUÇLARIM ----- */}
-      <div className={showSummaryCard ? "mt-7" : "mt-0"}>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-lg font-bold">Gecmis Sonuclarim</h3>
-          {filterOptions.length > 1 ? (
-            <select
-              value={historyFilter}
-              onChange={(e) => setHistoryFilter(e.target.value)}
-              className="min-h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 sm:w-auto"
-            >
-              {filterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          ) : null}
+    <div className={styles.page}>
+      <div className={styles.shell}>
+        <div className={styles.topBar}>
+          <Link href="/egzersizler" className={styles.backLink}>
+            ← Egzersizlere Dön
+          </Link>
         </div>
 
-        {!student ? (
-          <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
-            Ogrenci secili degil. Sonuclarini gormek icin once giris ekranindan ogrenci secmelisin.
-          </p>
-        ) : filteredHistoryResults.length === 0 && historyFilter === "all" ? (
-          <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
-            Henüz tamamlanmış bir çalışmanız bulunmuyor.
-          </p>
-        ) : filteredHistoryResults.length === 0 && historyFilter !== "all" ? (
-          <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-[var(--muted)]">
-            <p>Bu egzersize ait sonuç bulunamadı.</p>
-            <button
-              type="button"
-              onClick={() => setHistoryFilter("all")}
-              className="mt-2 rounded-xl border border-red-200 bg-white px-4 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-50"
-            >
-              Tüm Çalışmalar&apos;a dön
-            </button>
-          </div>
-        ) : student ? (
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {filteredHistoryResults.map((result) => (
-              <article key={result.id} className="rounded-2xl border border-red-100 bg-white p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-red-700">
-                    {result.exerciseTitle || formatExerciseType(result.exerciseType)}
-                  </p>
-                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                    {new Date(result.date).toLocaleDateString("tr-TR")}
-                  </span>
+        <div className={styles.card}>
+          <div className={styles.cardAccent} aria-hidden="true" />
+          <h2 className={styles.cardTitle}>Sonuçlarım</h2>
+          <p className={styles.cardSubtitle}>Tüm çalışma sonuçlarını görüntüle ve filtrele.</p>
+
+          {/* ----- ÜST ÖZET KARTI ----- */}
+          {showSummaryCard ? (
+            <>
+              <div className={styles.summaryCard}>
+                <p className={styles.summaryEyebrow}>{summaryData!.title} Sonucu</p>
+                <div className={styles.statGrid}>
+                  {stats.map((stat) => (
+                    <article key={stat.label} className={`${styles.statTile} ${stat.tone}`}>
+                      <p>{stat.label}</p>
+                      <p>{stat.value}</p>
+                    </article>
+                  ))}
                 </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  {new Date(result.date).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
-                  <p>
-                    Puan: <span className="text-[var(--brand)]">{result.score}</span>
-                  </p>
-                  <p>
-                    Basari: <span className="text-slate-900">{result.successRate}%</span>
-                  </p>
-                  <p>
-                    Dogru: <span className="text-[var(--ok)]">{result.correctCount}</span>
-                  </p>
-                  <p>
-                    Yanlis: <span className="text-[var(--bad)]">{result.wrongCount}</span>
-                  </p>
+                <div className={styles.actionRow}>
+                  <Link href={summaryRestartHref} className={styles.actionPrimary}>
+                    Tekrar Çalış
+                  </Link>
+                  <Link href="/egzersizler" className={styles.actionSecondary}>
+                    Egzersizlere Dön
+                  </Link>
+                  <Link href={student ? "/ogrenci" : "/"} className={styles.actionSecondary}>
+                    Öğrenci Paneline Dön
+                  </Link>
                 </div>
-                {result.durationSeconds > 0 ? (
-                  <p className="mt-2 text-[11px] text-slate-400">
-                    Süre: {formatSeconds(result.durationSeconds)}
-                  </p>
-                ) : null}
-              </article>
-            ))}
+              </div>
+
+              {/* eye-brain özel detayları */}
+              {eyeBrainDetails ? (
+                <div className={styles.detailCard}>
+                  <p className={styles.detailTitle}>Çalışma Özeti</p>
+                  <div className={styles.detailGrid}>
+                    <article className={styles.detailTile}>
+                      <p>Gecen Sure</p>
+                      <p>{formatSeconds(summaryData!.score)}</p>
+                    </article>
+                    <article className={styles.detailTile}>
+                      <p>Hiz</p>
+                      <p>{typeof eyeBrainDetails.speedMs === "number" ? `${eyeBrainDetails.speedMs} ms` : "-"}</p>
+                    </article>
+                    <article className={styles.detailTile}>
+                      <p>Simge Sayisi</p>
+                      <p>{typeof eyeBrainDetails.symbolCount === "number" ? eyeBrainDetails.symbolCount : "-"}</p>
+                    </article>
+                    <article className={styles.detailTile}>
+                      <p>Kural</p>
+                      <p>Sure odakli takip calismasi</p>
+                    </article>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {/* ----- GEÇMİŞ SONUÇLARIM ----- */}
+          <div className={styles.historySection}>
+            <div className={styles.historyHeader}>
+              <h3>Geçmiş Sonuçlarım</h3>
+              {filterOptions.length > 1 ? (
+                <select
+                  value={historyFilter}
+                  onChange={(e) => setHistoryFilter(e.target.value)}
+                  className={styles.historySelect}
+                >
+                  {filterOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+            </div>
+
+            {!student ? (
+              <p className={styles.emptyState}>
+                Öğrenci seçili değil. Sonuçlarını görmek için önce giriş ekranından öğrenci seçmelisin.
+              </p>
+            ) : filteredHistoryResults.length === 0 && historyFilter === "all" ? (
+              <p className={styles.emptyState}>Henüz tamamlanmış bir çalışmanız bulunmuyor.</p>
+            ) : filteredHistoryResults.length === 0 && historyFilter !== "all" ? (
+              <div className={styles.emptyState}>
+                <p>Bu egzersize ait sonuç bulunamadı.</p>
+                <button type="button" onClick={() => setHistoryFilter("all")} className={styles.retryButton}>
+                  Tüm Çalışmalar&apos;a dön
+                </button>
+              </div>
+            ) : student ? (
+              <div className={styles.historyGrid}>
+                {filteredHistoryResults.map((result) => (
+                  <article key={result.id} className={styles.historyCard}>
+                    <div className={styles.historyCardHead}>
+                      <p className={styles.historyCardTitle}>
+                        {result.exerciseTitle || formatExerciseType(result.exerciseType)}
+                      </p>
+                      <span className={styles.historyCardDate}>
+                        {new Date(result.date).toLocaleDateString("tr-TR")}
+                      </span>
+                    </div>
+                    <p className={styles.historyCardTime}>
+                      {new Date(result.date).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    <div className={styles.historyMetrics}>
+                      <p>
+                        Puan: <b>{result.score}</b>
+                      </p>
+                      <p>
+                        Basari: <b>{result.successRate}%</b>
+                      </p>
+                      <p>
+                        Dogru: <b>{result.correctCount}</b>
+                      </p>
+                      <p>
+                        Yanlis: <b>{result.wrongCount}</b>
+                      </p>
+                    </div>
+                    {result.durationSeconds > 0 ? (
+                      <p className={styles.historyDuration}>Süre: {formatSeconds(result.durationSeconds)}</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </div>
-    </PanelCard>
+    </div>
   );
 }
 
