@@ -6,6 +6,7 @@ import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExercis
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
 type ExercisePhase = "ready" | "play";
@@ -79,6 +80,9 @@ const FEEDBACK_TONE_CLASS = {
 
 export function TachistoscopeExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = `${tkStyles.themeRoot} ${isLight ? tkStyles.lightTheme : ""}`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const revealTimerRef = useRef<number | null>(null);
   const autoAdvanceTimerRef = useRef<number | null>(null);
@@ -541,7 +545,7 @@ export function TachistoscopeExerciseClient() {
 
   if (phase === "ready") {
     return (
-      <div className={tkStyles.themeRoot}>
+      <div className={themeRootClassName}>
         <FixedExerciseStage
           title="Takistoskop"
           subtitle="Hazirlik modu"
@@ -571,7 +575,7 @@ export function TachistoscopeExerciseClient() {
   }
 
   return (
-    <div className={tkStyles.themeRoot}>
+    <div className={themeRootClassName}>
       <FixedExerciseStage
         title="Takistoskop"
         subtitle="Odakli calisma modu"
@@ -593,7 +597,9 @@ export function TachistoscopeExerciseClient() {
                       transform: "none",
                       transition: "none",
                       overflowWrap: "anywhere",
-                      textShadow: "0 0 24px rgba(201, 79, 255, 0.35)",
+                      textShadow: isLight
+                        ? "0 2px 10px rgba(124, 58, 237, 0.18)"
+                        : "0 0 24px rgba(201, 79, 255, 0.35)",
                     }}
                   >
                     {currentRound.content}
