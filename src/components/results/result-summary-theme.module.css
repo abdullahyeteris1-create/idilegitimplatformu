@@ -388,3 +388,166 @@
     transition-duration: 0.01ms;
   }
 }
+
+/*
+ * Light-theme re-skin for the /sonuc result summary screen.
+ * Scoped under .lightTheme (applied alongside .page when the shared
+ * IdilThemeProvider theme is "light") so the dark/neon rules above are
+ * never edited or removed. This file has no shared custom properties, so
+ * each hardcoded dark literal gets an explicit light counterpart below.
+ */
+.lightTheme {
+  background: radial-gradient(circle at 80% 0, rgba(124, 58, 237, 0.05) 0, transparent 28%), linear-gradient(145deg, #eef4ff, #f4f2ff);
+  color: #172033;
+}
+
+.lightTheme .backLink {
+  border-color: #cbd7f3;
+  background: #ffffff;
+  color: #172033;
+}
+
+.lightTheme .backLink:hover {
+  background: #eef2fb;
+  border-color: #b9c6e6;
+}
+
+.lightTheme .card {
+  border-color: #cbd7f3;
+  background: linear-gradient(160deg, #ffffff, #f8fbff);
+  box-shadow: 0 18px 40px rgba(23, 32, 51, 0.1);
+}
+
+.lightTheme .cardTitle {
+  color: #172033;
+}
+
+.lightTheme .cardSubtitle {
+  color: #526076;
+}
+
+.lightTheme .loadingNotice,
+.lightTheme .emptyState {
+  border-color: #cbd7f3;
+  color: #526076;
+}
+
+.lightTheme .summaryCard {
+  border: 1px solid color-mix(in srgb, #7c3aed 45%, #cbd7f3);
+  background: linear-gradient(160deg, color-mix(in srgb, #7c3aed 14%, #ffffff), #f8fbff);
+  box-shadow: 0 10px 28px rgba(23, 32, 51, 0.08);
+}
+
+.lightTheme .summaryEyebrow {
+  color: #db2777;
+}
+
+.lightTheme .statTile p:first-child {
+  color: #526076;
+}
+
+.lightTheme .statOk {
+  --tone: #15803d;
+}
+
+.lightTheme .statBad {
+  --tone: #db2777;
+}
+
+.lightTheme .statBrand {
+  --tone: #7c3aed;
+}
+
+.lightTheme .statNeutral {
+  --tone: #2563eb;
+}
+
+.lightTheme .actionSecondary {
+  border-color: #cbd7f3;
+  background: #ffffff;
+  color: #172033;
+}
+
+.lightTheme .actionSecondary:hover {
+  background: #eef2fb;
+  border-color: #b9c6e6;
+}
+
+.lightTheme .detailCard {
+  border: 1px solid color-mix(in srgb, #2563eb 45%, #cbd7f3);
+  background: linear-gradient(160deg, color-mix(in srgb, #2563eb 12%, #ffffff), #f8fbff);
+}
+
+.lightTheme .detailTitle {
+  color: #1d4ed8;
+}
+
+.lightTheme .detailTile {
+  border-color: #cbd7f3;
+  background: #f8fbff;
+}
+
+.lightTheme .detailTile p:first-child {
+  color: #526076;
+}
+
+.lightTheme .detailTile p:last-child {
+  color: #172033;
+}
+
+.lightTheme .historyHeader h3 {
+  color: #172033;
+}
+
+.lightTheme .historySelect {
+  border-color: #cbd7f3;
+  background: #ffffff;
+  color: #172033;
+}
+
+.lightTheme .historySelect:focus-visible {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #7c3aed 35%, transparent);
+}
+
+.lightTheme .historySelect option {
+  background: #ffffff;
+  color: #172033;
+}
+
+.lightTheme .retryButton {
+  border-color: #cbd7f3;
+  background: #ffffff;
+  color: #172033;
+}
+
+.lightTheme .retryButton:hover {
+  background: #eef2fb;
+  border-color: #b9c6e6;
+}
+
+.lightTheme .historyCard {
+  border-color: #cbd7f3;
+  background: linear-gradient(150deg, #ffffff, #f8fbff);
+}
+
+.lightTheme .historyCardTitle {
+  color: #db2777;
+}
+
+.lightTheme .historyCardDate {
+  background: #eef2fb;
+  color: #526076;
+}
+
+.lightTheme .historyCardTime {
+  color: #526076;
+}
+
+.lightTheme .historyMetrics {
+  color: #172033;
+}
+
+.lightTheme .historyDuration {
+  color: #526076;
+}

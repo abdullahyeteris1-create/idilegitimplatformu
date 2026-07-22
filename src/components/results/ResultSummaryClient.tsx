@@ -10,6 +10,7 @@ import {
 } from "@/lib/results/resultStorage";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import type { Student } from "@/lib/students/types";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "./result-summary-theme.module.css";
 
 type ResultSummaryClientProps = {
@@ -98,6 +99,9 @@ export function ResultSummaryClient({
   score,
   exerciseType,
 }: ResultSummaryClientProps) {
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const pageClassName = `${styles.page} ${isLight ? styles.lightTheme : ""}`;
   const [isMounted, setIsMounted] = useState(false);
   const [student, setStudent] = useState<Student | null>(null);
   const [studentResults, setStudentResults] = useState<ExerciseResult[]>([]);
@@ -205,7 +209,7 @@ export function ResultSummaryClient({
   // --- YÜKLENİYOR ---
   if (!isMounted) {
     return (
-      <div className={styles.page}>
+      <div className={pageClassName}>
         <div className={styles.shell}>
           <div className={styles.card}>
             <div className={styles.cardAccent} aria-hidden="true" />
@@ -219,7 +223,7 @@ export function ResultSummaryClient({
   }
 
   return (
-    <div className={styles.page}>
+    <div className={pageClassName}>
       <div className={styles.shell}>
         <div className={styles.topBar}>
           <Link href="/egzersizler" className={styles.backLink}>
