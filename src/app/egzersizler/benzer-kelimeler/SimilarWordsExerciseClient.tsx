@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
@@ -185,6 +186,10 @@ function formatDuration(seconds: number): string {
 
 export function SimilarWordsExerciseClient() {
   const router = useRouter();
+  const { theme } = useIdilTheme();
+  const isLight = theme === "light";
+  const themeRootClassName = `${swStyles.themeRoot} ${isLight ? swStyles.lightTheme : ""}`;
+  const resultRootClassName = `${swStyles.resultRoot} ${isLight ? swStyles.lightTheme : ""}`;
   const hasSavedResultRef = useRef(false);
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
@@ -429,7 +434,7 @@ export function SimilarWordsExerciseClient() {
 
   if (phase === "setup") {
     return (
-      <div className={swStyles.themeRoot}>
+      <div className={themeRootClassName}>
         <FixedExerciseStage
           title="Benzer Kelimeler"
           subtitle="Giriş"
@@ -459,7 +464,7 @@ export function SimilarWordsExerciseClient() {
 
   if (phase === "ready") {
     return (
-      <div className={swStyles.themeRoot}>
+      <div className={themeRootClassName}>
         <FixedExerciseStage
           title="Benzer Kelimeler"
           subtitle="Hazirlik modu"
@@ -550,7 +555,7 @@ export function SimilarWordsExerciseClient() {
 
   if (phase === "result") {
     return (
-      <div className={swStyles.resultRoot}>
+      <div className={resultRootClassName}>
         <section className={swStyles.resultCard}>
           <div className={swStyles.resultAccent} aria-hidden="true" />
           <h2 className={swStyles.resultTitle}>Benzer Kelimeler Sonucu</h2>
@@ -639,7 +644,7 @@ export function SimilarWordsExerciseClient() {
   }
 
   return (
-    <div className={swStyles.themeRoot}>
+    <div className={themeRootClassName}>
       <FixedExerciseStage
         title="Benzer Kelimeler"
         subtitle="Tam ekran calisma modu"

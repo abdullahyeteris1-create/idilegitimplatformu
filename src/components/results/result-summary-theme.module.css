@@ -442,6 +442,10 @@
   color: #db2777;
 }
 
+.lightTheme .statTile {
+  background: color-mix(in srgb, var(--tone, #cbd7f3) 14%, #ffffff);
+}
+
 .lightTheme .statTile p:first-child {
   color: #526076;
 }
