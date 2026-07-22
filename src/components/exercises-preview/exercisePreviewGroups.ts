@@ -49,10 +49,11 @@ const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
   "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti"],
   assessment: ["anlama-testi"],
-  memory: ["kart-hafiza", "kart-eslestirme", "parcali-resim-kelime"],
+  memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme", "parcali-resim-kelime"],
 };
 
 const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }> = {
+  "hafiza-gelistirme": { description: "Kısa süre görünen kutuları aklında tut ve doğru kutuları seç.", tags: ["Hafıza", "Takip"] },
   "goz-beyin": { description: "Simgeleri gözlerinle takip ederek göz-beyin koordinasyonunu geliştir.", tags: ["Takip", "Koordinasyon"] },
   "goz-kaslari": { description: "Noktasal takip çalışmalarıyla göz kaslarını ve odak sürekliliğini destekle.", tags: ["Göz", "Odak"] },
   "goz-calismasi": { description: "Kısa tekrarlarla göz kaslarını ısındıran temel takip çalışması.", tags: ["Göz", "Isınma"] },

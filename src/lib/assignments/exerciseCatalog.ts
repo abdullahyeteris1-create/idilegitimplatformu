@@ -170,6 +170,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["durationMinutes", "targetCorrect", "textId"],
   },
   {
+    slug: "hafiza-gelistirme",
+    title: "Hafıza Geliştirme",
+    route: "/egzersizler/hafiza-gelistirme",
+    resultExerciseType: "memory-game",
+    category: "memory",
+    assignmentEnabled: true,
+    supportedSettings: ["level", "gridLayout", "displayMs", "fontSize"],
+  },
+  {
     slug: "kart-hafiza",
     title: "Kart Hafiza",
     route: "/egzersizler/kart-hafiza",
