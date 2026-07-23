@@ -155,7 +155,7 @@ test("ready comprehension yokken NO_READY_COMPREHENSION_WARNING preview'de gorun
 });
 
 // TEST 10: gercek program tablosuna yazan hicbir client kodu yok.
-test("AssignmentProgramSettingsClient hicbir Supabase/DB cagrisi icermiyor - yalniz iki admin API'sine fetch atiyor", async () => {
+test("AssignmentProgramSettingsClient hicbir Supabase/DB cagrisi icermiyor - yalniz admin API'lerine fetch atiyor", async () => {
   const source = await readFile(
     new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
     "utf8",
@@ -165,9 +165,68 @@ test("AssignmentProgramSettingsClient hicbir Supabase/DB cagrisi icermiyor - yal
   assert.doesNotMatch(source, /student_assignment_program/i);
   assert.doesNotMatch(source, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
 
-  // Yalniz beklenen iki admin API'sine fetch atildigini dogrula.
+  // Beklenen 4 admin API'sine fetch atildigini dogrula (templates/preview
+  // mevcuttu; students/programs bu turda ogrenci secimi + atama icin eklendi).
   assert.match(source, /\/api\/admin\/assignment-program\/templates/);
   assert.match(source, /\/api\/admin\/assignment-program\/preview/);
+  assert.match(source, /\/api\/admin\/assignment-program\/students/);
+  assert.match(source, /\/api\/admin\/assignment-program\/programs/);
+});
+
+// TEST 11: ogrenci secimi olmadan "Programi Ata" butonu tetiklenemez.
+test("AssignmentProgramSettingsClient: assignDisabledReason secili ogrenci yoksa/onizleme yoksa/kaydedilmemis degisiklik varsa butonu kilitliyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /assignDisabledReason/);
+  assert.match(source, /!selectedStudentId/);
+  assert.match(source, /disabled={!!assignDisabledReason \|\| isAssigning}/);
+});
+
+// TEST 12: cift-tiklama/cift-submit korumasi.
+test("AssignmentProgramSettingsClient: handleAssignProgram isAssigning kilidiyle cift-submit'i engelliyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /const handleAssignProgram = async \(\) => \{\s*\n\s*if \(isAssigning/);
+});
+
+// TEST 13: basari sonrasi secim temizleniyor (ayni programin tekrar gonderilmesine karsi).
+test("AssignmentProgramSettingsClient: basarili atama sonrasi selectedStudentId temizleniyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /setSelectedStudentId\(""\);\s*\n\s*setAssignMessage\(\{ tone: "success"/);
+});
+
+// TEST 14: sinif grubu degisince ogrenci secimi/atama mesaji sifirlaniyor (event handler'da, effect'te degil).
+test("AssignmentProgramSettingsClient: handleClassGroupChange ogrenci secimini ve atama mesajini sifirliyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  const handlerMatch = source.match(/const handleClassGroupChange = \(nextGroup: AssignmentClassGroup\) => \{[\s\S]*?\n  \};/);
+  assert.ok(handlerMatch, "handleClassGroupChange bulunamali");
+  assert.match(handlerMatch[0], /setSelectedStudentId\(""\)/);
+  assert.match(handlerMatch[0], /setAssignMessage\(null\)/);
+});
+
+// TEST 15: ogrenci listesi yalniz mapEducationLevelToClassGroup ile mevcut sinif grubuna daraltiliyor.
+test("AssignmentProgramSettingsClient: studentsForClassGroup mapEducationLevelToClassGroup kullaniyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /mapEducationLevelToClassGroup/);
+  assert.match(source, /studentsForClassGroup/);
 });
 
 // Ek saf-helper testleri (formatDurationLabel, getSettingFieldLabel, validation, sayim).

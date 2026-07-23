@@ -11,6 +11,8 @@
  * kullanir, ogrenci profili/education_level formu degismez.
  */
 
+import { isEducationLevel, type EducationLevel } from "@/lib/assignments/educationLevels";
+
 export const ASSIGNMENT_CLASS_GROUPS = [
   "grade_1",
   "grade_2",
@@ -40,4 +42,40 @@ const ASSIGNMENT_CLASS_GROUP_SET = new Set<string>(ASSIGNMENT_CLASS_GROUPS);
 /** Bilinmeyen bir degerin gecerli bir AssignmentClassGroup olup olmadigini calisma zamaninda dogrular. */
 export function isAssignmentClassGroup(value: unknown): value is AssignmentClassGroup {
   return typeof value === "string" && ASSIGNMENT_CLASS_GROUP_SET.has(value);
+}
+
+export type ClassGroupMappingResult = { ok: true; value: AssignmentClassGroup } | { ok: false; message: string };
+
+/**
+ * students.education_level -> class_group deterministic esleme tablosu.
+ * TEK kaynak - bu esleme baska hicbir dosyada tekrarlanmaz. "adult" icin
+ * dogrudan karsilik gelen bir sinif grubu olmadigindan "general" (Genel)
+ * kullanilir; bu, egitim_seviyesindeki "adult" ile class_group'taki "general"
+ * kavramlarinin farkli oldugu notunu (bkz. yukaridaki dosya basi aciklama)
+ * ihlal etmez - yalniz "general" grubunun pratikte "adult" ogrencileri de
+ * kapsayacak sekilde kullanilmasi gerektigi anlamina gelir.
+ */
+const EDUCATION_LEVEL_TO_CLASS_GROUP: Record<EducationLevel, AssignmentClassGroup> = {
+  primary_1: "grade_1",
+  primary_2: "grade_2",
+  primary_3: "grade_3",
+  primary_4: "grade_4",
+  middle_5_6: "grade_5_6",
+  middle_7_8: "grade_7_8",
+  high_school: "high_school",
+  adult: "general",
+};
+
+/**
+ * Bir ogrencinin class_group'unu YALNIZ education_level degerinden turetir.
+ * Client'tan gelen bir classGroup degerine ASLA guvenilmemeli - bu fonksiyon
+ * her zaman DB'den taze okunan education_level ile cagrilmalidir. Bilinmeyen/
+ * null/bos/desteklenmeyen bir deger icin sessizce bir varsayilan grup
+ * URETMEZ - acik bir validation hatasi doner.
+ */
+export function mapEducationLevelToClassGroup(educationLevel: unknown): ClassGroupMappingResult {
+  if (!isEducationLevel(educationLevel)) {
+    return { ok: false, message: "Öğrencinin eğitim seviyesi desteklenmiyor veya tanımlı değil." };
+  }
+  return { ok: true, value: EDUCATION_LEVEL_TO_CLASS_GROUP[educationLevel] };
 }

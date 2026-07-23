@@ -7,6 +7,7 @@ import { PanelCard } from "@/components/ui/PanelCard";
 import {
   ASSIGNMENT_CLASS_GROUPS,
   ASSIGNMENT_CLASS_GROUP_LABELS,
+  mapEducationLevelToClassGroup,
   type AssignmentClassGroup,
 } from "@/lib/assignments/classGroups";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
@@ -51,6 +52,26 @@ type PreviewPostResponse = {
   ok?: boolean;
   message?: string;
   preview?: ProgramPreview;
+};
+
+type AssignableStudent = {
+  id: string;
+  name: string;
+  educationLevel: string;
+  isActive: boolean;
+  status: string;
+};
+
+type StudentsGetResponse = {
+  ok?: boolean;
+  message?: string;
+  students?: AssignableStudent[];
+};
+
+type ProgramsPostResponse = {
+  ok?: boolean;
+  message?: string;
+  program?: { id: string };
 };
 
 type FeedbackMessage = { tone: "success" | "error" | "warning"; text: string };
@@ -140,6 +161,27 @@ async function fetchTemplateData(group: AssignmentClassGroup): Promise<TemplateL
     return { ok: true, catalog: data.catalog ?? [], existing };
   } catch {
     return { ok: false, message: "Şablon yüklenemedi. Lütfen tekrar deneyin." };
+  }
+}
+
+type StudentsLoadResult = { ok: true; students: AssignableStudent[] } | { ok: false; message: string };
+
+/** fetchTemplateData ile ayni desen: setState icermeyen, saf network cagrisi. */
+async function fetchAssignableStudents(): Promise<StudentsLoadResult> {
+  try {
+    const response = await fetch("/api/admin/assignment-program/students", {
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    const data = (await response.json()) as StudentsGetResponse;
+
+    if (!response.ok || !data.ok) {
+      return { ok: false, message: data.message ?? "Öğrenci listesi alınamadı." };
+    }
+
+    return { ok: true, students: data.students ?? [] };
+  } catch {
+    return { ok: false, message: "Öğrenci listesi alınamadı. Lütfen tekrar deneyin." };
   }
 }
 
@@ -419,6 +461,13 @@ export function AssignmentProgramSettingsClient() {
   const [preview, setPreview] = useState<ProgramPreview | null>(null);
   const [activeDay, setActiveDay] = useState(1);
 
+  const [students, setStudents] = useState<AssignableStudent[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [studentsError, setStudentsError] = useState<string | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignMessage, setAssignMessage] = useState<FeedbackMessage | null>(null);
+
   const currentSnapshot = useMemo(
     () => buildSnapshot(name, description, defaultTaskDurationSeconds, exerciseForms),
     [name, description, defaultTaskDurationSeconds, exerciseForms],
@@ -480,6 +529,34 @@ export function AssignmentProgramSettingsClient() {
     };
   }, [classGroup]);
 
+  useEffect(() => {
+    // Atanabilecek ogrenci listesi sinif grubundan bagimsiz, bir kez
+    // yuklenir (siniflara gore daraltma asagida studentsForClassGroup ile
+    // yalniz goruntulemede yapilir) - bu yuzden bagimlilik dizisi bostur.
+    let cancelled = false;
+
+    void (async () => {
+      const result = await fetchAssignableStudents();
+      if (cancelled) {
+        return;
+      }
+
+      if (!result.ok) {
+        setStudentsError(result.message);
+        setIsLoadingStudents(false);
+        return;
+      }
+
+      setStudents(result.students);
+      setStudentsError(null);
+      setIsLoadingStudents(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleRetryLoad = () => {
     setIsLoadingTemplate(true);
     setTemplateError(null);
@@ -526,8 +603,19 @@ export function AssignmentProgramSettingsClient() {
     setPreview(null);
     setPreviewError(null);
     setSaveMessage(null);
+    setSelectedStudentId("");
+    setAssignMessage(null);
     setClassGroup(nextGroup);
   };
+
+  const studentsForClassGroup = useMemo(
+    () =>
+      students.filter((student) => {
+        const mapped = mapEducationLevelToClassGroup(student.educationLevel);
+        return mapped.ok && mapped.value === classGroup;
+      }),
+    [students, classGroup],
+  );
 
   const readyExerciseSlugs = useMemo(
     () => catalog.filter((definition) => definition.integrationStatus === "ready").map((definition) => definition.exerciseSlug),
@@ -648,6 +736,53 @@ export function AssignmentProgramSettingsClient() {
       ? "Kaydedilmemiş değişiklikler var — önce şablonu kaydedin."
       : null;
 
+  const handleAssignProgram = async () => {
+    if (isAssigning || !selectedStudentId || !preview || !savedTemplateId) {
+      return;
+    }
+
+    setIsAssigning(true);
+    setAssignMessage(null);
+
+    try {
+      const response = await fetch("/api/admin/assignment-program/programs", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          templateId: savedTemplateId,
+          generationSeed: preview.generationSeed,
+        }),
+      });
+      const data = (await response.json()) as ProgramsPostResponse;
+
+      if (!response.ok || !data.ok) {
+        setAssignMessage({ tone: "error", text: data.message ?? "Program oluşturulamadı." });
+        return;
+      }
+
+      // Basariyla atandiktan sonra secimi temizle - "ayni programin tekrar
+      // gonderilmesi" yalniz teknik olarak (isAssigning kilidi + RPC'nin
+      // kendi 409'u ile) degil, ogretmenin bilincli olarak yeni bir ogrenci
+      // secmesini zorunlu kilarak da engellenir.
+      setSelectedStudentId("");
+      setAssignMessage({ tone: "success", text: "Program başarıyla atandı." });
+    } catch {
+      setAssignMessage({ tone: "error", text: "Program oluşturulamadı. Lütfen tekrar deneyin." });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const assignDisabledReason = !selectedStudentId
+    ? "Program atamak için önce bir öğrenci seçin."
+    : !preview
+      ? "Program atamadan önce 20 günlük önizlemeyi oluşturun."
+      : isDirty
+        ? "Kaydedilmemiş değişiklikler var — önce şablonu kaydedin ve önizlemeyi yeniden oluşturun."
+        : null;
+
   return (
     <AppShell title="20 Günlük Ödev Programı" subtitle="Sınıf gruplarına göre çalışma ayarlarını düzenleyin ve program önizlemesi oluşturun." navItems={TEACHER_NAV_ITEMS} wide>
       <TeacherOnly>
@@ -687,6 +822,47 @@ export function AssignmentProgramSettingsClient() {
                 );
               })}
             </div>
+          </PanelCard>
+
+          <PanelCard title="Öğrenci Seçimi" subtitle="Programı atayacağınız aktif öğrenciyi seçin">
+            {isLoadingStudents ? (
+              <p aria-busy="true" className="animate-pulse text-sm text-slate-500">
+                Öğrenciler yükleniyor...
+              </p>
+            ) : studentsError ? (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                <p>{studentsError}</p>
+              </div>
+            ) : studentsForClassGroup.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-800/50 [data-idil-theme=dark]:text-slate-300">
+                Bu sınıf grubu için atanabilecek aktif öğrenci bulunamadı.
+              </p>
+            ) : (
+              <label className="grid gap-1 text-sm font-semibold">
+                <span>Öğrenci</span>
+                <select
+                  value={selectedStudentId}
+                  onChange={(event) => {
+                    setSelectedStudentId(event.target.value);
+                    setAssignMessage(null);
+                  }}
+                  className={INPUT_CLASS}
+                >
+                  <option value="">Öğrenci seçin...</option>
+                  {studentsForClassGroup.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {selectedStudentId ? (
+              <p className="mt-2 text-xs text-[var(--idil-muted,#64748b)]">
+                Seçili öğrenci: {studentsForClassGroup.find((student) => student.id === selectedStudentId)?.name ?? selectedStudentId}
+              </p>
+            ) : null}
           </PanelCard>
 
           <PanelCard title="Şablon Genel Ayarları">
@@ -972,6 +1148,34 @@ export function AssignmentProgramSettingsClient() {
                         ))}
                       </div>
                     ))}
+                </div>
+
+                <div className="border-t border-slate-200 pt-4 [data-idil-theme=dark]:border-slate-700">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleAssignProgram()}
+                      disabled={!!assignDisabledReason || isAssigning}
+                      className="min-h-[44px] rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isAssigning ? "Atanıyor..." : "Programı Ata"}
+                    </button>
+                    {assignDisabledReason ? <p className="text-xs text-slate-500">{assignDisabledReason}</p> : null}
+                  </div>
+
+                  {assignMessage ? (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                        assignMessage.tone === "success"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : "border-rose-200 bg-rose-50 text-rose-800"
+                      }`}
+                    >
+                      {assignMessage.text}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             ) : null}
