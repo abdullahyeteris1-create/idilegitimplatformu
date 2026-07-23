@@ -251,7 +251,7 @@ export function SquareVisionExerciseClient() {
     const finalScore = Math.max(0, correctCount * 10 - wrongCount * 3);
     const payload = {
       exerciseType: "square-vision",
-      exerciseTitle: "KAREL: Kare Görme Alanı",
+      exerciseTitle: "KAREL: Kare Görme Çalışması",
       durationSeconds,
       correctCount,
       wrongCount,
@@ -343,12 +343,12 @@ export function SquareVisionExerciseClient() {
         return;
       }
 
-      if (event.key === "ArrowRight") {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         answerRound("same");
       }
 
-      if (event.key === "ArrowLeft") {
+      if (event.key === "ArrowRight") {
         event.preventDefault();
         answerRound("different");
       }
@@ -495,7 +495,7 @@ export function SquareVisionExerciseClient() {
     return (
       <div className={themeRootClassName}>
         <FullscreenExerciseIntro
-          title="KAREL: Kare Görme Alanı"
+          title="KAREL: Kare Görme Çalışması"
           description="Merkezdeki odak noktasına bakarken çevrede işaretlenen iki harfi başını oynatmadan algıla ve aynı mı farklı mı olduğuna karar ver."
           buttonLabel="Eğitime Başla"
           onStart={resetExercise}
@@ -509,7 +509,7 @@ export function SquareVisionExerciseClient() {
       <div className={themeRootClassName}>
         <section className={`idil-card p-5 md:p-7 ${styles.resultCardOverride}`}>
           <h1 className={`text-2xl font-black text-slate-950 ${styles.resultTitle}`}>
-            KAREL: Kare Görme Alanı Sonucu
+            KAREL: Kare Görme Çalışması Sonucu
           </h1>
           <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>{saveStatus === "success" ? "Egzersiz tamamlandı." : saveMessage}</p>
           {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
@@ -568,7 +568,7 @@ export function SquareVisionExerciseClient() {
   return (
     <div className={themeRootClassName}>
       <FullscreenExerciseShell
-        title="KAREL: Kare Görme Alanı"
+        title="KAREL: Kare Görme Çalışması"
         subtitle="Merkez noktaya odaklan"
         stats={[
           { label: "Süre", value: formatTime(remainingSeconds) },
@@ -616,7 +616,7 @@ export function SquareVisionExerciseClient() {
               </h2>
               <p className={`mt-2 max-w-2xl text-sm leading-5 text-slate-500 ${styles.introBody}`}>
                 İşaretlenen iki harfi başını hareket ettirmeden görmeye çalış.
-                Aynıysa sağdaki, farklıysa soldaki butona bas.
+                Aynıysa soldaki, farklıysa sağdaki butona bas.
               </p>
             </div>
           ) : (
@@ -624,7 +624,7 @@ export function SquareVisionExerciseClient() {
               <div className="shrink-0">
                 <div className="mb-1 flex items-center justify-between gap-3 text-xs">
                   <p className={`text-sm font-bold text-slate-700 ${styles.helperText}`}>
-                    Sol ok: Farklı · Sağ ok: Aynı
+                    Sol ok: Aynı · Sağ ok: Farklı
                   </p>
                   <p className={`text-sm font-black text-red-700 ${styles.timerText}`}>
                     {formatTime(remainingSeconds)}
@@ -682,21 +682,21 @@ export function SquareVisionExerciseClient() {
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => answerRound("different")}
-                    disabled={phase !== "running"}
-                    className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
-                    style={FULLSCREEN_TOUCH_STYLE}
-                  >
-                    Farklı Harfler ←
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => answerRound("same")}
                     disabled={phase !== "running"}
                     className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
                     style={FULLSCREEN_TOUCH_STYLE}
                   >
-                    Aynı Harfler →
+                    ← Aynı Harfler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => answerRound("different")}
+                    disabled={phase !== "running"}
+                    className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
+                    style={FULLSCREEN_TOUCH_STYLE}
+                  >
+                    Farklı Harfler →
                   </button>
                 </div>
 

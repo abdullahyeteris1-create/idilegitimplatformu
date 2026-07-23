@@ -35,7 +35,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   hangman: "Adam Asmaca",
   "grouping-reading": "Gruplama Çalışması",
   "eye-columns": "Göz Egzersizleri: Kolonlar",
-  "square-vision": "KAREL: Kare Görme Alanı",
+  "square-vision": "KAREL: Kare Görme Çalışması",
   "color-match": "Renk Uyumu",
   "reading-speed-test": "Okuma Hızı Testi",
 };

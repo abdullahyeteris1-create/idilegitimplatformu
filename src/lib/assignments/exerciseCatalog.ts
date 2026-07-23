@@ -72,7 +72,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "kare-gorme-alani",
-    title: "Kare Gorme Alani",
+    title: "Kare Gorme Calismasi",
     route: "/egzersizler/kare-gorme-alani",
     resultExerciseType: "square-vision",
     category: "attention",

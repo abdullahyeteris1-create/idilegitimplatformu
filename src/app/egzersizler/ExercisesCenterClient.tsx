@@ -138,7 +138,7 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Göz Hareketi", "Kolonlar"],
       },
       {
-        title: "KAREL: Kare Görme Alanı",
+        title: "KAREL: Kare Görme Çalışması",
         description: "Merkez noktaya odaklanırken çevredeki iki harfi gör ve aynı mı farklı mı olduğunu belirle.",
         href: "/egzersizler/kare-gorme-alani",
         icon: "KG",

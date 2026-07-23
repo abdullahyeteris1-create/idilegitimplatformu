@@ -42,7 +42,7 @@ const EXERCISE_LABELS: Record<string, string> = {
   hangman: "Adam Asmaca",
   "grouping-reading": "Gruplama Çalışması",
   "eye-columns": "Göz Egzersizleri Kolonlar",
-  "square-vision": "Kare Görme Alanı",
+  "square-vision": "Kare Görme Çalışması",
   "reading-speed-test": "Okuma Hızı Testi",
 };
 
