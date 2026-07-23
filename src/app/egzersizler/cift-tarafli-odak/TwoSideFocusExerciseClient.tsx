@@ -235,10 +235,16 @@ export function TwoSideFocusExerciseClient() {
   clearRoundTimeout();
 
   if (level >= 5) {
-    setIsRunning(false);
+    // 5. seviyede 10 net'e ulaşınca çalışma durmasın, kullanıcı durdurana kadar
+    // aynı seviyede devam etsin.
+    setCorrectCount(0);
+    setWrongCount(0);
+    setRoundData(createRound(level));
+    answerLockedRef.current = false;
+    setIsRunning(true);
     setFeedback({
       type: "success",
-      message: "Tebrikler! 5. seviyeyi de tamamladın.",
+      message: "Tebrikler! 5. seviyede 10 net'e ulaştın. Devam ediyorsun!",
     });
     return;
   }
