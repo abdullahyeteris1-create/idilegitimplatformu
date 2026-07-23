@@ -42,14 +42,14 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 };
 
 const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
-  eye: ["goz-beyin", "goz-kaslari", "goz-calismasi"],
+  eye: ["goz-beyin", "goz-kaslari"],
   attention: ["takistoskop", "benzer-kelimeler", "kelime-bulma", "goz-egzersizleri-kolonlar", "kare-gorme-alani"],
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
   "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti"],
   assessment: ["anlama-testi", "okuma-hizi-testi"],
-  memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme", "parcali-resim-kelime"],
+  memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme"],
 };
 
 const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }> = {

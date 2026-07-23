@@ -130,7 +130,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     route: "/egzersizler/goz-calismasi",
     resultExerciseType: "eye-muscle",
     category: "eye",
-    assignmentEnabled: true,
+    assignmentEnabled: false,
     supportedSettings: ["level", "durationMinutes"],
   },
   {
@@ -202,7 +202,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     route: "/egzersizler/parcali-resim-kelime",
     resultExerciseType: "memory-game",
     category: "memory",
-    assignmentEnabled: true,
+    assignmentEnabled: false,
     supportedSettings: ["level", "durationMinutes", "targetCorrect"],
   },
   {
