@@ -59,6 +59,12 @@ const MODULE_CARDS: ModuleCard[] = [
     href: "/ogretmen/idil-panel/ders-kayitlari",
   },
   {
+    title: "Odev Programi",
+    description: "Sinif gruplarina gore 20 gunluk odev sablonu ayarlari ve program onizlemesi.",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/odev-programi",
+  },
+  {
     title: "Gelisim Raporu",
     description: "Ogrenci bazli okuma hizi ve anlama gelisimi.",
     status: "Sonraki adim",
