@@ -36,7 +36,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "gruplama-calismasi",
-    title: "Gruplama Calismasi",
+    title: "Gruplama Çalışması",
     route: "/egzersizler/gruplama-calismasi",
     resultExerciseType: "grouping-reading",
     category: "speed",
@@ -45,7 +45,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "golgeleme",
-    title: "Golgeleme",
+    title: "Gölgeleme",
     route: "/egzersizler/golgeleme",
     resultExerciseType: "shadow-reading",
     category: "speed",
@@ -54,7 +54,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "odakli-okuma",
-    title: "Odakli Okuma",
+    title: "Odaklı Okuma",
     route: "/egzersizler/odakli-okuma",
     resultExerciseType: "focused-reading",
     category: "speed",
@@ -63,7 +63,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "cift-tarafli-odak",
-    title: "Cift Tarafli Odak",
+    title: "Çift Taraflı Odak",
     route: "/egzersizler/cift-tarafli-odak",
     resultExerciseType: "two-side-focus",
     category: "attention",
@@ -72,7 +72,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "kare-gorme-alani",
-    title: "Kare Gorme Calismasi",
+    title: "Kare Görme Çalışması",
     route: "/egzersizler/kare-gorme-alani",
     resultExerciseType: "square-vision",
     category: "attention",
@@ -90,7 +90,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "ayni-olani-yakala",
-    title: "Ayni Olani Yakala",
+    title: "Aynı Olanı Yakala",
     route: "/egzersizler/ayni-olani-yakala",
     resultExerciseType: "catch-same",
     category: "attention",
@@ -117,7 +117,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "goz-kaslari",
-    title: "Goz Kaslari",
+    title: "Göz Kasları",
     route: "/egzersizler/goz-kaslari",
     resultExerciseType: "eye-muscle",
     category: "eye",
@@ -126,7 +126,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "goz-calismasi",
-    title: "Goz Calismasi",
+    title: "Göz Çalışması",
     route: "/egzersizler/goz-calismasi",
     resultExerciseType: "eye-muscle",
     category: "eye",
@@ -135,7 +135,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "goz-beyin",
-    title: "Goz Beyin",
+    title: "Göz Beyin",
     route: "/egzersizler/goz-beyin",
     resultExerciseType: "eye-brain",
     category: "eye",
@@ -144,7 +144,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "goz-egzersizleri-kolonlar",
-    title: "Goz Egzersizleri Kolonlar",
+    title: "Göz Egzersizleri Kolonlar",
     route: "/egzersizler/goz-egzersizleri-kolonlar",
     resultExerciseType: "eye-columns",
     category: "eye",
@@ -180,7 +180,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "kart-hafiza",
-    title: "Kart Hafiza",
+    title: "Kart Hafıza",
     route: "/egzersizler/kart-hafiza",
     resultExerciseType: "memory-game",
     category: "memory",
@@ -189,7 +189,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "kart-eslestirme",
-    title: "Kart Eslestirme",
+    title: "Kart Eşleştirme",
     route: "/egzersizler/kart-eslestirme",
     resultExerciseType: "card-matching",
     category: "memory",
@@ -198,7 +198,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "parcali-resim-kelime",
-    title: "Parcali Resim Kelime",
+    title: "Parçalı Resim Kelime",
     route: "/egzersizler/parcali-resim-kelime",
     resultExerciseType: "memory-game",
     category: "memory",
@@ -216,7 +216,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "gorsel-puzzle",
-    title: "Gorsel Puzzle",
+    title: "Görsel Puzzle",
     route: "/egzersizler/gorsel-puzzle",
     resultExerciseType: "visual-puzzle",
     category: "memory",
