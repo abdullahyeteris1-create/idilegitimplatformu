@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
@@ -60,12 +60,22 @@ type AssignableStudent = {
   educationLevel: string;
   isActive: boolean;
   status: string;
+  hasActiveProgram: boolean;
+  activeProgramId: string | null;
+};
+
+// Sunucudan gelen ham ogrenci kaydi - hasActiveProgram/activeProgramId eski
+// veya eksik bir yanit surumunde bulunmayabilir, bu yuzden opsiyonel tanimlanir
+// ve fetchAssignableStudents icinde guvenli varsayilanlarla normalize edilir.
+type RawAssignableStudent = Omit<AssignableStudent, "hasActiveProgram" | "activeProgramId"> & {
+  hasActiveProgram?: boolean;
+  activeProgramId?: string | null;
 };
 
 type StudentsGetResponse = {
   ok?: boolean;
   message?: string;
-  students?: AssignableStudent[];
+  students?: RawAssignableStudent[];
 };
 
 type ProgramsPostResponse = {
@@ -179,7 +189,18 @@ async function fetchAssignableStudents(): Promise<StudentsLoadResult> {
       return { ok: false, message: data.message ?? "Öğrenci listesi alınamadı." };
     }
 
-    return { ok: true, students: data.students ?? [] };
+    // Katı normalize: yalnız gerçek boolean true "aktif program var" sayılır.
+    // API zaten boolean donduruyor, ama beklenmeyen bir tip (ör. string
+    // "true", 1, undefined) gelirse GUVENLI TARAF secilir - yani ogrenci
+    // "aktif degil" (false) kabul edilir; asil guvenlik agi zaten API'nin
+    // 409 kontrolu oldugu icin UI tarafinda "false" varsayimi risksizdir.
+    const students: AssignableStudent[] = (data.students ?? []).map((student) => ({
+      ...student,
+      hasActiveProgram: student.hasActiveProgram === true,
+      activeProgramId: typeof student.activeProgramId === "string" ? student.activeProgramId : null,
+    }));
+
+    return { ok: true, students };
   } catch {
     return { ok: false, message: "Öğrenci listesi alınamadı. Lütfen tekrar deneyin." };
   }
@@ -467,6 +488,23 @@ export function AssignmentProgramSettingsClient() {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignMessage, setAssignMessage] = useState<FeedbackMessage | null>(null);
+  // Yalniz "secili ogrenci sonradan aktif programli oldu mu" degisiklik
+  // tespiti icin - React'in resmi "render sirasinda state ayarlama" deseni
+  // (bkz. asagidaki if bloğu) icin gereken "onceki deger" referansi. Ref
+  // DEGIL, bilerek useState kullaniliyor: bu proje/eslint konfigurasyonu
+  // render sirasinda ref okuma/yazmayi yasakliyor (react-hooks/refs).
+  const [lastCheckedStudents, setLastCheckedStudents] = useState(students);
+  // Aktif programli bir option'a fare/klavye ile ulasildiginda bazi
+  // tarayicilarda native <select>'in DOM .value'su, React'in onChange'i
+  // calistirmasindan ONCE tarayici tarafindan degistiriliyor. onChange
+  // guard'i setSelectedStudentId'yi CAGIRMADIGI icin (state degismedigi
+  // icin) React bu dugumu yeniden render ETMEZ - dolayisiyla DOM kendiliginden
+  // eski gecerli degere donmez, secim gorsel olarak "tutunmus" gibi kalir.
+  // Bu yuzden onChange icinde DOM degerini bu ref uzerinden ELDEYLE
+  // (imperatif) geri yaziyoruz - yalniz event handler icinde okunur/yazilir,
+  // render sirasinda DEGIL (render sirasinda ref erisimi bu projede
+  // yasaktir, bkz. yukaridaki lastCheckedStudents yorumu).
+  const studentSelectRef = useRef<HTMLSelectElement | null>(null);
 
   const currentSnapshot = useMemo(
     () => buildSnapshot(name, description, defaultTaskDurationSeconds, exerciseForms),
@@ -556,6 +594,27 @@ export function AssignmentProgramSettingsClient() {
       cancelled = true;
     };
   }, []);
+
+  // Secili ogrenci, liste (yeniden) yuklendiginde artik aktif programli ise
+  // (ör. baska bir sekmede/oturumda o arada program atanmissa) secimi
+  // otomatik temizle - "eski secim guvenligi". Bir useEffect icinde senkron
+  // setState cagirmak "cascading render" riski tasidigi icin (bkz. dosyanin
+  // basindaki ayni gerekcenin kullanildigi diger yorum), React'in resmi
+  // "render sirasinda state ayarlama" deseni kullanilir: students referansi
+  // degistiginde render govdesinde kosullu olarak setState cagrilir.
+  // lastCheckedStudents yalniz degisiklik tespiti icindir; referans ayni
+  // kaldigi surece govde calismaz, bu yuzden sonsuz donguye yol acmaz.
+  if (students !== lastCheckedStudents) {
+    setLastCheckedStudents(students);
+    const selected = selectedStudentId ? students.find((student) => student.id === selectedStudentId) : null;
+    if (selected?.hasActiveProgram === true) {
+      setSelectedStudentId("");
+      setAssignMessage({
+        tone: "warning",
+        text: "Seçili öğrencinin artık aktif bir programı var, lütfen başka bir öğrenci seçin.",
+      });
+    }
+  }
 
   const handleRetryLoad = () => {
     setIsLoadingTemplate(true);
@@ -741,6 +800,17 @@ export function AssignmentProgramSettingsClient() {
       return;
     }
 
+    // Buton normalde aktif programli bir ogrenci icin disabled kalir (bkz.
+    // assignDisabledReason), ama bu, "eski/stale state uzerinden" veya baska
+    // bir yoldan handleAssignProgram yine de cagrilsa dahi POST'un asla
+    // gitmemesini garanti eden BAGIMSIZ, son bir kontrol - butonun disabled
+    // durumuna guvenmez, students listesinden anlik olarak yeniden okur.
+    const targetStudent = students.find((student) => student.id === selectedStudentId);
+    if (targetStudent?.hasActiveProgram === true) {
+      setAssignMessage({ tone: "error", text: "Bu öğrencinin zaten aktif bir ödev programı var." });
+      return;
+    }
+
     setIsAssigning(true);
     setAssignMessage(null);
 
@@ -775,13 +845,17 @@ export function AssignmentProgramSettingsClient() {
     }
   };
 
+  const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? null;
+
   const assignDisabledReason = !selectedStudentId
     ? "Program atamak için önce bir öğrenci seçin."
-    : !preview
-      ? "Program atamadan önce 20 günlük önizlemeyi oluşturun."
-      : isDirty
-        ? "Kaydedilmemiş değişiklikler var — önce şablonu kaydedin ve önizlemeyi yeniden oluşturun."
-        : null;
+    : selectedStudent?.hasActiveProgram === true
+      ? "Bu öğrencinin zaten aktif bir ödev programı var."
+      : !preview
+        ? "Program atamadan önce 20 günlük önizlemeyi oluşturun."
+        : isDirty
+          ? "Kaydedilmemiş değişiklikler var — önce şablonu kaydedin ve önizlemeyi yeniden oluşturun."
+          : null;
 
   return (
     <AppShell title="20 Günlük Ödev Programı" subtitle="Sınıf gruplarına göre çalışma ayarlarını düzenleyin ve program önizlemesi oluşturun." navItems={TEACHER_NAV_ITEMS} wide>
@@ -841,17 +915,39 @@ export function AssignmentProgramSettingsClient() {
               <label className="grid gap-1 text-sm font-semibold">
                 <span>Öğrenci</span>
                 <select
+                  ref={studentSelectRef}
                   value={selectedStudentId}
                   onChange={(event) => {
-                    setSelectedStudentId(event.target.value);
+                    const nextId = event.target.value;
+                    // Native <option disabled> normal akista secilemez, ama
+                    // bazi tarayicilarda fare tiklamasi bu korumayi atlayip
+                    // DOM'un .value'sunu yine de degistirebiliyor - bu yuzden
+                    // aktif programli bir ogrenci burada da KESIN olarak
+                    // reddedilir.
+                    const nextStudent = studentsForClassGroup.find((student) => student.id === nextId);
+                    if (nextStudent && nextStudent.hasActiveProgram === true) {
+                      // selectedStudentId DEGISMEDIGI (onceki gecerli deger
+                      // - varsa o, yoksa bos - korunuyor) icin React bu
+                      // dugumu yeniden render ETMEYECEK; DOM'un .value'su
+                      // ise tarayici tarafindan zaten degistirilmis olabilir.
+                      // Bu yuzden DOM'u eldeyle eski gecerli degere geri
+                      // yaziyoruz - boylece secim gorsel olarak da "tutunmus"
+                      // gibi kalmaz.
+                      if (studentSelectRef.current) {
+                        studentSelectRef.current.value = selectedStudentId;
+                      }
+                      setAssignMessage({ tone: "error", text: "Bu öğrencinin zaten aktif bir ödev programı var." });
+                      return;
+                    }
+                    setSelectedStudentId(nextId);
                     setAssignMessage(null);
                   }}
                   className={INPUT_CLASS}
                 >
                   <option value="">Öğrenci seçin...</option>
                   {studentsForClassGroup.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.name}
+                    <option key={student.id} value={student.id} disabled={student.hasActiveProgram === true}>
+                      {student.hasActiveProgram === true ? `${student.name} — 🔒 Aktif Ödev Programı` : student.name}
                     </option>
                   ))}
                 </select>

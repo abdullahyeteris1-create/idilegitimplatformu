@@ -229,6 +229,135 @@ test("AssignmentProgramSettingsClient: studentsForClassGroup mapEducationLevelTo
   assert.match(source, /studentsForClassGroup/);
 });
 
+// TEST 16: AssignableStudent tipi hasActiveProgram/activeProgramId alanlarini iceriyor.
+test("AssignmentProgramSettingsClient: AssignableStudent tipi hasActiveProgram/activeProgramId iceriyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /hasActiveProgram: boolean;\s*\n\s*activeProgramId: string \| null;/);
+});
+
+// TEST 17: eski/eksik/beklenmeyen tipte API yanitinda hasActiveProgram/activeProgramId
+// KATI (strict) sekilde normalize ediliyor - yalniz gercek boolean true "aktif" sayilir.
+test("AssignmentProgramSettingsClient: fetchAssignableStudents hasActiveProgram'i === true ile kati normalize ediyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /hasActiveProgram: student\.hasActiveProgram === true/);
+  assert.match(source, /activeProgramId: typeof student\.activeProgramId === "string" \? student\.activeProgramId : null/);
+});
+
+// TEST 18: aktif programli ogrenci icin option disabled oluyor, adinin yaninda
+// "🔒 Aktif Ödev Programı" gosteriliyor (istenen tam format).
+test("AssignmentProgramSettingsClient: aktif programli ogrenci option'i disabled ve '🔒 Aktif Ödev Programı' etiketli", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /disabled=\{student\.hasActiveProgram === true\}/);
+  assert.match(source, /— 🔒 Aktif Ödev Programı/);
+  // Aktif programi OLMAYAN ogrenciler icin disabled kosula bagli (sabit
+  // "disabled" degil) - bu yuzden onlar normal sekilde secilebilir kalir.
+  assert.doesNotMatch(source, /<option key=\{student\.id\} value=\{student\.id\} disabled>/);
+});
+
+// TEST 19: secim, native <option disabled>'a ek olarak onChange icinde de KESIN
+// olarak engelleniyor - hem state degismiyor hem de DOM'un .value'su (bazi
+// tarayicilarda disabled option'a tiklamanin DOM'u degistirebildigi bilinen
+// davranisina karsi) eldeyle eski gecerli degere geri yaziliyor.
+test("AssignmentProgramSettingsClient: select onChange aktif programli ogrenciyi KESIN olarak reddediyor (state + DOM)", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  const onChangeMatch = source.match(/onChange=\{\(event\) => \{\s*\n\s*const nextId = event\.target\.value;[\s\S]*?\n {18}\}\}/);
+  assert.ok(onChangeMatch, "select onChange govdesi bulunamali");
+  const guardBody = onChangeMatch[0];
+
+  assert.match(guardBody, /if \(nextStudent && nextStudent\.hasActiveProgram === true\) \{/);
+  // Onceki gecerli secim korunuyor: guard blogu setSelectedStudentId'yi HIC
+  // cagirmiyor (yalniz DOM'u ve mesaji gunceller, state'e dokunmuyor).
+  const guardBranch = guardBody.slice(guardBody.indexOf("hasActiveProgram === true) {"), guardBody.indexOf("setSelectedStudentId(nextId);"));
+  assert.doesNotMatch(guardBranch, /setSelectedStudentId\(/);
+  assert.match(guardBranch, /studentSelectRef\.current\.value = selectedStudentId;/);
+  assert.match(guardBranch, /Bu öğrencinin zaten aktif bir ödev programı var\./);
+  assert.match(guardBranch, /return;/);
+  // Aktif OLMAYAN ogrenci normal sekilde secilebiliyor.
+  assert.match(guardBody, /setSelectedStudentId\(nextId\);\s*\n\s*setAssignMessage\(null\);/);
+});
+
+// TEST 19b: select DOM'una ref bagli - guard'in "eski gecerli degere geri yaz"
+// islemi icin gereken teknik on kosul.
+test("AssignmentProgramSettingsClient: student select'e studentSelectRef bagli", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /const studentSelectRef = useRef<HTMLSelectElement \| null>\(null\);/);
+  assert.match(source, /<select\s*\n\s*ref=\{studentSelectRef\}/);
+});
+
+// TEST 20: aktif programli secili ogrenci icin "Programi Ata" butonu devre disi kaliyor.
+test("AssignmentProgramSettingsClient: assignDisabledReason secili ogrencinin hasActiveProgram === true durumunu kontrol ediyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /selectedStudent\?\.hasActiveProgram === true/);
+  assert.match(source, /Bu öğrencinin zaten aktif bir ödev programı var\./);
+});
+
+// TEST 20b: handleAssignProgram, buton disabled durumuna GUVENMEDEN, POST
+// atmadan hemen once secili ogrenciyi students listesinden yeniden okuyup
+// hasActiveProgram === true ise BAGIMSIZ olarak POST'u iptal ediyor - eski
+// state/klavye/fare uzerinden butona her nasilsa ulasilsa bile.
+test("AssignmentProgramSettingsClient: handleAssignProgram POST'tan once hasActiveProgram'i bagimsizca yeniden kontrol ediyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  const handlerMatch = source.match(/const handleAssignProgram = async \(\) => \{[\s\S]*?\n {2}\};/);
+  assert.ok(handlerMatch, "handleAssignProgram bulunamali");
+  const handlerBody = handlerMatch[0];
+
+  const guardIndex = handlerBody.search(/const targetStudent = students\.find/);
+  const fetchIndex = handlerBody.indexOf('fetch("/api/admin/assignment-program/programs"');
+  assert.ok(guardIndex !== -1, "targetStudent kontrolu bulunamali");
+  assert.ok(fetchIndex !== -1, "POST fetch cagrisi bulunamali");
+  assert.ok(guardIndex < fetchIndex, "hasActiveProgram kontrolu POST'tan ONCE calismali");
+  assert.match(handlerBody, /if \(targetStudent\?\.hasActiveProgram === true\) \{/);
+  assert.match(handlerBody, /return;/);
+});
+
+// TEST 21: secili ogrenci sonradan (liste yenilenince) aktif programli hale gelirse secim otomatik temizleniyor.
+test("AssignmentProgramSettingsClient: secili ogrenci sonradan aktif programli olursa selectedStudentId temizleniyor", async () => {
+  const source = await readFile(
+    new URL("../src/app/ogretmen/idil-panel/odev-programi/AssignmentProgramSettingsClient.tsx", import.meta.url),
+    "utf8",
+  );
+
+  // Bilerek bir useEffect DEGIL - senkron setState cascading-render riski
+  // tasidigi icin (bkz. dosyadaki diger ayni gerekceli yorumlar) VE bu
+  // projenin eslint konfigurasyonu render sirasinda ref okuma/yazmayi
+  // yasakladigi icin (react-hooks/refs), React'in resmi "render sirasinda
+  // state ayarlama" deseni useState (lastCheckedStudents) ile uygulaniyor.
+  const adjustBlockMatch = source.match(/if \(students !== lastCheckedStudents\) \{[\s\S]*?\n {2}\}/);
+  assert.ok(adjustBlockMatch, "secili-ogrenci-temizleme render-sirasinda-ayarlama bloğu bulunamali");
+  assert.match(adjustBlockMatch[0], /setLastCheckedStudents\(students\);/);
+  assert.match(adjustBlockMatch[0], /if \(selected\?\.hasActiveProgram === true\) \{/);
+  assert.match(adjustBlockMatch[0], /setSelectedStudentId\(""\);/);
+  assert.doesNotMatch(source, /useEffect\(\(\) => \{\s*\n\s*\/\/ Secili ogrenci/);
+});
+
 // Ek saf-helper testleri (formatDurationLabel, getSettingFieldLabel, validation, sayim).
 
 test("formatDurationLabel saniyeyi kullanici dostu bicime cevirir", () => {

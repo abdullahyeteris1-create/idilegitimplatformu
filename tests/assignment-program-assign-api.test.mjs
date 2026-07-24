@@ -137,9 +137,45 @@ test("GET students route hicbir yazma islemi (insert/update/upsert/delete) icerm
   assert.doesNotMatch(source, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
 });
 
-test("GET students route mevcut gunluk odev veya program tablolarina dokunmuyor", async () => {
+test("GET students route eski gunluk odev tablosuna dokunmuyor (daily_assignment)", async () => {
   const source = await readStudentsRoute();
-  assert.doesNotMatch(source, /daily_assignment|student_assignment_program/i);
+  assert.doesNotMatch(source, /daily_assignment/i);
+});
+
+// ============================================================================
+// GET /api/admin/assignment-program/students - aktif program isaretleme.
+// Ogrenci, aktif bir programi olsa bile listeden ELENMEZ; yalniz
+// hasActiveProgram/activeProgramId alanlariyla isaretlenir (UI bunu kullanarak
+// gri/disabled gosterir). API tarafindaki asil guvenlik agi (409, RPC) ayri.
+// ============================================================================
+
+test("GET students route ikinci, ayri bir sorguyla student_assignment_programs tablosunu okuyor", async () => {
+  const source = await readStudentsRoute();
+  assert.match(source, /student_assignment_programs/);
+  assert.match(source, /\.eq\("status",\s*"active"\)/);
+  assert.match(source, /\.in\("student_id",\s*studentIds\)/);
+});
+
+test("GET students route yalniz status='active' kayitlari aktif program olarak sayiyor (draft/completed/cancelled degil)", async () => {
+  const source = await readStudentsRoute();
+  const activeProgramsQueryMatch = source.match(
+    /from\(STUDENT_ASSIGNMENT_PROGRAMS_TABLE\)[\s\S]*?\.in\("student_id",\s*studentIds\);/,
+  );
+  assert.ok(activeProgramsQueryMatch, "student_assignment_programs sorgusu bulunamali");
+  assert.match(activeProgramsQueryMatch[0], /\.eq\("status",\s*"active"\)/);
+  assert.doesNotMatch(activeProgramsQueryMatch[0], /"draft"|"completed"|"cancelled"/);
+});
+
+test("GET students route yaniti her ogrenci icin hasActiveProgram (boolean) ve activeProgramId (string|null) iceriyor", async () => {
+  const source = await readStudentsRoute();
+  assert.match(source, /hasActiveProgram:\s*boolean/);
+  assert.match(source, /activeProgramId:\s*string \| null/);
+  assert.match(source, /hasActiveProgram:\s*activeProgramId !== null/);
+});
+
+test("GET students route aktif program sorgusunda da hicbir yazma islemi yok", async () => {
+  const source = await readStudentsRoute();
+  assert.doesNotMatch(source, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
 });
 
 // ============================================================================

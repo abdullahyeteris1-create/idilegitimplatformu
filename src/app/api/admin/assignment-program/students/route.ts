@@ -7,6 +7,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
+const STUDENT_ASSIGNMENT_PROGRAMS_TABLE = "student_assignment_programs";
 
 type AssignableStudentRow = {
   id: string;
@@ -14,6 +15,8 @@ type AssignableStudentRow = {
   educationLevel: string;
   isActive: boolean;
   status: string;
+  hasActiveProgram: boolean;
+  activeProgramId: string | null;
 };
 
 /**
@@ -58,7 +61,7 @@ export async function GET(request: NextRequest) {
   // egitim seviyesi gecerli bir class_group'a eslenebilenlerdir - eslenemeyen
   // bir ogrenci secilse bile POST /programs zaten reddedecektir, bu yuzden
   // burada onceden filtrelemek gereksiz bir hata denemesini engeller.
-  const students: AssignableStudentRow[] = rows
+  const students = rows
     .map((row) => ({
       id: String(row.id ?? ""),
       name: String(row.name ?? ""),
@@ -68,5 +71,44 @@ export async function GET(request: NextRequest) {
     }))
     .filter((student) => student.id && mapEducationLevelToClassGroup(student.educationLevel).ok);
 
-  return NextResponse.json({ ok: true, students });
+  // Aktif programi olan ogrenciler listeden ELENMEZ - yalniz isaretlenir
+  // (bkz. AssignmentProgramSettingsClient.tsx). Bu yuzden ayri, salt-okunur
+  // bir ikinci sorgu ile student_assignment_programs tablosundan yalniz
+  // status='active' kayitlar cekilir. PostgREST embed (foreign-key join)
+  // yerine ayri sorgu tercih edildi cunku bir ogrencinin draft/completed
+  // gibi baska durumlarda birden fazla kaydi olabilir - embed bu durumda
+  // belirsiz (dizi) bir sonuc dondururdu.
+  const activeProgramIdByStudentId = new Map<string, string>();
+  const studentIds = students.map((student) => student.id);
+
+  if (studentIds.length > 0) {
+    const { data: activeProgramRows, error: activeProgramsError } = await supabase
+      .from(STUDENT_ASSIGNMENT_PROGRAMS_TABLE)
+      .select("id, student_id, status")
+      .eq("status", "active")
+      .in("student_id", studentIds);
+
+    if (activeProgramsError) {
+      console.error("Active assignment programs query failed", {
+        code: activeProgramsError.code,
+        message: activeProgramsError.message,
+      });
+      return NextResponse.json({ ok: false, message: "Öğrenci listesi alınamadı. Lütfen tekrar deneyin." }, { status: 500 });
+    }
+
+    for (const row of (activeProgramRows ?? []) as Record<string, unknown>[]) {
+      const studentId = String(row.student_id ?? "");
+      const programId = String(row.id ?? "");
+      if (studentId && programId) {
+        activeProgramIdByStudentId.set(studentId, programId);
+      }
+    }
+  }
+
+  const studentsWithProgramInfo: AssignableStudentRow[] = students.map((student) => {
+    const activeProgramId = activeProgramIdByStudentId.get(student.id) ?? null;
+    return { ...student, hasActiveProgram: activeProgramId !== null, activeProgramId };
+  });
+
+  return NextResponse.json({ ok: true, students: studentsWithProgramInfo });
 }
