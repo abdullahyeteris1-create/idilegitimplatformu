@@ -90,7 +90,7 @@ export function isDeniedAssignmentExerciseSlug(exerciseSlug: string): boolean {
 type AllowlistMetadata = Omit<AssignmentExerciseDefinition, "title" | "route" | "category" | "resultExerciseType">;
 
 const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
-  // ---- integrationStatus: "ready" (mevcut 10, Faz 1'de zaten dahildi) ----
+  // ---- integrationStatus: "ready" (mevcut 9) ----
   {
     exerciseSlug: "kare-gorme-alani",
     assignmentEligible: true,
@@ -218,7 +218,11 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
   {
     exerciseSlug: "goz-beyin",
     assignmentEligible: true,
-    integrationStatus: "ready",
+    // Faz 2.5: Egzersiz platform katalogunda gorunmeye devam eder; ancak
+    // guvenilir assignment bitis/sonuc akisi tamamlanana kadar yalniz
+    // integrationStatus="ready" kayitlarini kullanan yeni program
+    // onizleme/uretim havuzuna alinmaz. Mevcut program snapshot'lari etkilenmez.
+    integrationStatus: "needs_major_changes",
     supportsLevel: false,
     supportsSpeed: true,
     settingsSchema: {

@@ -336,7 +336,30 @@ test("TEST 22: integrationStatus=needs_major_changes program preview'e girmez", 
   for (const day of result.preview.days) {
     for (const task of day.tasks) {
       assert.notEqual(task.exerciseSlug, "anlama-testi");
+      assert.notEqual(task.exerciseSlug, "goz-beyin");
     }
+  }
+});
+
+test("TEST 22A: Goz Beyin katalogda gorunur kalir, yeni 20x5 preview havuzuna girmez", () => {
+  const definition = getAssignmentExerciseDefinition("goz-beyin");
+  assert.ok(definition);
+  assert.equal(definition.integrationStatus, "needs_major_changes");
+  assert.equal(isAssignmentCatalogExerciseSlug("goz-beyin"), true);
+  assert.equal(isAssignmentReadyExerciseSlug("goz-beyin"), false);
+
+  const result = generateProgramPreview({
+    classGroup: "grade_1",
+    generationSeed: "goz-beyin-faz-2-5",
+    exerciseSettings: makeFullPool(),
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.preview.days.length, 20);
+  assert.equal(result.preview.totalTasks, 100);
+
+  for (const day of result.preview.days) {
+    assert.equal(day.tasks.length, 5);
+    assert.equal(day.tasks.some((task) => task.exerciseSlug === "goz-beyin"), false);
   }
 });
 
@@ -407,9 +430,9 @@ test("TEST 26: ready comprehension egzersizi yoksa preview warning uretir", () =
   );
 });
 
-test("TEST 27: mevcut 10 ready egzersizle 20x5 uretim hala basarili", () => {
+test("TEST 27: mevcut 9 ready egzersizle 20x5 uretim hala basarili", () => {
   const readyPool = makeReadyOnlyPool();
-  assert.equal(readyPool.length, 10, "ready havuzu 10 kayittan olusmali");
+  assert.equal(readyPool.length, 9, "ready havuzu 9 kayittan olusmali");
 
   const result = generateProgramPreview({ classGroup: "grade_1", generationSeed: "ready-only-check", exerciseSettings: readyPool });
   assert.equal(result.ok, true);

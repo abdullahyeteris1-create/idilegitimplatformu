@@ -30,16 +30,16 @@ test("katalogda tam 16 kayit var", () => {
   assert.equal(ASSIGNMENT_EXERCISE_CATALOG.length, 16);
 });
 
-// TEST 3: 10 ready secilebilir.
-test("katalogda tam 10 ready egzersiz var", () => {
+// TEST 3: 9 ready secilebilir.
+test("katalogda tam 9 ready egzersiz var", () => {
   const readyCount = ASSIGNMENT_EXERCISE_CATALOG.filter((entry) => entry.integrationStatus === "ready").length;
-  assert.equal(readyCount, 10);
+  assert.equal(readyCount, 9);
 });
 
-// TEST 4: 6 hazir olmayan secilemez.
-test("katalogda tam 6 hazir olmayan (needs_minor+needs_major) egzersiz var, hicbiri ready degil", () => {
+// TEST 4: 7 hazir olmayan secilemez.
+test("katalogda tam 7 hazir olmayan (needs_minor+needs_major) egzersiz var, hicbiri ready degil", () => {
   const notReady = ASSIGNMENT_EXERCISE_CATALOG.filter((entry) => entry.integrationStatus !== "ready");
-  assert.equal(notReady.length, 6);
+  assert.equal(notReady.length, 7);
   for (const entry of notReady) {
     assert.notEqual(entry.integrationStatus, "ready");
   }
