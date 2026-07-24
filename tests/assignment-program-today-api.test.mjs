@@ -84,7 +84,41 @@ test("GET today route gorev adini DB'nin exercise_title kolonundan DEGIL, guvenl
 
 test("GET today route yalniz ready egzersizleri isReady=true olarak isaretliyor (savunma amacli ikinci kontrol)", async () => {
   const source = await readTodayRoute();
-  assert.match(source, /isReady:\s*definition\?\.integrationStatus === "ready"/);
+  assert.match(source, /const isReady = definition\?\.integrationStatus === "ready";/);
+});
+
+// ============================================================================
+// Faz 2: API yanitina 'route' alani eklendi - yalniz yonlendirme icin,
+// hicbir yazma/tamamlama eklenmedi.
+// ============================================================================
+
+test("GET today route yanitina 'route' alanini KATALOGDAN (getAssignmentExerciseDefinition) ekliyor, slug birlestirerek uretmiyor", async () => {
+  const source = await readTodayRoute();
+  assert.match(source, /route:\s*string \| null;/);
+  assert.match(source, /route:\s*isReady && definition\?\.route \? definition\.route : null/);
+  // Client'in kendi basina "/egzersizler/" + exerciseSlug kurmasi gereken
+  // hicbir kod yolu YOK - route yalniz definition.route'tan gelir.
+  assert.doesNotMatch(source, /"\/egzersizler\/" \+/);
+});
+
+test("GET today route bilinmeyen/hazir olmayan egzersizde route icin guvenli null davranisi var", async () => {
+  const source = await readTodayRoute();
+  // route yalniz isReady === true VE definition.route varsa doluyor -
+  // hazir olmayan/katalogda bulunamayan bir slug icin route her zaman null.
+  const routeAssignment = source.match(/route:\s*isReady && definition\?\.route \? definition\.route : null/);
+  assert.ok(routeAssignment, "route atamasi bulunamali");
+});
+
+test("GET today route mevcut response alanlarini (program/todayDay/tasks/dayCompleted/programCompleted) bozmadi", async () => {
+  const source = await readTodayRoute();
+  assert.match(source, /taskOrder:/);
+  assert.match(source, /exerciseSlug,/);
+  assert.match(source, /title:/);
+  assert.match(source, /category:/);
+  assert.match(source, /currentLevel:/);
+  assert.match(source, /durationSeconds:/);
+  assert.match(source, /status:/);
+  assert.match(source, /isReady,/);
 });
 
 test("GET today route programi/gunu/gorevleri bulunamayinca uygun bos durumlari donuyor (400\\/500 hatasi degil)", async () => {
@@ -102,13 +136,38 @@ test("GET today route eski daily_assignments sistemine hic dokunmuyor", async ()
 // TodaysProgramTasksCard - Faz 1 UI: yalniz gosterim, hicbir eylem/link yok.
 // ============================================================================
 
-test("TodaysProgramTasksCard 'Calismaya Basla' butonu veya egzersize link ICERMIYOR (Faz 1 kesin yasagi)", async () => {
+// ============================================================================
+// Faz 2: her goreve, durumuna gore "Calismaya Basla"/"Devam Et" butonu
+// eklendi - yalniz yonlendirme, hicbir query parametresi/localStorage/
+// sessionStorage/tamamlama YOK.
+// ============================================================================
+
+test("TodaysProgramTasksCard: getTaskActionLabel yalniz available/in_progress icin metin donduruyor, digerlerinde null", async () => {
   const source = await readCardComponent();
-  assert.doesNotMatch(source, /Çalışmaya Başla/);
-  assert.doesNotMatch(source, /\/egzersizler\//);
+  const fnMatch = source.match(/function getTaskActionLabel\(status: string\): string \| null \{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, "getTaskActionLabel fonksiyonu bulunamali");
+  assert.match(fnMatch[0], /status === "available"[\s\S]*?"Çalışmaya Başla"/);
+  assert.match(fnMatch[0], /status === "in_progress"[\s\S]*?"Devam Et"/);
+  assert.match(fnMatch[0], /return null;/);
+});
+
+test("TodaysProgramTasksCard: buton yalniz isReady && task.route varsa VE durum uygunsa render ediliyor", async () => {
+  const source = await readCardComponent();
+  assert.match(source, /const actionLabel = task\.isReady && task\.route \? getTaskActionLabel\(task\.status\) : null;/);
+  assert.match(source, /\{actionLabel && task\.route \? \(/);
+});
+
+test("TodaysProgramTasksCard: buton gercek Next.js Link ile task.route'a gidiyor, hicbir query parametresi eklenmiyor", async () => {
+  const source = await readCardComponent();
+  assert.match(source, /import Link from "next\/link";/);
+  assert.match(source, /<Link href=\{task\.route\} className=\{styles\.todaysProgramItemAction\}>/);
+  // Faz 3'e ertelenen id tasima mekanizmalari - hicbiri bu fazda eklenmemeli.
+  assert.doesNotMatch(source, /assignmentItemId/);
+  assert.doesNotMatch(source, /assignmentTaskId/);
   assert.doesNotMatch(source, /programTaskId/);
-  assert.doesNotMatch(source, /<Link/);
-  assert.doesNotMatch(source, /<a\s/);
+  assert.doesNotMatch(source, /\?\$\{/); // href'e sablon literaliyle query eklenmemis
+  assert.doesNotMatch(source, /localStorage/);
+  assert.doesNotMatch(source, /sessionStorage/);
 });
 
 test("TodaysProgramTasksCard gorev tamamlama, sonuc kaydetme veya program ilerletme cagrisi ICERMIYOR", async () => {
@@ -118,6 +177,8 @@ test("TodaysProgramTasksCard gorev tamamlama, sonuc kaydetme veya program ilerle
   assert.doesNotMatch(source, /saveExerciseResult/);
   assert.doesNotMatch(source, /\.rpc\(/);
   assert.doesNotMatch(source, /supabase/i);
+  assert.doesNotMatch(source, /\.insert\(|\.update\(|\.upsert\(|\.delete\(/);
+  assert.doesNotMatch(source, /method:\s*"POST"/);
 });
 
 test("TodaysProgramTasksCard yalniz GET /api/student/assignment-program/today'ye fetch atiyor", async () => {
@@ -156,7 +217,50 @@ test("TodaysProgramTasksCard gorsel dili (CSS module) mevcut panel kartlariyla u
   assert.match(source, /styles\.todaysProgramSection/);
   assert.match(source, /styles\.todaysProgramItem/);
   assert.match(source, /styles\.todaysProgramStatus/);
+  assert.match(source, /styles\.todaysProgramItemFoot/);
+  assert.match(source, /styles\.todaysProgramItemAction/);
   assert.doesNotMatch(source, /className="[^"]*rounded-|className="[^"]*text-\[/);
+});
+
+test("student-panel-preview.module.css: buton mevcut kucuk-buton diliyle uyumlu, acik/koyu tema ve mobil tasma-onleme kurallari var", async () => {
+  const cssSource = await readFile(
+    new URL("../src/components/student-panel-preview/student-panel-preview.module.css", import.meta.url),
+    "utf8",
+  );
+
+  // Masaustu: gorev satirinin sagi (foot icinde meta ile ayni satirda,
+  // space-between) - mevcut min-height:44px dokunma-hedefi konvansiyonu.
+  assert.match(cssSource, /\.todaysProgramItemFoot\{display:flex;align-items:center;justify-content:space-between/);
+  assert.match(cssSource, /\.todaysProgramItemAction\{[^}]*min-height:44px/);
+  // Acik tema override'i.
+  assert.match(cssSource, /\.light \.todaysProgramItemAction\{/);
+  // Mobilde tasma yapmamasi icin gorev bilgilerinin altina gecmesi.
+  assert.match(cssSource, /@media\(max-width:560px\)\{[\s\S]*?\.todaysProgramItemFoot\{flex-direction:column;align-items:stretch\}\.todaysProgramItemAction\{width:100%\}/);
+  // Durum rozeti (.todaysProgramStatus) ve gun/gorev basligi kurallari
+  // (Faz 1) hala yerinde - bu faz onlari silmedi.
+  assert.match(cssSource, /\.todaysProgramStatus\{/);
+  assert.match(cssSource, /\.todaysProgramHead\{/);
+});
+
+test("Firdevs Bilici'nin programindaki 5 egzersizin route'lari katalogda dogru (Kare Gorme/Hafiza/Goz Beyin/Takistoskop/Ayni Olani Yakala)", async () => {
+  const source = await readFile(
+    new URL("../src/lib/assignments/exerciseCatalog.ts", import.meta.url),
+    "utf8",
+  );
+
+  const expectedRoutesBySlug = {
+    "kare-gorme-alani": "/egzersizler/kare-gorme-alani",
+    "hafiza-gelistirme": "/egzersizler/hafiza-gelistirme",
+    "goz-beyin": "/egzersizler/goz-beyin",
+    takistoskop: "/egzersizler/takistoskop",
+    "ayni-olani-yakala": "/egzersizler/ayni-olani-yakala",
+  };
+
+  for (const [slug, expectedRoute] of Object.entries(expectedRoutesBySlug)) {
+    const entryMatch = source.match(new RegExp(`slug: "${slug}",[\\s\\S]{0,120}?route: "([^"]+)"`));
+    assert.ok(entryMatch, `${slug} icin katalog kaydi bulunamali`);
+    assert.equal(entryMatch[1], expectedRoute, `${slug} route'u beklenenle uyusmuyor`);
+  }
 });
 
 // ============================================================================

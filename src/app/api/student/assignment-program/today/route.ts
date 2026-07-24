@@ -21,6 +21,7 @@ type TodayProgramTask = {
   durationSeconds: number;
   status: string;
   isReady: boolean;
+  route: string | null;
 };
 
 /**
@@ -132,10 +133,14 @@ export async function GET(request: NextRequest) {
 
   // exercise_title DB'de her zaman null yazilir (RPC bu alani doldurmaz) -
   // gorev adi/route/hazir-mi bilgisi guvenli sunucu katalogundan (slug ile)
-  // cozulur, DB'den asla okunmaz.
+  // cozulur, DB'den asla okunmaz. route de AYNI katalogdan gelir - client
+  // hicbir zaman exerciseSlug'dan kendi basina bir URL kurmamalidir (Faz 2:
+  // yalniz yonlendirme, katalogda karsiligi olmayan/hazir olmayan bir slug
+  // icin route null doner, boylece client'ta buton hic render edilmez).
   const tasks: TodayProgramTask[] = rows.map((row) => {
     const exerciseSlug = typeof row.exercise_slug === "string" ? row.exercise_slug : "";
     const definition = getAssignmentExerciseDefinition(exerciseSlug);
+    const isReady = definition?.integrationStatus === "ready";
 
     return {
       id: String(row.id ?? ""),
@@ -146,7 +151,8 @@ export async function GET(request: NextRequest) {
       currentLevel: typeof row.current_level === "number" ? row.current_level : 1,
       durationSeconds: typeof row.duration_seconds === "number" ? row.duration_seconds : 0,
       status: typeof row.status === "string" ? row.status : "",
-      isReady: definition?.integrationStatus === "ready",
+      isReady,
+      route: isReady && definition?.route ? definition.route : null,
     };
   });
 

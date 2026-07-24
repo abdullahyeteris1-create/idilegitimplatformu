@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./student-panel-preview.module.css";
 
@@ -13,6 +14,7 @@ type TodayProgramTask = {
   durationSeconds: number;
   status: string;
   isReady: boolean;
+  route: string | null;
 };
 
 type TodayProgramResponse = {
@@ -44,6 +46,15 @@ function formatDuration(durationSeconds: number): string {
   if (durationSeconds <= 0) return "-";
   const minutes = Math.round(durationSeconds / 60);
   return minutes > 0 ? `${minutes} dakika` : `${durationSeconds} saniye`;
+}
+
+// Buton metni yalniz status'e gore secilir - "completed"/"cancelled"/"locked"
+// icin null doner (buton HIC render edilmez, "Tekrar Calis" gibi yaniltici
+// bir CTA gosterilmez - tamamlama/tekrar kavrami Faz 3'e kadar tanimsizdir).
+function getTaskActionLabel(status: string): string | null {
+  if (status === "available") return "Çalışmaya Başla";
+  if (status === "in_progress") return "Devam Et";
+  return null;
 }
 
 /**
@@ -145,31 +156,47 @@ export function TodaysProgramTasksCard() {
             </p>
           ) : null}
           <ul className={styles.todaysProgramList}>
-            {state.tasks.map((task) => (
-              <li key={task.id} className={styles.todaysProgramItem}>
-                <div className={styles.todaysProgramItemHead}>
-                  <div className={styles.todaysProgramItemLead}>
-                    <span className={styles.todaysProgramItemOrder} aria-hidden="true">
-                      {task.taskOrder}
-                    </span>
-                    <span className={styles.todaysProgramItemTitle}>
-                      {task.isReady ? task.title : `${task.title} (Yakında)`}
+            {state.tasks.map((task) => {
+              // Buton yalniz gercekten hazir bir egzersize, katalogdan gelen
+              // bir route varsa VE durum uygunsa gosterilir - hicbir gorev/
+              // id tasima query parametresi eklenmez (bu, Faz 3'e ertelendi),
+              // tarayici depolama alanlarina hicbir sey yazilmaz. href
+              // dogrudan API'nin dondurdugu (katalogdan cozulmus) route'tur.
+              const actionLabel = task.isReady && task.route ? getTaskActionLabel(task.status) : null;
+
+              return (
+                <li key={task.id} className={styles.todaysProgramItem}>
+                  <div className={styles.todaysProgramItemHead}>
+                    <div className={styles.todaysProgramItemLead}>
+                      <span className={styles.todaysProgramItemOrder} aria-hidden="true">
+                        {task.taskOrder}
+                      </span>
+                      <span className={styles.todaysProgramItemTitle}>
+                        {task.isReady ? task.title : `${task.title} (Yakında)`}
+                      </span>
+                    </div>
+                    <span className={styles.todaysProgramStatus} data-status={task.status}>
+                      {STATUS_LABELS[task.status] ?? task.status}
                     </span>
                   </div>
-                  <span className={styles.todaysProgramStatus} data-status={task.status}>
-                    {STATUS_LABELS[task.status] ?? task.status}
-                  </span>
-                </div>
-                <div className={styles.todaysProgramItemMeta}>
-                  <span>
-                    Seviye: <b>{task.currentLevel}</b>
-                  </span>
-                  <span>
-                    Süre: <b>{formatDuration(task.durationSeconds)}</b>
-                  </span>
-                </div>
-              </li>
-            ))}
+                  <div className={styles.todaysProgramItemFoot}>
+                    <div className={styles.todaysProgramItemMeta}>
+                      <span>
+                        Seviye: <b>{task.currentLevel}</b>
+                      </span>
+                      <span>
+                        Süre: <b>{formatDuration(task.durationSeconds)}</b>
+                      </span>
+                    </div>
+                    {actionLabel && task.route ? (
+                      <Link href={task.route} className={styles.todaysProgramItemAction}>
+                        {actionLabel}
+                      </Link>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
