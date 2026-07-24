@@ -13,7 +13,9 @@
     "stop-node": "taskkill /IM node.exe /F || exit /b 0",
     "mobile:prod": "npm run build && npm run start:mobile",
     "test:mobile": "taskkill /IM node.exe /F || echo node.exe not running && rmdir /s /q .next && npm run build && npm run start:mobile",
-    "lint": "eslint"
+    "lint": "eslint",
+    "maintenance:repair-eye-brain:dry-run": "node --env-file-if-exists=.env.local --experimental-loader ./tests/ts-alias-loader.mjs scripts/maintenance/repair-eye-brain-assignment.mjs",
+    "maintenance:repair-eye-brain:execute": "node --env-file-if-exists=.env.local --experimental-loader ./tests/ts-alias-loader.mjs scripts/maintenance/repair-eye-brain-assignment.mjs --execute"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
