@@ -322,20 +322,22 @@ export function SquareVisionExerciseClient() {
     }
 
     const timerId = window.setInterval(() => {
-      setElapsedSeconds((current) => {
-        const next = current + 1;
-
-        if (next >= totalDurationSeconds) {
-          window.setTimeout(finishExercise, 0);
-          return totalDurationSeconds;
-        }
-
-        return next;
-      });
+      setElapsedSeconds((current) =>
+        Math.min(current + 1, totalDurationSeconds),
+      );
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [finishExercise, phase, totalDurationSeconds]);
+  }, [phase, totalDurationSeconds]);
+
+  useEffect(() => {
+    if (
+      phase === "running" &&
+      elapsedSeconds >= totalDurationSeconds
+    ) {
+      finishExercise();
+    }
+  }, [elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
