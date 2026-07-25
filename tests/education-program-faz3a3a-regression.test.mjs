@@ -22,10 +22,14 @@ test("Assignment System V2 dosyalari FAZ 3A-3A'da da degismemis sekilde durur", 
 });
 
 test("FAZ 3A-3A'da yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ayni)", async () => {
+  // NOT: Bu sayi yalniz FAZ 3A-3A anini tanimliyordu. FAZ 3B-1A'da kasitli
+  // olarak yeni bir migration (gorev tamamlama RPC'si) eklendi - bu artik
+  // beklenen bir durum, regresyon degil (bkz.
+  // education-program-complete-task-migration.test.mjs).
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 15);
+  assert.equal(sqlFiles.length, 16);
 });
 
 test("Kare Gorme Alani route'u FAZ 3A-3A'da degistirilmedi (paylasilan helper'a gecirilmedi)", async () => {
