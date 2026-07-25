@@ -158,11 +158,15 @@ export function TodaysProgramTasksCard() {
           <ul className={styles.todaysProgramList}>
             {state.tasks.map((task) => {
               // Buton yalniz gercekten hazir bir egzersize, katalogdan gelen
-              // bir route varsa VE durum uygunsa gosterilir - hicbir gorev/
-              // id tasima query parametresi eklenmez (bu, Faz 3'e ertelendi),
-              // tarayici depolama alanlarina hicbir sey yazilmaz. href
-              // dogrudan API'nin dondurdugu (katalogdan cozulmus) route'tur.
+              // bir route varsa VE durum uygunsa gosterilir. href, API'nin
+              // dondurdugu (katalogdan cozulmus) route'a ?programTaskId=
+              // eklenmis halidir (Faz 3) - egzersiz bitince secureResultStorage
+              // bu id'yi URL'den okuyup /api/student/assignment-program-tasks/
+              // [taskId]/complete'i cagirir, gorevi tamamlar ve gerekirse
+              // sonraki gunu acar. Tarayici depolama alanlarina hicbir sey
+              // yazilmaz - id yalniz URL uzerinden tasinir.
               const actionLabel = task.isReady && task.route ? getTaskActionLabel(task.status) : null;
+              const taskHref = task.route ? `${task.route}?programTaskId=${encodeURIComponent(task.id)}` : null;
 
               return (
                 <li key={task.id} className={styles.todaysProgramItem}>
@@ -188,8 +192,8 @@ export function TodaysProgramTasksCard() {
                         Süre: <b>{formatDuration(task.durationSeconds)}</b>
                       </span>
                     </div>
-                    {actionLabel && task.route ? (
-                      <Link href={task.route} className={styles.todaysProgramItemAction}>
+                    {actionLabel && taskHref ? (
+                      <Link href={taskHref} className={styles.todaysProgramItemAction}>
                         {actionLabel}
                       </Link>
                     ) : null}

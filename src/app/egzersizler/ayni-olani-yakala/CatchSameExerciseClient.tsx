@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/catch-same-theme.module.css";
 
@@ -52,7 +53,17 @@ export function CatchSameExerciseClient() {
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(60);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [timeLeft, setTimeLeft] = useState<number>(60);
-    const [currentItem, setCurrentItem] = useState("Hazir");
+  const assignmentTask = useAssignmentTask();
+  const isAssignmentMode = assignmentTask !== null;
+  /**
+   * Odev modunda sureyi ogretmen belirler, serbest calismada asagidaki secici.
+   * State'e KOPYALANMAZ, her render'da turetilir - boylece ayarlar sayfa
+   * acildiktan sonra (asenkron) gelse bile ek bir senkronizasyona gerek kalmaz.
+   */
+  const effectiveDuration =
+    assignmentTask && assignmentTask.durationSeconds > 0 ? assignmentTask.durationSeconds : selectedDuration;
+
+  const [currentItem, setCurrentItem] = useState("Hazir");
   const [correct, setCorrect] = useState(0);
   const [wrong, setWrong] = useState(0);
   const [missed, setMissed] = useState(0);
@@ -113,7 +124,7 @@ export function CatchSameExerciseClient() {
     }
 
     hasSavedResultRef.current = true;
-    const durationSeconds = Math.max(1, selectedDuration - timeLeft);
+    const durationSeconds = Math.max(1, effectiveDuration - timeLeft);
 
     const payload = {
       exerciseType: "catch-same",
@@ -128,7 +139,7 @@ export function CatchSameExerciseClient() {
         reason,
         mode,
         speed,
-        selectedDuration,
+        selectedDuration: effectiveDuration,
         wrong,
         missed,
         roundCount,
@@ -233,7 +244,7 @@ export function CatchSameExerciseClient() {
 
     statusRef.current = nextStatus;
     setStatus(nextStatus);
-    setTimeLeft(selectedDuration);
+    setTimeLeft(effectiveDuration);
     setCurrentItem("Hazir");
     setCorrect(0);
     setWrong(0);
@@ -340,7 +351,7 @@ export function CatchSameExerciseClient() {
         title="Aynı Olanı Yakala"
         subtitle={statusLabel}
         topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
-        bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
+        bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5" hidden={isAssignmentMode}><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
         controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}>Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button> : <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>{saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
         onExit={() => router.push("/egzersizler")}
       >

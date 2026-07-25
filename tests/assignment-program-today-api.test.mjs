@@ -154,25 +154,28 @@ test("TodaysProgramTasksCard: getTaskActionLabel yalniz available/in_progress ic
 test("TodaysProgramTasksCard: buton yalniz isReady && task.route varsa VE durum uygunsa render ediliyor", async () => {
   const source = await readCardComponent();
   assert.match(source, /const actionLabel = task\.isReady && task\.route \? getTaskActionLabel\(task\.status\) : null;/);
-  assert.match(source, /\{actionLabel && task\.route \? \(/);
+  assert.match(source, /\{actionLabel && taskHref \? \(/);
 });
 
-test("TodaysProgramTasksCard: buton gercek Next.js Link ile task.route'a gidiyor, hicbir query parametresi eklenmiyor", async () => {
+test("TodaysProgramTasksCard: buton Next.js Link ile route'a + programTaskId query parametresiyle gidiyor", async () => {
   const source = await readCardComponent();
   assert.match(source, /import Link from "next\/link";/);
-  assert.match(source, /<Link href=\{task\.route\} className=\{styles\.todaysProgramItemAction\}>/);
-  // Faz 3'e ertelenen id tasima mekanizmalari - hicbiri bu fazda eklenmemeli.
+  assert.match(source, /<Link href=\{taskHref\} className=\{styles\.todaysProgramItemAction\}>/);
+  // Gorev id'si YALNIZ URL uzerinden tasinir - egzersiz bitince
+  // secureResultStorage bunu okuyup gorevi tamamlar.
+  assert.match(source, /\?programTaskId=\$\{encodeURIComponent\(task\.id\)\}/);
+  // Eski gunluk odev sisteminin id'si buraya karismamalidir.
   assert.doesNotMatch(source, /assignmentItemId/);
-  assert.doesNotMatch(source, /assignmentTaskId/);
-  assert.doesNotMatch(source, /programTaskId/);
-  assert.doesNotMatch(source, /\?\$\{/); // href'e sablon literaliyle query eklenmemis
+  // Tarayici depolamasi hicbir zaman kullanilmaz.
   assert.doesNotMatch(source, /localStorage/);
   assert.doesNotMatch(source, /sessionStorage/);
 });
 
-test("TodaysProgramTasksCard gorev tamamlama, sonuc kaydetme veya program ilerletme cagrisi ICERMIYOR", async () => {
+test("TodaysProgramTasksCard'in KENDISI hicbir yazma/tamamlama cagrisi yapmiyor (yalniz link uretir)", async () => {
   const source = await readCardComponent();
-  assert.doesNotMatch(source, /\/complete/);
+  // Tamamlama cagrisini bu kart DEGIL, egzersiz bitiminde secureResultStorage
+  // yapar; bu bilesen salt-okunurdur.
+  assert.doesNotMatch(source, /fetch\([^)]*\/complete/);
   assert.doesNotMatch(source, /\/api\/student\/results/);
   assert.doesNotMatch(source, /saveExerciseResult/);
   assert.doesNotMatch(source, /\.rpc\(/);

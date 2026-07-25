@@ -10,8 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -374,11 +373,10 @@ export function MemoryGameExerciseClient() {
       totalCorrectCount,
       totalWrongCount,
     );
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Seçilmemiş Öğrenci",
+    // Sunucu tarafli guvenli kayit: ogrenci kimligi imzali oturum
+    // cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev, ogrenci
+    // calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
+    void saveExerciseResultSecure({
       exerciseType: "memory-game",
       exerciseTitle: "Hafıza Geliştirme",
       durationSeconds,

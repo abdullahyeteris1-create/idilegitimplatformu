@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { AssignmentProgramSettingsClient } from "./AssignmentProgramSettingsClient";
+import { TemplateLibraryClient } from "./TemplateLibraryClient";
 
 export const metadata: Metadata = {
-  title: "20 Günlük Ödev Programı | İDİL Hızlı Okuma",
-  description: "Sınıf gruplarına göre çalışma ayarlarını düzenleyin ve program önizlemesi oluşturun.",
+  title: "Ödev Şablonları | İDİL Hızlı Okuma",
+  description: "Günlük çalışmaları tek tek belirlediğiniz ödev şablonlarını hazırlayın ve öğrencilere atayın.",
 };
 
-export default function AssignmentProgramSettingsPage() {
-  return <AssignmentProgramSettingsClient />;
+export default function AssignmentTemplateLibraryPage() {
+  return <TemplateLibraryClient />;
 }

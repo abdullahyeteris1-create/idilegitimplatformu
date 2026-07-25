@@ -19,8 +19,7 @@ import {
   shouldLevelUp,
   type MatchingCard,
 } from "@/lib/exercise-engine/cardMatching";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -457,11 +456,10 @@ export function CardMatchingExerciseClient() {
     const successRate = calculateSuccessRate(correctCount, wrongCount);
     const finalNet = calculateNet(levelCorrectCount, levelWrongCount);
     const durationSeconds = Math.max(1, elapsedSeconds);
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Seçilmemiş Öğrenci",
+    // Sunucu tarafli guvenli kayit: ogrenci kimligi imzali oturum
+    // cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev, ogrenci
+    // calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
+    void saveExerciseResultSecure({
       exerciseType: "card-matching",
       exerciseTitle: "Kart Eşleştirme Çalışması",
       durationSeconds,

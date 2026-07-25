@@ -47,37 +47,6 @@ export function validateDurationSeconds(value: unknown): ValidationResult<number
   return ok(value);
 }
 
-export function validateDailyWeight(value: unknown): ValidationResult<number> {
-  if (!isFiniteInteger(value) || value < 0) {
-    return fail("dailyWeight sifir veya pozitif bir tam sayi olmalidir.");
-  }
-  return ok(value);
-}
-
-export function validateRepeatCooldownDays(value: unknown): ValidationResult<number> {
-  if (!isFiniteInteger(value) || value < 0) {
-    return fail("repeatCooldownDays sifir veya pozitif bir tam sayi olmalidir.");
-  }
-  return ok(value);
-}
-
-export function validateMaxOccurrencesPerProgram(value: unknown): ValidationResult<number | null> {
-  if (value === null || value === undefined) {
-    return ok(null);
-  }
-  if (!isFiniteInteger(value) || value <= 0) {
-    return fail("maxOccurrencesPerProgram null veya pozitif bir tam sayi olmalidir.");
-  }
-  return ok(value);
-}
-
-export function validateDisplayOrder(value: unknown): ValidationResult<number> {
-  if (!isFiniteInteger(value) || value < 0) {
-    return fail("displayOrder sifir veya pozitif bir tam sayi olmalidir.");
-  }
-  return ok(value);
-}
-
 /**
  * Bir egzersizin settings objesini, o egzersizin allowlist'teki
  * settingsSchema'sina gore dogrular:

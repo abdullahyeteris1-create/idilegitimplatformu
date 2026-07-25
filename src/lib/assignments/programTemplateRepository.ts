@@ -1,9 +1,25 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ASSIGNMENT_CLASS_GROUPS, type AssignmentClassGroup } from "@/lib/assignments/classGroups";
-import type { ProgramClassExerciseSetting, ProgramClassTemplate, ProgramClassTemplateWithSettings } from "@/lib/assignments/types";
+import type {
+  ProgramClassTemplate,
+  ProgramTemplateSlot,
+  ProgramTemplateSummary,
+  ProgramTemplateWithSlots,
+} from "@/lib/assignments/types";
+
+/**
+ * Elle kurulan odev sablonu kutuphanesinin veri erisim katmani. Sablon
+ * basliklari `program_class_templates` tablosunda, her gunun 5 calismasi ise
+ * `program_template_tasks` tablosunda yasar.
+ *
+ * NOT: `program_class_exercise_settings` tablosu bu dosyadan artik hic
+ * okunmaz/yazilmaz - o tablo yalniz eski, kullanilmayan agirlikli-rastgele
+ * uretim akisina aitti (bkz. ilgili migration'daki "DEPRECATED" yorumu).
+ */
 
 const PROGRAM_CLASS_TEMPLATES_TABLE = "program_class_templates";
-const PROGRAM_CLASS_EXERCISE_SETTINGS_TABLE = "program_class_exercise_settings";
+const PROGRAM_TEMPLATE_TASKS_TABLE = "program_template_tasks";
+const REPLACE_TEMPLATE_SLOTS_RPC = "replace_program_template_tasks";
 
 const CLASS_GROUP_ORDER = new Map<string, number>(ASSIGNMENT_CLASS_GROUPS.map((group, index) => [group, index]));
 
@@ -23,84 +39,30 @@ function mapTemplateRow(row: Record<string, unknown>): ProgramClassTemplate {
   };
 }
 
-function mapExerciseSettingRow(row: Record<string, unknown>): ProgramClassExerciseSetting {
+function mapSlotRow(row: Record<string, unknown>): ProgramTemplateSlot {
   return {
-    id: String(row.id ?? ""),
-    templateId: String(row.template_id ?? ""),
+    dayNumber: Number(row.day_number ?? 0),
+    taskOrder: Number(row.task_order ?? 0),
     exerciseSlug: String(row.exercise_slug ?? ""),
-    enabled: row.enabled !== false,
+    category: String(row.category ?? ""),
     startingLevel: Number(row.starting_level ?? 1),
     durationSeconds: Number(row.duration_seconds ?? 300),
     settings: (row.settings as Record<string, string | number | boolean>) ?? {},
-    dailyWeight: Number(row.daily_weight ?? 1),
-    repeatCooldownDays: Number(row.repeat_cooldown_days ?? 0),
-    maxOccurrencesPerProgram: typeof row.max_occurrences_per_program === "number" ? row.max_occurrences_per_program : null,
-    displayOrder: Number(row.display_order ?? 0),
-    createdAt: String(row.created_at ?? new Date().toISOString()),
-    updatedAt: String(row.updated_at ?? new Date().toISOString()),
   };
 }
 
-function sortExerciseSettings(rows: ProgramClassExerciseSetting[]): ProgramClassExerciseSetting[] {
-  return [...rows].sort((a, b) => {
-    if (a.displayOrder !== b.displayOrder) {
-      return a.displayOrder - b.displayOrder;
-    }
-    return a.exerciseSlug.localeCompare(b.exerciseSlug);
-  });
+function expectedSlotCountFor(template: ProgramClassTemplate): number {
+  return template.programDays * template.tasksPerDay;
 }
 
-function sortTemplates(templates: ProgramClassTemplateWithSettings[]): ProgramClassTemplateWithSettings[] {
-  return [...templates].sort((a, b) => {
-    const orderA = CLASS_GROUP_ORDER.get(a.template.classGroup) ?? Number.MAX_SAFE_INTEGER;
-    const orderB = CLASS_GROUP_ORDER.get(b.template.classGroup) ?? Number.MAX_SAFE_INTEGER;
-    if (orderA !== orderB) {
-      return orderA - orderB;
-    }
-    return a.template.name.localeCompare(b.template.name);
-  });
-}
-
-async function loadExerciseSettingsForTemplates(
+/** Sablon kutuphanesi: her sablon + kac slotunun doldugu. Salt-okunur. */
+export async function listTemplateLibrary(
   supabase: SupabaseClient,
-  templateIds: string[],
-): Promise<Map<string, ProgramClassExerciseSetting[]>> {
-  const byTemplate = new Map<string, ProgramClassExerciseSetting[]>();
-  if (templateIds.length === 0) {
-    return byTemplate;
-  }
-
-  const { data } = await supabase
-    .from(PROGRAM_CLASS_EXERCISE_SETTINGS_TABLE)
-    .select("*")
-    .in("template_id", templateIds);
-
-  if (!Array.isArray(data)) {
-    return byTemplate;
-  }
-
-  for (const row of data as Record<string, unknown>[]) {
-    const setting = mapExerciseSettingRow(row);
-    const list = byTemplate.get(setting.templateId) ?? [];
-    list.push(setting);
-    byTemplate.set(setting.templateId, list);
-  }
-
-  for (const [templateId, list] of byTemplate) {
-    byTemplate.set(templateId, sortExerciseSettings(list));
-  }
-
-  return byTemplate;
-}
-
-/** Butun sinif sablonlarini (istege bagli classGroup filtresiyle) ayarlariyla birlikte listeler. Salt-okunur. */
-export async function listProgramClassTemplates(
-  supabase: SupabaseClient,
-  classGroup?: AssignmentClassGroup,
-): Promise<ProgramClassTemplateWithSettings[]> {
+  options?: { includeInactive?: boolean },
+): Promise<ProgramTemplateSummary[]> {
   let query = supabase.from(PROGRAM_CLASS_TEMPLATES_TABLE).select("*");
-  if (classGroup) {
-    query = query.eq("class_group", classGroup);
+  if (!options?.includeInactive) {
+    query = query.eq("is_active", true);
   }
 
   const { data, error } = await query;
@@ -109,24 +71,46 @@ export async function listProgramClassTemplates(
   }
 
   const templates = (data as Record<string, unknown>[]).map(mapTemplateRow);
-  const settingsByTemplate = await loadExerciseSettingsForTemplates(
-    supabase,
-    templates.map((template) => template.id),
-  );
+  if (templates.length === 0) {
+    return [];
+  }
 
-  return sortTemplates(
-    templates.map((template) => ({
-      template,
-      exerciseSettings: settingsByTemplate.get(template.id) ?? [],
-    })),
-  );
+  // Yalniz template_id kolonu cekilir - slot govdelerini (settings jsonb dahil)
+  // liste ekraninda tasimanin anlami yok, sayim icin bu yeterli.
+  const { data: slotRows } = await supabase
+    .from(PROGRAM_TEMPLATE_TASKS_TABLE)
+    .select("template_id")
+    .in("template_id", templates.map((template) => template.id));
+
+  const filledByTemplate = new Map<string, number>();
+  if (Array.isArray(slotRows)) {
+    for (const row of slotRows as Record<string, unknown>[]) {
+      const templateId = String(row.template_id ?? "");
+      filledByTemplate.set(templateId, (filledByTemplate.get(templateId) ?? 0) + 1);
+    }
+  }
+
+  return templates
+    .map((template) => ({
+      ...template,
+      filledSlotCount: filledByTemplate.get(template.id) ?? 0,
+      expectedSlotCount: expectedSlotCountFor(template),
+    }))
+    .sort((a, b) => {
+      const orderA = CLASS_GROUP_ORDER.get(a.classGroup) ?? Number.MAX_SAFE_INTEGER;
+      const orderB = CLASS_GROUP_ORDER.get(b.classGroup) ?? Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.name.localeCompare(b.name, "tr");
+    });
 }
 
-/** Tek bir sablonu id ile ayarlariyla birlikte getirir. Salt-okunur. */
-export async function getProgramClassTemplateById(
+/** Bir sablonu tum gun/slot satirlariyla birlikte getirir. Salt-okunur. */
+export async function getTemplateWithSlots(
   supabase: SupabaseClient,
   templateId: string,
-): Promise<ProgramClassTemplateWithSettings | null> {
+): Promise<ProgramTemplateWithSlots | null> {
   const { data, error } = await supabase
     .from(PROGRAM_CLASS_TEMPLATES_TABLE)
     .select("*")
@@ -138,125 +122,209 @@ export async function getProgramClassTemplateById(
   }
 
   const template = mapTemplateRow(data as Record<string, unknown>);
-  const settingsByTemplate = await loadExerciseSettingsForTemplates(supabase, [template.id]);
+
+  const { data: slotRows } = await supabase
+    .from(PROGRAM_TEMPLATE_TASKS_TABLE)
+    .select("day_number, task_order, exercise_slug, category, starting_level, duration_seconds, settings")
+    .eq("template_id", templateId)
+    .order("day_number", { ascending: true })
+    .order("task_order", { ascending: true });
 
   return {
     template,
-    exerciseSettings: settingsByTemplate.get(template.id) ?? [],
+    slots: Array.isArray(slotRows) ? (slotRows as Record<string, unknown>[]).map(mapSlotRow) : [],
+    expectedSlotCount: expectedSlotCountFor(template),
   };
 }
 
-export type UpsertExerciseSettingInput = {
-  exerciseSlug: string;
-  enabled: boolean;
-  startingLevel: number;
-  durationSeconds: number;
-  dailyWeight: number;
-  repeatCooldownDays: number;
-  maxOccurrencesPerProgram: number | null;
-  displayOrder: number;
-  settings: Record<string, string | number | boolean>;
-};
-
-export type UpsertProgramClassTemplateInput = {
-  templateId?: string;
+export type CreateTemplateInput = {
   classGroup: AssignmentClassGroup;
   name: string;
   description: string | null;
+  programDays: number;
   defaultTaskDurationSeconds: number;
-  exercises: UpsertExerciseSettingInput[];
+  createdBy: string | null;
 };
 
-/**
- * Sablonu ve egzersiz ayarlarini kaydeder/gunceller.
- *
- * TRANSACTION NOTU: Supabase JS istemcisi coklu-tablo transaction saglamaz;
- * bu turda yeni bir SQL RPC/migration yazilmadigi icin en guvenli mevcut
- * yaklasim izlendi: (1) sablon satiri TEK bir upsert ile yazilir, (2)
- * gonderilen tum egzersiz ayarlari TEK bir toplu upsert cagrisiyla yazilir
- * (Supabase/Postgrest coklu-satir upsert'i TEK bir SQL ifadesi olarak
- * calistirir, bu yuzden o coklu-satir islem kendi icinde atomiktir), (3)
- * istekte YER ALMAYAN mevcut satirlar SILINMEZ, yalniz `enabled=false`
- * yapilir (destructive delete-all-then-insert yaklasimindan bilerek
- * kacinildi). Adim (1) basarili olup adim (2) basarisiz olursa, sablon
- * satisi yeni/guncel haliyle kalir ama egzersiz ayarlari eskisi gibi kalmis
- * olabilir - bu KISMI BASARISIZLIK RISKI yalniz gercek bir RPC/transaction
- * ile tam olarak ortadan kaldirilabilir (bu turda yaziLMADI).
- */
-export async function upsertProgramClassTemplate(
+/** Bos bir sablon basligi olusturur (slotlar sonradan editorde doldurulur). */
+export async function createTemplate(
   supabase: SupabaseClient,
-  input: UpsertProgramClassTemplateInput,
-): Promise<{ ok: true; result: ProgramClassTemplateWithSettings } | { ok: false; message: string }> {
-  const templatePayload: Record<string, unknown> = {
-    class_group: input.classGroup,
-    name: input.name,
-    description: input.description,
-    default_task_duration_seconds: input.defaultTaskDurationSeconds,
-  };
+  input: CreateTemplateInput,
+): Promise<{ ok: true; templateId: string } | { ok: false; message: string }> {
+  const { data, error } = await supabase
+    .from(PROGRAM_CLASS_TEMPLATES_TABLE)
+    .insert({
+      class_group: input.classGroup,
+      name: input.name,
+      description: input.description,
+      program_days: input.programDays,
+      tasks_per_day: 5,
+      default_task_duration_seconds: input.defaultTaskDurationSeconds,
+      created_by: input.createdBy,
+      is_active: true,
+    })
+    .select("id")
+    .maybeSingle();
 
-  let templateId = input.templateId;
-
-  if (templateId) {
-    const { data, error } = await supabase
-      .from(PROGRAM_CLASS_TEMPLATES_TABLE)
-      .update(templatePayload)
-      .eq("id", templateId)
-      .select("id")
-      .maybeSingle();
-
-    if (error || !data) {
-      return { ok: false, message: "Sablon guncellenemedi veya bulunamadi." };
-    }
-  } else {
-    const { data, error } = await supabase
-      .from(PROGRAM_CLASS_TEMPLATES_TABLE)
-      .insert(templatePayload)
-      .select("id")
-      .maybeSingle();
-
-    if (error || !data) {
-      return { ok: false, message: "Sablon olusturulamadi." };
-    }
-    templateId = String((data as Record<string, unknown>).id);
+  if (error || !data) {
+    console.error("Template creation failed", { code: error?.code, message: error?.message });
+    return { ok: false, message: "Sablon olusturulamadi." };
   }
 
-  if (input.exercises.length > 0) {
-    const settingsRows = input.exercises.map((exercise) => ({
-      template_id: templateId,
-      exercise_slug: exercise.exerciseSlug,
-      enabled: exercise.enabled,
-      starting_level: exercise.startingLevel,
-      duration_seconds: exercise.durationSeconds,
-      daily_weight: exercise.dailyWeight,
-      repeat_cooldown_days: exercise.repeatCooldownDays,
-      max_occurrences_per_program: exercise.maxOccurrencesPerProgram,
-      display_order: exercise.displayOrder,
-      settings: exercise.settings,
-    }));
-
-    const { error: upsertError } = await supabase
-      .from(PROGRAM_CLASS_EXERCISE_SETTINGS_TABLE)
-      .upsert(settingsRows, { onConflict: "template_id,exercise_slug" });
-
-    if (upsertError) {
-      return { ok: false, message: "Egzersiz ayarlari kaydedilemedi." };
-    }
-
-    // exerciseSlug degerleri her zaman kebab-case (harf/rakam/tire) oldugu
-    // icin (bkz. ASSIGNMENT_EXERCISE_CATALOG) PostgREST'in "in.(a,b,c)"
-    // liste sozdizimine ekstra tirnaklama gerekmeden guvenle yazilabilir.
-    const incomingSlugs = input.exercises.map((exercise) => exercise.exerciseSlug);
-    await supabase
-      .from(PROGRAM_CLASS_EXERCISE_SETTINGS_TABLE)
-      .update({ enabled: false })
-      .eq("template_id", templateId)
-      .not("exercise_slug", "in", `(${incomingSlugs.join(",")})`);
-  }
-
-  const result = await getProgramClassTemplateById(supabase, templateId);
-  if (!result) {
-    return { ok: false, message: "Sablon kaydedildi ancak yeniden okunamadi." };
-  }
-
-  return { ok: true, result };
+  return { ok: true, templateId: String((data as Record<string, unknown>).id) };
 }
+
+/** Sablon basligini gunceller (ad/aciklama). Gun sayisi burada degistirilmez. */
+export async function updateTemplateMeta(
+  supabase: SupabaseClient,
+  templateId: string,
+  input: { name: string; description: string | null },
+): Promise<boolean> {
+  const { error } = await supabase
+    .from(PROGRAM_CLASS_TEMPLATES_TABLE)
+    .update({ name: input.name, description: input.description })
+    .eq("id", templateId);
+
+  return !error;
+}
+
+/** Sablonu pasiflestirir (kalici silme YAPILMAZ - atanmis programlarin kokeni korunur). */
+export async function deactivateTemplate(supabase: SupabaseClient, templateId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from(PROGRAM_CLASS_TEMPLATES_TABLE)
+    .update({ is_active: false })
+    .eq("id", templateId);
+
+  return !error;
+}
+
+/**
+ * Bir sablonun TUM slotlarini degistirir. Sil+yaz islemi
+ * replace_program_template_tasks RPC'si icinde TEK transaction olarak
+ * yapilir - yarim kaydedilmis bir sablon olusamaz.
+ */
+export async function replaceTemplateSlots(
+  supabase: SupabaseClient,
+  templateId: string,
+  slots: ProgramTemplateSlot[],
+): Promise<{ ok: true; slotCount: number } | { ok: false; message: string }> {
+  const { data, error } = await supabase.rpc(REPLACE_TEMPLATE_SLOTS_RPC, {
+    p_template_id: templateId,
+    p_tasks: slots.map((slot) => ({
+      dayNumber: slot.dayNumber,
+      taskOrder: slot.taskOrder,
+      exerciseSlug: slot.exerciseSlug,
+      category: slot.category,
+      startingLevel: slot.startingLevel,
+      durationSeconds: slot.durationSeconds,
+      settings: slot.settings,
+    })),
+  });
+
+  if (error) {
+    console.error("replace_program_template_tasks failed", { code: error.code, message: error.message });
+    return { ok: false, message: "Sablon slotlari kaydedilemedi." };
+  }
+
+  const slotCount = typeof data === "object" && data && typeof (data as Record<string, unknown>).slotCount === "number"
+    ? ((data as Record<string, unknown>).slotCount as number)
+    : slots.length;
+
+  return { ok: true, slotCount };
+}
+
+/**
+ * Tek bir slotu yazar/gunceller (grid'de tek hucre duzenlerken). Ayni gun
+ * icinde ayni egzersizin tekrarini engelleyen unique constraint bu yolda da
+ * gecerlidir - ihlal durumunda anlasilir bir mesaj donulur.
+ */
+export async function upsertTemplateSlot(
+  supabase: SupabaseClient,
+  templateId: string,
+  slot: ProgramTemplateSlot,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { error } = await supabase
+    .from(PROGRAM_TEMPLATE_TASKS_TABLE)
+    .upsert(
+      {
+        template_id: templateId,
+        day_number: slot.dayNumber,
+        task_order: slot.taskOrder,
+        exercise_slug: slot.exerciseSlug,
+        category: slot.category,
+        starting_level: slot.startingLevel,
+        duration_seconds: slot.durationSeconds,
+        settings: slot.settings,
+      },
+      { onConflict: "template_id,day_number,task_order" },
+    );
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, message: "Bu egzersiz ayni gun icinde zaten kullaniliyor." };
+    }
+    console.error("Template slot upsert failed", { code: error.code, message: error.message });
+    return { ok: false, message: "Slot kaydedilemedi." };
+  }
+
+  return { ok: true };
+}
+
+/** Tek bir slotu bosaltir. */
+export async function deleteTemplateSlot(
+  supabase: SupabaseClient,
+  templateId: string,
+  dayNumber: number,
+  taskOrder: number,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from(PROGRAM_TEMPLATE_TASKS_TABLE)
+    .delete()
+    .eq("template_id", templateId)
+    .eq("day_number", dayNumber)
+    .eq("task_order", taskOrder);
+
+  return !error;
+}
+
+/**
+ * Bir sablonu tum slotlariyla birlikte kopyalar - ogretmenin tek
+ * hizlandiricisi: "1. Sinif sablonunu cogalt, adini degistir, seviyeleri
+ * yukselt". Slot kopyalama, hedef sablon olustuktan sonra tek bir
+ * replaceTemplateSlots cagrisiyla atomik olarak yapilir.
+ */
+export async function duplicateTemplate(
+  supabase: SupabaseClient,
+  sourceTemplateId: string,
+  input: { name: string; classGroup?: AssignmentClassGroup; createdBy: string | null },
+): Promise<{ ok: true; templateId: string } | { ok: false; message: string }> {
+  const source = await getTemplateWithSlots(supabase, sourceTemplateId);
+  if (!source) {
+    return { ok: false, message: "Kopyalanacak sablon bulunamadi." };
+  }
+
+  const created = await createTemplate(supabase, {
+    classGroup: input.classGroup ?? source.template.classGroup,
+    name: input.name,
+    description: source.template.description,
+    programDays: source.template.programDays,
+    defaultTaskDurationSeconds: source.template.defaultTaskDurationSeconds,
+    createdBy: input.createdBy,
+  });
+
+  if (!created.ok) {
+    return created;
+  }
+
+  if (source.slots.length > 0) {
+    const replaced = await replaceTemplateSlots(supabase, created.templateId, source.slots);
+    if (!replaced.ok) {
+      // Slot kopyalama basarisiz olduysa yarim kalmis basligi geride birakma.
+      await supabase.from(PROGRAM_CLASS_TEMPLATES_TABLE).delete().eq("id", created.templateId);
+      return { ok: false, message: "Sablon kopyalanamadi." };
+    }
+  }
+
+  return { ok: true, templateId: created.templateId };
+}
+

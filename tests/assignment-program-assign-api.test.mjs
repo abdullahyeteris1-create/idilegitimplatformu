@@ -126,6 +126,11 @@ test("GET students route yalniz aktif (is_active=true ve status=active) ogrencil
   assert.match(source, /\.eq\("status",\s*"active"\)/);
 });
 
+test("GET students route egitim seviyesine gore ELEME YAPMIYOR (her ogrenciye her sablon atanabilir)", async () => {
+  const source = await readStudentsRoute();
+  assert.doesNotMatch(source, /mapEducationLevelToClassGroup/);
+});
+
 test("GET students route minimal alanlari seciyor, hassas alan (parent_email, phone, password vb.) yok", async () => {
   const source = await readStudentsRoute();
   assert.match(source, /select\("id, name, education_level, is_active, status"\)/);
@@ -188,32 +193,38 @@ test("POST programs route admin oturumunu server tarafinda dogruluyor", async ()
   assert.match(source, /401/);
 });
 
-test("POST programs route client govdesinden yalniz studentId/templateId/generationSeed okuyor", async () => {
+test("POST programs route client govdesinden YALNIZ studentId/templateId okuyor", async () => {
   const source = await readProgramsRoute();
   assert.match(source, /body\.studentId/);
   assert.match(source, /body\.templateId/);
-  assert.match(source, /body\.generationSeed/);
 
-  // Client'in gonderebilecegi ama ASLA okunmamasi gereken "nihai" alanlar:
+  // Gorev/gun verisi artik client'tan HIC gelmez - RPC slotlari sunucuda
+  // program_template_tasks tablosundan okur.
   assert.doesNotMatch(source, /body\.classGroup/);
+  assert.doesNotMatch(source, /body\.generationSeed/);
   assert.doesNotMatch(source, /body\.templateSnapshot/);
   assert.doesNotMatch(source, /body\.template_snapshot/);
   assert.doesNotMatch(source, /body\.pDays/);
   assert.doesNotMatch(source, /body\.p_days/);
   assert.doesNotMatch(source, /body\.days/);
+  assert.doesNotMatch(source, /body\.slots/);
   assert.doesNotMatch(source, /body\.assignedBy/);
   assert.doesNotMatch(source, /body\.assigned_by/);
 });
 
-test("POST programs route class_group'u yalniz mapEducationLevelToClassGroup ile ogrencinin education_level'inden turetiyor", async () => {
+test("POST programs route ogrencinin sinifina gore sablon kisiti UYGULAMIYOR (capraz atama serbest)", async () => {
   const source = await readProgramsRoute();
-  assert.match(source, /mapEducationLevelToClassGroup/);
-  assert.match(source, /studentRow\.education_level/);
+  // Ogretmen herhangi bir sablonu herhangi bir ogrenciye atayabilmelidir -
+  // education_level'a dayali bir class_group turetmesi/karsilastirmasi
+  // KALMAMALIDIR.
+  assert.doesNotMatch(source, /mapEducationLevelToClassGroup/);
+  assert.doesNotMatch(source, /education_level/);
+  assert.doesNotMatch(source, /classGroup !==|classGroup ===/);
 });
 
-test("POST programs route mevcut generateProgramPreview fonksiyonunu yeniden kullaniyor", async () => {
+test("POST programs route rastgele uretim (generateProgramPreview) kullanmiyor", async () => {
   const source = await readProgramsRoute();
-  assert.match(source, /generateProgramPreview/);
+  assert.doesNotMatch(source, /generateProgramPreview|programPreview/);
 });
 
 test("POST programs route assigned_by icin sabit bir literal kullaniyor, client'tan okumuyor", async () => {
@@ -222,19 +233,15 @@ test("POST programs route assigned_by icin sabit bir literal kullaniyor, client'
   assert.match(source, /p_assigned_by:\s*ASSIGNED_BY_VALUE/);
 });
 
-test("POST programs route RPC'yi tam olarak 7 gercek parametre adiyla cagiriyor", async () => {
+test("POST programs route sablondan-uretim RPC'sini tam olarak 3 gercek parametre adiyla cagiriyor", async () => {
   const source = await readProgramsRoute();
-  assert.match(source, /supabase\.rpc\("create_student_assignment_program",/);
-  for (const paramName of [
-    "p_student_id",
-    "p_template_id",
-    "p_class_group",
-    "p_generation_seed",
-    "p_template_snapshot",
-    "p_days",
-    "p_assigned_by",
-  ]) {
+  assert.match(source, /create_student_assignment_program_from_template/);
+  for (const paramName of ["p_student_id", "p_template_id", "p_assigned_by"]) {
     assert.match(source, new RegExp(`${paramName}:`), `${paramName} RPC cagrisinda bulunmali`);
+  }
+  // Eski RPC'nin client-payload'li parametreleri artik gonderilmemelidir.
+  for (const removedParam of ["p_class_group", "p_generation_seed", "p_template_snapshot", "p_days"]) {
+    assert.doesNotMatch(source, new RegExp(`${removedParam}:`), `${removedParam} artik gonderilmemeli`);
   }
 });
 

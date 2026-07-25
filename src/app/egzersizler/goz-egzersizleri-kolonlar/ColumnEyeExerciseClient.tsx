@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -139,7 +139,9 @@ export function ColumnEyeExerciseClient() {
   const [result, setResult] = useState<ExerciseResult | null>(null);
 
   const intervalMs = jumpSpeed;
-  const totalDurationSeconds = durationMinutes * 60;
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir.
+  const totalDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  const isAssignmentMode = useIsAssignmentMode();
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
   const rowsPerColumn = useMemo(() => {
@@ -200,11 +202,10 @@ export function ColumnEyeExerciseClient() {
       Math.round((completedSteps / totalSteps) * 100),
     );
 
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Seçilmemiş Öğrenci",
+    // Sunucu tarafli guvenli kayit: ogrenci kimligi client'tan DEGIL, imzali
+    // oturum cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev
+    // ogrenci calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
+    void saveExerciseResultSecure({
       exerciseType: "eye-columns",
       exerciseTitle: "Kelime Kolonları",
       durationSeconds,
@@ -298,25 +299,28 @@ export function ColumnEyeExerciseClient() {
 
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
-      <label className="flex flex-col gap-1">
-        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
-          Çalışma Süresi
-        </span>
-        <select
-          value={durationMinutes}
-          onChange={(event) => {
-            setDurationMinutes(Number(event.target.value) as DurationMinutes);
-            resetExercise();
-          }}
-          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-        >
-          {DURATION_OPTIONS.map((value) => (
-            <option key={value} value={value}>
-              {value}:00
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
+      {isAssignmentMode ? null : (
+        <label className="flex flex-col gap-1">
+          <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
+            Çalışma Süresi
+          </span>
+          <select
+            value={durationMinutes}
+            onChange={(event) => {
+              setDurationMinutes(Number(event.target.value) as DurationMinutes);
+              resetExercise();
+            }}
+            className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
+          >
+            {DURATION_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value}:00
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1">
         <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>

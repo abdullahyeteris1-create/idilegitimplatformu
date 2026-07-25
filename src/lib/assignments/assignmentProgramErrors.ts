@@ -19,7 +19,11 @@ const ERROR_CODE_MAP: Record<string, AssignmentProgramErrorMapping> = {
   ASSIGNMENT_TEMPLATE_NOT_FOUND: { status: 404, message: "Şablon bulunamadı." },
   ASSIGNMENT_TEMPLATE_INACTIVE: { status: 400, message: "Şablon pasif durumda." },
   ASSIGNMENT_CLASS_GROUP_MISMATCH: { status: 400, message: "Şablonun sınıf grubu öğrenciyle uyuşmuyor." },
-  ASSIGNMENT_TEMPLATE_INVALID: { status: 400, message: "Şablon 20 gün / 5 görev yapısında değil." },
+  ASSIGNMENT_TEMPLATE_INVALID: { status: 400, message: "Şablon gün başına 5 görev yapısında değil." },
+  ASSIGNMENT_TEMPLATE_INCOMPLETE: {
+    status: 400,
+    message: "Şablon eksik — atamadan önce tüm günlerin 5 çalışması doldurulmalıdır.",
+  },
   ASSIGNMENT_ACTIVE_PROGRAM_EXISTS: { status: 409, message: "Bu öğrencinin zaten aktif bir programı var." },
   ASSIGNMENT_TASK_SNAPSHOT_MISMATCH: {
     status: 409,

@@ -1,4 +1,5 @@
 import { getCurrentStudent } from "@/lib/auth/auth";
+import { emitProgramTaskCompleted } from "@/lib/results/programTaskEvents";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 
 const STORAGE_KEY = "idil-exercise-results";
@@ -14,11 +15,13 @@ export type SecureExerciseResultInput = {
   date?: string;
   completedAt?: string;
   assignmentItemId?: string | null;
+  programTaskId?: string | null;
   details?: Record<string, unknown>;
 };
 
 export type SecureExerciseResultSave = ExerciseResult & {
   assignmentCompletionStatus: "not-requested" | "completed" | "failed";
+  programTaskCompletionStatus: "not-requested" | "completed" | "failed";
 };
 
 type SecureResultResponse = {
@@ -41,6 +44,18 @@ type SecureResultResponse = {
 function getAssignmentItemIdFromUrl(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("assignmentItemId")?.trim() || null;
+}
+
+/**
+ * 20 gunluk kilitli odev programi gorevinin id'si - "Bugunku Odevlerim"
+ * karti tarafindan gorev linkine eklenir (bkz. TodaysProgramTasksCard.tsx).
+ * assignmentItemId ile AYNI anda GELMEZ - bu ikisi farkli, birbirinden
+ * bagimsiz iki odev sistemine ait (eski daily_assignments / yeni 20 gunluk
+ * program).
+ */
+function getProgramTaskIdFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("programTaskId")?.trim() || null;
 }
 
 function cacheResult(result: ExerciseResult): void {
@@ -74,8 +89,24 @@ async function completeAssignmentItem(assignmentItemId: string, resultId: string
   }
 }
 
+async function completeProgramTask(programTaskId: string, resultId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/student/assignment-program-tasks/${encodeURIComponent(programTaskId)}/complete`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resultId }),
+    });
+    return response.ok;
+  } catch {
+    // Sonuç sunucuda başarıyla kaydedildi; completion daha sonra mevcut akıştan tekrar denenebilir.
+    return false;
+  }
+}
+
 export async function saveExerciseResultSecure(input: SecureExerciseResultInput): Promise<SecureExerciseResultSave> {
   const assignmentItemId = input.assignmentItemId ?? getAssignmentItemIdFromUrl();
+  const programTaskId = input.programTaskId ?? getProgramTaskIdFromUrl();
   const completedAt = input.completedAt ?? input.date ?? new Date().toISOString();
   const response = await fetch("/api/student/results", {
     method: "POST",
@@ -123,5 +154,15 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
     assignmentCompletionStatus = await completeAssignmentItem(assignmentItemId, result.id) ? "completed" : "failed";
   }
 
-  return { ...result, assignmentCompletionStatus };
+  let programTaskCompletionStatus: SecureExerciseResultSave["programTaskCompletionStatus"] = "not-requested";
+  if (programTaskId) {
+    programTaskCompletionStatus = await completeProgramTask(programTaskId, result.id) ? "completed" : "failed";
+    if (programTaskCompletionStatus === "completed") {
+      // Oturum sayacina haber ver: ogrenci calismayi suresinden once bitirdi,
+      // sayac durup "Tebrikler" ekranini gosterebilir.
+      emitProgramTaskCompleted();
+    }
+  }
+
+  return { ...result, assignmentCompletionStatus, programTaskCompletionStatus };
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -132,7 +133,10 @@ export function SquareVisionExerciseClient() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
 
-  const totalDurationSeconds = durationMinutes * 60;
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir; serbest
+  // calismada asagidaki dakika secicisi gecerlidir.
+  const totalDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  const isAssignmentMode = useIsAssignmentMode();
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
   const successRate =
     answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
@@ -379,25 +383,28 @@ export function SquareVisionExerciseClient() {
 
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
-      <label className="flex flex-col gap-1">
-        <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
-          Egzersiz Süresi
-        </span>
-        <select
-          value={durationMinutes}
-          onChange={(event) => {
-            setDurationMinutes(Number(event.target.value) as DurationMinutes);
-            resetExercise();
-          }}
-          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-        >
-          {DURATION_OPTIONS.map((value) => (
-            <option key={value} value={value}>
-              {value}:00
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
+      {isAssignmentMode ? null : (
+        <label className="flex flex-col gap-1">
+          <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
+            Egzersiz Süresi
+          </span>
+          <select
+            value={durationMinutes}
+            onChange={(event) => {
+              setDurationMinutes(Number(event.target.value) as DurationMinutes);
+              resetExercise();
+            }}
+            className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
+          >
+            {DURATION_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value}:00
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-1">
         <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>

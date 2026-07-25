@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
@@ -201,6 +202,15 @@ export function SimilarWordsExerciseClient() {
   const [boxCount, setBoxCount] = useState<BoxCount>(16);
   const [targetDifferentCount, setTargetDifferentCount] = useState<TargetDifferentCount>(4);
   const [remainingSeconds, setRemainingSeconds] = useState(60);
+  const assignmentTask = useAssignmentTask();
+  const isAssignmentMode = assignmentTask !== null;
+  /**
+   * Odev modunda sureyi ogretmen belirler, serbest calismada asagidaki secici.
+   * State'e KOPYALANMAZ, her render'da turetilir - boylece ayarlar sayfa
+   * acildiktan sonra (asenkron) gelse bile ek bir senkronizasyona gerek kalmaz.
+   */
+  const effectiveDurationSeconds =
+    assignmentTask && assignmentTask.durationSeconds > 0 ? assignmentTask.durationSeconds : durationSeconds;
   const [boxes, setBoxes] = useState<SimilarWordBox[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
@@ -251,11 +261,11 @@ export function SimilarWordsExerciseClient() {
       setFoundInCurrentRound(0);
       setTotalShownTargetCount(0);
       setResultDuration(0);
-      setRemainingSeconds(durationSeconds);
+      setRemainingSeconds(effectiveDurationSeconds);
       setBoxes([]);
       setPhase(nextPhase);
     },
-    [durationSeconds],
+    [effectiveDurationSeconds],
   );
 
   useEffect(() => {
@@ -267,7 +277,7 @@ export function SimilarWordsExerciseClient() {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           window.clearInterval(intervalId);
-          setResultDuration(durationSeconds);
+          setResultDuration(effectiveDurationSeconds);
           setPhase("result");
           return 0;
         }
@@ -278,7 +288,7 @@ export function SimilarWordsExerciseClient() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [durationSeconds, phase]);
+  }, [effectiveDurationSeconds, phase]);
 
   const handleStart = () => {
     resetExercise("ready");
@@ -363,7 +373,7 @@ export function SimilarWordsExerciseClient() {
 
   const handleFinishEarly = () => {
     if (phase === "play") {
-      setResultDuration(Math.max(1, durationSeconds - remainingSeconds));
+      setResultDuration(Math.max(1, effectiveDurationSeconds - remainingSeconds));
     }
     setPhase("result");
   };
@@ -394,7 +404,7 @@ export function SimilarWordsExerciseClient() {
     }
 
     hasSavedResultRef.current = true;
-    const actualDurationSeconds = Math.max(1, resultDuration || durationSeconds - remainingSeconds);
+    const actualDurationSeconds = Math.max(1, resultDuration || effectiveDurationSeconds - remainingSeconds);
 
     const payload = {
       exerciseType: "similar-words",
@@ -471,7 +481,7 @@ export function SimilarWordsExerciseClient() {
           topStats={
             <>
               <CategoryTag />
-              <SwStat label="Sure" value={formatDuration(durationSeconds)} tone="brand" />
+              <SwStat label="Sure" value={formatDuration(effectiveDurationSeconds)} tone="brand" />
               <SwStat label="Kutu" value={boxCount} />
               <SwStat label="Hedef" value={targetDifferentCount} tone="progress" />
               <SwStat label="Kalan" value={targetDifferentCount} tone="progress" />
@@ -481,7 +491,7 @@ export function SimilarWordsExerciseClient() {
           }
           bottomSettings={
             <div className="grid gap-2 lg:grid-cols-5">
-              <label className="flex min-w-0 flex-col gap-1">
+              <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${swStyles.settingsLabel}`}>Sure</span>
                 <select
                   value={durationSeconds}
@@ -663,7 +673,7 @@ export function SimilarWordsExerciseClient() {
         }
         bottomSettings={
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <label className="flex min-w-0 flex-col gap-1">
+            <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode}>
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${swStyles.settingsLabel}`}>Sure</span>
               <select
                 value={durationSeconds}

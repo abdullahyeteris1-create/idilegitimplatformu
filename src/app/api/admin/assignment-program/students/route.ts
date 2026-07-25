@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { mapEducationLevelToClassGroup } from "@/lib/assignments/classGroups";
 import { isAdminSessionValid } from "@/lib/auth/adminSession";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -20,8 +19,13 @@ type AssignableStudentRow = {
 };
 
 /**
- * 20 gunluk odev programi atamasi icin uygun (aktif + egitim seviyesi
- * destekli) ogrencileri dondurur. Salt-okunur - hicbir tabloya yazmaz.
+ * Odev programi atamasi icin uygun (aktif) ogrencileri dondurur. Salt-okunur -
+ * hicbir tabloya yazmaz.
+ *
+ * EGITIM SEVIYESINE GORE FILTRELEME YAPILMAZ: ogretmen herhangi bir sablonu
+ * herhangi bir aktif ogrenciye atayabilir (ör. 4. sinif ogrencisine 2. sinif
+ * sablonu), bu yuzden education_level burada bir uygunluk kriteri DEGILDIR.
+ * education_level yalniz bilgi amacli dondurulur.
  *
  * GUVENLIK: service-role Supabase client'i yalniz burada, sunucu
  * tarafinda olusturulur (getSupabaseServerClient) - hicbir zaman bir
@@ -57,10 +61,6 @@ export async function GET(request: NextRequest) {
 
   const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
 
-  // "Atama yapilabilecek" ogrenciler yalniz aktif olanlar degil, ayni zamanda
-  // egitim seviyesi gecerli bir class_group'a eslenebilenlerdir - eslenemeyen
-  // bir ogrenci secilse bile POST /programs zaten reddedecektir, bu yuzden
-  // burada onceden filtrelemek gereksiz bir hata denemesini engeller.
   const students = rows
     .map((row) => ({
       id: String(row.id ?? ""),
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       isActive: row.is_active === true,
       status: typeof row.status === "string" ? row.status : "",
     }))
-    .filter((student) => student.id && mapEducationLevelToClassGroup(student.educationLevel).ok);
+    .filter((student) => student.id);
 
   // Aktif programi olan ogrenciler listeden ELENMEZ - yalniz isaretlenir
   // (bkz. AssignmentProgramSettingsClient.tsx). Bu yuzden ayri, salt-okunur

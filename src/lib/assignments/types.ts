@@ -71,100 +71,31 @@ export type ProgramClassTemplate = {
   updatedAt: string;
 };
 
-/** program_class_exercise_settings tablosunun uygulama-katmani karsiligi. */
-export type ProgramClassExerciseSetting = {
-  id: string;
-  templateId: string;
-  exerciseSlug: string;
-  enabled: boolean;
-  startingLevel: number;
-  durationSeconds: number;
-  settings: Record<string, string | number | boolean>;
-  dailyWeight: number;
-  repeatCooldownDays: number;
-  maxOccurrencesPerProgram: number | null;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-/** Bir sinif sablonu + o sablona bagli egzersiz ayarlari (GET yaniti icin). */
-export type ProgramClassTemplateWithSettings = {
-  template: ProgramClassTemplate;
-  exerciseSettings: ProgramClassExerciseSetting[];
-};
-
-/** PUT /templates istek govdesindeki tek egzersiz satiri (dogrulanmamis, client'tan gelen ham girdi). */
-export type AssignmentExerciseSettingInput = {
-  exerciseSlug?: unknown;
-  enabled?: unknown;
-  startingLevel?: unknown;
-  durationSeconds?: unknown;
-  dailyWeight?: unknown;
-  repeatCooldownDays?: unknown;
-  maxOccurrencesPerProgram?: unknown;
-  displayOrder?: unknown;
-  settings?: unknown;
-};
-
-/** PUT /templates istek govdesi (dogrulanmamis, client'tan gelen ham girdi). */
-export type ProgramClassTemplateUpsertInput = {
-  templateId?: unknown;
-  classGroup?: unknown;
-  name?: unknown;
-  description?: unknown;
-  defaultTaskDurationSeconds?: unknown;
-  exercises?: unknown;
-};
-
-/** POST /preview istek govdesi (dogrulanmamis, client'tan gelen ham girdi). */
-export type ProgramPreviewRequestInput = {
-  classGroup?: unknown;
-  templateId?: unknown;
-  generationSeed?: unknown;
-};
-
-/** Dogrulanmis preview istegi. */
-export type ProgramPreviewRequest = {
-  classGroup: AssignmentClassGroup;
-  templateId?: string;
-  generationSeed: string;
-};
-
-export type ProgramPreviewTask = {
+/**
+ * program_template_tasks tablosunun uygulama-katmani karsiligi: elle kurulan
+ * bir sablonun TEK bir gun/slot satiri. `category` client'tan ASLA alinmaz -
+ * sunucu tarafinda katalogdan (assignmentExerciseCatalog.ts) turetilir.
+ */
+export type ProgramTemplateSlot = {
+  dayNumber: number;
   taskOrder: number;
   exerciseSlug: string;
-  exerciseTitle: string;
   category: string;
   startingLevel: number;
   durationSeconds: number;
   settings: Record<string, string | number | boolean>;
 };
 
-export type ProgramPreviewDay = {
-  dayNumber: number;
-  tasks: ProgramPreviewTask[];
+/** Sablon kutuphanesi listesindeki tek kart (slot detaylari olmadan). */
+export type ProgramTemplateSummary = ProgramClassTemplate & {
+  filledSlotCount: number;
+  expectedSlotCount: number;
 };
 
-export type ProgramPreviewSummary = {
-  totalDays: number;
-  totalTasks: number;
-  tasksPerDay: number;
-  uniqueExerciseCount: number;
-  categoryCounts: Record<string, number>;
-  exerciseCounts: Record<string, number>;
-  cooldownRelaxationCount: number;
-  warnings: string[];
+/** Sablon editoru icin: sablon basligi + tum gun/slot satirlari. */
+export type ProgramTemplateWithSlots = {
+  template: ProgramClassTemplate;
+  slots: ProgramTemplateSlot[];
+  expectedSlotCount: number;
 };
 
-export type ProgramPreview = {
-  generationSeed: string;
-  classGroup: AssignmentClassGroup;
-  totalDays: number;
-  tasksPerDay: number;
-  totalTasks: number;
-  categorySummary: { category: string; count: number }[];
-  exerciseSummary: { exerciseSlug: string; count: number }[];
-  days: ProgramPreviewDay[];
-  summary: ProgramPreviewSummary;
-};

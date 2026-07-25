@@ -11,6 +11,7 @@ import {
   type ClickableWord,
 } from "@/lib/exercise-engine/wordFinding";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -102,8 +103,15 @@ export function WordFindingExerciseClient() {
   const activeTarget = round.targets[targetIndex] ?? round.targets[0] ?? null;
   const score = calculateScore(correctCount, wrongCount);
   const net = correctCount - wrongCount;
-  const configuredDurationSeconds = durationMinutes * 60;
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir.
+  const configuredDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  const isAssignmentMode = useIsAssignmentMode();
   const elapsedSeconds = Math.max(0, configuredDurationSeconds - remainingSeconds);
+
+  // NOT: odev ayarlari asenkron geldigi icin `remainingSeconds` state'ini ayrica
+  // senkronlamaya GEREK YOK - "ready" asamasinda ekranda zaten
+  // configuredDurationSeconds gosterilir (bkz. asagidaki stat satiri) ve
+  // calisma baslarken/sifirlanirken sayac bu degerden kurulur.
 
   const resetToReady = useCallback((nextDurationMinutes = durationMinutes) => {
     if (tickRef.current !== null) {
@@ -122,13 +130,13 @@ export function WordFindingExerciseClient() {
     setCompletedRounds(0);
     setCorrectCount(0);
     setWrongCount(0);
-    setRemainingSeconds(nextDurationMinutes * 60);
+    setRemainingSeconds(isAssignmentMode ? configuredDurationSeconds : nextDurationMinutes * 60);
     setIsPaused(false);
     setFeedback(null);
     setIsResolving(false);
     setResult(null);
     setPhase("ready");
-  }, [durationMinutes]);
+  }, [durationMinutes, isAssignmentMode, configuredDurationSeconds]);
 
   const persistResult = useCallback(async (pending: { payload: SecureExerciseResultInput; result: WordFindingResult }) => {
     if (saveInFlightRef.current || saveCompletedRef.current) return;
@@ -216,7 +224,7 @@ export function WordFindingExerciseClient() {
     setSaveStatus("idle");
     setSaveMessage("");
     setPhase("ready");
-    setRemainingSeconds(durationMinutes * 60);
+    setRemainingSeconds(configuredDurationSeconds);
   };
 
   const handleBeginPlay = () => {
@@ -226,7 +234,7 @@ export function WordFindingExerciseClient() {
     setCompletedRounds(0);
     setCorrectCount(0);
     setWrongCount(0);
-    setRemainingSeconds(durationMinutes * 60);
+    setRemainingSeconds(configuredDurationSeconds);
     setFeedback(null);
     setIsResolving(false);
     setIsPaused(false);
@@ -337,7 +345,7 @@ export function WordFindingExerciseClient() {
   };
 
   const stats = [
-    { label: "Sure", value: formatDuration(phase === "ready" ? durationMinutes * 60 : remainingSeconds), tone: "brand" as const },
+    { label: "Sure", value: formatDuration(phase === "ready" ? configuredDurationSeconds : remainingSeconds), tone: "brand" as const },
     { label: "Dogru", value: correctCount, tone: "ok" as const },
     { label: "Yanlis", value: wrongCount, tone: "bad" as const },
     { label: "Net", value: net },
@@ -347,24 +355,27 @@ export function WordFindingExerciseClient() {
 
   const footerControls = (
     <div className="grid gap-2 lg:grid-cols-5">
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Sure</span>
-        <select
-          value={durationMinutes}
-          onChange={(event) => {
-            const nextDuration = Number(event.target.value) as DurationMinutes;
-            setDurationMinutes(nextDuration);
-            resetToReady(nextDuration);
-          }}
-          className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-        >
-          {DURATION_OPTIONS.map((value) => (
-            <option key={value} value={value}>
-              {value} dakika
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
+      {isAssignmentMode ? null : (
+        <label className="flex min-w-0 flex-col gap-1">
+          <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Sure</span>
+          <select
+            value={durationMinutes}
+            onChange={(event) => {
+              const nextDuration = Number(event.target.value) as DurationMinutes;
+              setDurationMinutes(nextDuration);
+              resetToReady(nextDuration);
+            }}
+            className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
+          >
+            {DURATION_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value} dakika
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <label className="flex min-w-0 flex-col gap-1">
         <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kelime</span>
