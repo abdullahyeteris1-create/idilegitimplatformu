@@ -21,7 +21,13 @@ test("17) Assignment System V2 dosyalari FAZ 3A-2'de degismemis sekilde durur", 
   assert.doesNotMatch(layout, /education-programs/);
 });
 
-test("diger 4 egzersiz route'u FAZ 3A-2'de degismedi (yalniz Kare Gorme Alani entegre edildi)", async () => {
+test("diger 4 egzersiz route'u FAZ 3A-2'de degismedi (yalniz Kare Gorme Alani entegre edildi, FAZ 3A-2 aninda)", async () => {
+  // NOT: Bu iddia yalniz FAZ 3A-2 anini tanimliyordu. FAZ 3A-3A'da kalan 4
+  // egzersize de educationLaunch destegi eklendi (bkz.
+  // education-program-remaining-exercises-*.test.mjs) - bu artik beklenen
+  // ve kasitli bir durum, regresyon degil. Burada yalniz her 4 route'un
+  // KENDI token/DB dogrulama mantigini kopyalamadigini, ortak helper'a
+  // (exerciseLaunchValidation.ts) delege ettigini dogruluyoruz.
   for (const slug of [
     "ayni-olani-yakala",
     "benzer-kelimeler",
@@ -29,9 +35,13 @@ test("diger 4 egzersiz route'u FAZ 3A-2'de degismedi (yalniz Kare Gorme Alani en
     "goz-egzersizleri-kolonlar",
   ]) {
     const source = await read(`src/app/egzersizler/${slug}/page.tsx`);
-    assert.doesNotMatch(source, /educationLaunch/);
-    assert.doesNotMatch(source, /educationProgramLaunch/);
+    assert.match(source, /educationLaunch/);
+    assert.match(source, /educationProgramLaunch/);
     assert.doesNotMatch(source, /getEducationProgramTaskLaunchContext/);
+    assert.match(
+      source,
+      /resolveEducationProgramExerciseLaunch/,
+    );
   }
 });
 

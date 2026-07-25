@@ -12,6 +12,7 @@ import {
 } from "@/lib/exercise-engine/wordFinding";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -63,7 +64,11 @@ function getTextIndex(seed: number): number {
   return seed % WORD_FINDING_TEXTS.length;
 }
 
-export function WordFindingExerciseClient() {
+export function WordFindingExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -103,9 +108,15 @@ export function WordFindingExerciseClient() {
   const activeTarget = round.targets[targetIndex] ?? round.targets[0] ?? null;
   const score = calculateScore(correctCount, wrongCount);
   const net = correctCount - wrongCount;
-  // Odev modunda sure ogretmenin sablonda belirledigi degerdir.
-  const configuredDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir; Egitim
+  // Programi modunda sunucuda dogrulanmis gorev snapshot'inin durationSeconds
+  // degeridir. useAssignedDurationSeconds, Assignment V2 baglami aktifse onu,
+  // degilse burada verilen fallback'i dondurur - iki mod ayni anda aktif olamaz.
+  const configuredDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? durationMinutes * 60,
+  );
   const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
   const elapsedSeconds = Math.max(0, configuredDurationSeconds - remainingSeconds);
 
   // NOT: odev ayarlari asenkron geldigi icin `remainingSeconds` state'ini ayrica
@@ -355,8 +366,10 @@ export function WordFindingExerciseClient() {
 
   const footerControls = (
     <div className="grid gap-2 lg:grid-cols-5">
-      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
-      {isAssignmentMode ? null : (
+      {/* Odev modunda sureyi ogretmen belirler, Egitim Programi modunda
+          sureyi gorev snapshot'i belirler - her iki durumda da secici
+          gizlenir. */}
+      {isAssignmentMode || isEducationProgramMode ? null : (
         <label className="flex min-w-0 flex-col gap-1">
           <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Sure</span>
           <select

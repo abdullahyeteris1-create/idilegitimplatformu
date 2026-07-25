@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -119,7 +120,11 @@ function getNextIndex(
   return nextColumn;
 }
 
-export function ColumnEyeExerciseClient() {
+export function ColumnEyeExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
@@ -139,9 +144,15 @@ export function ColumnEyeExerciseClient() {
   const [result, setResult] = useState<ExerciseResult | null>(null);
 
   const intervalMs = jumpSpeed;
-  // Odev modunda sure ogretmenin sablonda belirledigi degerdir.
-  const totalDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir; Egitim
+  // Programi modunda sunucuda dogrulanmis gorev snapshot'inin durationSeconds
+  // degeridir. useAssignedDurationSeconds, Assignment V2 baglami aktifse onu,
+  // degilse burada verilen fallback'i dondurur - iki mod ayni anda aktif olamaz.
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? durationMinutes * 60,
+  );
   const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
   const rowsPerColumn = useMemo(() => {
@@ -299,8 +310,10 @@ export function ColumnEyeExerciseClient() {
 
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
-      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
-      {isAssignmentMode ? null : (
+      {/* Odev modunda sureyi ogretmen belirler, Egitim Programi modunda
+          sureyi gorev snapshot'i belirler - her iki durumda da secici
+          gizlenir. */}
+      {isAssignmentMode || isEducationProgramMode ? null : (
         <label className="flex flex-col gap-1">
           <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
             Çalışma Süresi
@@ -516,21 +529,26 @@ export function ColumnEyeExerciseClient() {
       settings={
         phase === "running" || phase === "paused" ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-            <label className="flex min-w-0 flex-col gap-1">
-              <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Çalışma Süresi</span>
-              <select
-                value={durationMinutes}
-                onChange={(event) => {
-                  setDurationMinutes(Number(event.target.value) as DurationMinutes);
-                  resetExercise();
-                }}
-                className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-              >
-                {DURATION_OPTIONS.map((value) => (
-                  <option key={value} value={value}>{value}:00</option>
-                ))}
-              </select>
-            </label>
+            {/* Egitim Programi modunda sureyi gorev snapshot'i belirler -
+                secici gizlenir (Assignment V2 modu bu ikinci panelde onceden
+                de gizlenmiyordu, o davranis burada degistirilmedi). */}
+            {isEducationProgramMode ? null : (
+              <label className="flex min-w-0 flex-col gap-1">
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Çalışma Süresi</span>
+                <select
+                  value={durationMinutes}
+                  onChange={(event) => {
+                    setDurationMinutes(Number(event.target.value) as DurationMinutes);
+                    resetExercise();
+                  }}
+                  className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
+                >
+                  {DURATION_OPTIONS.map((value) => (
+                    <option key={value} value={value}>{value}:00</option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="flex min-w-0 flex-col gap-1">
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Atlama Hızı</span>
               <select

@@ -7,6 +7,7 @@ import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
@@ -185,7 +186,11 @@ function formatDuration(seconds: number): string {
   return `${min}:${sec}`;
 }
 
-export function SimilarWordsExerciseClient() {
+export function SimilarWordsExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -204,13 +209,17 @@ export function SimilarWordsExerciseClient() {
   const [remainingSeconds, setRemainingSeconds] = useState(60);
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
   /**
-   * Odev modunda sureyi ogretmen belirler, serbest calismada asagidaki secici.
-   * State'e KOPYALANMAZ, her render'da turetilir - boylece ayarlar sayfa
-   * acildiktan sonra (asenkron) gelse bile ek bir senkronizasyona gerek kalmaz.
+   * Odev modunda sureyi ogretmen belirler, Egitim Programi modunda sureyi
+   * gorev snapshot'i belirler, serbest calismada asagidaki secici. State'e
+   * KOPYALANMAZ, her render'da turetilir - boylece ayarlar sayfa acildiktan
+   * sonra (asenkron) gelse bile ek bir senkronizasyona gerek kalmaz.
    */
   const effectiveDurationSeconds =
-    assignmentTask && assignmentTask.durationSeconds > 0 ? assignmentTask.durationSeconds : durationSeconds;
+    assignmentTask && assignmentTask.durationSeconds > 0
+      ? assignmentTask.durationSeconds
+      : (educationProgramLaunch?.durationSeconds ?? durationSeconds);
   const [boxes, setBoxes] = useState<SimilarWordBox[]>([]);
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
@@ -491,7 +500,7 @@ export function SimilarWordsExerciseClient() {
           }
           bottomSettings={
             <div className="grid gap-2 lg:grid-cols-5">
-              <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode}>
+              <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode || isEducationProgramMode}>
                 <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${swStyles.settingsLabel}`}>Sure</span>
                 <select
                   value={durationSeconds}
