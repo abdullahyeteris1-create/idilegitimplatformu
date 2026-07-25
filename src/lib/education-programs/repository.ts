@@ -28,7 +28,7 @@ export const EDUCATION_PROGRAM_TEMPLATE_DAYS_TABLE = "education_program_template
 export const EDUCATION_PROGRAM_TEMPLATE_TASKS_TABLE = "education_program_template_tasks";
 
 const TEMPLATE_SELECT =
-  "id,name,admin_description,category,day_count,status,created_by,created_at,updated_at";
+  "id,name,admin_description,category,day_count,status,is_active,version,created_by,created_at,updated_at";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -64,8 +64,15 @@ export function mapEducationProgramTemplateSummary(
   const dayCount = Number(row.day_count);
   const status: EducationProgramTemplateStatus =
     row.status === "published" ? "published" : "draft";
+  const version = Number(row.version ?? 1);
 
-  if (!Number.isInteger(dayCount) || dayCount < 1 || dayCount > 60) {
+  if (
+    !Number.isInteger(dayCount) ||
+    dayCount < 1 ||
+    dayCount > 60 ||
+    !Number.isInteger(version) ||
+    version < 1
+  ) {
     return null;
   }
 
@@ -76,6 +83,8 @@ export function mapEducationProgramTemplateSummary(
     category: row.category,
     dayCount,
     status,
+    isActive: row.is_active !== false,
+    version,
     createdBy: nullableString(row.created_by),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
@@ -97,6 +106,7 @@ function mapTaskRow(row: DatabaseRow): EducationProgramTemplateTask | null {
     orderNumber: Number(row.order_number),
     exerciseSlug: nullableString(row.exercise_slug),
     exerciseTitle: nullableString(row.exercise_title),
+    resultExerciseType: nullableString(row.result_exercise_type),
     durationSeconds:
       row.duration_seconds === null || row.duration_seconds === undefined
         ? null
@@ -105,6 +115,7 @@ function mapTaskRow(row: DatabaseRow): EducationProgramTemplateTask | null {
       row.starting_level === null || row.starting_level === undefined
         ? null
         : Number(row.starting_level),
+    settingsSchemaVersion: Number(row.settings_schema_version ?? 1),
     settings: settingsFromRow(row.settings),
     createdAt: String(row.created_at ?? ""),
     updatedAt: String(row.updated_at ?? ""),
@@ -251,7 +262,7 @@ export async function getEducationProgramTemplate(
       const { data, error } = await supabase
         .from(EDUCATION_PROGRAM_TEMPLATE_TASKS_TABLE)
         .select(
-          "id,template_day_id,order_number,exercise_slug,exercise_title,duration_seconds,starting_level,settings,created_at,updated_at",
+          "id,template_day_id,order_number,exercise_slug,exercise_title,result_exercise_type,duration_seconds,starting_level,settings_schema_version,settings,created_at,updated_at",
         )
         .in("template_day_id", dayIds)
         .order("order_number", { ascending: true });
@@ -374,7 +385,7 @@ export async function saveEducationProgramTemplateDay(
   try {
     const { data: template, error: templateError } = await supabase
       .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
-      .select("id,day_count")
+      .select("id,day_count,version")
       .eq("id", templateId)
       .maybeSingle();
 
@@ -409,11 +420,25 @@ export async function saveEducationProgramTemplateDay(
         order_number: task.orderNumber,
         exercise_slug: definition?.slug ?? null,
         exercise_title: definition?.title ?? null,
+        result_exercise_type: definition?.resultExerciseType ?? null,
         duration_seconds: definition ? task.durationSeconds : null,
         starting_level: definition?.supportsLevel ? task.startingLevel : null,
+        settings_schema_version: definition?.settingsSchemaVersion ?? 1,
         settings: definition ? task.settings : {},
       };
     });
+
+    const { error: statusError } = await supabase
+      .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
+      .update({
+        status: "draft",
+        version: Math.max(1, Number(template.version ?? 1)) + 1,
+      })
+      .eq("id", templateId);
+
+    if (statusError) {
+      return educationProgramFailure("database", getEducationProgramDatabaseMessage(statusError));
+    }
 
     const { error: tasksError } = await supabase
       .from(EDUCATION_PROGRAM_TEMPLATE_TASKS_TABLE)
@@ -421,15 +446,6 @@ export async function saveEducationProgramTemplateDay(
 
     if (tasksError) {
       return educationProgramFailure("database", getEducationProgramDatabaseMessage(tasksError));
-    }
-
-    const { error: statusError } = await supabase
-      .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
-      .update({ status: "draft" })
-      .eq("id", templateId);
-
-    if (statusError) {
-      return educationProgramFailure("database", getEducationProgramDatabaseMessage(statusError));
     }
 
     return { ok: true, value: { dayNumber } };

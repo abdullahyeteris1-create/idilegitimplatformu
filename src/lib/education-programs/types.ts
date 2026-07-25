@@ -18,8 +18,10 @@ export type EducationProgramTemplateTask = {
   orderNumber: number;
   exerciseSlug: string | null;
   exerciseTitle: string | null;
+  resultExerciseType: string | null;
   durationSeconds: number | null;
   startingLevel: number | null;
+  settingsSchemaVersion: number;
   settings: EducationProgramTaskSettings;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +45,8 @@ export type EducationProgramTemplateSummary = {
   category: EducationProgramCategory;
   dayCount: number;
   status: EducationProgramTemplateStatus;
+  isActive: boolean;
+  version: number;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;

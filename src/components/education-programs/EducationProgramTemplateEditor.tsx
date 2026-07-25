@@ -304,7 +304,7 @@ export function EducationProgramTemplateEditor({
               disabled={pending}
               className="min-h-11 rounded-xl bg-[var(--brand)] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-strong)] disabled:opacity-60"
             >
-              {pending ? "Doğrulanıyor..." : "Programı Kaydet"}
+              {pending ? "Doğrulanıyor..." : "Yayınla"}
             </button>
           </div>
         </form>

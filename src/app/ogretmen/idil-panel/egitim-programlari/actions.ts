@@ -18,9 +18,14 @@ import {
   validateCompleteEducationProgramTemplate,
   validateEducationProgramTemplateMetadata,
 } from "@/lib/education-programs/validation";
+import { assignStudentEducationProgram } from "@/lib/education-programs/studentProgramRepository";
+import type { StudentEducationProgramActionState } from "@/lib/education-programs/studentProgramTypes";
+import { validateStudentEducationProgramAssignment } from "@/lib/education-programs/studentProgramValidation";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 const LIST_ROUTE = "/ogretmen/idil-panel/egitim-programlari";
+const ASSIGN_ROUTE = `${LIST_ROUTE}/ata`;
+const STUDENT_PROGRAMS_ROUTE = "/ogretmen/idil-panel/ogrenci-programlari";
 
 async function hasAdminSession(): Promise<boolean> {
   const cookieStore = await cookies();
@@ -32,6 +37,13 @@ function errorState(
   message: string,
   issues?: EducationProgramActionState["issues"],
 ): EducationProgramActionState {
+  return { status: "error", message, ...(issues ? { issues } : {}) };
+}
+
+function assignmentErrorState(
+  message: string,
+  issues?: StudentEducationProgramActionState["issues"],
+): StudentEducationProgramActionState {
   return { status: "error", message, ...(issues ? { issues } : {}) };
 }
 
@@ -159,7 +171,7 @@ export async function saveEducationProgramDayAction(
     revalidatePath(editorRoute);
     return {
       status: "success",
-      message: "Program doğrulandı ve başarıyla kaydedildi.",
+      message: "Program yayınlandı.",
     };
   }
 
@@ -169,4 +181,44 @@ export async function saveEducationProgramDayAction(
     status: "success",
     message: `Gün ${dayNumber} taslak olarak kaydedildi.`,
   };
+}
+
+export async function assignEducationProgramAction(
+  _previousState: StudentEducationProgramActionState,
+  formData: FormData,
+): Promise<StudentEducationProgramActionState> {
+  if (!(await hasAdminSession())) {
+    return assignmentErrorState(
+      "Yönetici oturumu geçerli değil. Lütfen yeniden giriş yapın.",
+    );
+  }
+
+  const validation = validateStudentEducationProgramAssignment({
+    studentId: formData.get("studentId"),
+    templateId: formData.get("templateId"),
+    visibleName: formData.get("visibleName"),
+    studentMessage: formData.get("studentMessage"),
+    adminNote: formData.get("adminNote"),
+  });
+  if (!validation.ok) {
+    return assignmentErrorState(validation.message, validation.issues);
+  }
+
+  const supabase = getSupabaseServiceRoleClient();
+  if (!supabase) {
+    return assignmentErrorState("Eğitim programı servisi yapılandırılmamış.");
+  }
+
+  const result = await assignStudentEducationProgram(
+    supabase,
+    validation.value,
+    process.env.ADMIN_USERNAME?.trim() || "teacher",
+  );
+  if (!result.ok) {
+    return assignmentErrorState(result.message);
+  }
+
+  revalidatePath(ASSIGN_ROUTE);
+  revalidatePath(STUDENT_PROGRAMS_ROUTE);
+  redirect(`${STUDENT_PROGRAMS_ROUTE}/${result.value.programId}?assigned=1`);
 }
