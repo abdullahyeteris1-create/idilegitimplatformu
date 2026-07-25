@@ -3,8 +3,8 @@ import type { SVGProps } from "react";
 export type IconName =
   | "activity" | "arrow" | "badge" | "bell" | "book" | "bookOpen" | "brain"
   | "chart" | "checkbox" | "circle" | "clock" | "eye" | "flame" | "gauge"
-  | "grid" | "help" | "home" | "house" | "medal" | "menu" | "moon"
-  | "puzzle" | "rocket" | "settings" | "sparkles" | "target" | "type" | "user";
+  | "grid" | "help" | "home" | "house" | "lock" | "medal" | "menu" | "moon"
+  | "play" | "puzzle" | "rocket" | "settings" | "sparkles" | "target" | "type" | "user";
 
 const paths: Record<IconName, React.ReactNode> = {
   activity: <path d="M3 12h4l2-7 4 14 2-7h6" />,
@@ -25,9 +25,11 @@ const paths: Record<IconName, React.ReactNode> = {
   help: <><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.2 2.4c-.7.3-.7.8-.7 1.6M12 17h.01"/></>,
   home: <><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></>,
   house: <><path d="m4 10 8-7 8 7v10H4Z"/><path d="M9 20v-6h6v6"/></>,
+  lock: <><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
   medal: <><circle cx="12" cy="14" r="5"/><path d="m8 3 4 6 4-6M9 14l2 2 4-4"/></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   moon: <path d="M20 15a8 8 0 0 1-11-11 9 9 0 1 0 11 11Z" />,
+  play: <path d="M7 4.5v15l13-7.5Z" />,
   puzzle: <path d="M8 3h4v4a2 2 0 1 0 4 0V3h5v6h-3a2 2 0 1 0 0 4h3v8h-8v-3a2 2 0 1 0-4 0v3H3v-6h3a2 2 0 1 0 0-4H3V3Z" />,
   rocket: <><path d="M14 5c3-3 6-2 6-2s1 3-2 6l-5 5-4-4Z"/><path d="m9 10-4 1-2 3 6 1M14 15l-1 4-3 2-1-6M15 8h.01"/><path d="M5 19c1-3 3-3 4-4-1 3-1 5-4 4Z"/></>,
   settings: <><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7-.8-1.8.9-1.9-2.2-2.2-1.9.9-1.8-.8-.7-2h-3l-.7 2-1.8.8-1.9-.9L1 6.1 2 8l-.8 1.8-2 .7v3l2 .7L2 16l-.9 1.9 2.2 2.2 1.9-.9 1.8.8.7 2h3l.7-2 1.8-.8 1.9.9 2.2-2.2-.9-1.9.8-1.8Z"/></>,

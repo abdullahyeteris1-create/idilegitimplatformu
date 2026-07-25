@@ -1,6 +1,7 @@
 import type {
   StudentEducationProgramDayStatus,
   StudentEducationProgramStudentDay,
+  StudentEducationProgramStudentTask,
   StudentEducationProgramTaskStatus,
 } from "@/lib/education-programs/studentProgramTypes";
 
@@ -75,4 +76,48 @@ export function selectCurrentStudentProgramDay(
     sortedDays[0] ??
     null
   );
+}
+
+export function countCompletedStudentProgramTasks(
+  tasks: readonly StudentEducationProgramStudentTask[],
+): number {
+  return tasks.filter((task) => task.status === "completed").length;
+}
+
+// Iki kolonlu gun gezgininin baslangicta hangi gunu secili gostermesi
+// gerektigini belirler. Yalniz UI state icin kullanilir - veritabanini veya
+// mevcut program.currentDayNumber degerini degistirmez. Sira: 1) ogrencinin
+// mevcut gunu, 2) yoksa ilk in_progress gun, 3) yoksa ilk available gun,
+// 4) yoksa son tamamlanan gun, 5) hicbiri yoksa ilk gun.
+export function selectInitialStudentProgramDayId(
+  days: readonly StudentEducationProgramStudentDay[],
+  currentDayNumber: number,
+): string | null {
+  if (days.length === 0) return null;
+
+  const sortedDays = [...days].sort(
+    (first, second) => first.dayNumber - second.dayNumber,
+  );
+
+  const currentDay = sortedDays.find(
+    (day) => day.dayNumber === currentDayNumber,
+  );
+  if (currentDay) return currentDay.id;
+
+  const firstInProgressDay = sortedDays.find(
+    (day) => day.status === "in_progress",
+  );
+  if (firstInProgressDay) return firstInProgressDay.id;
+
+  const firstAvailableDay = sortedDays.find(
+    (day) => day.status === "available",
+  );
+  if (firstAvailableDay) return firstAvailableDay.id;
+
+  const completedDays = sortedDays.filter((day) => day.status === "completed");
+  if (completedDays.length > 0) {
+    return completedDays[completedDays.length - 1].id;
+  }
+
+  return sortedDays[0]?.id ?? null;
 }

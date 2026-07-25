@@ -3,14 +3,21 @@ import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import { TaskLaunchForm } from "@/components/education-programs/TaskLaunchForm";
 import {
+  StudentEducationProgramDaysExplorer,
+  type StudentEducationProgramDayNavItem,
+} from "@/components/education-programs/StudentEducationProgramDaysExplorer";
+import {
   calculateStudentProgramProgress,
+  countCompletedStudentProgramTasks,
   formatStudentProgramDuration,
   selectCurrentStudentProgramDay,
+  selectInitialStudentProgramDayId,
   STUDENT_PROGRAM_DAY_STATUS_LABELS,
   STUDENT_PROGRAM_TASK_STATUS_LABELS,
 } from "@/lib/education-programs/studentProgramPresentation";
 import type {
   StudentEducationProgramDayStatus,
+  StudentEducationProgramStudentDay,
   StudentEducationProgramStudentTask,
   StudentEducationProgramStudentView as StudentProgramView,
   StudentEducationProgramTaskStatus,
@@ -128,21 +135,109 @@ function TaskCard({
   );
 }
 
+function DayArticle({
+  day,
+  isCurrent,
+}: {
+  day: StudentEducationProgramStudentDay;
+  isCurrent: boolean;
+}) {
+  const tasksByOrder = new Map(day.tasks.map((task) => [task.orderNumber, task]));
+  const completedTaskCount = countCompletedStudentProgramTasks(day.tasks);
+
+  return (
+    <article
+      className={`${styles.dayCard} ${
+        isCurrent ? styles.currentDay : ""
+      } ${day.status === "completed" ? styles.completedDay : ""}`}
+      aria-current={isCurrent ? "step" : undefined}
+      data-status={day.status}
+    >
+      <header className={styles.dayHeader}>
+        <div>
+          <div className={styles.dayTitleLine}>
+            <span className={styles.dayNumber}>Gün {day.dayNumber}</span>
+            {isCurrent ? (
+              <span className={styles.currentBadge}>Mevcut gün</span>
+            ) : null}
+          </div>
+          <h2>{day.title ?? `Program günü ${day.dayNumber}`}</h2>
+          {day.description ? <p>{day.description}</p> : null}
+          <p className={styles.dayMotivation}>
+            {day.tasks.length > 0
+              ? `Bugünkü ${day.tasks.length} çalışmayı sırayla tamamlayın.`
+              : "Bu gün için çalışma bulunmuyor."}
+          </p>
+        </div>
+        <div className={styles.dayHeaderMeta}>
+          <span className={`${styles.statusBadge} ${statusClass(day.status)}`}>
+            {STUDENT_PROGRAM_DAY_STATUS_LABELS[day.status]}
+          </span>
+          {day.tasks.length > 0 ? (
+            <span className={styles.dayProgressText}>
+              {completedTaskCount} / {day.tasks.length} çalışma tamamlandı
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <div className={styles.taskGrid}>
+        {Array.from({ length: 5 }, (_, index) => {
+          const orderNumber = index + 1;
+          return (
+            <TaskCard
+              key={`${day.id}-${orderNumber}`}
+              task={tasksByOrder.get(orderNumber) ?? null}
+              orderNumber={orderNumber}
+            />
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
 export function StudentEducationProgramStudentView({
   program,
 }: {
   program: StudentProgramView;
 }) {
-  const progress = calculateStudentProgramProgress(
-    program.completedDays,
-    program.totalDays,
-  );
   const currentDay = selectCurrentStudentProgramDay(
     program.days,
     program.currentDayNumber,
   );
   const displayedCurrentDay = currentDay?.dayNumber ?? program.currentDayNumber;
   const visibleName = program.visibleName.trim() || "Eğitim Programım";
+
+  const todayDay =
+    program.days.find((day) => day.dayNumber === program.currentDayNumber) ??
+    null;
+  const todayCompletedTaskCount = todayDay
+    ? countCompletedStudentProgramTasks(todayDay.tasks)
+    : 0;
+  const todayTotalTaskCount = todayDay ? todayDay.tasks.length : 0;
+
+  const allTasks = program.days.flatMap((day) => day.tasks);
+  const overallTaskProgress = calculateStudentProgramProgress(
+    countCompletedStudentProgramTasks(allTasks),
+    allTasks.length,
+  );
+
+  const dayNavItems: StudentEducationProgramDayNavItem[] = program.days.map(
+    (day) => ({
+      id: day.id,
+      dayNumber: day.dayNumber,
+      title: day.title,
+      status: day.status,
+      completedTaskCount: countCompletedStudentProgramTasks(day.tasks),
+      totalTaskCount: day.tasks.length,
+    }),
+  );
+
+  const initialSelectedDayId =
+    selectInitialStudentProgramDayId(program.days, program.currentDayNumber) ??
+    program.days[0]?.id ??
+    "";
 
   return (
     <PageFrame>
@@ -159,18 +254,20 @@ export function StudentEducationProgramStudentView({
 
         <div className={styles.summaryGrid}>
           <div className={styles.summaryItem}>
-            <span>Program süresi</span>
-            <strong>{program.totalDays} günlük program</strong>
-          </div>
-          <div className={styles.summaryItem}>
-            <span>Mevcut gün</span>
-            <strong>Şu an {displayedCurrentDay}. gündesiniz</strong>
-          </div>
-          <div className={styles.summaryItem}>
-            <span>İlerleme</span>
+            <span>Tamamlanan gün</span>
             <strong>
-              {program.completedDays} / {program.totalDays} gün tamamlandı
+              {program.completedDays} / {program.totalDays}
             </strong>
+          </div>
+          <div className={styles.summaryItem}>
+            <span>Bugünkü çalışma</span>
+            <strong>
+              {todayCompletedTaskCount} / {todayTotalTaskCount}
+            </strong>
+          </div>
+          <div className={styles.summaryItem}>
+            <span>Genel ilerleme</span>
+            <strong>%{overallTaskProgress}</strong>
           </div>
           <div className={styles.summaryItem}>
             <span>Atanma tarihi</span>
@@ -184,11 +281,13 @@ export function StudentEducationProgramStudentView({
           aria-label="Eğitim programı ilerlemesi"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={progress}
+          aria-valuenow={overallTaskProgress}
         >
-          <span style={{ width: `${progress}%` }} />
+          <span style={{ width: `${overallTaskProgress}%` }} />
         </div>
-        <p className={styles.progressLabel}>%{progress} tamamlandı</p>
+        <p className={styles.progressLabel}>
+          %{overallTaskProgress} tamamlandı · Şu an {displayedCurrentDay}. gündesiniz
+        </p>
       </header>
 
       <section className={styles.daysSection} aria-labelledby="program-days-title">
@@ -200,54 +299,16 @@ export function StudentEducationProgramStudentView({
           <p>Kilitli günler zamanı geldiğinde öğretmeninizin planına göre açılır.</p>
         </div>
 
-        <div className={styles.dayList}>
-          {program.days.map((day) => {
-            const isCurrent = currentDay?.id === day.id;
-            const tasksByOrder = new Map(
-              day.tasks.map((task) => [task.orderNumber, task]),
-            );
-
-            return (
-              <article
-                key={day.id}
-                className={`${styles.dayCard} ${
-                  isCurrent ? styles.currentDay : ""
-                } ${day.status === "completed" ? styles.completedDay : ""}`}
-                aria-current={isCurrent ? "step" : undefined}
-                data-status={day.status}
-              >
-                <header className={styles.dayHeader}>
-                  <div>
-                    <div className={styles.dayTitleLine}>
-                      <span className={styles.dayNumber}>Gün {day.dayNumber}</span>
-                      {isCurrent ? (
-                        <span className={styles.currentBadge}>Mevcut gün</span>
-                      ) : null}
-                    </div>
-                    <h2>{day.title ?? `Program günü ${day.dayNumber}`}</h2>
-                    {day.description ? <p>{day.description}</p> : null}
-                  </div>
-                  <span className={`${styles.statusBadge} ${statusClass(day.status)}`}>
-                    {STUDENT_PROGRAM_DAY_STATUS_LABELS[day.status]}
-                  </span>
-                </header>
-
-                <div className={styles.taskGrid}>
-                  {Array.from({ length: 5 }, (_, index) => {
-                    const orderNumber = index + 1;
-                    return (
-                      <TaskCard
-                        key={`${day.id}-${orderNumber}`}
-                        task={tasksByOrder.get(orderNumber) ?? null}
-                        orderNumber={orderNumber}
-                      />
-                    );
-                  })}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <StudentEducationProgramDaysExplorer
+          initialSelectedDayId={initialSelectedDayId}
+          days={dayNavItems}
+        >
+          {program.days.map((day) => (
+            <div key={day.id} data-day-id={day.id}>
+              <DayArticle day={day} isCurrent={currentDay?.id === day.id} />
+            </div>
+          ))}
+        </StudentEducationProgramDaysExplorer>
       </section>
     </PageFrame>
   );
