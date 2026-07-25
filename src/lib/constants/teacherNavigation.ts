@@ -5,6 +5,7 @@ export const TEACHER_NAV_ITEMS = [
   { href: "/ogretmen/idil-panel/ogrenci-takip", label: "Ogrenciler" },
   { href: "/ogretmen/idil-panel/odevler", label: "Odevler" },
   { href: "/ogretmen/idil-panel/odev-programi", label: "Odev Programi" },
+  { href: "/ogretmen/idil-panel/egitim-programlari", label: "Egitim Programlari" },
   { href: "/ogretmen/idil-panel/ders-kayitlari", label: "Ders Kayitlari" },
   { href: "/egzersizler", label: "Egzersizler" },
   { href: "/sonuc", label: "Sonuclar" },
