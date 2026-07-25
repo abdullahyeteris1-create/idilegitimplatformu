@@ -121,6 +121,14 @@ export type StudentEducationProgramActionState = {
   programId?: string;
 };
 
+export type StudentEducationProgramTaskStartResult = {
+  taskId: string;
+  taskStatus: "in_progress";
+  startedAt: string;
+  exerciseSlug: string;
+  idempotent: boolean;
+};
+
 export type StudentEducationProgramStudentTask = {
   id: string;
   dayNumber: number;

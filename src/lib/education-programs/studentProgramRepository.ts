@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEducationProgramCategory } from "@/lib/education-programs/categories";
 import {
+  getEducationProgramTaskStartErrorCode,
+  getEducationProgramTaskStartMessage,
   getStudentEducationProgramDatabaseMessage,
   studentEducationProgramFailure,
 } from "@/lib/education-programs/studentProgramErrors";
@@ -19,6 +21,7 @@ import type {
   StudentEducationProgramStudentView,
   StudentEducationProgramSummary,
   StudentEducationProgramTask,
+  StudentEducationProgramTaskStartResult,
   StudentEducationProgramTaskStatus,
 } from "@/lib/education-programs/studentProgramTypes";
 import {
@@ -31,6 +34,7 @@ export const STUDENT_EDUCATION_PROGRAMS_TABLE = "student_education_programs";
 export const STUDENT_EDUCATION_PROGRAM_DAYS_TABLE = "student_education_program_days";
 export const STUDENT_EDUCATION_PROGRAM_TASKS_TABLE = "student_education_program_tasks";
 export const ASSIGN_EDUCATION_PROGRAM_RPC = "assign_education_program_template_v1";
+export const START_EDUCATION_PROGRAM_TASK_RPC = "start_education_program_task_v1";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 const PROGRAM_SUMMARY_SELECT =
@@ -753,6 +757,61 @@ export async function getStudentEducationProgramDetail(
     return studentEducationProgramFailure(
       "database",
       getStudentEducationProgramDatabaseMessage(error),
+    );
+  }
+}
+
+export async function startEducationProgramTask(
+  supabase: SupabaseClient,
+  studentId: string,
+  taskId: string,
+): Promise<StudentEducationProgramRepositoryResult<StudentEducationProgramTaskStartResult>> {
+  if (!isEducationProgramUuid(studentId) || !isEducationProgramUuid(taskId)) {
+    return studentEducationProgramFailure("not_found", "Görev bulunamadı.");
+  }
+
+  try {
+    const { data, error } = await supabase.rpc(START_EDUCATION_PROGRAM_TASK_RPC, {
+      p_student_id: studentId,
+      p_task_id: taskId,
+    });
+
+    if (error) {
+      const message = getEducationProgramTaskStartMessage(error);
+      return studentEducationProgramFailure(
+        getEducationProgramTaskStartErrorCode(message),
+        message,
+      );
+    }
+
+    const row = data as DatabaseRow | null;
+    if (
+      !row ||
+      typeof row !== "object" ||
+      typeof row.taskId !== "string" ||
+      row.taskStatus !== "in_progress" ||
+      typeof row.exerciseSlug !== "string" ||
+      !row.exerciseSlug.trim() ||
+      typeof row.startedAt !== "string"
+    ) {
+      return studentEducationProgramFailure("database", "Görev başlatılamadı.");
+    }
+
+    return {
+      ok: true,
+      value: {
+        taskId: row.taskId,
+        taskStatus: "in_progress",
+        startedAt: row.startedAt,
+        exerciseSlug: row.exerciseSlug,
+        idempotent: row.idempotent === true,
+      },
+    };
+  } catch (error) {
+    const message = getEducationProgramTaskStartMessage(error);
+    return studentEducationProgramFailure(
+      getEducationProgramTaskStartErrorCode(message),
+      message,
     );
   }
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
+import { TaskLaunchForm } from "@/components/education-programs/TaskLaunchForm";
 import {
   calculateStudentProgramProgress,
   formatStudentProgramDuration,
@@ -117,6 +118,12 @@ function TaskCard({
           </div>
         ) : null}
       </dl>
+      {task.status === "available" || task.status === "in_progress" ? (
+        <TaskLaunchForm
+          taskId={task.id}
+          label={task.status === "available" ? "Başla" : "Devam Et"}
+        />
+      ) : null}
     </article>
   );
 }

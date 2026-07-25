@@ -58,3 +58,68 @@ export function getStudentEducationProgramDatabaseMessage(error: unknown): strin
 
   return "Program atanamadı.";
 }
+
+export function getEducationProgramTaskStartMessage(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "Görev başlatılamadı.";
+  }
+
+  const databaseError = error as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+  };
+  const message =
+    typeof databaseError.message === "string" ? databaseError.message : "";
+  const details =
+    typeof databaseError.details === "string" ? databaseError.details : "";
+  const combined = `${message} ${details}`;
+
+  if (combined.includes("EDUCATION_TASK_START_TASK_NOT_FOUND")) {
+    return "Görev bulunamadı.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_STUDENT_MISMATCH")) {
+    return "Bu görev size ait değil.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_PROGRAM_NOT_FOUND")) {
+    return "Görevin bağlı olduğu program bulunamadı.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_PROGRAM_NOT_ACTIVE")) {
+    return "Bu program artık aktif değil.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_DAY_NOT_FOUND")) {
+    return "Görevin bağlı olduğu gün bulunamadı.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_DAY_NOT_STARTABLE")) {
+    return "Bu gün henüz açılmadı.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_TASK_NOT_STARTABLE")) {
+    return "Bu görev şu anda başlatılamaz.";
+  }
+  if (combined.includes("EDUCATION_TASK_START_INVALID_INPUT")) {
+    return "Görev başlatma bilgileri geçerli değil.";
+  }
+
+  return "Görev başlatılamadı.";
+}
+
+export function getEducationProgramTaskStartErrorCode(
+  message: string,
+): "not_found" | "conflict" | "database" {
+  if (
+    message === "Görev bulunamadı." ||
+    message === "Bu görev size ait değil." ||
+    message === "Görevin bağlı olduğu program bulunamadı." ||
+    message === "Görevin bağlı olduğu gün bulunamadı."
+  ) {
+    return "not_found";
+  }
+  if (
+    message === "Bu program artık aktif değil." ||
+    message === "Bu gün henüz açılmadı." ||
+    message === "Bu görev şu anda başlatılamaz."
+  ) {
+    return "conflict";
+  }
+  return "database";
+}

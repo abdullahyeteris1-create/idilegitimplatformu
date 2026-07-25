@@ -1,0 +1,16 @@
+// Egitim Programi snapshot gorevlerinde kullanilan exercise_slug -> egzersiz
+// route eslemesi. Sabit bir allow-list: redirect hedefi hicbir zaman slug
+// client'tan geliyormus gibi dogrudan URL'e enterpole edilerek kurulmaz.
+// Assignment System V2'nin kendi kataloguna (assignmentExerciseCatalog.ts)
+// hicbir bagimliligi yoktur.
+const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>> = {
+  "kare-gorme-alani": "/egzersizler/kare-gorme-alani",
+  "ayni-olani-yakala": "/egzersizler/ayni-olani-yakala",
+  "benzer-kelimeler": "/egzersizler/benzer-kelimeler",
+  "kelime-bulma": "/egzersizler/kelime-bulma",
+  "goz-egzersizleri-kolonlar": "/egzersizler/goz-egzersizleri-kolonlar",
+};
+
+export function resolveEducationProgramExerciseRoute(exerciseSlug: string): string | null {
+  return EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG[exerciseSlug] ?? null;
+}
