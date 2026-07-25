@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -45,6 +46,7 @@ const DURATION_OPTIONS: DurationMinutes[] = [1, 2, 3, 4, 5];
 const GRID_OPTIONS: GridSize[] = [7, 9, 11, 13, 15];
 const LEVEL_OPTIONS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const LETTERS = "ABCDEFGHJKLMNPRSTUVYZ".split("");
+const EXPECTED_RESULT_EXERCISE_TYPE = "square-vision";
 
 function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -156,6 +158,18 @@ export function SquareVisionExerciseClient({
     educationProgramLaunch?.durationSeconds ?? durationMinutes * 60,
   );
   const isAssignmentMode = useIsAssignmentMode();
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode
+      ? educationProgramLaunch?.taskId
+      : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    EXPECTED_RESULT_EXERCISE_TYPE,
+  );
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
   const successRate =
     answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
@@ -245,13 +259,14 @@ export function SquareVisionExerciseClient({
       setSaveMessage(saved.assignmentCompletionStatus === "failed"
         ? "Sonuç kaydedildi ancak görev tamamlanamadı."
         : "Sonuç başarıyla kaydedildi.");
+      await completeTaskAfterResultSave();
     } catch {
       setSaveStatus("error");
       setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [completeTaskAfterResultSave]);
 
   const finishExercise = useCallback(() => {
     if (savedRef.current) {
@@ -543,6 +558,16 @@ export function SquareVisionExerciseClient({
           </h1>
           <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>{saveStatus === "success" ? "Egzersiz tamamlandı." : saveMessage}</p>
           {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
+          {completionStatus.state !== "idle" ? (
+            <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button type="button" className="mt-2 min-h-11 rounded-xl bg-amber-700 px-4 text-white" onClick={() => void retryTaskCompletion()}>
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <article className={`rounded-2xl border border-green-100 bg-green-50 p-4 text-center ${styles.resultStatCorrect}`}>

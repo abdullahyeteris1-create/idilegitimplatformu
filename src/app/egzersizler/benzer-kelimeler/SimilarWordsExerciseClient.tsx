@@ -8,6 +8,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
@@ -33,6 +34,7 @@ const TOUCH_STYLE: CSSProperties = {
   touchAction: "manipulation",
   WebkitTapHighlightColor: "transparent",
 };
+const EXPECTED_RESULT_EXERCISE_TYPE = "similar-words";
 
 const BOX_TONE_CLASSES = [
   swStyles.boxTone0,
@@ -210,6 +212,18 @@ export function SimilarWordsExerciseClient({
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode
+      ? educationProgramLaunch?.taskId
+      : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    EXPECTED_RESULT_EXERCISE_TYPE,
+  );
   /**
    * Odev modunda sureyi ogretmen belirler, Egitim Programi modunda sureyi
    * gorev snapshot'i belirler, serbest calismada asagidaki secici. State'e
@@ -399,13 +413,14 @@ export function SimilarWordsExerciseClient({
       setSaveMessage(saved.assignmentCompletionStatus === "failed"
         ? "Sonuç kaydedildi ancak görev tamamlanamadı."
         : "Sonuç başarıyla kaydedildi.");
+      await completeTaskAfterResultSave();
     } catch {
       setSaveStatus("error");
       setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [completeTaskAfterResultSave]);
 
   useEffect(() => {
     if (phase !== "result" || hasSavedResultRef.current) {
@@ -596,6 +611,16 @@ export function SimilarWordsExerciseClient({
                   onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}
                 >
                   Yeniden Dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {completionStatus.state !== "idle" ? (
+            <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? swStyles.resultNoticeError : swStyles.resultNoticeInfo}`}>
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button type="button" className={`mt-2 ${swStyles.primaryButton}`} style={TOUCH_STYLE} onClick={() => void retryTaskCompletion()}>
+                  Program ilerlemesini yeniden dene
                 </button>
               ) : null}
             </div>

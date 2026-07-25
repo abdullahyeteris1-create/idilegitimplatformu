@@ -55,7 +55,7 @@ test("Eklenen yeni dosyalar eski Assignment System V2'ye bagimlilik icermez", as
   assert.doesNotMatch(source, /student_assignment_program/);
 });
 
-test("Sonuc kaydi/tamamlama/ilerleme mantigina FAZ 3A-3A'da dokunulmadi", async () => {
+test("FAZ 3B-2 completion entegrasyonu eski Assignment System V2 tamamlama yoluna dokunmaz", async () => {
   for (const clientPath of [
     "src/app/egzersizler/ayni-olani-yakala/CatchSameExerciseClient.tsx",
     "src/app/egzersizler/benzer-kelimeler/SimilarWordsExerciseClient.tsx",
@@ -64,7 +64,7 @@ test("Sonuc kaydi/tamamlama/ilerleme mantigina FAZ 3A-3A'da dokunulmadi", async 
   ]) {
     const source = await read(clientPath);
     assert.match(source, /saveExerciseResultSecure/);
-    assert.doesNotMatch(source, /educationProgramLaunch\.taskId/);
+    assert.match(source, /educationProgramLaunch\?\.taskId/);
     assert.doesNotMatch(source, /complete_student_assignment_program_task/);
     assert.doesNotMatch(source, /student_education_program_tasks/);
   }

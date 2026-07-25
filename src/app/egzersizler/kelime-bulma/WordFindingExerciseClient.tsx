@@ -13,6 +13,7 @@ import {
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -43,6 +44,7 @@ type WordFindingResult = {
 
 const DURATION_OPTIONS: DurationMinutes[] = [1, 2, 3, 4, 5];
 const TARGET_WORD_OPTIONS: TargetWordsPerText[] = [3, 4, 5, 6];
+const EXPECTED_RESULT_EXERCISE_TYPE = "word-finding";
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -117,6 +119,18 @@ export function WordFindingExerciseClient({
   );
   const isAssignmentMode = useIsAssignmentMode();
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode
+      ? educationProgramLaunch?.taskId
+      : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    EXPECTED_RESULT_EXERCISE_TYPE,
+  );
   const elapsedSeconds = Math.max(0, configuredDurationSeconds - remainingSeconds);
 
   // NOT: odev ayarlari asenkron geldigi icin `remainingSeconds` state'ini ayrica
@@ -161,13 +175,14 @@ export function WordFindingExerciseClient({
       setSaveMessage(saved.assignmentCompletionStatus === "failed"
         ? "Sonuç kaydedildi ancak görev tamamlanamadı."
         : "Sonuç başarıyla kaydedildi.");
+      await completeTaskAfterResultSave();
     } catch {
       setSaveStatus("error");
       setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [completeTaskAfterResultSave]);
 
   const finalizeExercise = useCallback(() => {
     if (hasSavedResultRef.current) {
@@ -475,6 +490,16 @@ export function WordFindingExerciseClient({
           <h2 className="text-2xl font-bold">Kelime Bulma Sonucu</h2>
           <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>{saveStatus === "success" ? "Calisma tamamlandi." : saveMessage}</p>
           {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
+          {completionStatus.state !== "idle" ? (
+            <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button type="button" className="mt-2 min-h-11 rounded-xl bg-amber-700 px-4 text-white" onClick={() => void retryTaskCompletion()}>
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>

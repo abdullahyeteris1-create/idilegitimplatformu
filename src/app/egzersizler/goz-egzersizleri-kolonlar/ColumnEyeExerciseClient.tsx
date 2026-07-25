@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -21,6 +22,7 @@ type DurationMinutes = 1 | 2 | 3 | 4 | 5;
 type ColumnCount = 3 | 4 | 5 | 6 | 7;
 type JumpSpeed = 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
 type FlowDirection = "column" | "row";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type ExerciseResult = {
   durationSeconds: number;
@@ -32,6 +34,7 @@ type ExerciseResult = {
 
 const DURATION_OPTIONS: DurationMinutes[] = [1, 2, 3, 4, 5];
 const COLUMN_OPTIONS: ColumnCount[] = [3, 4, 5, 6, 7];
+const EXPECTED_RESULT_EXERCISE_TYPE = "eye-columns";
 const JUMP_SPEED_OPTIONS: JumpSpeed[] = [
   200,
   400,
@@ -131,6 +134,9 @@ export function ColumnEyeExerciseClient({
   const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
   const finishExerciseRef = useRef<() => void>(() => undefined);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
@@ -142,6 +148,8 @@ export function ColumnEyeExerciseClient({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(0);
   const [result, setResult] = useState<ExerciseResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const intervalMs = jumpSpeed;
   // Odev modunda sure ogretmenin sablonda belirledigi degerdir; Egitim
@@ -153,6 +161,18 @@ export function ColumnEyeExerciseClient({
   );
   const isAssignmentMode = useIsAssignmentMode();
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode
+      ? educationProgramLaunch?.taskId
+      : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    EXPECTED_RESULT_EXERCISE_TYPE,
+  );
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
   const rowsPerColumn = useMemo(() => {
@@ -192,7 +212,34 @@ export function ColumnEyeExerciseClient({
     setPhase("ready");
     startedAtRef.current = null;
     savedRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, []);
+
+  const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    if (saveInFlightRef.current || saveCompletedRef.current) return;
+    saveInFlightRef.current = true;
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      saveCompletedRef.current = true;
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+      await completeTaskAfterResultSave();
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, [completeTaskAfterResultSave]);
 
   const finishExercise = useCallback(() => {
     if (savedRef.current) {
@@ -214,9 +261,9 @@ export function ColumnEyeExerciseClient({
     );
 
     // Sunucu tarafli guvenli kayit: ogrenci kimligi client'tan DEGIL, imzali
-    // oturum cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev
-    // ogrenci calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
-    void saveExerciseResultSecure({
+    // oturum cookie'sinden turetilir. Egitim Programi completion'i bu kayit
+    // basariyla tamamlandiktan sonra ayri client helper'i ile cagrilir.
+    const payload = {
       exerciseType: "eye-columns",
       exerciseTitle: "Kelime Kolonları",
       durationSeconds,
@@ -235,7 +282,8 @@ export function ColumnEyeExerciseClient({
         visibleWordCount,
         allWordsUnique: true,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+    pendingResultRef.current = payload;
 
     setResult({
       durationSeconds,
@@ -245,6 +293,7 @@ export function ColumnEyeExerciseClient({
       successRate,
     });
     setPhase("result");
+    void persistResult(payload);
   }, [
     columnCount,
     completedSteps,
@@ -255,6 +304,7 @@ export function ColumnEyeExerciseClient({
     jumpSpeed,
     totalSteps,
     visibleWordCount,
+    persistResult,
   ]);
 
   useEffect(() => {
@@ -304,6 +354,10 @@ export function ColumnEyeExerciseClient({
     setCompletedSteps(0);
     setResult(null);
     savedRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = Date.now();
     setPhase("running");
   };
@@ -448,7 +502,27 @@ export function ColumnEyeExerciseClient({
         <h1 className={`text-2xl font-black text-slate-950 ${styles.resultTitle}`}>
           Kelime Kolonları Sonucu
         </h1>
-        <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>Çalışma tamamlandı.</p>
+        <p className={`mt-2 text-sm text-slate-500 ${styles.resultMuted}`}>{saveStatus === "success" ? "Çalışma tamamlandı." : saveMessage}</p>
+        {saveStatus !== "idle" ? (
+          <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+            <p>{saveMessage}</p>
+            {saveStatus === "error" ? (
+              <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>
+                Yeniden Dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {completionStatus.state !== "idle" ? (
+          <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+            <p>{completionStatus.message}</p>
+            {completionStatus.state === "error" && completionStatus.canRetry ? (
+              <button type="button" className="mt-2 min-h-11 rounded-xl bg-amber-700 px-4 text-white" onClick={() => void retryTaskCompletion()}>
+                Program ilerlemesini yeniden dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -490,18 +564,28 @@ export function ColumnEyeExerciseClient({
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
+            disabled={saveStatus !== "success"}
             onClick={resetExercise}
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
             Tekrar Çalış
           </button>
-          <Link
-            href="/egzersizler"
-            className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800 ${styles.secondaryButtonOverride}`}
-          >
-            Egzersizlere Dön
-          </Link>
+          {saveStatus === "success" ? (
+            <Link
+              href="/egzersizler"
+              className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-800 ${styles.secondaryButtonOverride}`}
+            >
+              Egzersizlere Dön
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-100 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-400 ${styles.secondaryButtonOverride}`}
+            >
+              Egzersizlere Dön
+            </span>
+          )}
         </div>
       </section>
       </div>

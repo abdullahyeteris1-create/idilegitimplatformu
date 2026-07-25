@@ -7,6 +7,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import styles from "@/components/exercises/catch-same-theme.module.css";
 
 type GameMode = "word" | "letter" | "symbol" | "number";
@@ -22,6 +23,7 @@ const NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 const SPEED_OPTIONS: SpeedOption[] = [1500, 1000, 750, 500];
 const DURATION_OPTIONS: DurationOption[] = [30, 60, 90];
+const EXPECTED_RESULT_EXERCISE_TYPE = "catch-same";
 
 function getRandomItem(items: string[]) {
   return items[Math.floor(Math.random() * items.length)];
@@ -61,6 +63,18 @@ export function CatchSameExerciseClient({
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode
+      ? educationProgramLaunch?.taskId
+      : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    EXPECTED_RESULT_EXERCISE_TYPE,
+  );
   /**
    * Odev modunda sureyi ogretmen belirler, Egitim Programi modunda sureyi
    * gorev snapshot'i belirler, serbest calismada asagidaki secici. State'e
@@ -119,6 +133,7 @@ export function CatchSameExerciseClient({
       setFeedback(saved.assignmentCompletionStatus === "failed"
         ? "Sonuç kaydedildi ancak görev tamamlanamadı."
         : "Sonuç başarıyla kaydedildi.");
+      await completeTaskAfterResultSave();
     } catch {
       setSaveStatus("error");
       setFeedback("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
@@ -366,6 +381,16 @@ export function CatchSameExerciseClient({
       >
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
           <div className={`shrink-0 rounded-xl px-2.5 py-1.5 text-center text-xs font-semibold ${styles.feedbackBar}`}>{feedback}</div>
+          {status === "finished" && completionStatus.state !== "idle" ? (
+            <div className={`shrink-0 rounded-xl border px-3 py-2 text-center text-xs font-semibold ${completionStatus.state === "error" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button type="button" className={`mt-2 min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => void retryTaskCompletion()}>
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <button
             type="button"
