@@ -14,6 +14,9 @@ import type {
   StudentEducationProgramDetail,
   StudentEducationProgramRepositoryResult,
   StudentEducationProgramStatus,
+  StudentEducationProgramStudentDay,
+  StudentEducationProgramStudentTask,
+  StudentEducationProgramStudentView,
   StudentEducationProgramSummary,
   StudentEducationProgramTask,
   StudentEducationProgramTaskStatus,
@@ -34,6 +37,10 @@ const PROGRAM_SUMMARY_SELECT =
   "id,student_id,source_template_id,source_template_version,source_template_name,visible_name,status,current_day_number,completed_days,total_days,assigned_at";
 const PROGRAM_DETAIL_SELECT =
   `${PROGRAM_SUMMARY_SELECT},student_message,admin_note,assigned_by,started_at,completed_at,cancelled_at,cancel_reason`;
+const STUDENT_PROGRAM_VIEW_SELECT =
+  "id,student_id,visible_name,student_message,status,current_day_number,completed_days,total_days,assigned_at,started_at";
+const STUDENT_PROGRAM_VIEW_ERROR =
+  "Eğitim programınız şu anda görüntülenemiyor. Lütfen daha sonra tekrar deneyin.";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -264,6 +271,226 @@ function mapStudentEducationProgramDay(
       .filter((task) => task.programDayId === row.id)
       .sort((first, second) => first.orderNumber - second.orderNumber),
   };
+}
+
+type StudentTaskSnapshot = StudentEducationProgramStudentTask & {
+  programId: string;
+  programDayId: string;
+  studentId: string;
+};
+
+function mapStudentTaskSnapshot(row: DatabaseRow): StudentTaskSnapshot | null {
+  const dayNumber = finiteInteger(row.day_number);
+  const orderNumber = finiteInteger(row.order_number);
+  const durationSeconds = finiteInteger(row.duration_seconds);
+  const startingLevel =
+    row.starting_level === null || row.starting_level === undefined
+      ? null
+      : finiteInteger(row.starting_level);
+
+  if (
+    typeof row.id !== "string" ||
+    typeof row.program_id !== "string" ||
+    typeof row.program_day_id !== "string" ||
+    typeof row.student_id !== "string" ||
+    typeof row.exercise_slug !== "string" ||
+    !row.exercise_slug.trim() ||
+    typeof row.exercise_title !== "string" ||
+    !row.exercise_title.trim() ||
+    dayNumber === null ||
+    dayNumber < 1 ||
+    dayNumber > 60 ||
+    orderNumber === null ||
+    orderNumber < 1 ||
+    orderNumber > 5 ||
+    durationSeconds === null ||
+    durationSeconds < 1 ||
+    (startingLevel !== null && startingLevel < 1)
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    programId: row.program_id,
+    programDayId: row.program_day_id,
+    studentId: row.student_id,
+    dayNumber,
+    orderNumber,
+    exerciseSlug: row.exercise_slug.trim(),
+    exerciseTitle: row.exercise_title.trim(),
+    durationSeconds,
+    startingLevel,
+    status: readProgressStatus(row.status) as StudentEducationProgramTaskStatus,
+  };
+}
+
+export function mapActiveEducationProgramForStudent(
+  programRow: DatabaseRow | null,
+  dayRows: readonly DatabaseRow[],
+  taskRows: readonly DatabaseRow[],
+  studentId: string,
+): StudentEducationProgramStudentView | null {
+  if (
+    !programRow ||
+    typeof programRow.id !== "string" ||
+    programRow.student_id !== studentId ||
+    programRow.status !== "active"
+  ) {
+    return null;
+  }
+
+  const totalDays = finiteInteger(programRow.total_days);
+  const currentDayNumber = finiteInteger(programRow.current_day_number);
+  const completedDays = finiteInteger(programRow.completed_days);
+  if (
+    totalDays === null ||
+    totalDays < 1 ||
+    totalDays > 60 ||
+    currentDayNumber === null ||
+    completedDays === null
+  ) {
+    return null;
+  }
+
+  const programId = programRow.id;
+  const tasks = taskRows
+    .map(mapStudentTaskSnapshot)
+    .filter(
+      (task): task is StudentTaskSnapshot =>
+        task !== null &&
+        task.programId === programId &&
+        task.studentId === studentId,
+    );
+
+  const days = dayRows
+    .map((row): StudentEducationProgramStudentDay | null => {
+      const dayNumber = finiteInteger(row.day_number);
+      if (
+        typeof row.id !== "string" ||
+        row.program_id !== programId ||
+        dayNumber === null ||
+        dayNumber < 1 ||
+        dayNumber > 60
+      ) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        dayNumber,
+        title: nullableString(row.title),
+        description: nullableString(row.description),
+        status: readProgressStatus(row.status),
+        startedAt: nullableString(row.started_at),
+        completedAt: nullableString(row.completed_at),
+        tasks: tasks
+          .filter(
+            (task) =>
+              task.programDayId === row.id && task.dayNumber === dayNumber,
+          )
+          .map((task) => ({
+            id: task.id,
+            dayNumber: task.dayNumber,
+            orderNumber: task.orderNumber,
+            exerciseSlug: task.exerciseSlug,
+            exerciseTitle: task.exerciseTitle,
+            durationSeconds: task.durationSeconds,
+            startingLevel: task.startingLevel,
+            status: task.status,
+          }))
+          .sort((first, second) => first.orderNumber - second.orderNumber),
+      };
+    })
+    .filter(
+      (day): day is StudentEducationProgramStudentDay => day !== null,
+    )
+    .sort((first, second) => first.dayNumber - second.dayNumber);
+
+  return {
+    id: programId,
+    visibleName:
+      nullableString(programRow.visible_name) ?? "Eğitim Programım",
+    studentMessage: nullableString(programRow.student_message),
+    status: "active",
+    currentDayNumber: Math.min(Math.max(currentDayNumber, 1), totalDays),
+    completedDays: Math.min(Math.max(completedDays, 0), totalDays),
+    totalDays,
+    assignedAt: String(programRow.assigned_at ?? ""),
+    startedAt: nullableString(programRow.started_at),
+    days,
+  };
+}
+
+export async function getActiveEducationProgramForStudent(
+  supabase: SupabaseClient,
+  studentId: string,
+): Promise<
+  StudentEducationProgramRepositoryResult<StudentEducationProgramStudentView | null>
+> {
+  if (!isEducationProgramUuid(studentId)) {
+    return studentEducationProgramFailure(
+      "not_found",
+      "Aktif eğitim programı bulunamadı.",
+    );
+  }
+
+  try {
+    const { data: programRow, error: programError } = await supabase
+      .from(STUDENT_EDUCATION_PROGRAMS_TABLE)
+      .select(STUDENT_PROGRAM_VIEW_SELECT)
+      .eq("student_id", studentId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (programError) {
+      return studentEducationProgramFailure("database", STUDENT_PROGRAM_VIEW_ERROR);
+    }
+    if (!programRow) return { ok: true, value: null };
+    if (
+      typeof programRow.id !== "string" ||
+      programRow.student_id !== studentId
+    ) {
+      return { ok: true, value: null };
+    }
+
+    const [daysResult, tasksResult] = await Promise.all([
+      supabase
+        .from(STUDENT_EDUCATION_PROGRAM_DAYS_TABLE)
+        .select(
+          "id,program_id,day_number,title,description,status,started_at,completed_at",
+        )
+        .eq("program_id", programRow.id)
+        .order("day_number", { ascending: true }),
+      supabase
+        .from(STUDENT_EDUCATION_PROGRAM_TASKS_TABLE)
+        .select(
+          "id,program_id,program_day_id,student_id,day_number,order_number,exercise_slug,exercise_title,duration_seconds,starting_level,status",
+        )
+        .eq("program_id", programRow.id)
+        .eq("student_id", studentId)
+        .order("day_number", { ascending: true })
+        .order("order_number", { ascending: true }),
+    ]);
+
+    if (daysResult.error || tasksResult.error) {
+      return studentEducationProgramFailure("database", STUDENT_PROGRAM_VIEW_ERROR);
+    }
+
+    const program = mapActiveEducationProgramForStudent(
+      programRow as DatabaseRow,
+      (daysResult.data ?? []) as DatabaseRow[],
+      (tasksResult.data ?? []) as DatabaseRow[],
+      studentId,
+    );
+    if (!program) {
+      return studentEducationProgramFailure("database", STUDENT_PROGRAM_VIEW_ERROR);
+    }
+
+    return { ok: true, value: program };
+  } catch {
+    return studentEducationProgramFailure("database", STUDENT_PROGRAM_VIEW_ERROR);
+  }
 }
 
 export async function listEducationProgramAssignmentOptions(

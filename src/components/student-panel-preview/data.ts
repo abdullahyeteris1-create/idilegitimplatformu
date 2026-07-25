@@ -136,6 +136,7 @@ export const categories: Category[] = [
 export type NavItem = { label: string; icon: IconName; href?: string };
 
 export const navItems: NavItem[] = [
+  { label: "Eğitim Programım", icon: "bookOpen", href: "/ogrenci/egitim-programim" },
   { label: "Öğrenci Paneli", icon: "home", href: "/ogrenci-paneli-onizleme" },
   { label: "Ana Sayfa", icon: "house", href: "/" },
   { label: "Egzersizler", icon: "checkbox", href: "/egzersizler" },
@@ -153,4 +154,3 @@ export const stats: { label: string; value: string; note: string; icon: IconName
   { label: "Haftalık Başarı", value: "%0", note: "Bu haftaki çalışmalarının ortalama başarı oranı", icon: "circle", tone: "green" },
   { label: "Günlük Seri", value: "0 gün", note: "Henüz aktif seri yok", icon: "flame", tone: "orange" },
 ];
-

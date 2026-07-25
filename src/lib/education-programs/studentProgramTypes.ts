@@ -120,3 +120,38 @@ export type StudentEducationProgramActionState = {
   issues?: StudentEducationProgramValidationIssue[];
   programId?: string;
 };
+
+export type StudentEducationProgramStudentTask = {
+  id: string;
+  dayNumber: number;
+  orderNumber: number;
+  exerciseSlug: string;
+  exerciseTitle: string;
+  durationSeconds: number;
+  startingLevel: number | null;
+  status: StudentEducationProgramTaskStatus;
+};
+
+export type StudentEducationProgramStudentDay = {
+  id: string;
+  dayNumber: number;
+  title: string | null;
+  description: string | null;
+  status: StudentEducationProgramDayStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+  tasks: StudentEducationProgramStudentTask[];
+};
+
+export type StudentEducationProgramStudentView = {
+  id: string;
+  visibleName: string;
+  studentMessage: string | null;
+  status: StudentEducationProgramStatus;
+  currentDayNumber: number;
+  completedDays: number;
+  totalDays: number;
+  assignedAt: string;
+  startedAt: string | null;
+  days: StudentEducationProgramStudentDay[];
+};
