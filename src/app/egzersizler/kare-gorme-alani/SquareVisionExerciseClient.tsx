@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -108,7 +109,15 @@ function createRound(gridSize: GridSize, level: Level): Round {
   };
 }
 
-export function SquareVisionExerciseClient() {
+function isValidLevel(value: number | null): value is Level {
+  return value !== null && (LEVEL_OPTIONS as number[]).includes(value);
+}
+
+export function SquareVisionExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
@@ -117,11 +126,16 @@ export function SquareVisionExerciseClient() {
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
   const [gridSize, setGridSize] = useState<GridSize>(13);
-  const [level, setLevel] = useState<Level>(1);
+  const [level, setLevel] = useState<Level>(() =>
+    isValidLevel(educationProgramLaunch?.initialLevel ?? null)
+      ? (educationProgramLaunch!.initialLevel as Level)
+      : 1,
+  );
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [round, setRound] = useState<Round>(() => createRound(13, 1));
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -133,9 +147,14 @@ export function SquareVisionExerciseClient() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
 
-  // Odev modunda sure ogretmenin sablonda belirledigi degerdir; serbest
-  // calismada asagidaki dakika secicisi gecerlidir.
-  const totalDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
+  // Odev modunda sure ogretmenin sablonda belirledigi degerdir; Egitim
+  // Programi modunda sunucuda dogrulanmis gorev snapshot'inin durationSeconds
+  // degeridir; serbest calismada asagidaki dakika secicisi gecerlidir.
+  // useAssignedDurationSeconds, Assignment V2 baglami aktifse onu, degilse
+  // burada verilen fallback'i dondurur - iki mod ayni anda aktif olamaz.
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? durationMinutes * 60,
+  );
   const isAssignmentMode = useIsAssignmentMode();
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
   const successRate =
@@ -383,8 +402,10 @@ export function SquareVisionExerciseClient() {
 
   const controls = (
     <div className="grid gap-3 md:grid-cols-5">
-      {/* Odev modunda sureyi ogretmen belirler - secici gizlenir. */}
-      {isAssignmentMode ? null : (
+      {/* Odev modunda sureyi ogretmen belirler, Egitim Programi modunda
+          sureyi gorev snapshot'i belirler - her iki durumda da secici
+          gizlenir. */}
+      {isAssignmentMode || isEducationProgramMode ? null : (
         <label className="flex flex-col gap-1">
           <span className={`text-xs font-bold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>
             Egzersiz Süresi

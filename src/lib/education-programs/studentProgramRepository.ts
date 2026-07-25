@@ -29,6 +29,7 @@ import {
   validateStudentEducationProgramAssignment,
 } from "@/lib/education-programs/studentProgramValidation";
 import type { EducationProgramTaskSettings } from "@/lib/education-programs/types";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 
 export const STUDENT_EDUCATION_PROGRAMS_TABLE = "student_education_programs";
 export const STUDENT_EDUCATION_PROGRAM_DAYS_TABLE = "student_education_program_days";
@@ -813,5 +814,113 @@ export async function startEducationProgramTask(
       getEducationProgramTaskStartErrorCode(message),
       message,
     );
+  }
+}
+
+const TASK_LAUNCH_SELECT =
+  "id,program_id,program_day_id,student_id,status,exercise_slug,duration_seconds,starting_level,result_exercise_type,settings,settings_schema_version";
+
+/**
+ * Bir Egitim Programi gorevinin, imzali launch token dogrulandiktan SONRA,
+ * egzersiz route'unun sunucu tarafinda ihtiyac duydugu snapshot baglamini
+ * okur. p_student_id/taskId disaridan (token'dan) gelir ama sahiplik burada
+ * TEKRAR dogrulanir - hicbir yazma yapmaz, yalniz SELECT. FAZ 3A-1'deki RPC'yi
+ * genisletmez, yeni bir tabloya/RPC'ye bagli degildir.
+ */
+export async function getEducationProgramTaskLaunchContext(
+  supabase: SupabaseClient,
+  studentId: string,
+  taskId: string,
+): Promise<StudentEducationProgramRepositoryResult<EducationProgramExerciseLaunchProps & { exerciseSlug: string }>> {
+  if (!isEducationProgramUuid(studentId) || !isEducationProgramUuid(taskId)) {
+    return studentEducationProgramFailure("not_found", "Görev bulunamadı.");
+  }
+
+  try {
+    const { data: taskRow, error: taskError } = await supabase
+      .from(STUDENT_EDUCATION_PROGRAM_TASKS_TABLE)
+      .select(TASK_LAUNCH_SELECT)
+      .eq("id", taskId)
+      .maybeSingle();
+
+    if (taskError) {
+      return studentEducationProgramFailure("database", "Görev okunamadı.");
+    }
+    if (!taskRow) {
+      return studentEducationProgramFailure("not_found", "Görev bulunamadı.");
+    }
+    if (typeof taskRow.student_id !== "string" || taskRow.student_id !== studentId) {
+      return studentEducationProgramFailure("not_found", "Bu görev size ait değil.");
+    }
+    if (taskRow.status !== "in_progress") {
+      return studentEducationProgramFailure(
+        "conflict",
+        "Bu görev şu anda başlatılmamış görünüyor.",
+      );
+    }
+    if (
+      typeof taskRow.program_id !== "string" ||
+      typeof taskRow.program_day_id !== "string" ||
+      typeof taskRow.exercise_slug !== "string" ||
+      !taskRow.exercise_slug.trim()
+    ) {
+      return studentEducationProgramFailure("database", "Görev verisi eksik.");
+    }
+
+    const durationSeconds = finiteInteger(taskRow.duration_seconds);
+    const settingsSchemaVersion = finiteInteger(taskRow.settings_schema_version);
+    if (durationSeconds === null || durationSeconds < 1 || settingsSchemaVersion === null) {
+      return studentEducationProgramFailure("database", "Görev verisi eksik.");
+    }
+
+    const [programResult, dayResult] = await Promise.all([
+      supabase
+        .from(STUDENT_EDUCATION_PROGRAMS_TABLE)
+        .select("status")
+        .eq("id", taskRow.program_id)
+        .maybeSingle(),
+      supabase
+        .from(STUDENT_EDUCATION_PROGRAM_DAYS_TABLE)
+        .select("status")
+        .eq("id", taskRow.program_day_id)
+        .maybeSingle(),
+    ]);
+
+    if (programResult.error || dayResult.error) {
+      return studentEducationProgramFailure("database", "Görev bağlamı okunamadı.");
+    }
+    if (!programResult.data || programResult.data.status !== "active") {
+      return studentEducationProgramFailure("conflict", "Bu program artık aktif değil.");
+    }
+
+    const dayStatus = dayResult.data?.status;
+    if (dayStatus !== "available" && dayStatus !== "in_progress") {
+      return studentEducationProgramFailure(
+        "conflict",
+        "Bu görev şu anda başlatılmamış görünüyor.",
+      );
+    }
+
+    const startingLevel =
+      taskRow.starting_level === null || taskRow.starting_level === undefined
+        ? null
+        : finiteInteger(taskRow.starting_level);
+
+    return {
+      ok: true,
+      value: {
+        taskId,
+        programId: taskRow.program_id,
+        dayId: taskRow.program_day_id,
+        exerciseSlug: taskRow.exercise_slug.trim(),
+        durationSeconds,
+        initialLevel: startingLevel,
+        resultExerciseType: nullableString(taskRow.result_exercise_type),
+        settings: settingsFromRow(taskRow.settings),
+        settingsSchemaVersion,
+      },
+    };
+  } catch {
+    return studentEducationProgramFailure("database", "Görev bağlamı okunamadı.");
   }
 }
