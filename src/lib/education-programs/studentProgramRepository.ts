@@ -1,12 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEducationProgramCategory } from "@/lib/education-programs/categories";
 import {
+  getEducationProgramTaskCompleteErrorCode,
+  getEducationProgramTaskCompleteMessage,
   getEducationProgramTaskStartErrorCode,
   getEducationProgramTaskStartMessage,
   getStudentEducationProgramDatabaseMessage,
   studentEducationProgramFailure,
 } from "@/lib/education-programs/studentProgramErrors";
 import type {
+  EducationProgramTaskCompleteErrorCode,
   StudentEducationProgramAssignmentInput,
   StudentEducationProgramAssignmentOptions,
   StudentEducationProgramAssignmentStudent,
@@ -21,6 +24,8 @@ import type {
   StudentEducationProgramStudentView,
   StudentEducationProgramSummary,
   StudentEducationProgramTask,
+  StudentEducationProgramTaskCompleteRepositoryResult,
+  StudentEducationProgramTaskCompleteResult,
   StudentEducationProgramTaskStartResult,
   StudentEducationProgramTaskStatus,
 } from "@/lib/education-programs/studentProgramTypes";
@@ -36,6 +41,7 @@ export const STUDENT_EDUCATION_PROGRAM_DAYS_TABLE = "student_education_program_d
 export const STUDENT_EDUCATION_PROGRAM_TASKS_TABLE = "student_education_program_tasks";
 export const ASSIGN_EDUCATION_PROGRAM_RPC = "assign_education_program_template_v1";
 export const START_EDUCATION_PROGRAM_TASK_RPC = "start_education_program_task_v1";
+export const COMPLETE_EDUCATION_PROGRAM_TASK_RPC = "complete_education_program_task_v1";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 const PROGRAM_SUMMARY_SELECT =
@@ -922,5 +928,176 @@ export async function getEducationProgramTaskLaunchContext(
     };
   } catch {
     return studentEducationProgramFailure("database", "Görev bağlamı okunamadı.");
+  }
+}
+
+function completeTaskFailure(
+  code: EducationProgramTaskCompleteErrorCode,
+): StudentEducationProgramTaskCompleteRepositoryResult {
+  return { ok: false, code, message: getEducationProgramTaskCompleteMessage(code) };
+}
+
+const COMPLETE_TASK_OUTCOME_VALUES = new Set([
+  "already_completed",
+  "task_completed",
+  "task_completed_next_task_unlocked",
+  "day_completed",
+  "day_completed_next_day_unlocked",
+  "program_completed",
+]);
+const COMPLETE_TASK_DAY_STATUS_VALUES = new Set(["available", "in_progress", "completed"]);
+const COMPLETE_TASK_PROGRAM_STATUS_VALUES = new Set(["active", "completed"]);
+
+/**
+ * complete_education_program_task_v1'in ham snake_case jsonb donusunu
+ * (bkz. 20260725200000_complete_education_program_task_rpc.sql) strict
+ * sekilde dogrulayip camelCase domain tipine map eder. Herhangi bir alan
+ * beklenen tipte degilse (null/array/eksik/yanlis tip) `null` doner -
+ * cagiran bunu guvenli "completion_failed" hatasina cevirir, asla yanlis
+ * sekilli veriye guvenilmez.
+ */
+function mapCompleteEducationProgramTaskRow(
+  data: unknown,
+): StudentEducationProgramTaskCompleteResult | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return null;
+  }
+
+  const row = data as DatabaseRow;
+
+  if (row.success !== true) return null;
+  if (typeof row.outcome !== "string" || !COMPLETE_TASK_OUTCOME_VALUES.has(row.outcome)) {
+    return null;
+  }
+  if (typeof row.already_completed !== "boolean") return null;
+  if (typeof row.task_id !== "string" || !row.task_id.trim()) return null;
+  if (row.task_status !== "completed") return null;
+  if (typeof row.day_id !== "string" || !row.day_id.trim()) return null;
+  if (
+    typeof row.day_status !== "string" ||
+    !COMPLETE_TASK_DAY_STATUS_VALUES.has(row.day_status)
+  ) {
+    return null;
+  }
+  if (typeof row.program_id !== "string" || !row.program_id.trim()) return null;
+  if (
+    typeof row.program_status !== "string" ||
+    !COMPLETE_TASK_PROGRAM_STATUS_VALUES.has(row.program_status)
+  ) {
+    return null;
+  }
+  if (row.unlocked_task_id !== null && typeof row.unlocked_task_id !== "string") return null;
+  if (row.unlocked_day_id !== null && typeof row.unlocked_day_id !== "string") return null;
+
+  const currentDayNumber = finiteInteger(row.current_day_number);
+  const completedDays = finiteInteger(row.completed_days);
+  const totalDays = finiteInteger(row.total_days);
+  if (currentDayNumber === null || completedDays === null || totalDays === null) {
+    return null;
+  }
+  if (typeof row.program_completed !== "boolean") return null;
+
+  return {
+    outcome: row.outcome as StudentEducationProgramTaskCompleteResult["outcome"],
+    alreadyCompleted: row.already_completed,
+    taskId: row.task_id,
+    taskStatus: "completed",
+    dayId: row.day_id,
+    dayStatus: row.day_status as StudentEducationProgramTaskCompleteResult["dayStatus"],
+    programId: row.program_id,
+    programStatus: row.program_status as StudentEducationProgramTaskCompleteResult["programStatus"],
+    unlockedTaskId: row.unlocked_task_id,
+    unlockedDayId: row.unlocked_day_id,
+    currentDayNumber,
+    completedDays,
+    totalDays,
+    programCompleted: row.program_completed,
+  };
+}
+
+/**
+ * expectedResultExerciseType RPC'ye HIC gonderilmez (RPC yalniz p_student_id/
+ * p_task_id alir) - bu, RPC'den ONCE calisan, salt-okunur, ucuz bir on
+ * kontrol: dogru egzersiz client'inin dogru gorevi tamamladigini teyit eder
+ * (yanlis-egzersiz bug senaryosuna karsi). ONEMLI (TOCTOU guvenligi): bu on
+ * kontrol TEK BASINA bir yetkilendirme mekanizmasi DEGILDIR - asil sahiplik/
+ * status yetkilendirmesi hala RPC'nin kendi transaction'i icinde ("for
+ * update" kilitli) yapilir. Bu fonksiyon yalniz erken, daha net bir hata
+ * kodu (`exercise_mismatch`) uretmek icindir; RPC'yi TAMAMEN atlayip
+ * yetkilendirme yerine gecmez.
+ */
+async function verifyExpectedResultExerciseType(
+  supabase: SupabaseClient,
+  studentId: string,
+  taskId: string,
+  expectedResultExerciseType: string,
+): Promise<StudentEducationProgramTaskCompleteRepositoryResult | null> {
+  const { data, error } = await supabase
+    .from(STUDENT_EDUCATION_PROGRAM_TASKS_TABLE)
+    .select("student_id,result_exercise_type")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (error) {
+    return completeTaskFailure("completion_failed");
+  }
+  if (!data) {
+    return completeTaskFailure("task_not_found");
+  }
+  if (typeof data.student_id !== "string" || data.student_id !== studentId) {
+    return completeTaskFailure("unauthorized_task");
+  }
+  if (nullableString(data.result_exercise_type) !== expectedResultExerciseType) {
+    return completeTaskFailure("exercise_mismatch");
+  }
+
+  return null;
+}
+
+export async function completeEducationProgramTask(
+  supabase: SupabaseClient,
+  studentId: string,
+  taskId: string,
+  expectedResultExerciseType?: string,
+): Promise<StudentEducationProgramTaskCompleteRepositoryResult> {
+  if (!isEducationProgramUuid(studentId) || !isEducationProgramUuid(taskId)) {
+    return completeTaskFailure("task_not_found");
+  }
+
+  const trimmedExpectedType =
+    typeof expectedResultExerciseType === "string" && expectedResultExerciseType.trim()
+      ? expectedResultExerciseType.trim()
+      : null;
+
+  if (trimmedExpectedType) {
+    const preCheckFailure = await verifyExpectedResultExerciseType(
+      supabase,
+      studentId,
+      taskId,
+      trimmedExpectedType,
+    );
+    if (preCheckFailure) {
+      return preCheckFailure;
+    }
+  }
+
+  try {
+    const { data, error } = await supabase.rpc(COMPLETE_EDUCATION_PROGRAM_TASK_RPC, {
+      p_student_id: studentId,
+      p_task_id: taskId,
+    });
+
+    if (error) {
+      return completeTaskFailure(getEducationProgramTaskCompleteErrorCode(error));
+    }
+
+    const value = mapCompleteEducationProgramTaskRow(data);
+    if (!value) {
+      return completeTaskFailure("completion_failed");
+    }
+
+    return { ok: true, value };
+  } catch (error) {
+    return completeTaskFailure(getEducationProgramTaskCompleteErrorCode(error));
   }
 }

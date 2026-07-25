@@ -129,6 +129,50 @@ export type StudentEducationProgramTaskStartResult = {
   idempotent: boolean;
 };
 
+// FAZ 3B-1B: gorev tamamlama. Bu, StudentEducationProgramRepositoryResult'in
+// 5 degerli genel "code" union'indan KASITLI olarak ayri, daha ayrintili bir
+// hata kodu kumesi kullanir - tamamlama akisinin (ownership/status/program/
+// gun/exercise-turu) her biri icin ayirt edilebilir, HTTP status'a birebir
+// eslenebilir bir kod gerekiyor (bkz. studentProgramErrors.ts).
+export type EducationProgramTaskCompleteErrorCode =
+  | "task_not_found"
+  | "unauthorized_task"
+  | "program_not_active"
+  | "day_not_available"
+  | "task_not_in_progress"
+  | "completion_conflict"
+  | "exercise_mismatch"
+  | "completion_failed";
+
+export type EducationProgramTaskCompleteOutcome =
+  | "already_completed"
+  | "task_completed"
+  | "task_completed_next_task_unlocked"
+  | "day_completed"
+  | "day_completed_next_day_unlocked"
+  | "program_completed";
+
+export type StudentEducationProgramTaskCompleteResult = {
+  outcome: EducationProgramTaskCompleteOutcome;
+  alreadyCompleted: boolean;
+  taskId: string;
+  taskStatus: "completed";
+  dayId: string;
+  dayStatus: "available" | "in_progress" | "completed";
+  programId: string;
+  programStatus: "active" | "completed";
+  unlockedTaskId: string | null;
+  unlockedDayId: string | null;
+  currentDayNumber: number;
+  completedDays: number;
+  totalDays: number;
+  programCompleted: boolean;
+};
+
+export type StudentEducationProgramTaskCompleteRepositoryResult =
+  | { ok: true; value: StudentEducationProgramTaskCompleteResult }
+  | { ok: false; code: EducationProgramTaskCompleteErrorCode; message: string };
+
 export type StudentEducationProgramStudentTask = {
   id: string;
   dayNumber: number;
