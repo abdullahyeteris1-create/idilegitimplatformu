@@ -4,6 +4,13 @@ import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess, type StudentAccessFailure } from "@/lib/auth/verifyStudentAccess";
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import { getAssignmentItemById, getDailyAssignmentById } from "@/lib/assignments/assignmentRepository";
+import {
+  assignmentV2Error,
+  isAssignmentUuid,
+  type AssignmentV2ErrorCode,
+} from "@/lib/assignments/assignmentV2";
+import { inspectAssignmentV2LegacyTask } from "@/lib/assignments/assignmentV2LegacyGuard.server";
+import { isAssignmentV2Enabled } from "@/lib/assignments/assignmentV2Server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -25,6 +32,7 @@ const ALLOWED_BODY_KEYS = new Set([
   "date",
   "completedAt",
   "assignmentItemId",
+  "programTaskId",
   "details",
 ]);
 const MAX_SCORE = 1_000_000;
@@ -131,6 +139,7 @@ type ValidatedResultBody = {
   durationSeconds: number;
   completedAt: string;
   assignmentItemId: string | null;
+  programTaskId: string | null;
   details: Record<string, string | number | boolean>;
 };
 
@@ -147,6 +156,11 @@ function studentAccessFailureResponse(access: StudentAccessFailure) {
     clearStudentSessionCookie(response);
   }
   return response;
+}
+
+function v2GuardErrorResponse(code: AssignmentV2ErrorCode) {
+  const error = assignmentV2Error(code);
+  return jsonResponse({ ok: false, error: { code: error.code, message: error.message } }, error.status);
 }
 
 function hasClientIdentityParameter(request: NextRequest): boolean {
@@ -286,6 +300,12 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
     assignmentItemId = value.assignmentItemId.trim();
   }
 
+  let programTaskId: string | null = null;
+  if (value.programTaskId !== undefined && value.programTaskId !== null && value.programTaskId !== "") {
+    if (!isAssignmentUuid(value.programTaskId)) return null;
+    programTaskId = value.programTaskId;
+  }
+
   return {
     exerciseType,
     exerciseTitle: exerciseTitle || "Egzersiz",
@@ -296,6 +316,7 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
     durationSeconds: Math.round(rawDuration),
     completedAt,
     assignmentItemId,
+    programTaskId,
     details,
   };
 }
@@ -379,6 +400,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await verifyStudentAccess(request);
   if (!access.ok) {
+    if (isAssignmentV2Enabled()) {
+      const code: AssignmentV2ErrorCode =
+        access.status === 401
+          ? "SESSION_REQUIRED"
+          : access.status === 403
+            ? "ACCESS_DENIED"
+            : "ASSIGNMENT_V2_GUARD_UNAVAILABLE";
+      const response = v2GuardErrorResponse(code);
+      if (access.clearSessionCookie) clearStudentSessionCookie(response);
+      return response;
+    }
     return studentAccessFailureResponse(access);
   }
 
@@ -387,6 +419,19 @@ export async function POST(request: NextRequest) {
     rawBody = await request.json();
   } catch {
     return jsonResponse({ message: "Geçersiz sonuç verisi." }, 400);
+  }
+
+  if (isAssignmentV2Enabled() && isPlainObject(rawBody) && rawBody.programTaskId !== undefined) {
+    const candidate = rawBody.programTaskId;
+    if (candidate !== null && candidate !== "") {
+      if (!isAssignmentUuid(candidate)) return v2GuardErrorResponse("TASK_NOT_FOUND");
+
+      const guard = await inspectAssignmentV2LegacyTask(candidate, access.studentId);
+      if (!guard.ok) return v2GuardErrorResponse(guard.code);
+      if (guard.activeAssignmentTask) {
+        return v2GuardErrorResponse("ASSIGNMENT_V2_RESULT_ROUTE_DISABLED");
+      }
+    }
   }
 
   const body = validateResultBody(rawBody);

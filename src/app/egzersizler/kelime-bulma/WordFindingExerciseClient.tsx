@@ -12,6 +12,7 @@ import {
 } from "@/lib/exercise-engine/wordFinding";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -21,6 +22,7 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/word-finding-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "running" | "result";
@@ -107,6 +109,24 @@ export function WordFindingExerciseClient() {
   const configuredDurationSeconds = useAssignedDurationSeconds(durationMinutes * 60);
   const isAssignmentMode = useIsAssignmentMode();
   const elapsedSeconds = Math.max(0, configuredDurationSeconds - remainingSeconds);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score,
+      successRate: calculateSuccessRate(correctCount, wrongCount),
+      correctCount,
+      wrongCount,
+      level: null,
+      details: {
+        completedRounds,
+        foundWords: correctCount,
+        targetWordsPerText,
+        totalClicks: correctCount + wrongCount,
+      },
+    }),
+  );
+  const displayedRemainingSeconds = assignmentAdapter.isAssignmentV2
+    ? assignmentAdapter.remainingSeconds ?? configuredDurationSeconds
+    : remainingSeconds;
 
   // NOT: odev ayarlari asenkron geldigi icin `remainingSeconds` state'ini ayrica
   // senkronlamaya GEREK YOK - "ready" asamasinda ekranda zaten
@@ -139,6 +159,7 @@ export function WordFindingExerciseClient() {
   }, [durationMinutes, isAssignmentMode, configuredDurationSeconds]);
 
   const persistResult = useCallback(async (pending: { payload: SecureExerciseResultInput; result: WordFindingResult }) => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || saveCompletedRef.current) return;
     saveInFlightRef.current = true;
     setSaveStatus("saving");
@@ -156,9 +177,10 @@ export function WordFindingExerciseClient() {
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [assignmentAdapter.isAssignmentV2]);
 
   const finalizeExercise = useCallback(() => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (hasSavedResultRef.current) {
       return;
     }
@@ -215,6 +237,7 @@ export function WordFindingExerciseClient() {
     targetWordsPerText,
     wrongCount,
     persistResult,
+    assignmentAdapter.isAssignmentV2,
   ]);
 
   const handleStartIntro = () => {
@@ -227,32 +250,36 @@ export function WordFindingExerciseClient() {
     setRemainingSeconds(configuredDurationSeconds);
   };
 
-  const handleBeginPlay = () => {
-    hasSavedResultRef.current = false;
-    setTargetIndex(0);
-    setFoundInRound(0);
-    setCompletedRounds(0);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setRemainingSeconds(configuredDurationSeconds);
-    setFeedback(null);
-    setIsResolving(false);
-    setIsPaused(false);
-    setPhase("running");
+  const handleBeginPlay = async () => {
+    await assignmentAdapter.startExercise(() => {
+      hasSavedResultRef.current = false;
+      setTargetIndex(0);
+      setFoundInRound(0);
+      setCompletedRounds(0);
+      setCorrectCount(0);
+      setWrongCount(0);
+      setRemainingSeconds(configuredDurationSeconds);
+      setFeedback(null);
+      setIsResolving(false);
+      setIsPaused(false);
+      setPhase("running");
 
-    if (tickRef.current !== null) {
-      window.clearInterval(tickRef.current);
-    }
+      if (tickRef.current !== null) {
+        window.clearInterval(tickRef.current);
+      }
 
-    tickRef.current = window.setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          return 0;
-        }
+      if (!assignmentAdapter.isAssignmentV2) {
+        tickRef.current = window.setInterval(() => {
+          setRemainingSeconds((prev) => {
+            if (prev <= 1) {
+              return 0;
+            }
 
-        return prev - 1;
-      });
-    }, 1000);
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    });
   };
 
   const handleRestart = () => {
@@ -264,10 +291,10 @@ export function WordFindingExerciseClient() {
   };
 
   useEffect(() => {
-    if (phase === "running" && remainingSeconds === 0) {
+    if (!assignmentAdapter.isAssignmentV2 && phase === "running" && remainingSeconds === 0) {
       window.setTimeout(finalizeExercise, 0);
     }
-  }, [finalizeExercise, phase, remainingSeconds]);
+  }, [assignmentAdapter.isAssignmentV2, finalizeExercise, phase, remainingSeconds]);
 
   useEffect(() => {
     return () => {
@@ -294,7 +321,13 @@ export function WordFindingExerciseClient() {
   };
 
   const handleWordClick = (word: ClickableWord) => {
-    if (phase !== "running" || isPaused || isResolving || !activeTarget) {
+    if (
+      phase !== "running" ||
+      isPaused ||
+      isResolving ||
+      !activeTarget ||
+      assignmentAdapter.isInteractionLocked
+    ) {
       return;
     }
 
@@ -305,6 +338,7 @@ export function WordFindingExerciseClient() {
     if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
       window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         setFeedback(null);
         advanceRound();
         setIsResolving(false);
@@ -314,6 +348,7 @@ export function WordFindingExerciseClient() {
 
     setWrongCount((prev) => prev + 1);
     window.setTimeout(() => {
+      if (!assignmentAdapter.canInteractRef.current) return;
       setFeedback(null);
       setIsResolving(false);
     }, 320);
@@ -345,7 +380,7 @@ export function WordFindingExerciseClient() {
   };
 
   const stats = [
-    { label: "Sure", value: formatDuration(phase === "ready" ? configuredDurationSeconds : remainingSeconds), tone: "brand" as const },
+    { label: "Sure", value: formatDuration(phase === "ready" ? configuredDurationSeconds : displayedRemainingSeconds), tone: "brand" as const },
     { label: "Dogru", value: correctCount, tone: "ok" as const },
     { label: "Yanlis", value: wrongCount, tone: "bad" as const },
     { label: "Net", value: net },
@@ -397,10 +432,16 @@ export function WordFindingExerciseClient() {
 
       <div className="grid gap-2 sm:grid-cols-3 lg:col-span-3">
         {phase === "ready" ? (
-          <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay}>
-            Baslat
+          <button
+            type="button"
+            className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
+            style={FULLSCREEN_TOUCH_STYLE}
+            onClick={() => void handleBeginPlay()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
+          >
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Baslat"}
           </button>
-        ) : (
+        ) : !assignmentAdapter.isAssignmentV2 ? (
           <>
             <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={togglePause}>
               {isPaused ? "Devam Et" : "Duraklat"}
@@ -412,7 +453,7 @@ export function WordFindingExerciseClient() {
               Bitir
             </button>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -523,12 +564,12 @@ export function WordFindingExerciseClient() {
         subtitle={selectedText.title}
         stats={stats}
         finishButton={
-          <button type="button" onClick={handleFinishEarly} className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE}>
+          assignmentAdapter.isAssignmentV2 ? null : <button type="button" onClick={handleFinishEarly} className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE}>
             Bitir
           </button>
         }
         stageClassName={`fx-slide-up flex min-h-[380px] w-full flex-col items-center justify-center gap-3 rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[460px] md:px-5 ${styles.stageOverride}`}
-        footer={footerControls}
+        footer={assignmentAdapter.isAssignmentV2 ? undefined : footerControls}
       >
         <div className="w-full max-w-4xl">
           <article className={`rounded-[26px] border border-red-100 bg-white px-4 py-5 text-left leading-9 shadow-[0_18px_50px_rgba(185,28,28,0.10)] md:px-7 md:py-6 md:leading-10 ${styles.readingArticle}`}>
@@ -544,7 +585,12 @@ export function WordFindingExerciseClient() {
                 <button
                   key={word.id}
                   type="button"
-                  disabled={phase !== "running" || isPaused || isResolving}
+                  disabled={
+                    phase !== "running" ||
+                    isPaused ||
+                    isResolving ||
+                    assignmentAdapter.isInteractionLocked
+                  }
                   onClick={() => handleWordClick(word)}
                   className={`mx-0.5 inline-flex min-h-11 items-center cursor-pointer rounded-lg border px-1.5 text-base font-semibold transition duration-150 active:scale-[0.96] disabled:cursor-default md:text-lg ${feedbackClass}`}
                   style={FULLSCREEN_TOUCH_STYLE}

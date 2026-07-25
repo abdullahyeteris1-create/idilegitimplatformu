@@ -6,7 +6,9 @@ import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExercis
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
 type ExercisePhase = "ready" | "play";
@@ -126,13 +128,34 @@ export function TachistoscopeExerciseClient() {
   const totalAnswered = totalCorrect + totalWrong;
   const totalNet = totalCorrect - totalWrong;
   const liveScore = totalCorrect * 10 - totalWrong * 5;
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score: liveScore,
+      successRate: totalAnswered === 0 ? 0 : Math.round((totalCorrect / totalAnswered) * 100),
+      correctCount: totalCorrect,
+      wrongCount: totalWrong,
+      level: reachedLevel,
+      details: {
+        completedRounds: totalAnswered,
+        responseCount: totalAnswered,
+        speedMs,
+        mode: workMode,
+        contentType,
+        autoLevelUpCount,
+      },
+    }),
+  );
 
   useEffect(() => {
     latestSettingsRef.current = { level, speedMs, contentType };
   }, [level, speedMs, contentType]);
 
   useEffect(() => {
-    if (phase !== "play" || sessionStartedAt === null) return;
+    if (
+      phase !== "play" ||
+      sessionStartedAt === null ||
+      assignmentAdapter.isAssignmentV2
+    ) return;
 
     const updateElapsed = () => {
       setElapsedSeconds(Math.max(0, Math.floor((Date.now() - sessionStartedAt) / 1000)));
@@ -141,7 +164,7 @@ export function TachistoscopeExerciseClient() {
     updateElapsed();
     const timerId = window.setInterval(updateElapsed, 1000);
     return () => window.clearInterval(timerId);
-  }, [phase, sessionStartedAt]);
+  }, [assignmentAdapter.isAssignmentV2, phase, sessionStartedAt]);
 
   useEffect(() => {
     feedbackAdvanceGuardRef.current = false;
@@ -174,7 +197,12 @@ export function TachistoscopeExerciseClient() {
   }, [phase, responsePhase, currentRound?.content]);
 
   useEffect(() => {
-    if (phase !== "play" || responsePhase !== "show" || !currentRound) {
+    if (
+      phase !== "play" ||
+      responsePhase !== "show" ||
+      !currentRound ||
+      assignmentAdapter.isInteractionLocked
+    ) {
       return;
     }
 
@@ -183,6 +211,7 @@ export function TachistoscopeExerciseClient() {
     }
 
     revealTimerRef.current = window.setTimeout(() => {
+      if (!assignmentAdapter.canInteractRef.current) return;
       setResponsePhase("answer");
       setCurrentInput("");
       setCurrentFeedback("");
@@ -195,9 +224,10 @@ export function TachistoscopeExerciseClient() {
         window.clearTimeout(revealTimerRef.current);
       }
     };
-  }, [currentRound, phase, responsePhase]);
+  }, [assignmentAdapter, currentRound, phase, responsePhase]);
 
   const startNextRound = (overrideSettings?: Partial<RoundSettings>) => {
+    if (!assignmentAdapter.canInteractRef.current) return;
     const settings = { ...latestSettingsRef.current, ...overrideSettings };
     const normalizedLevel = normalizeTachistoscopeLevel(settings.level);
 
@@ -227,30 +257,34 @@ export function TachistoscopeExerciseClient() {
 
     autoAdvanceTimerRef.current = window.setTimeout(() => {
       autoAdvanceTimerRef.current = null;
+      if (!assignmentAdapter.canInteractRef.current) return;
       startNextRound();
     }, AUTO_ADVANCE_DELAY_MS);
   };
 
-  const handleBeginPlay = () => {
-    hasSavedResultRef.current = false;
-    saveInFlightRef.current = false;
-    pendingResultRef.current = null;
-    setSaveStatus("idle");
-    setSaveMessage("");
-    setSavedResultUrl("");
-    setCurrentLevelCorrect(0);
-    setCurrentLevelWrong(0);
-    setTotalCorrect(0);
-    setTotalWrong(0);
-    setAutoLevelUpCount(0);
-    setReachedLevel(level);
-    setElapsedSeconds(0);
-    setPhase("play");
-    setSessionStartedAt(Date.now());
-    startNextRound({ level, speedMs, contentType });
+  const handleBeginPlay = async () => {
+    await assignmentAdapter.startExercise(() => {
+      hasSavedResultRef.current = false;
+      saveInFlightRef.current = false;
+      pendingResultRef.current = null;
+      setSaveStatus("idle");
+      setSaveMessage("");
+      setSavedResultUrl("");
+      setCurrentLevelCorrect(0);
+      setCurrentLevelWrong(0);
+      setTotalCorrect(0);
+      setTotalWrong(0);
+      setAutoLevelUpCount(0);
+      setReachedLevel(level);
+      setElapsedSeconds(0);
+      setPhase("play");
+      setSessionStartedAt(Date.now());
+      startNextRound({ level, speedMs, contentType });
+    });
   };
 
   const persistPendingResult = async (pending: { payload: SecureExerciseResultInput; resultUrl: string }) => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || hasSavedResultRef.current) {
       return;
     }
@@ -278,6 +312,7 @@ export function TachistoscopeExerciseClient() {
   };
 
   const finishExercise = () => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (hasSavedResultRef.current || saveInFlightRef.current || saveStatus !== "idle") return;
 
     if (revealTimerRef.current) {
@@ -325,6 +360,7 @@ export function TachistoscopeExerciseClient() {
   const handleSubmitAnswer = () => {
     if (
       phase !== "play" ||
+      assignmentAdapter.isInteractionLocked ||
       responsePhase !== "answer" ||
       answerLocked ||
       answerSubmissionGuardRef.current ||
@@ -381,7 +417,7 @@ export function TachistoscopeExerciseClient() {
   };
 
   const handleNext = () => {
-    if (phase !== "play") {
+    if (phase !== "play" || assignmentAdapter.isInteractionLocked) {
       return;
     }
 
@@ -411,6 +447,7 @@ export function TachistoscopeExerciseClient() {
   };
 
   const handleFeedbackAdvance = useEffectEvent((event: KeyboardEvent) => {
+    if (assignmentAdapter.isInteractionLocked) return;
     if (event.key !== "Enter" || event.repeat) {
       return;
     }
@@ -450,7 +487,14 @@ export function TachistoscopeExerciseClient() {
     };
   }, [phase, responsePhase]);
 
+  useEffect(() => {
+    if (!assignmentAdapter.isAssignmentV2 || assignmentAdapter.isRunning) return;
+    if (revealTimerRef.current) window.clearTimeout(revealTimerRef.current);
+    if (autoAdvanceTimerRef.current) window.clearTimeout(autoAdvanceTimerRef.current);
+  }, [assignmentAdapter.isAssignmentV2, assignmentAdapter.isRunning]);
+
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (assignmentAdapter.isInteractionLocked) return;
     if (event.key !== "Enter" || event.repeat) {
       return;
     }
@@ -484,7 +528,14 @@ export function TachistoscopeExerciseClient() {
       <TkStat label="Doğru" value={totalCorrect} tone="ok" />
       <TkStat label="Yanlış" value={totalWrong} tone="bad" />
       <TkStat label="Net" value={totalNet} tone={totalNet < 0 ? "bad" : "brand"} />
-      <TkStat label="Süre" value={formatElapsed(elapsedSeconds)} />
+      <TkStat
+        label={assignmentAdapter.isAssignmentV2 ? "Kalan" : "Süre"}
+        value={formatElapsed(
+          assignmentAdapter.isAssignmentV2
+            ? assignmentAdapter.remainingSeconds ?? 0
+            : elapsedSeconds,
+        )}
+      />
     </>
   );
 
@@ -496,7 +547,7 @@ export function TachistoscopeExerciseClient() {
         onChange={(event) => setCurrentInput(event.target.value)}
         onKeyDown={handleInputKeyDown}
         aria-label="Gordugun kelimeyi yaz"
-        disabled={answerLocked}
+        disabled={answerLocked || assignmentAdapter.isInteractionLocked}
         className={tkStyles.answerInput}
         placeholder="Gordugun kelimeyi yaz"
         inputMode="text"
@@ -509,29 +560,33 @@ export function TachistoscopeExerciseClient() {
         className={`${tkStyles.primaryButton} sm:w-auto sm:min-w-32`}
         style={FULLSCREEN_TOUCH_STYLE}
         onClick={handleSubmitAnswer}
-        disabled={answerLocked || !currentInput.trim()}
+        disabled={
+          answerLocked ||
+          !currentInput.trim() ||
+          assignmentAdapter.isInteractionLocked
+        }
       >
         Kontrol Et
       </button>
-      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      {!assignmentAdapter.isAssignmentV2 ? <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
-      </button>
+      </button> : null}
     </div>
   ) : responsePhase === "feedback" ? (
     <div className="mx-auto grid w-full max-w-xl grid-cols-2 gap-2">
       <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={handleNext}>
         Sonraki
       </button>
-      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      {!assignmentAdapter.isAssignmentV2 ? <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
-      </button>
+      </button> : null}
     </div>
   ) : (
     <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
       <p className={`min-w-0 text-xs font-semibold ${tkStyles.helperText}`}>İçerik gösteriliyor...</p>
-      <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
+      {!assignmentAdapter.isAssignmentV2 ? <button type="button" disabled={saveStatus !== "idle"} className={tkStyles.secondaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>
         Bitir
-      </button>
+      </button> : null}
     </div>
   );
 
@@ -553,8 +608,14 @@ export function TachistoscopeExerciseClient() {
           bottomSettings={stageSettings}
           controls={
             <div className="mx-auto w-full max-w-sm">
-              <button type="button" onClick={handleBeginPlay} className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE}>
-                Egzersizi Başlat
+              <button
+                type="button"
+                onClick={() => void handleBeginPlay()}
+                disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
+                className={tkStyles.primaryButton}
+                style={FULLSCREEN_TOUCH_STYLE}
+              >
+                {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Egzersizi Başlat"}
               </button>
             </div>
           }

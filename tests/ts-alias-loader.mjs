@@ -12,9 +12,20 @@ const SRC_ROOT = pathToFileURL(`${path.resolve(process.cwd(), "src")}/`).href;
 const HAS_EXTENSION = /\.[a-zA-Z]+$/;
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier === "next/server") {
+    return nextResolve("next/server.js", context);
+  }
+  if (specifier === "server-only") {
+    return {
+      url: "data:text/javascript,export {};",
+      shortCircuit: true,
+    };
+  }
   if (specifier.startsWith("@/")) {
     const withoutAlias = specifier.slice(2);
-    const rewritten = HAS_EXTENSION.test(withoutAlias) ? withoutAlias : `${withoutAlias}.ts`;
+    const rewritten = withoutAlias.endsWith(".server")
+      ? `${withoutAlias}.ts`
+      : HAS_EXTENSION.test(withoutAlias) ? withoutAlias : `${withoutAlias}.ts`;
     return nextResolve(new URL(rewritten, SRC_ROOT).href, context);
   }
   return nextResolve(specifier, context);

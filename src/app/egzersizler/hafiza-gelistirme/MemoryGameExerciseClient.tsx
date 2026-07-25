@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -20,6 +21,7 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/memory-game-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
@@ -174,6 +176,23 @@ export function MemoryGameExerciseClient() {
   const net = levelCorrectCount - levelWrongCount;
   const score = calculateScore(totalCorrectCount, totalWrongCount);
   const successRate = calculateSuccessRate(totalCorrectCount, totalWrongCount);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score,
+      successRate,
+      correctCount: totalCorrectCount,
+      wrongCount: totalWrongCount,
+      level,
+      details: {
+        completedRounds: Math.max(0, roundNumber - 1),
+        gridRows: gridInfo.rows,
+        gridCols: gridInfo.cols,
+        reachedLevel: level,
+        displayMs,
+        levelUpCount,
+      },
+    }),
+  );
   const clearRoundTimers = useCallback(() => {
     if (prepareTimerRef.current !== null) {
       window.clearTimeout(prepareTimerRef.current);
@@ -193,6 +212,7 @@ export function MemoryGameExerciseClient() {
 
   const beginRound = useCallback(
     (nextRoundNumber: number, activeLevel = level) => {
+      if (!assignmentAdapter.canInteractRef.current) return;
       clearRoundTimers();
 
       const nextTargets = generateTargets(gridInfo.totalBoxes, activeLevel);
@@ -208,18 +228,20 @@ export function MemoryGameExerciseClient() {
       setSelectedWrong(null);
 
       prepareTimerRef.current = window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         setRoundPhase("show");
         setFeedbackType("info");
         setFeedbackMessage("Yanan kutulara dikkatlice bak.");
 
         hideTimerRef.current = window.setTimeout(() => {
+          if (!assignmentAdapter.canInteractRef.current) return;
           setRoundPhase("select");
           setFeedbackType("info");
           setFeedbackMessage("Şimdi aklında kalan kutuları seç.");
         }, displayMs);
       }, 350);
     },
-    [clearRoundTimers, displayMs, gridInfo.totalBoxes, level],
+    [assignmentAdapter.canInteractRef, clearRoundTimers, displayMs, gridInfo.totalBoxes, level],
   );
 
   const resetToReady = useCallback(() => {
@@ -247,22 +269,24 @@ export function MemoryGameExerciseClient() {
     resetToReady();
   };
 
-  const handleBeginPlay = () => {
-    clearRoundTimers();
+  const handleBeginPlay = async () => {
+    await assignmentAdapter.startExercise(() => {
+      clearRoundTimers();
 
-    hasSavedResultRef.current = false;
-    startedAtRef.current = Date.now();
+      hasSavedResultRef.current = false;
+      startedAtRef.current = Date.now();
 
-    setPhase("play");
-    setRoundNumber(1);
-    setLevelCorrectCount(0);
-    setLevelWrongCount(0);
-    setTotalCorrectCount(0);
-    setTotalWrongCount(0);
-    setLevelUpCount(0);
-    setElapsedSeconds(0);
+      setPhase("play");
+      setRoundNumber(1);
+      setLevelCorrectCount(0);
+      setLevelWrongCount(0);
+      setTotalCorrectCount(0);
+      setTotalWrongCount(0);
+      setLevelUpCount(0);
+      setElapsedSeconds(0);
 
-    beginRound(1, level);
+      beginRound(1, level);
+    });
   };
 
   const handleRestart = () => {
@@ -272,6 +296,7 @@ export function MemoryGameExerciseClient() {
   const scheduleNextRound = useCallback(
     (nextLevel: number, resetLevelStats: boolean) => {
       nextRoundTimerRef.current = window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         if (resetLevelStats) {
           setLevelCorrectCount(0);
           setLevelWrongCount(0);
@@ -280,7 +305,7 @@ export function MemoryGameExerciseClient() {
         beginRound(roundNumber + 1, nextLevel);
       }, 850);
     },
-    [beginRound, roundNumber],
+    [assignmentAdapter.canInteractRef, beginRound, roundNumber],
   );
 
   const handleLevelUp = useCallback(
@@ -317,7 +342,11 @@ export function MemoryGameExerciseClient() {
   );
 
   const handleSelectBox = (boxIndex: number) => {
-    if (phase !== "play" || roundPhase !== "select") {
+    if (
+      phase !== "play" ||
+      roundPhase !== "select" ||
+      assignmentAdapter.isInteractionLocked
+    ) {
       return;
     }
 
@@ -357,6 +386,7 @@ export function MemoryGameExerciseClient() {
   };
 
   const finishExercise = useCallback(() => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (hasSavedResultRef.current) return;
 
     hasSavedResultRef.current = true;
@@ -417,10 +447,11 @@ export function MemoryGameExerciseClient() {
     roundNumber,
     totalCorrectCount,
     totalWrongCount,
+    assignmentAdapter.isAssignmentV2,
   ]);
 
   useEffect(() => {
-    if (phase !== "play") return;
+    if (phase !== "play" || assignmentAdapter.isAssignmentV2) return;
 
     const timerId = window.setInterval(() => {
       setElapsedSeconds((previous) => previous + 1);
@@ -429,13 +460,23 @@ export function MemoryGameExerciseClient() {
     return () => {
       window.clearInterval(timerId);
     };
-  }, [phase]);
+  }, [assignmentAdapter.isAssignmentV2, phase]);
 
   useEffect(() => {
     return () => {
       clearRoundTimers();
     };
   }, [clearRoundTimers]);
+
+  useEffect(() => {
+    if (assignmentAdapter.isAssignmentV2 && !assignmentAdapter.isRunning) {
+      clearRoundTimers();
+    }
+  }, [
+    assignmentAdapter.isAssignmentV2,
+    assignmentAdapter.isRunning,
+    clearRoundTimers,
+  ]);
 
   const footerControls = (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -517,11 +558,12 @@ export function MemoryGameExerciseClient() {
             type="button"
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
-            onClick={handleBeginPlay}
+            onClick={() => void handleBeginPlay()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
           >
-            Başlat
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Başlat"}
           </button>
-        ) : (
+        ) : !assignmentAdapter.isAssignmentV2 ? (
           <>
             <button
               type="button"
@@ -541,7 +583,7 @@ export function MemoryGameExerciseClient() {
               Bitir
             </button>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -703,7 +745,7 @@ export function MemoryGameExerciseClient() {
           { label: "Net", value: net, tone: "brand" },
         ]}
         finishButton={
-          <button
+          assignmentAdapter.isAssignmentV2 ? null : <button
             type="button"
             onClick={finishExercise}
             className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`}
@@ -769,7 +811,10 @@ export function MemoryGameExerciseClient() {
                       fontSize: `${fontSize}px`,
                     }}
                     onClick={() => handleSelectBox(index)}
-                    disabled={roundPhase !== "select"}
+                    disabled={
+                      roundPhase !== "select" ||
+                      assignmentAdapter.isInteractionLocked
+                    }
                   >
                     <span className="sr-only">Kutu {index + 1}</span>
                   </button>

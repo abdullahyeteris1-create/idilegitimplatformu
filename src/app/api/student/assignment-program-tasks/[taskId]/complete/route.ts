@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
+import { inspectAssignmentV2LegacyTask } from "@/lib/assignments/assignmentV2LegacyGuard.server";
+import {
+  assignmentV2Error,
+  type AssignmentV2ErrorCode,
+} from "@/lib/assignments/assignmentV2";
+import { isAssignmentV2Enabled } from "@/lib/assignments/assignmentV2Server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -17,6 +23,11 @@ type CompletePayload = {
 
 function badRequest(message: string) {
   return NextResponse.json({ ok: false, message }, { status: 400 });
+}
+
+function v2GuardErrorResponse(code: AssignmentV2ErrorCode) {
+  const error = assignmentV2Error(code);
+  return NextResponse.json({ ok: false, error: { code: error.code, message: error.message } }, { status: error.status });
 }
 
 /**
@@ -35,6 +46,31 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ taskId: string }> },
 ) {
+  let guardedStudentId: string | null = null;
+
+  if (isAssignmentV2Enabled()) {
+    const access = await verifyStudentAccess(request);
+    if (!access.ok) {
+      const code: AssignmentV2ErrorCode =
+        access.status === 401
+          ? "SESSION_REQUIRED"
+          : access.status === 403
+            ? "ACCESS_DENIED"
+            : "ASSIGNMENT_V2_GUARD_UNAVAILABLE";
+      const response = v2GuardErrorResponse(code);
+      if (access.clearSessionCookie) clearStudentSessionCookie(response);
+      return response;
+    }
+
+    const { taskId } = await context.params;
+    const guard = await inspectAssignmentV2LegacyTask(taskId, access.studentId);
+    if (!guard.ok) return v2GuardErrorResponse(guard.code);
+    if (guard.activeAssignmentTask) {
+      return v2GuardErrorResponse("ASSIGNMENT_V2_COMPLETION_REQUIRED");
+    }
+    guardedStudentId = access.studentId;
+  }
+
   let payload: CompletePayload;
   try {
     payload = (await request.json()) as CompletePayload;
@@ -42,16 +78,19 @@ export async function POST(
     return badRequest("Gecersiz istek govdesi.");
   }
 
-  const access = await verifyStudentAccess(request);
-  if (!access.ok) {
-    const response = NextResponse.json({ ok: false, message: access.message }, { status: access.status });
-    if (access.clearSessionCookie) {
-      clearStudentSessionCookie(response);
+  if (!guardedStudentId) {
+    const access = await verifyStudentAccess(request);
+    if (!access.ok) {
+      const response = NextResponse.json({ ok: false, message: access.message }, { status: access.status });
+      if (access.clearSessionCookie) {
+        clearStudentSessionCookie(response);
+      }
+      return response;
     }
-    return response;
+    guardedStudentId = access.studentId;
   }
 
-  const studentId = access.studentId;
+  const studentId = guardedStudentId;
 
   /**
    * resultId OPSIYONELDIR:

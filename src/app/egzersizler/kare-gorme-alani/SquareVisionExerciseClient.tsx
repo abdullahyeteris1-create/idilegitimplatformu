@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -13,6 +14,7 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/square-vision-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
@@ -141,6 +143,24 @@ export function SquareVisionExerciseClient() {
   const successRate =
     answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
   const score = Math.max(0, correctCount * 10 - wrongCount * 3);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score,
+      successRate,
+      correctCount,
+      wrongCount,
+      level,
+      details: {
+        completedRounds: answeredCount,
+        highestGridSize: gridSize,
+        totalTargets: answeredCount * 2,
+        answeredCount,
+      },
+    }),
+  );
+  const displayedRemainingSeconds = assignmentAdapter.isAssignmentV2
+    ? assignmentAdapter.remainingSeconds ?? totalDurationSeconds
+    : remainingSeconds;
 
   const cellFontSize = useMemo(() => {
     if (gridSize >= 15) return "text-[9px] sm:text-xs md:text-sm";
@@ -191,11 +211,6 @@ export function SquareVisionExerciseClient() {
     [soundEnabled],
   );
 
-  const prepareRound = useCallback(() => {
-    setRound(createRound(gridSize, level));
-    setLastFeedback(null);
-  }, [gridSize, level]);
-
   const resetExercise = useCallback(() => {
     setRound(createRound(gridSize, level));
     setElapsedSeconds(0);
@@ -215,6 +230,7 @@ export function SquareVisionExerciseClient() {
   }, [gridSize, level]);
 
   const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || saveCompletedRef.current) return;
     saveInFlightRef.current = true;
     setSaveStatus("saving");
@@ -232,9 +248,10 @@ export function SquareVisionExerciseClient() {
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [assignmentAdapter.isAssignmentV2]);
 
   const finishExercise = useCallback(() => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (savedRef.current) {
       return;
     }
@@ -291,11 +308,12 @@ export function SquareVisionExerciseClient() {
     soundEnabled,
     wrongCount,
     persistResult,
+    assignmentAdapter.isAssignmentV2,
   ]);
 
   const answerRound = useCallback(
     (answer: Answer) => {
-      if (phase !== "running") {
+      if (phase !== "running" || assignmentAdapter.isInteractionLocked) {
         return;
       }
 
@@ -313,15 +331,16 @@ export function SquareVisionExerciseClient() {
       playFeedback(isCorrect);
 
       window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         setRound(createRound(gridSize, level));
         setLastFeedback(null);
       }, 160);
     },
-    [gridSize, level, phase, playFeedback, round.correctAnswer],
+    [assignmentAdapter, gridSize, level, phase, playFeedback, round.correctAnswer],
   );
 
   useEffect(() => {
-    if (phase !== "running") {
+    if (phase !== "running" || assignmentAdapter.isAssignmentV2) {
       return;
     }
 
@@ -332,20 +351,21 @@ export function SquareVisionExerciseClient() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [phase, totalDurationSeconds]);
+  }, [assignmentAdapter.isAssignmentV2, phase, totalDurationSeconds]);
 
   useEffect(() => {
     if (
       phase === "running" &&
+      !assignmentAdapter.isAssignmentV2 &&
       elapsedSeconds >= totalDurationSeconds
     ) {
       finishExercise();
     }
-  }, [elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
+  }, [assignmentAdapter.isAssignmentV2, elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (phase !== "running") {
+      if (phase !== "running" || assignmentAdapter.isInteractionLocked) {
         return;
       }
 
@@ -362,23 +382,25 @@ export function SquareVisionExerciseClient() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [answerRound, phase]);
+  }, [answerRound, assignmentAdapter.isInteractionLocked, phase]);
 
-  const beginExercise = () => {
-    setRound(createRound(gridSize, level));
-    setElapsedSeconds(0);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setAnsweredCount(0);
-    setLastFeedback(null);
-    setResult(null);
-    savedRef.current = false;
-    saveCompletedRef.current = false;
-    pendingResultRef.current = null;
-    setSaveStatus("idle");
-    setSaveMessage("");
-    startedAtRef.current = Date.now();
-    setPhase("running");
+  const beginExercise = async () => {
+    await assignmentAdapter.startExercise(() => {
+      setRound(createRound(gridSize, level));
+      setElapsedSeconds(0);
+      setCorrectCount(0);
+      setWrongCount(0);
+      setAnsweredCount(0);
+      setLastFeedback(null);
+      setResult(null);
+      savedRef.current = false;
+      saveCompletedRef.current = false;
+      pendingResultRef.current = null;
+      setSaveStatus("idle");
+      setSaveMessage("");
+      startedAtRef.current = Date.now();
+      setPhase("running");
+    });
   };
 
   const controls = (
@@ -468,13 +490,14 @@ export function SquareVisionExerciseClient() {
         {phase === "ready" ? (
           <button
             type="button"
-            onClick={beginExercise}
+            onClick={() => void beginExercise()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} min-h-[44px] ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
-            Egzersizi Başlat
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Egzersizi Başlat"}
           </button>
-        ) : phase === "running" ? (
+        ) : !assignmentAdapter.isAssignmentV2 && phase === "running" ? (
           <button
             type="button"
             onClick={() => setPhase("paused")}
@@ -483,7 +506,7 @@ export function SquareVisionExerciseClient() {
           >
             Duraklat
           </button>
-        ) : (
+        ) : !assignmentAdapter.isAssignmentV2 && phase === "paused" ? (
           <button
             type="button"
             onClick={() => {
@@ -495,7 +518,7 @@ export function SquareVisionExerciseClient() {
           >
             Devam Et
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -580,14 +603,14 @@ export function SquareVisionExerciseClient() {
         title="KAREL: Kare Görme Çalışması"
         subtitle="Merkez noktaya odaklan"
         stats={[
-          { label: "Süre", value: formatTime(remainingSeconds) },
+          { label: "Süre", value: formatTime(displayedRemainingSeconds) },
           { label: "Seviye", value: level, tone: "brand" },
           { label: "Kare", value: `${gridSize}x${gridSize}` },
           { label: "Doğru", value: correctCount },
           { label: "Yanlış", value: wrongCount },
         ]}
         finishButton={
-          phase === "running" || phase === "paused" ? (
+          !assignmentAdapter.isAssignmentV2 && (phase === "running" || phase === "paused") ? (
             <div className="flex gap-1">
               <button
                 type="button"
@@ -612,7 +635,11 @@ export function SquareVisionExerciseClient() {
         }
         stageClassName={`exercise-stage-fit flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] border border-red-100 bg-white p-2 shadow-[0_18px_56px_rgba(185,28,28,0.10)] md:rounded-[28px] md:p-4 ${styles.stageOverride}`}
         footer={phase === "ready" ? controls : undefined}
-        settings={controls}
+        settings={
+          assignmentAdapter.isAssignmentV2 && phase !== "ready"
+            ? undefined
+            : controls
+        }
       >
         <div className="flex h-full min-h-0 w-full flex-col">
           {phase === "ready" ? (
@@ -636,7 +663,7 @@ export function SquareVisionExerciseClient() {
                     Sol ok: Aynı · Sağ ok: Farklı
                   </p>
                   <p className={`text-sm font-black text-red-700 ${styles.timerText}`}>
-                    {formatTime(remainingSeconds)}
+                    {formatTime(displayedRemainingSeconds)}
                   </p>
                 </div>
               </div>
@@ -692,7 +719,7 @@ export function SquareVisionExerciseClient() {
                   <button
                     type="button"
                     onClick={() => answerRound("same")}
-                    disabled={phase !== "running"}
+                    disabled={phase !== "running" || assignmentAdapter.isInteractionLocked}
                     className="min-h-[44px] rounded-xl border border-red-700 bg-red-600 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
                     style={FULLSCREEN_TOUCH_STYLE}
                   >
@@ -701,7 +728,7 @@ export function SquareVisionExerciseClient() {
                   <button
                     type="button"
                     onClick={() => answerRound("different")}
-                    disabled={phase !== "running"}
+                    disabled={phase !== "running" || assignmentAdapter.isInteractionLocked}
                     className="min-h-[44px] rounded-xl border border-slate-300 bg-slate-900 px-2 py-2 text-sm font-black text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 md:text-base"
                     style={FULLSCREEN_TOUCH_STYLE}
                   >

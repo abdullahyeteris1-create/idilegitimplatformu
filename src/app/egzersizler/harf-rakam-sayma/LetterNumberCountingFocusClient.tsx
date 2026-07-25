@@ -14,12 +14,14 @@ import {
   type CountingRound,
 } from "@/lib/exercise-engine/letterNumberCountingFocus";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/counting-focus-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "running" | "feedback" | "paused" | "completed";
@@ -98,6 +100,24 @@ export function LetterNumberCountingFocusClient() {
 
   const net = calculateNet(correctCount, wrongCount);
   const safeSpeedSeconds = getRoundDurationBySpeed(speedSeconds);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() => {
+    const answered = correctCount + wrongCount;
+    return createAssignmentResultSnapshot({
+      score: Math.max(0, correctCount * 10 - wrongCount * 5),
+      successRate: answered === 0 ? 0 : Math.round((correctCount / answered) * 100),
+      correctCount,
+      wrongCount,
+      level,
+      details: {
+        completedRounds: totalRounds,
+        unansweredCount,
+        levelUpCount,
+        mode,
+        difficulty,
+        speedSeconds: safeSpeedSeconds,
+      },
+    });
+  });
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -151,17 +171,19 @@ export function LetterNumberCountingFocusClient() {
     setPhase("running");
   }, [clearFeedbackTimer, clearTimer, createRound, level]);
 
-  const handleStart = () => {
-    hasSavedResultRef.current = false;
-    startedAtRef.current = Date.now();
-    setCorrectCount(0);
-    setWrongCount(0);
-    setUnansweredCount(0);
-    setTotalRounds(0);
-    setLevelUpCount(0);
-    setLevel(startLevel);
-    setResult(null);
-    startRound(startLevel);
+  const handleStart = async () => {
+    await assignmentAdapter.startExercise(() => {
+      hasSavedResultRef.current = false;
+      startedAtRef.current = Date.now();
+      setCorrectCount(0);
+      setWrongCount(0);
+      setUnansweredCount(0);
+      setTotalRounds(0);
+      setLevelUpCount(0);
+      setLevel(startLevel);
+      setResult(null);
+      startRound(startLevel);
+    });
   };
 
   const continueAfterFeedback = useCallback((nextCorrect: number, nextWrong: number, nextLevel: number) => {
@@ -186,7 +208,7 @@ export function LetterNumberCountingFocusClient() {
   }, [startRound]);
 
   const submitAnswer = useCallback((answer: number | null, reason: "answer" | "timeout") => {
-    if (!round || phase !== "running") return;
+    if (!round || phase !== "running" || !assignmentAdapter.canInteractRef.current) return;
     clearTimer();
     clearFeedbackTimer();
     setPhase("feedback");
@@ -207,12 +229,12 @@ export function LetterNumberCountingFocusClient() {
       }
     }
     feedbackRef.current = window.setTimeout(() => { continueAfterFeedback(nextCorrect, nextWrong, level); }, 850);
-  }, [clearFeedbackTimer, clearTimer, continueAfterFeedback, correctCount, level, phase, round, wrongCount]);
+  }, [assignmentAdapter.canInteractRef, clearFeedbackTimer, clearTimer, continueAfterFeedback, correctCount, level, phase, round, wrongCount]);
 
   // --- Klavye destegi: sayi tuslari (1-9, 0) ve Numpad ---
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (phase !== "running" || !round) return;
+      if (phase !== "running" || !round || assignmentAdapter.isInteractionLocked) return;
       let pressedNumber: number | null = null;
       if (event.key >= "1" && event.key <= "9") {
         pressedNumber = Number(event.key);
@@ -223,7 +245,7 @@ export function LetterNumberCountingFocusClient() {
       event.preventDefault();
       submitAnswer(pressedNumber, "answer");
     },
-    [phase, round, submitAnswer],
+    [assignmentAdapter.isInteractionLocked, phase, round, submitAnswer],
   );
 
   useEffect(() => {
@@ -250,6 +272,18 @@ export function LetterNumberCountingFocusClient() {
     return () => { clearTimer(); clearFeedbackTimer(); };
   }, [clearFeedbackTimer, clearTimer]);
 
+  useEffect(() => {
+    if (assignmentAdapter.isAssignmentV2 && !assignmentAdapter.isRunning) {
+      clearTimer();
+      clearFeedbackTimer();
+    }
+  }, [
+    assignmentAdapter.isAssignmentV2,
+    assignmentAdapter.isRunning,
+    clearFeedbackTimer,
+    clearTimer,
+  ]);
+
   const handlePause = () => {
     if (phase !== "running") return;
     clearTimer();
@@ -262,6 +296,7 @@ export function LetterNumberCountingFocusClient() {
   };
 
   const persistResult = async (payload: SecureExerciseResultInput) => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || saveCompletedRef.current) return;
     saveInFlightRef.current = true;
     setSaveStatus("saving");
@@ -282,6 +317,7 @@ export function LetterNumberCountingFocusClient() {
   };
 
   const finishExercise = () => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (hasSavedResultRef.current) return;
     hasSavedResultRef.current = true;
     clearTimer();
@@ -364,8 +400,16 @@ export function LetterNumberCountingFocusClient() {
       </label>
       <div className="flex flex-wrap gap-1.5">
         {phase === "ready" ? (
-          <button type="button" className={`min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white ${styles.startButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleStart}>Baslat</button>
-        ) : (
+          <button
+            type="button"
+            className={`min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white ${styles.startButtonOverride}`}
+            style={FULLSCREEN_TOUCH_STYLE}
+            onClick={() => void handleStart()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
+          >
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Baslat"}
+          </button>
+        ) : !assignmentAdapter.isAssignmentV2 ? (
           <>
             {phase === "paused" ? (
               <button type="button" className={`min-h-11 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white ${styles.startButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleResume}>Devam</button>
@@ -375,7 +419,7 @@ export function LetterNumberCountingFocusClient() {
             <button type="button" className={`min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={() => resetToReady()}>Sifirla</button>
             <button type="button" className={`min-h-11 rounded-xl bg-red-600 px-3 text-xs font-bold text-white ${styles.finishButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={finishExercise}>Bitir</button>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -475,8 +519,8 @@ export function LetterNumberCountingFocusClient() {
       title="Harf / Rakam Sayma Odak Calismasi"
       subtitle={round ? ("Kac tane " + round.target + " var?") : "Sayma turu"}
       stats={[...stats, { label: "Kalan", value: remainingSeconds + " sn", tone: remainingSeconds <= 3 ? "bad" as const : "brand" as const }]}
-      footer={footerControls}
-      settings={footerControls}
+      footer={assignmentAdapter.isAssignmentV2 ? undefined : footerControls}
+      settings={assignmentAdapter.isAssignmentV2 ? undefined : footerControls}
     >
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
         <div className={`shrink-0 flex items-center justify-between gap-2 rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-left ${styles.targetBanner}`}>
@@ -523,7 +567,7 @@ export function LetterNumberCountingFocusClient() {
               key={ans}
               type="button"
               onClick={() => submitAnswer(ans, "answer")}
-              disabled={phase !== "running"}
+              disabled={phase !== "running" || assignmentAdapter.isInteractionLocked}
               className={`min-h-8 rounded-lg border border-red-100 bg-white px-0.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-red-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 ${styles.answerButton}`}
               style={FULLSCREEN_TOUCH_STYLE}
             >

@@ -9,10 +9,10 @@ type ExercisesLayoutProps = {
 
 /**
  * AssignmentTaskProvider/Timer TUM egzersizleri tek noktadan sarar: URL'de
- * ?programTaskId= varsa ogretmenin belirledigi sure/seviye/ayarlar sunucudan
- * okunur, ortak geri sayim sayaci calisir ve sure bitince gorev guvenli
- * bicimde tamamlanip "Tebrikler" ekrani gosterilir. Serbest calismada
- * (parametre yoksa) ikisi de hicbir sey yapmaz - mevcut akis degismez.
+ * ?programTaskId= varsa öğretmenin belirlediği snapshot sunucudan okunur.
+ * V2 flag açıkken provider gerçek start/completion state makinesini ve
+ * sunucu deadline'ını kullanır; adapter yoksa fail-closed kalır. Flag kapalı
+ * ve serbest çalışma dalları mevcut davranışlarını korur.
  */
 export default function ExercisesLayout({ children }: ExercisesLayoutProps) {
   return (

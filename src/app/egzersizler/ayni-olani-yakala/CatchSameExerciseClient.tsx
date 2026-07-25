@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/catch-same-theme.module.css";
 
 type GameMode = "word" | "letter" | "symbol" | "number";
@@ -97,8 +99,28 @@ export function CatchSameExerciseClient() {
     if (totalActions === 0) return 0;
     return Math.round((correct / totalActions) * 100);
   }, [correct, totalActions]);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score,
+      successRate,
+      correctCount: correct,
+      wrongCount: wrong + missed,
+      level: null,
+      details: {
+        completedRounds: roundCount,
+        responseCount: correct + wrong,
+        missed,
+        mode,
+        speed,
+      },
+    }),
+  );
+  const displayedTimeLeft = assignmentAdapter.isAssignmentV2
+    ? assignmentAdapter.remainingSeconds ?? effectiveDuration
+    : timeLeft;
 
   async function persistResult(payload: SecureExerciseResultInput) {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || saveCompletedRef.current) return;
     saveInFlightRef.current = true;
     setSaveStatus("saving");
@@ -172,6 +194,7 @@ export function CatchSameExerciseClient() {
   }
 
   function makeNextItem() {
+    if (!assignmentAdapter.canInteractRef.current) return;
     const oldPrevious = previousItemRef.current;
     const oldCurrent = currentItemRef.current;
 
@@ -198,7 +221,7 @@ export function CatchSameExerciseClient() {
         setIsChanging(true);
 
     transitionTimeoutRef.current = setTimeout(() => {
-      if (statusRef.current !== "running") return;
+      if (statusRef.current !== "running" || !assignmentAdapter.canInteractRef.current) return;
 
       previousItemRef.current = oldCurrent === "Hazir" ? null : oldCurrent;
       currentItemRef.current = nextItem;
@@ -217,21 +240,23 @@ export function CatchSameExerciseClient() {
       makeNextItem();
     }, speed);
 
-    timerIntervalRef.current = setInterval(() => {
-      setTimeLeft((value) => {
-        if (value <= 1) {
-          clearIntervals();
-          statusRef.current = "finished";
-          setStatus("finished");
-          setIsChanging(false);
-          setFeedback("Sure bitti. Sonuclarini inceleyebilirsin.");
-          saveResult("finished");
-          return 0;
-        }
+    if (!assignmentAdapter.isAssignmentV2) {
+      timerIntervalRef.current = setInterval(() => {
+        setTimeLeft((value) => {
+          if (value <= 1) {
+            clearIntervals();
+            statusRef.current = "finished";
+            setStatus("finished");
+            setIsChanging(false);
+            setFeedback("Sure bitti. Sonuclarini inceleyebilirsin.");
+            saveResult("finished");
+            return 0;
+          }
 
-        return value - 1;
-      });
-    }, 1000);
+          return value - 1;
+        });
+      }, 1000);
+    }
   }
 
   function resetGame(nextStatus: GameStatus = "ready") {
@@ -259,19 +284,21 @@ export function CatchSameExerciseClient() {
     currentItemRef.current = "Hazir";
   }
 
-  function startGame() {
-    resetGame("running");
+  async function startGame() {
+    await assignmentAdapter.startExercise(() => {
+      resetGame("running");
 
-    statusRef.current = "running";
-    setStatus("running");
-    setFeedback("Ayni oge arka arkaya gelirse buyuk karta tikla.");
+      statusRef.current = "running";
+      setStatus("running");
+      setFeedback("Ayni oge arka arkaya gelirse buyuk karta tikla.");
 
-    startTimeoutRef.current = setTimeout(() => {
-      if (statusRef.current !== "running") return;
+      startTimeoutRef.current = setTimeout(() => {
+        if (statusRef.current !== "running" || !assignmentAdapter.canInteractRef.current) return;
 
-      makeNextItem();
-      startIntervals();
-    }, 250);
+        makeNextItem();
+        startIntervals();
+      }, 250);
+    });
   }
 
   function pauseGame() {
@@ -311,7 +338,7 @@ export function CatchSameExerciseClient() {
   }
 
   function handleCardClick() {
-    if (status !== "running") return;
+    if (status !== "running" || assignmentAdapter.isInteractionLocked) return;
     if (isChanging) return;
     if (clickedThisRoundRef.current) return;
 
@@ -338,6 +365,12 @@ export function CatchSameExerciseClient() {
   }, [status]);
 
   useEffect(() => {
+    if (assignmentAdapter.isAssignmentV2 && !assignmentAdapter.isRunning) {
+      clearIntervals();
+    }
+  }, [assignmentAdapter.isAssignmentV2, assignmentAdapter.isRunning]);
+
+  useEffect(() => {
     return () => {
       clearIntervals();
     };
@@ -350,9 +383,37 @@ export function CatchSameExerciseClient() {
       <FixedExerciseStage
         title="Aynı Olanı Yakala"
         subtitle={statusLabel}
-        topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+        topStats={<><FixedExerciseStat label="Süre" value={displayedTimeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
         bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5" hidden={isAssignmentMode}><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
-        controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}>Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button> : <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>{saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
+        controls={
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {status === "ready" || (!assignmentAdapter.isAssignmentV2 && status === "finished") ? (
+              <button
+                type="button"
+                disabled={
+                  !assignmentAdapter.canStart ||
+                  assignmentAdapter.isStartPending ||
+                  (status === "finished" && saveStatus !== "success")
+                }
+                onClick={() => void startGame()}
+                className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}
+              >
+                {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Başlat"}
+              </button>
+            ) : !assignmentAdapter.isAssignmentV2 && status === "running" ? (
+              <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button>
+            ) : !assignmentAdapter.isAssignmentV2 && status === "paused" ? (
+              <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>
+            ) : null}
+            {!assignmentAdapter.isAssignmentV2 ? (
+              <>
+                <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button>
+                <button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>
+                {saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}
+              </>
+            ) : null}
+          </div>
+        }
         onExit={() => router.push("/egzersizler")}
       >
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden gap-1.5">
@@ -361,7 +422,7 @@ export function CatchSameExerciseClient() {
           <button
             type="button"
             onClick={handleCardClick}
-            disabled={status !== "running" || isChanging}
+            disabled={status !== "running" || isChanging || assignmentAdapter.isInteractionLocked}
             className={`relative flex min-h-0 flex-1 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
               isChanging ? `scale-[0.98] ${styles.stimulusCardChanging}` : `scale-100 ${styles.stimulusCard}`
             }`}

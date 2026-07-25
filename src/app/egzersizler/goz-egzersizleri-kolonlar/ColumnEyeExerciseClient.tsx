@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -13,6 +14,7 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/eye-columns-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
@@ -171,6 +173,29 @@ export function ColumnEyeExerciseClient() {
     100,
     Math.round((elapsedSeconds / totalDurationSeconds) * 100),
   );
+  const assignmentAdapter = useAssignmentExerciseAdapter(() => {
+    const currentSuccessRate = Math.min(
+      100,
+      Math.round((completedSteps / totalSteps) * 100),
+    );
+    return createAssignmentResultSnapshot({
+      score: currentSuccessRate,
+      successRate: currentSuccessRate,
+      correctCount: 0,
+      wrongCount: 0,
+      level: null,
+      details: {
+        completedRounds: completedSteps,
+        jumpSpeed,
+        columnCount,
+        flowDirection,
+        visibleWordCount,
+      },
+    });
+  });
+  const displayedRemainingSeconds = assignmentAdapter.isAssignmentV2
+    ? assignmentAdapter.remainingSeconds ?? totalDurationSeconds
+    : remainingSeconds;
 
   const resetExercise = useCallback(() => {
     setWords(shuffleUniqueWords());
@@ -184,6 +209,7 @@ export function ColumnEyeExerciseClient() {
   }, []);
 
   const finishExercise = useCallback(() => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (savedRef.current) {
       return;
     }
@@ -244,6 +270,7 @@ export function ColumnEyeExerciseClient() {
     jumpSpeed,
     totalSteps,
     visibleWordCount,
+    assignmentAdapter.isAssignmentV2,
   ]);
 
   useEffect(() => {
@@ -251,7 +278,11 @@ export function ColumnEyeExerciseClient() {
   });
 
   useEffect(() => {
-    if (phase !== "running" || visibleWordCount <= 0) {
+    if (
+      phase !== "running" ||
+      visibleWordCount <= 0 ||
+      (assignmentAdapter.isAssignmentV2 && !assignmentAdapter.isRunning)
+    ) {
       return;
     }
 
@@ -263,10 +294,19 @@ export function ColumnEyeExerciseClient() {
     }, intervalMs);
 
     return () => window.clearInterval(movementId);
-  }, [columnCount, flowDirection, intervalMs, phase, rowsPerColumn, visibleWordCount]);
+  }, [
+    assignmentAdapter.isAssignmentV2,
+    assignmentAdapter.isRunning,
+    columnCount,
+    flowDirection,
+    intervalMs,
+    phase,
+    rowsPerColumn,
+    visibleWordCount,
+  ]);
 
   useEffect(() => {
-    if (phase !== "running") {
+    if (phase !== "running" || assignmentAdapter.isAssignmentV2) {
       return;
     }
 
@@ -284,17 +324,19 @@ export function ColumnEyeExerciseClient() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [phase, totalDurationSeconds]);
+  }, [assignmentAdapter.isAssignmentV2, phase, totalDurationSeconds]);
 
-  const beginExercise = () => {
-    setWords(shuffleUniqueWords());
-    setActiveIndex(0);
-    setElapsedSeconds(0);
-    setCompletedSteps(0);
-    setResult(null);
-    savedRef.current = false;
-    startedAtRef.current = Date.now();
-    setPhase("running");
+  const beginExercise = async () => {
+    await assignmentAdapter.startExercise(() => {
+      setWords(shuffleUniqueWords());
+      setActiveIndex(0);
+      setElapsedSeconds(0);
+      setCompletedSteps(0);
+      setResult(null);
+      savedRef.current = false;
+      startedAtRef.current = Date.now();
+      setPhase("running");
+    });
   };
 
   const controls = (
@@ -383,13 +425,14 @@ export function ColumnEyeExerciseClient() {
         {phase === "ready" ? (
           <button
             type="button"
-            onClick={beginExercise}
+            onClick={() => void beginExercise()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
-            Egzersizi Başlat
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Egzersizi Başlat"}
           </button>
-        ) : phase === "running" ? (
+        ) : !assignmentAdapter.isAssignmentV2 && phase === "running" ? (
           <button
             type="button"
             onClick={() => setPhase("paused")}
@@ -398,7 +441,7 @@ export function ColumnEyeExerciseClient() {
           >
             Duraklat
           </button>
-        ) : (
+        ) : !assignmentAdapter.isAssignmentV2 && phase === "paused" ? (
           <button
             type="button"
             onClick={() => {
@@ -410,7 +453,7 @@ export function ColumnEyeExerciseClient() {
           >
             Devam Et
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -505,7 +548,7 @@ export function ColumnEyeExerciseClient() {
           : "Satır şeklinde takip"
       }
       stats={[
-        { label: "Süre", value: formatTime(remainingSeconds) },
+        { label: "Süre", value: formatTime(displayedRemainingSeconds) },
         { label: "Atlama Hızı", value: `${intervalMs} ms`, tone: "brand" },
         {
           label: "Akış",
@@ -514,7 +557,7 @@ export function ColumnEyeExerciseClient() {
         { label: "Kolon", value: columnCount },
       ]}
       settings={
-        phase === "running" || phase === "paused" ? (
+        !assignmentAdapter.isAssignmentV2 && (phase === "running" || phase === "paused") ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
             <label className="flex min-w-0 flex-col gap-1">
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Çalışma Süresi</span>
@@ -579,7 +622,7 @@ export function ColumnEyeExerciseClient() {
         ) : null
       }
       finishButton={
-        phase === "running" || phase === "paused" ? (
+        !assignmentAdapter.isAssignmentV2 && (phase === "running" || phase === "paused") ? (
           <div className="flex gap-1">
             <button
               type="button"
@@ -626,7 +669,7 @@ export function ColumnEyeExerciseClient() {
                 Aktif kelimeyi takip et
               </p>
               <p className={`text-sm font-black text-red-700 ${styles.helperValue}`}>
-                {formatTime(remainingSeconds)}
+                {formatTime(displayedRemainingSeconds)}
               </p>
             </div>
 

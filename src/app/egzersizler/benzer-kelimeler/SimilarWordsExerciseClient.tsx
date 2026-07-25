@@ -6,7 +6,9 @@ import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavig
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
@@ -231,6 +233,24 @@ export function SimilarWordsExerciseClient() {
   const remainingTarget = Math.max(targetDifferentCount - foundInCurrentRound, 0);
   const successPercent =
     totalShownTargetCount <= 0 ? 0 : Math.round((correctCount / totalShownTargetCount) * 100);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score,
+      successRate: successPercent,
+      correctCount,
+      wrongCount,
+      level: null,
+      details: {
+        completedRounds,
+        currentDifficulty: targetDifferentCount,
+        boxCount,
+        totalClicks,
+      },
+    }),
+  );
+  const displayedRemainingSeconds = assignmentAdapter.isAssignmentV2
+    ? assignmentAdapter.remainingSeconds ?? effectiveDurationSeconds
+    : remainingSeconds;
 
   const stageInfoText = useMemo(() => {
     if (phase !== "play") {
@@ -269,7 +289,7 @@ export function SimilarWordsExerciseClient() {
   );
 
   useEffect(() => {
-    if (phase !== "play") {
+    if (phase !== "play" || assignmentAdapter.isAssignmentV2) {
       return;
     }
 
@@ -288,19 +308,21 @@ export function SimilarWordsExerciseClient() {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [effectiveDurationSeconds, phase]);
+  }, [assignmentAdapter.isAssignmentV2, effectiveDurationSeconds, phase]);
 
   const handleStart = () => {
     resetExercise("ready");
   };
 
-  const handleBeginPlay = () => {
-    resetExercise("play");
-    startNewRound();
+  const handleBeginPlay = async () => {
+    await assignmentAdapter.startExercise(() => {
+      resetExercise("play");
+      startNewRound();
+    });
   };
 
   const handleSelectBox = (boxId: string) => {
-    if (phase !== "play") {
+    if (phase !== "play" || assignmentAdapter.isInteractionLocked) {
       return;
     }
 
@@ -329,7 +351,7 @@ export function SimilarWordsExerciseClient() {
         if (nextFoundCount >= targetDifferentCount) {
           setCompletedRounds((prev) => prev + 1);
           window.setTimeout(() => {
-            if (phaseRef.current === "play") {
+            if (phaseRef.current === "play" && assignmentAdapter.canInteractRef.current) {
               startNewRound();
             }
           }, 320);
@@ -379,6 +401,7 @@ export function SimilarWordsExerciseClient() {
   };
 
   const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (saveInFlightRef.current || saveCompletedRef.current) return;
     saveInFlightRef.current = true;
     setSaveStatus("saving");
@@ -396,10 +419,10 @@ export function SimilarWordsExerciseClient() {
     } finally {
       saveInFlightRef.current = false;
     }
-  }, []);
+  }, [assignmentAdapter.isAssignmentV2]);
 
   useEffect(() => {
-    if (phase !== "result" || hasSavedResultRef.current) {
+    if (assignmentAdapter.isAssignmentV2 || phase !== "result" || hasSavedResultRef.current) {
       return;
     }
 
@@ -430,6 +453,7 @@ export function SimilarWordsExerciseClient() {
     completedRounds,
     correctCount,
     durationSeconds,
+    effectiveDurationSeconds,
     net,
     phase,
     remainingSeconds,
@@ -440,6 +464,7 @@ export function SimilarWordsExerciseClient() {
     totalClicks,
     wrongCount,
     persistResult,
+    assignmentAdapter.isAssignmentV2,
   ]);
 
   if (phase === "setup") {
@@ -537,8 +562,14 @@ export function SimilarWordsExerciseClient() {
                   <option value={8}>8</option>
                 </select>
               </label>
-              <button type="button" className={swStyles.primaryButton} style={TOUCH_STYLE} onClick={handleBeginPlay}>
-                Baslat
+              <button
+                type="button"
+                className={swStyles.primaryButton}
+                style={TOUCH_STYLE}
+                onClick={() => void handleBeginPlay()}
+                disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
+              >
+                {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Baslat"}
               </button>
               <button type="button" className={swStyles.secondaryButton} style={TOUCH_STYLE} onClick={handleRetry}>
                 Yeniden Baslat
@@ -661,7 +692,7 @@ export function SimilarWordsExerciseClient() {
         topStats={
           <>
             <CategoryTag />
-            <SwStat label="Sure" value={formatDuration(remainingSeconds)} tone="brand" />
+            <SwStat label="Sure" value={formatDuration(displayedRemainingSeconds)} tone="brand" />
             <SwStat label="Kutu" value={boxCount} />
             <SwStat label="Tur Hedefi" value={targetDifferentCount} tone="progress" />
             <SwStat label="Kalan" value={remainingTarget} tone="progress" />
@@ -722,7 +753,7 @@ export function SimilarWordsExerciseClient() {
           </div>
         }
         controls={
-          <div className="flex gap-1">
+          assignmentAdapter.isAssignmentV2 ? null : <div className="flex gap-1">
             <button type="button" onClick={handleRetry} className={swStyles.secondaryButton} style={TOUCH_STYLE}>
               Yeniden
             </button>
@@ -749,7 +780,12 @@ export function SimilarWordsExerciseClient() {
                     className={`relative isolate z-50 flex h-full min-h-0 w-full cursor-pointer select-none touch-manipulation items-center justify-center overflow-hidden rounded-xl border p-1 text-center transition-all duration-300 active:scale-95 md:rounded-2xl md:p-2 ${swStyles.box} ${toneClass} ${stateClass}`}
                     style={TOUCH_STYLE}
                     onClick={() => handleSelectBox(box.id)}
-                    disabled={phase !== "play" || box.state !== "idle" || remainingSeconds <= 0}
+                    disabled={
+                      phase !== "play" ||
+                      box.state !== "idle" ||
+                      displayedRemainingSeconds <= 0 ||
+                      assignmentAdapter.isInteractionLocked
+                    }
                   >
                     {box.state === "idle" ? <span className={`pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full ${swStyles.boxDot}`} /> : null}
 

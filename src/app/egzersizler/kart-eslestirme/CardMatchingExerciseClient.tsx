@@ -20,6 +20,7 @@ import {
   type MatchingCard,
 } from "@/lib/exercise-engine/cardMatching";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { useAssignmentExerciseAdapter } from "@/components/assignments/useAssignmentExerciseAdapter";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -29,6 +30,7 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { createAssignmentResultSnapshot } from "@/lib/assignments/assignmentV2";
 import styles from "@/components/exercises/card-matching-theme.module.css";
 
 type ExercisePhase =
@@ -151,6 +153,24 @@ export function CardMatchingExerciseClient() {
   const net = calculateNet(levelCorrectCount, levelWrongCount);
   const totalMoves = correctCount + wrongCount;
   const pairCount = getPairCountByLevel(level);
+  const assignmentAdapter = useAssignmentExerciseAdapter(() =>
+    createAssignmentResultSnapshot({
+      score: calculateScore(correctCount, wrongCount),
+      successRate: calculateSuccessRate(correctCount, wrongCount),
+      correctCount,
+      wrongCount,
+      level,
+      details: {
+        completedRounds,
+        pairCount,
+        totalMoves,
+        reachedLevel: level,
+        levelUpCount,
+        previewDurationMs,
+        flipBackDelayMs,
+      },
+    }),
+  );
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -225,6 +245,7 @@ export function CardMatchingExerciseClient() {
 
   const startPreviewThenPlay = useCallback(
     (deck: MatchingCard[]) => {
+      if (!assignmentAdapter.canInteractRef.current) return;
       clearPreviewTimer();
 
       setPhase("preview");
@@ -236,6 +257,7 @@ export function CardMatchingExerciseClient() {
       });
 
       previewRef.current = window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         setOpenedCardIds([]);
         setIsResolving(false);
         setPhase("playing");
@@ -245,32 +267,34 @@ export function CardMatchingExerciseClient() {
         });
       }, previewDurationMs);
     },
-    [clearPreviewTimer, previewDurationMs],
+    [assignmentAdapter.canInteractRef, clearPreviewTimer, previewDurationMs],
   );
 
-  const handleStart = () => {
-    clearTimer();
-    clearResolveTimer();
-    clearPreviewTimer();
+  const handleStart = async () => {
+    await assignmentAdapter.startExercise(() => {
+      clearTimer();
+      clearResolveTimer();
+      clearPreviewTimer();
 
-    hasSavedResultRef.current = false;
+      hasSavedResultRef.current = false;
 
-    const nextDeck = generateCardDeck(startLevel);
+      const nextDeck = generateCardDeck(startLevel);
 
-    setLevel(startLevel);
-    setCards(nextDeck);
-    setElapsedSeconds(0);
-    setCorrectCount(0);
-    setWrongCount(0);
-    setLevelCorrectCount(0);
-    setLevelWrongCount(0);
-    setLevelUpCount(0);
-    setCompletedRounds(0);
-    setResult(null);
-    setBrokenVisualIds([]);
+      setLevel(startLevel);
+      setCards(nextDeck);
+      setElapsedSeconds(0);
+      setCorrectCount(0);
+      setWrongCount(0);
+      setLevelCorrectCount(0);
+      setLevelWrongCount(0);
+      setLevelUpCount(0);
+      setCompletedRounds(0);
+      setResult(null);
+      setBrokenVisualIds([]);
 
-    startElapsedTimer();
-    startPreviewThenPlay(nextDeck);
+      if (!assignmentAdapter.isAssignmentV2) startElapsedTimer();
+      startPreviewThenPlay(nextDeck);
+    });
   };
 
   const renewDeckAfterRound = useCallback(
@@ -287,6 +311,7 @@ export function CardMatchingExerciseClient() {
       setCompletedRounds((previous) => previous + 1);
 
       resolveRef.current = window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         const nextDeck = generateCardDeck(nextLevel);
 
         setCards(nextDeck);
@@ -301,12 +326,13 @@ export function CardMatchingExerciseClient() {
         }
       }, 850);
     },
-    [clearPreviewTimer, clearResolveTimer, startPreviewThenPlay],
+    [assignmentAdapter.canInteractRef, clearPreviewTimer, clearResolveTimer, startPreviewThenPlay],
   );
 
   const handleCardClick = (card: MatchingCard) => {
     if (
       phase !== "playing" ||
+      assignmentAdapter.isInteractionLocked ||
       isResolving ||
       card.isMatched ||
       openedCardIds.includes(card.id)
@@ -352,6 +378,7 @@ export function CardMatchingExerciseClient() {
       setFeedback({ tone: "ok", message: "Eşleşme doğru!" });
 
       resolveRef.current = window.setTimeout(() => {
+        if (!assignmentAdapter.canInteractRef.current) return;
         setOpenedCardIds([]);
         setIsResolving(false);
 
@@ -401,6 +428,7 @@ export function CardMatchingExerciseClient() {
     });
 
     resolveRef.current = window.setTimeout(() => {
+      if (!assignmentAdapter.canInteractRef.current) return;
       setOpenedCardIds([]);
       setIsResolving(false);
       setFeedback(null);
@@ -442,6 +470,7 @@ export function CardMatchingExerciseClient() {
   };
 
   const finishExercise = () => {
+    if (assignmentAdapter.isAssignmentV2) return;
     if (hasSavedResultRef.current) {
       return;
     }
@@ -516,8 +545,30 @@ export function CardMatchingExerciseClient() {
     };
   }, [clearPreviewTimer, clearResolveTimer, clearTimer]);
 
+  useEffect(() => {
+    if (assignmentAdapter.isAssignmentV2 && !assignmentAdapter.isRunning) {
+      clearTimer();
+      clearResolveTimer();
+      clearPreviewTimer();
+    }
+  }, [
+    assignmentAdapter.isAssignmentV2,
+    assignmentAdapter.isRunning,
+    clearPreviewTimer,
+    clearResolveTimer,
+    clearTimer,
+  ]);
+
   const stats = [
-    { label: "Süre", value: formatElapsed(elapsedSeconds), tone: "brand" as const },
+    {
+      label: assignmentAdapter.isAssignmentV2 ? "Kalan" : "Süre",
+      value: formatElapsed(
+        assignmentAdapter.isAssignmentV2
+          ? assignmentAdapter.remainingSeconds ?? 0
+          : elapsedSeconds,
+      ),
+      tone: "brand" as const,
+    },
     { label: "Seviye", value: level },
     { label: "Doğru", value: correctCount, tone: "ok" as const },
     { label: "Yanlış", value: wrongCount, tone: "bad" as const },
@@ -598,11 +649,12 @@ export function CardMatchingExerciseClient() {
             type="button"
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
-            onClick={handleStart}
+            onClick={() => void handleStart()}
+            disabled={!assignmentAdapter.canStart || assignmentAdapter.isStartPending}
           >
-            Başlat
+            {assignmentAdapter.isStartPending ? "Başlatılıyor..." : "Başlat"}
           </button>
-        ) : (
+        ) : !assignmentAdapter.isAssignmentV2 ? (
           <>
             {phase === "paused" ? (
               <button
@@ -643,7 +695,7 @@ export function CardMatchingExerciseClient() {
               Bitir
             </button>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -832,7 +884,7 @@ export function CardMatchingExerciseClient() {
         }
         stats={stats}
         finishButton={
-          <button
+          assignmentAdapter.isAssignmentV2 ? null : <button
             type="button"
             onClick={finishExercise}
             className={`min-h-[44px] rounded-full border border-red-200 bg-white/95 px-4 text-sm font-bold text-red-700 shadow-sm shadow-red-100/70 transition duration-200 hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-md ${styles.secondaryButtonOverride}`}
@@ -859,9 +911,15 @@ export function CardMatchingExerciseClient() {
             </div>
 
             <div className={`shrink-0 rounded-xl border border-white/80 bg-white px-2.5 py-1 text-center shadow-sm ${styles.timeChip}`}>
-              <p className={`text-[10px] font-bold leading-none text-slate-500 ${styles.timeChipLabel}`}>Süre</p>
+              <p className={`text-[10px] font-bold leading-none text-slate-500 ${styles.timeChipLabel}`}>
+                {assignmentAdapter.isAssignmentV2 ? "Kalan" : "Süre"}
+              </p>
               <p className={`text-base font-black leading-tight text-red-700 md:text-lg ${styles.timeChipValue}`}>
-                {formatElapsed(elapsedSeconds)}
+                {formatElapsed(
+                  assignmentAdapter.isAssignmentV2
+                    ? assignmentAdapter.remainingSeconds ?? 0
+                    : elapsedSeconds,
+                )}
               </p>
             </div>
           </div>
@@ -900,7 +958,10 @@ export function CardMatchingExerciseClient() {
                   type="button"
                   onClick={() => handleCardClick(card)}
                   disabled={
-                    phase !== "playing" || isResolving || card.isMatched
+                    phase !== "playing" ||
+                    isResolving ||
+                    card.isMatched ||
+                    assignmentAdapter.isInteractionLocked
                   }
                   className="group relative h-full min-h-0 w-full touch-manipulation rounded-[10px] outline-none transition active:scale-[0.97] disabled:cursor-default sm:rounded-xl md:rounded-2xl"
                   style={{ ...FULLSCREEN_TOUCH_STYLE, perspective: "900px" }}

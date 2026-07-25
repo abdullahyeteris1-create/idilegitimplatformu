@@ -24,6 +24,19 @@ export type SecureExerciseResultSave = ExerciseResult & {
   programTaskCompletionStatus: "not-requested" | "completed" | "failed";
 };
 
+export type SecureExerciseResultContext = {
+  assignmentV2Enabled?: boolean;
+};
+
+export class AssignmentV2LegacyPathBlockedError extends Error {
+  readonly code = "ASSIGNMENT_V2_LEGACY_PATH_BLOCKED";
+
+  constructor() {
+    super("Bu atanmış görev eski sonuç kayıt akışını kullanamaz.");
+    this.name = "AssignmentV2LegacyPathBlockedError";
+  }
+}
+
 type SecureResultResponse = {
   result?: {
     id: string;
@@ -104,9 +117,16 @@ async function completeProgramTask(programTaskId: string, resultId: string): Pro
   }
 }
 
-export async function saveExerciseResultSecure(input: SecureExerciseResultInput): Promise<SecureExerciseResultSave> {
+export async function saveExerciseResultSecure(
+  input: SecureExerciseResultInput,
+  context: SecureExerciseResultContext = {},
+): Promise<SecureExerciseResultSave> {
   const assignmentItemId = input.assignmentItemId ?? getAssignmentItemIdFromUrl();
   const programTaskId = input.programTaskId ?? getProgramTaskIdFromUrl();
+  if (programTaskId && context.assignmentV2Enabled === true) {
+    throw new AssignmentV2LegacyPathBlockedError();
+  }
+
   const completedAt = input.completedAt ?? input.date ?? new Date().toISOString();
   const response = await fetch("/api/student/results", {
     method: "POST",
@@ -123,6 +143,7 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
       durationSeconds: input.durationSeconds,
       completedAt,
       assignmentItemId,
+      ...(programTaskId ? { programTaskId } : {}),
       ...(input.details ? { details: input.details } : {}),
     }),
   });
