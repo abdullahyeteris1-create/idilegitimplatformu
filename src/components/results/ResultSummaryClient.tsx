@@ -19,6 +19,7 @@ type ResultSummaryClientProps = {
   successRate?: number;
   score?: number;
   exerciseType?: ExerciseType;
+  fromEducationProgram?: boolean;
 };
 
 const EXERCISE_LABELS: Record<string, string> = {
@@ -125,6 +126,7 @@ export function ResultSummaryClient({
   successRate,
   score,
   exerciseType,
+  fromEducationProgram = false,
 }: ResultSummaryClientProps) {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -269,6 +271,17 @@ export function ResultSummaryClient({
             ← Egzersizlere Dön
           </Link>
         </div>
+
+        {fromEducationProgram ? (
+          <div className={styles.educationProgramNotice} role="status">
+            <p className={styles.educationProgramNoticeText}>
+              Bu çalışma Eğitim Programınızın bir parçası olarak tamamlandı.
+            </p>
+            <Link href="/ogrenci/egitim-programim" className={styles.educationProgramNoticeLink}>
+              Eğitim Programıma Dön
+            </Link>
+          </div>
+        ) : null}
 
         <div className={styles.card}>
           <div className={styles.cardAccent} aria-hidden="true" />

@@ -671,7 +671,9 @@ export function SimilarWordsExerciseClient({
               style={TOUCH_STYLE}
               onClick={() =>
                 router.push(
-                  `/sonuc?exerciseType=similar-words&correct=${correctCount}&wrong=${wrongCount}&successRate=${successPercent}&score=${score}`,
+                  `/sonuc?exerciseType=similar-words&correct=${correctCount}&wrong=${wrongCount}&successRate=${successPercent}&score=${score}${
+                    isEducationProgramMode && !isAssignmentMode ? "&fromEducationProgram=1" : ""
+                  }`,
                 )
               }
             >

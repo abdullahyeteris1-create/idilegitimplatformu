@@ -39,6 +39,48 @@
   transform: translateY(-1px);
 }
 
+.educationProgramNotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  border: 1px solid color-mix(in srgb, #38a9ff 45%, #1e2c45);
+  border-radius: 16px;
+  background: color-mix(in srgb, #38a9ff 14%, #0b1528);
+  padding: 12px 16px;
+}
+
+.educationProgramNoticeText {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #bfe3ff;
+}
+
+.educationProgramNoticeLink {
+  display: inline-flex;
+  min-height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #38a9ff 55%, transparent);
+  background: #0b1528;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #bfe3ff;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.educationProgramNoticeLink:hover {
+  background: #142445;
+  transform: translateY(-1px);
+}
+
 .card {
   position: relative;
   overflow: hidden;
@@ -384,7 +426,8 @@
 @media (prefers-reduced-motion: reduce) {
   .backLink,
   .actionPrimary,
-  .actionSecondary {
+  .actionSecondary,
+  .educationProgramNoticeLink {
     transition-duration: 0.01ms;
   }
 }
@@ -408,6 +451,26 @@
 }
 
 .lightTheme .backLink:hover {
+  background: #eef2fb;
+  border-color: #b9c6e6;
+}
+
+.lightTheme .educationProgramNotice {
+  border: 1px solid color-mix(in srgb, #2563eb 45%, #cbd7f3);
+  background: color-mix(in srgb, #2563eb 10%, #ffffff);
+}
+
+.lightTheme .educationProgramNoticeText {
+  color: #1d4ed8;
+}
+
+.lightTheme .educationProgramNoticeLink {
+  border-color: #cbd7f3;
+  background: #ffffff;
+  color: #1d4ed8;
+}
+
+.lightTheme .educationProgramNoticeLink:hover {
   background: #eef2fb;
   border-color: #b9c6e6;
 }

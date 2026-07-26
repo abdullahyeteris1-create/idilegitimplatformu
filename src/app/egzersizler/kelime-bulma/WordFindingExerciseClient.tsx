@@ -540,7 +540,13 @@ export function WordFindingExerciseClient({
               className={ACTION_BUTTON_CLASS}
               disabled={saveStatus !== "success"}
               style={TOUCH_STYLE}
-              onClick={() => router.push(`/sonuc?exerciseType=word-finding&correct=${result.correctCount}&wrong=${result.wrongCount}&successRate=${result.successRate}&score=${result.score}`)}
+              onClick={() =>
+                router.push(
+                  `/sonuc?exerciseType=word-finding&correct=${result.correctCount}&wrong=${result.wrongCount}&successRate=${result.successRate}&score=${result.score}${
+                    isEducationProgramMode && !isAssignmentMode ? "&fromEducationProgram=1" : ""
+                  }`,
+                )
+              }
             >
               Ortak Sonuc Ekrani
             </button>

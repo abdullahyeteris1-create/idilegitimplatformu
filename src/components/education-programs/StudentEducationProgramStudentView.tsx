@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import { TaskLaunchForm } from "@/components/education-programs/TaskLaunchForm";
+import { StudentEducationProgramHero } from "@/components/education-programs/StudentEducationProgramHero";
 import {
   StudentEducationProgramDaysExplorer,
   type StudentEducationProgramDayNavItem,
@@ -15,6 +16,10 @@ import {
   STUDENT_PROGRAM_DAY_STATUS_LABELS,
   STUDENT_PROGRAM_TASK_STATUS_LABELS,
 } from "@/lib/education-programs/studentProgramPresentation";
+import {
+  getStudentProgramTaskVisual,
+  type StudentProgramTaskVisualTone,
+} from "@/lib/education-programs/studentProgramTaskVisuals";
 import type {
   StudentEducationProgramDayStatus,
   StudentEducationProgramStudentDay,
@@ -24,15 +29,6 @@ import type {
 } from "@/lib/education-programs/studentProgramTypes";
 import styles from "./StudentEducationProgramStudentView.module.css";
 
-function formatDate(value: string): string {
-  if (!value || Number.isNaN(Date.parse(value))) return "Tarih bilgisi yok";
-
-  return new Intl.DateTimeFormat("tr-TR", {
-    dateStyle: "long",
-    timeZone: "Europe/Istanbul",
-  }).format(new Date(value));
-}
-
 function statusClass(
   status: StudentEducationProgramDayStatus | StudentEducationProgramTaskStatus,
 ): string {
@@ -40,6 +36,14 @@ function statusClass(
   if (status === "available") return styles.statusAvailable;
   if (status === "in_progress") return styles.statusInProgress;
   return styles.statusLocked;
+}
+
+function taskIconToneClass(tone: StudentProgramTaskVisualTone): string {
+  if (tone === "purple") return styles.taskIconPurple;
+  if (tone === "green") return styles.taskIconGreen;
+  if (tone === "orange") return styles.taskIconOrange;
+  if (tone === "cyan") return styles.taskIconCyan;
+  return styles.taskIconBlue;
 }
 
 function PageFrame({ children }: { children: ReactNode }) {
@@ -82,6 +86,9 @@ export function StudentEducationProgramErrorState() {
         </span>
         <h1>Eğitim programınız şu anda görüntülenemiyor</h1>
         <p>Lütfen daha sonra tekrar deneyin.</p>
+        <a href="/ogrenci/egitim-programim" className={styles.retryButton}>
+          Yeniden Dene
+        </a>
       </section>
     </PageFrame>
   );
@@ -104,10 +111,17 @@ function TaskCard({
     );
   }
 
+  const visual = getStudentProgramTaskVisual(task.exerciseSlug);
+
   return (
     <article className={styles.taskCard} data-status={task.status}>
       <div className={styles.taskTop}>
-        <span className={styles.taskOrder}>Çalışma {task.orderNumber}</span>
+        <div className={styles.taskIdentity}>
+          <span className={`${styles.taskIcon} ${taskIconToneClass(visual.tone)}`} aria-hidden="true">
+            <Icon name={visual.icon} />
+          </span>
+          <span className={styles.taskOrder}>Çalışma {task.orderNumber}</span>
+        </div>
         <span className={`${styles.statusBadge} ${statusClass(task.status)}`}>
           {STUDENT_PROGRAM_TASK_STATUS_LABELS[task.status]}
         </span>
@@ -241,54 +255,32 @@ export function StudentEducationProgramStudentView({
 
   return (
     <PageFrame>
-      <header className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <span className={styles.eyebrow}>Eğitim Programım</span>
-          <h1>{visibleName}</h1>
-          {program.studentMessage ? (
-            <blockquote className={styles.studentMessage}>
-              {program.studentMessage}
-            </blockquote>
-          ) : null}
-        </div>
+      <StudentEducationProgramHero
+        visibleName={visibleName}
+        studentMessage={program.studentMessage}
+        completedDays={program.completedDays}
+        totalDays={program.totalDays}
+        todayCompletedTaskCount={todayCompletedTaskCount}
+        todayTotalTaskCount={todayTotalTaskCount}
+        overallTaskProgress={overallTaskProgress}
+        displayedCurrentDay={displayedCurrentDay}
+        assignedAt={program.assignedAt}
+      />
 
-        <div className={styles.summaryGrid}>
-          <div className={styles.summaryItem}>
-            <span>Tamamlanan gün</span>
-            <strong>
-              {program.completedDays} / {program.totalDays}
-            </strong>
+      {program.status === "completed" ? (
+        <section className={styles.completionCard} role="status">
+          <span className={styles.completionIcon} aria-hidden="true">
+            <Icon name="checkbox" />
+          </span>
+          <div className={styles.completionCopy}>
+            <h2>Tebrikler!</h2>
+            <p>Programınızı başarıyla tamamladınız.</p>
+            <span className={styles.completionProgress}>
+              İlerleme: %{overallTaskProgress}
+            </span>
           </div>
-          <div className={styles.summaryItem}>
-            <span>Bugünkü çalışma</span>
-            <strong>
-              {todayCompletedTaskCount} / {todayTotalTaskCount}
-            </strong>
-          </div>
-          <div className={styles.summaryItem}>
-            <span>Genel ilerleme</span>
-            <strong>%{overallTaskProgress}</strong>
-          </div>
-          <div className={styles.summaryItem}>
-            <span>Atanma tarihi</span>
-            <strong>{formatDate(program.assignedAt)}</strong>
-          </div>
-        </div>
-
-        <div
-          className={styles.progressTrack}
-          role="progressbar"
-          aria-label="Eğitim programı ilerlemesi"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={overallTaskProgress}
-        >
-          <span style={{ width: `${overallTaskProgress}%` }} />
-        </div>
-        <p className={styles.progressLabel}>
-          %{overallTaskProgress} tamamlandı · Şu an {displayedCurrentDay}. gündesiniz
-        </p>
-      </header>
+        </section>
+      ) : null}
 
       <section className={styles.daysSection} aria-labelledby="program-days-title">
         <div className={styles.sectionHeading}>

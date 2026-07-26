@@ -6,7 +6,7 @@
 
 .launchButton {
   display: inline-flex;
-  min-height: 36px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   border: none;
@@ -31,7 +31,7 @@
 
 .launchError {
   margin: 0;
-  color: #f87171;
+  color: var(--idil-danger-text);
   font-size: 11px;
   line-height: 1.5;
 }

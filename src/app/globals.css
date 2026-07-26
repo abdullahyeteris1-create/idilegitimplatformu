@@ -22,6 +22,7 @@
   --idil-surface-soft: rgba(27, 33, 47, 0.96);
   --idil-text: #f8fafc;
   --idil-muted: #8d96a8;
+  --idil-danger-text: #f87171;
   --idil-border: rgba(255, 255, 255, 0.08);
   --idil-shadow: rgba(2, 6, 23, 0.42);
   --idil-strong: #7c3aed;
@@ -35,6 +36,12 @@
   --idil-brand: #ff4b3a;
   --idil-header: rgba(16, 20, 29, 0.92);
   --idil-soft-block: rgba(255, 255, 255, 0.03);
+  --idil-program-hero-start: #1e1b4b;
+  --idil-program-hero-end: #4c1d95;
+  --idil-program-accent: #f59e0b;
+  --idil-program-accent-soft: rgba(245, 158, 11, 0.18);
+  --idil-program-success: #4ade80;
+  --idil-program-success-soft: rgba(34, 197, 94, 0.16);
 }
 
 [data-idil-theme="dark"] {
@@ -44,6 +51,7 @@
   --idil-surface-soft: rgba(30, 41, 59, 0.92);
   --idil-text: #e2e8f0;
   --idil-muted: #94a3b8;
+  --idil-danger-text: #f87171;
   --idil-border: rgba(71, 85, 105, 0.72);
   --idil-shadow: rgba(2, 6, 23, 0.3);
   --idil-strong: #7c3aed;
@@ -53,6 +61,12 @@
   --idil-brand: #ff4b3a;
   --idil-header: rgba(15, 20, 31, 0.92);
   --idil-soft-block: rgba(255, 255, 255, 0.03);
+  --idil-program-hero-start: #1e1b4b;
+  --idil-program-hero-end: #4c1d95;
+  --idil-program-accent: #f59e0b;
+  --idil-program-accent-soft: rgba(245, 158, 11, 0.18);
+  --idil-program-success: #4ade80;
+  --idil-program-success-soft: rgba(34, 197, 94, 0.16);
 }
 
 [data-idil-theme="light"] {
@@ -62,6 +76,7 @@
   --idil-surface-soft: rgba(248, 250, 252, 0.95);
   --idil-text: #141a28;
   --idil-muted: #667085;
+  --idil-danger-text: #b91c1c;
   --idil-border: rgba(148, 163, 184, 0.24);
   --idil-shadow: rgba(15, 23, 42, 0.08);
   --idil-strong: #0f172a;
@@ -71,6 +86,12 @@
   --idil-brand: #ff4b3a;
   --idil-header: rgba(255, 255, 255, 0.86);
   --idil-soft-block: rgba(15, 23, 42, 0.04);
+  --idil-program-hero-start: #312e81;
+  --idil-program-hero-end: #6d28d9;
+  --idil-program-accent: #d97706;
+  --idil-program-accent-soft: rgba(217, 119, 6, 0.16);
+  --idil-program-success: #16a34a;
+  --idil-program-success-soft: rgba(34, 197, 94, 0.14);
 }
 
 [data-idil-accent="red"] {

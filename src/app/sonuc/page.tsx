@@ -15,6 +15,7 @@ type ResultPageProps = {
     successRate?: string;
     score?: string;
     exerciseType?: string;
+    fromEducationProgram?: string;
   }>;
 };
 
@@ -62,6 +63,7 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const successRate = parseOptionalNumber(params.successRate ?? params.percent);
   const score = parseOptionalNumber(params.score);
   const exerciseType = parseExerciseType(params.exerciseType);
+  const fromEducationProgram = params.fromEducationProgram === "1";
 
   return (
     <ResultSummaryClient
@@ -70,6 +72,7 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
       successRate={successRate}
       score={score}
       exerciseType={exerciseType}
+      fromEducationProgram={fromEducationProgram}
     />
   );
 }
