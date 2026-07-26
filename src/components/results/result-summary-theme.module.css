@@ -61,7 +61,8 @@
 
 .educationProgramNoticeLink {
   display: inline-flex;
-  min-height: 40px;
+  /* Dokunma hedefi minimumu (44px) - onceki 40px altinda kaliyordu. */
+  min-height: 44px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
@@ -79,6 +80,15 @@
 .educationProgramNoticeLink:hover {
   background: #142445;
   transform: translateY(-1px);
+}
+
+/*
+ * Bu dosyada tema token'i yok; currentColor kullanmak yeni sabit hex
+ * eklemeden hem koyu hem .lightTheme varyantinda dogru kontrasti verir.
+ */
+.educationProgramNoticeLink:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
 }
 
 .card {
@@ -429,6 +439,11 @@
   .actionSecondary,
   .educationProgramNoticeLink {
     transition-duration: 0.01ms;
+  }
+
+  /* Sure kisaltmak yetmiyor - transform tabanli hover hareketi de kapaniyor. */
+  .educationProgramNoticeLink:hover {
+    transform: none;
   }
 }
 

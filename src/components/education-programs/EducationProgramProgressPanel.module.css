@@ -137,6 +137,7 @@
 .statLabel {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 12px;
   font-weight: 700;
   color: var(--idil-muted);
@@ -167,6 +168,83 @@
   flex-shrink: 0;
   width: 18px;
   color: var(--idil-program-accent);
+}
+
+/*
+ * 1200px altinda panel tam genislige duser (workspaceGrid tek kolona iner) ve
+ * dikey yigin olarak cok uzun bir blok haline geliyordu. Tablet araliginda
+ * ayni bloklari tek satirda yatay bilgi kartlarina cevirmek panelin
+ * yuksekligini ucte birine indiriyor. Yeni veri/bolum eklenmedi, yalniz
+ * mevcut bolumlerin yerlesimi degisti.
+ */
+@media (min-width: 721px) and (max-width: 1200px) {
+  .panel {
+    display: grid;
+    grid-template-columns: minmax(170px, 210px) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px 24px;
+  }
+
+  .section {
+    border-top: none;
+    border-left: 1px solid var(--idil-border);
+    padding-top: 0;
+    padding-left: 20px;
+  }
+
+  .motivation {
+    grid-column: 1 / -1;
+  }
+}
+
+/*
+ * 480px ve alti: 148px'lik ring dar ekranda kart icinde orantisiz kaliyordu.
+ * 360px'te bir tik daha kuculuyor. aria-valuenow tasiyan .ringWrap yapisi ve
+ * SVG'nin aria-hidden dekoratif rolu degismedi.
+ */
+@media (max-width: 480px) {
+  .panel {
+    border-radius: 20px;
+    padding: 18px;
+    gap: 18px;
+  }
+
+  .ringWrap {
+    width: 128px;
+    height: 128px;
+  }
+
+  .ringPercent {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 380px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .ringWrap {
+    width: 112px;
+    height: 112px;
+  }
+
+  .ringPercent {
+    font-size: 23px;
+  }
+
+  .ringCaption {
+    font-size: 10px;
+  }
+
+  /*
+   * Ikon + etiket + deger 360px'te de tek satira sigiyor; etiket tasarsa
+   * .statLabel'daki overflow-wrap ile kirilir, satir iki kolona bolunmez.
+   */
+  .statRow {
+    gap: 8px;
+    padding: 7px 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

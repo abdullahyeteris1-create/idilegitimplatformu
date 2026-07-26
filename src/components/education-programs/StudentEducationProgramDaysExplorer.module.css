@@ -57,19 +57,34 @@
 }
 
 .navItem:focus-visible {
-  outline: 2px solid var(--idil-accent);
+  outline: 3px solid var(--idil-accent);
   outline-offset: 2px;
 }
 
+/*
+ * Kilitli gun tiklanabilir gibi gorunmemeli: imlec, sonmus opaklik ve
+ * kaldirilmis golge birlikte "su an acilamaz" sinyali verir. :hover kurali
+ * zaten :not(:disabled) ile korunuyor.
+ */
 .navItem:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+  box-shadow: none;
 }
 
 .navItemSelected {
   border-color: var(--idil-accent);
   background: var(--idil-accent-soft);
   box-shadow: 0 0 0 2px var(--idil-accent-soft);
+}
+
+/*
+ * Aktif gun yalniz yumusak accent zeminiyle ayirt ediliyordu; yatay kaydirma
+ * icinde bu zayif kaliyor. Gun numarasini da accent'e alarak secimi renk
+ * disinda tipografik olarak da belirginlestiriyoruz.
+ */
+.navItemSelected .navItemDayNumber {
+  color: var(--idil-accent);
 }
 
 .navItemIcon {
@@ -130,6 +145,19 @@
   min-width: 0;
 }
 
+/*
+ * 1366px sinifi (981-1500): sag ilerleme paneli ile birlikte orta gorev alani
+ * cok daraliyordu. Bu aralikta gun navigasyonu kolonu bir tik daraltilir.
+ * 1501px ustundeki taban olcu ve 980px altindaki yatay sekme davranisi
+ * degismedi.
+ */
+@media (min-width: 981px) and (max-width: 1500px) {
+  .layout {
+    grid-template-columns: minmax(200px, 232px) minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
 @media (max-width: 980px) {
   .layout {
     grid-template-columns: 1fr;
@@ -145,13 +173,37 @@
     max-height: none;
     overflow-x: auto;
     overflow-y: visible;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
+    /*
+     * Parmakla kaydirmada sekmeler yarim kalmasin diye hafif snap. proximity
+     * (mandatory degil) secildi: kullanici serbestce surukleyebilir, birakinca
+     * en yakin gune hizalanir - klavye ile gezinme ve odak davranisi degismez.
+     */
+    scroll-snap-type: x proximity;
+    scroll-padding-left: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--idil-accent-soft) transparent;
+  }
+
+  .dayNavList::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .dayNavList::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: var(--idil-soft-block);
+  }
+
+  .dayNavList::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--idil-accent-soft);
   }
 
   .navItem {
     min-width: 168px;
     flex-shrink: 0;
+    scroll-snap-align: start;
   }
 }
 
@@ -167,8 +219,32 @@
   }
 }
 
+/*
+ * 360px: sekme genisligini biraz daha kisiyoruz ki ekranda daima bir sonraki
+ * gunun bir parcasi gorunsun (kaydirilabilir oldugu belli olsun). 44px dokunma
+ * yuksekligi taban .navItem kuralindan korunuyor.
+ */
+@media (max-width: 380px) {
+  .navItem {
+    min-width: 136px;
+  }
+
+  .navItemStatusLabel,
+  .navItemProgress {
+    font-size: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .navItem {
     transition: none;
+  }
+
+  .navItem:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .dayNavList {
+    scroll-behavior: auto;
   }
 }

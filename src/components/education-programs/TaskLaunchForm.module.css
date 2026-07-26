@@ -24,6 +24,11 @@
   transform: translateY(-1px);
 }
 
+.launchButton:focus-visible {
+  outline: 3px solid var(--idil-accent);
+  outline-offset: 3px;
+}
+
 .launchButton:disabled {
   cursor: not-allowed;
   opacity: 0.7;
@@ -31,7 +36,22 @@
 
 .launchError {
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--idil-danger-text);
   font-size: 11px;
   line-height: 1.5;
+}
+
+/*
+ * Hover'daki transform tabanli ziplama kapatiliyor. Pending/disabled opaklik
+ * geri bildirimi ve focus halkasi korunuyor - form davranisi degismedi.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .launchButton {
+    transition: none;
+  }
+
+  .launchButton:hover:not(:disabled) {
+    transform: none;
+  }
 }
