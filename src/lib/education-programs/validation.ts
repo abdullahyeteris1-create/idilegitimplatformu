@@ -1,5 +1,9 @@
 import { isEducationProgramCategory } from "@/lib/education-programs/categories";
 import { getEducationProgramExercise } from "@/lib/education-programs/exerciseCatalog";
+import {
+  getExerciseSettingsSchema,
+  validateExerciseSettingsValue,
+} from "@/lib/education-programs/exerciseSettingsSchemas";
 import type {
   EducationProgramTaskSettings,
   EducationProgramTemplate,
@@ -236,8 +240,8 @@ export function validateEducationProgramDayTasks(
       }
     }
 
-    const settings = normalizeSettings(raw.settings);
-    if (!settings) {
+    const genericSettings = normalizeSettings(raw.settings);
+    if (!genericSettings) {
       issues.push({
         field: "settings",
         message: `Gün ${dayNumber ?? "-"}, çalışma ${orderNumber}: Ayarlar geçerli değil.`,
@@ -245,6 +249,15 @@ export function validateEducationProgramDayTasks(
         orderNumber,
       });
     }
+
+    // Yalniz ilk surumde ayar semasi tanimli egzersizler (eye-columns,
+    // word-finding, square-vision) gorev bazinda ayar kaydedebilir; diger
+    // egzersizler icin settings her zaman bos kalir (mevcut/eski {}
+    // kayitlarla ayni davranis, geriye donuk uyumlu).
+    const settingsSchema = getExerciseSettingsSchema(exerciseSlug);
+    const settings = settingsSchema
+      ? validateExerciseSettingsValue(settingsSchema, genericSettings ?? {})
+      : {};
 
     normalized.push({
       orderNumber,
@@ -254,7 +267,7 @@ export function validateEducationProgramDayTasks(
           ? durationSeconds
           : null,
       startingLevel,
-      settings: settings ?? {},
+      settings,
     });
   });
 

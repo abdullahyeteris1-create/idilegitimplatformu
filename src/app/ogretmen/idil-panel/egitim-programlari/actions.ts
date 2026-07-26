@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/auth/adminSession";
 import {
   createEducationProgramTemplate,
+  EDUCATION_PROGRAM_TEMPLATES_TABLE,
   getEducationProgramTemplate,
   publishEducationProgramTemplate,
   saveEducationProgramTemplateDay,
@@ -18,6 +19,8 @@ import {
   validateCompleteEducationProgramTemplate,
   validateEducationProgramTemplateMetadata,
 } from "@/lib/education-programs/validation";
+import { buildPublishValidationMessage } from "@/lib/education-programs/publishMessages";
+import { getExerciseSettingsSchema, readExerciseSettingsFromFormData } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { assignStudentEducationProgram } from "@/lib/education-programs/studentProgramRepository";
 import type { StudentEducationProgramActionState } from "@/lib/education-programs/studentProgramTypes";
 import { validateStudentEducationProgramAssignment } from "@/lib/education-programs/studentProgramValidation";
@@ -65,13 +68,17 @@ function readTaskInputs(formData: FormData): EducationProgramTemplateTaskInput[]
 
     const durationRaw = String(formData.get(`${prefix}-durationSeconds`) ?? "").trim();
     const levelRaw = String(formData.get(`${prefix}-startingLevel`) ?? "").trim();
+    const settingsSchema = getExerciseSettingsSchema(exerciseSlug);
+    const settings = settingsSchema
+      ? readExerciseSettingsFromFormData(settingsSchema, formData, `${prefix}-settings-`)
+      : {};
 
     return {
       orderNumber,
       exerciseSlug,
       durationSeconds: durationRaw ? Number(durationRaw) : null,
       startingLevel: levelRaw ? Number(levelRaw) : null,
-      settings: {},
+      settings,
     };
   });
 }
@@ -134,6 +141,17 @@ export async function saveEducationProgramDayAction(
     return errorState("Eğitim programı servisi yapılandırılmamış.");
   }
 
+  // Bu gun kaydindan ONCE mevcut status okunur - saveEducationProgramTemplateDay
+  // her cagrida statusu kosulsuz "draft"a dondurur (bkz. repository.ts), bu
+  // yuzden yayinda bir sablonun sessizce taslaga dustugunu tespit etmenin tek
+  // yolu save'den once statusu bilmektir.
+  const { data: statusRow } = await supabase
+    .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
+    .select("status")
+    .eq("id", templateId)
+    .maybeSingle();
+  const wasPublished = statusRow?.status === "published";
+
   const saveResult = await saveEducationProgramTemplateDay(
     supabase,
     templateId,
@@ -157,7 +175,7 @@ export async function saveEducationProgramDayAction(
     if (!validation.ok) {
       revalidatePath(editorRoute);
       return errorState(
-        "Program yayınlanamadı. Eksik gün ve çalışmaları tamamlayın.",
+        buildPublishValidationMessage(validation.issues, templateResult.value.dayCount),
         validation.issues,
       );
     }
@@ -177,6 +195,14 @@ export async function saveEducationProgramDayAction(
 
   revalidatePath(LIST_ROUTE);
   revalidatePath(editorRoute);
+
+  if (wasPublished) {
+    return {
+      status: "warning",
+      message: `Gün ${dayNumber} kaydedildi. Şablonda değişiklik yaptığınız için şablon tekrar taslak durumuna alındı. Öğrencilere atayabilmek için yeniden yayınlamanız gerekir.`,
+    };
+  }
+
   return {
     status: "success",
     message: `Gün ${dayNumber} taslak olarak kaydedildi.`,

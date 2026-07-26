@@ -14,6 +14,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -83,7 +84,17 @@ export function WordFindingExerciseClient({
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(2);
-  const [targetWordsPerText, setTargetWordsPerText] = useState<TargetWordsPerText>(3);
+  // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayar
+  // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;
+  // deger yoksa/gecersizse mevcut client varsayilanina duser (crash olmaz).
+  const [targetWordsPerText, setTargetWordsPerText] = useState<TargetWordsPerText>(() =>
+    pickEducationProgramSettingOption(
+      educationProgramLaunch?.settings,
+      "targetWordsPerText",
+      TARGET_WORD_OPTIONS,
+      3,
+    ),
+  );
   const [textSeed, setTextSeed] = useState(0);
   const [targetIndex, setTargetIndex] = useState(0);
   const [foundInRound, setFoundInRound] = useState(0);
@@ -409,6 +420,7 @@ export function WordFindingExerciseClient({
         <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kelime</span>
         <select
           value={targetWordsPerText}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             setTargetWordsPerText(Number(event.target.value) as TargetWordsPerText);
             resetToReady();

@@ -7,6 +7,7 @@ import {
   EDUCATION_PROGRAM_EXERCISE_CATALOG,
   getEducationProgramExercise,
 } from "@/lib/education-programs/exerciseCatalog";
+import { getExerciseSettingsSchema } from "@/lib/education-programs/exerciseSettingsSchemas";
 import type {
   EducationProgramActionState,
   EducationProgramTemplate,
@@ -16,6 +17,7 @@ type SlotDraft = {
   exerciseSlug: string;
   durationSeconds: string;
   startingLevel: string;
+  settings: Record<string, string>;
 };
 
 type DraftsByDay = Record<number, SlotDraft[]>;
@@ -27,6 +29,21 @@ const INITIAL_STATE: EducationProgramActionState = {
 
 const FIELD_CLASS =
   "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
+
+function createSlotSettings(
+  exerciseSlug: string,
+  existingSettings?: Record<string, string | number | boolean>,
+): Record<string, string> {
+  const schema = getExerciseSettingsSchema(exerciseSlug);
+  if (!schema) return {};
+
+  const settings: Record<string, string> = {};
+  for (const field of schema.fields) {
+    const existing = existingSettings?.[field.key];
+    settings[field.key] = existing !== undefined ? String(existing) : String(field.defaultValue);
+  }
+  return settings;
+}
 
 function createDrafts(template: EducationProgramTemplate): DraftsByDay {
   const result: DraftsByDay = {};
@@ -50,6 +67,9 @@ function createDrafts(template: EducationProgramTemplate): DraftsByDay {
             : definition?.supportsLevel
               ? String(definition.levelMin ?? 1)
               : "",
+        settings: task?.exerciseSlug
+          ? createSlotSettings(task.exerciseSlug, task.settings)
+          : {},
       };
     });
   }
@@ -90,7 +110,17 @@ export function EducationProgramTemplateEditor({
       exerciseSlug,
       durationSeconds: definition ? String(definition.defaultDurationSeconds) : "300",
       startingLevel: definition?.supportsLevel ? String(definition.levelMin ?? 1) : "",
+      settings: exerciseSlug ? createSlotSettings(exerciseSlug) : {},
     });
+  };
+
+  const updateSlotSetting = (index: number, key: string, value: string) => {
+    setDraftsByDay((current) => ({
+      ...current,
+      [selectedDayNumber]: (current[selectedDayNumber] ?? []).map((slot, slotIndex) =>
+        slotIndex === index ? { ...slot, settings: { ...slot.settings, [key]: value } } : slot,
+      ),
+    }));
   };
 
   const filledCountByDay = (dayNumber: number) =>
@@ -141,25 +171,34 @@ export function EducationProgramTemplateEditor({
             </h2>
             <p className="mt-1 text-sm text-slate-500">Her gün tam beş çalışma seçilmelidir.</p>
           </div>
-          <span
-            className={`inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-semibold ${
-              template.status === "published"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-amber-200 bg-amber-50 text-amber-800"
-            }`}
-          >
-            {template.status === "published" ? "Yayında" : "Taslak"}
-          </span>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <span
+              className={`inline-flex w-fit rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                template.status === "published"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-amber-200 bg-amber-50 text-amber-800"
+              }`}
+            >
+              {template.status === "published" ? "Yayında" : "Taslak"}
+            </span>
+            <p className="max-w-xs text-right text-xs text-slate-500 sm:text-right">
+              {template.status === "published"
+                ? "Bu şablon öğrencilere atanabilir."
+                : "Taslak şablonlar öğrencilere atanamaz. Atamak için önce yayınlayın."}
+            </p>
+          </div>
         </div>
 
         <form action={formAction} className="space-y-4">
           {state.status !== "idle" ? (
             <div
-              role={state.status === "error" ? "alert" : "status"}
+              role={state.status === "error" || state.status === "warning" ? "alert" : "status"}
               className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
                 state.status === "error"
                   ? "border-red-200 bg-red-50 text-red-800"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : state.status === "warning"
+                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-800"
               }`}
             >
               <p>{state.message}</p>
@@ -179,6 +218,9 @@ export function EducationProgramTemplateEditor({
             const orderNumber = index + 1;
             const definition = slot.exerciseSlug
               ? getEducationProgramExercise(slot.exerciseSlug)
+              : undefined;
+            const settingsSchema = slot.exerciseSlug
+              ? getExerciseSettingsSchema(slot.exerciseSlug)
               : undefined;
 
             return (
@@ -262,20 +304,50 @@ export function EducationProgramTemplateEditor({
                     />
                   </label>
 
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
-                      Egzersize özel ayarlar
-                    </span>
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        definition?.settingsPlaceholder ??
-                        "Ayarları görmek için egzersiz seçin."
-                      }
-                      className={`${FIELD_CLASS} cursor-not-allowed bg-slate-100 text-xs text-slate-500`}
-                    />
-                  </label>
+                  {settingsSchema ? (
+                    settingsSchema.fields.map((field) => (
+                      <label key={field.key} className="grid gap-1.5">
+                        <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                          {field.label}
+                          {field.unit ? ` (${field.unit})` : ""}
+                        </span>
+                        <select
+                          name={`task-${orderNumber}-settings-${field.key}`}
+                          value={slot.settings[field.key] ?? String(field.defaultValue)}
+                          onChange={(event) =>
+                            updateSlotSetting(index, field.key, event.target.value)
+                          }
+                          className={FIELD_CLASS}
+                        >
+                          {field.options.map((option) => (
+                            <option key={option} value={option}>
+                              {field.key === "flowDirection"
+                                ? option === "column"
+                                  ? "Sütun Şeklinde"
+                                  : "Satır Şeklinde"
+                                : `${option}${field.unit ? ` ${field.unit}` : ""}`}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))
+                  ) : (
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                        Egzersize özel ayarlar
+                      </span>
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          definition
+                            ? "Bu egzersiz için özel ayarlar henüz desteklenmiyor. Egzersiz varsayılan ayarlarla çalışacaktır."
+                            : "Ayarları görmek için egzersiz seçin."
+                        }
+                        className={`${FIELD_CLASS} cursor-not-allowed bg-slate-100 text-xs text-slate-500`}
+                      />
+                    </label>
+                  )}
                 </div>
               </article>
             );

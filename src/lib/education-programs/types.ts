@@ -12,6 +12,25 @@ export type EducationProgramTemplateStatus = "draft" | "published";
 
 export type EducationProgramTaskSettings = Record<string, string | number | boolean>;
 
+// Bu tipler yalniz UI/istemci tarafinda tipli okuma/varsayilan degerler icin
+// kullanilir - DB katmani her zaman jenerik EducationProgramTaskSettings
+// (jsonb) tutar. Alan adlari ve degerler ilgili egzersiz client
+// component'lerindeki gercek state/option tanimlarindan birebir alinmistir
+// (bkz. src/lib/education-programs/exerciseSettingsSchemas.ts).
+export type EyeColumnsTaskSettings = {
+  jumpSpeed?: 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
+  columnCount?: 3 | 4 | 5 | 6 | 7;
+  flowDirection?: "column" | "row";
+};
+
+export type WordFindingTaskSettings = {
+  targetWordsPerText?: 3 | 4 | 5 | 6;
+};
+
+export type SquareVisionTaskSettings = {
+  gridSize?: 7 | 9 | 11 | 13 | 15;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;
@@ -87,7 +106,7 @@ export type EducationProgramRepositoryResult<T> =
   | { ok: false; code: "configuration" | "not_found" | "validation" | "database"; message: string };
 
 export type EducationProgramActionState = {
-  status: "idle" | "success" | "error";
+  status: "idle" | "success" | "warning" | "error";
   message: string;
   issues?: EducationProgramValidationIssue[];
 };

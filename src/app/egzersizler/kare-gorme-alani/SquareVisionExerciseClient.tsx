@@ -6,6 +6,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -132,7 +133,12 @@ export function SquareVisionExerciseClient({
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
-  const [gridSize, setGridSize] = useState<GridSize>(13);
+  // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayar
+  // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;
+  // deger yoksa/gecersizse mevcut client varsayilanina duser (crash olmaz).
+  const [gridSize, setGridSize] = useState<GridSize>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "gridSize", GRID_OPTIONS, 13),
+  );
   const [level, setLevel] = useState<Level>(() =>
     isValidLevel(educationProgramLaunch?.initialLevel ?? null)
       ? (educationProgramLaunch!.initialLevel as Level)
@@ -448,6 +454,7 @@ export function SquareVisionExerciseClient({
         </span>
         <select
           value={gridSize}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             const nextSize = Number(event.target.value) as GridSize;
             setGridSize(nextSize);

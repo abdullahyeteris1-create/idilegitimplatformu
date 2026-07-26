@@ -6,6 +6,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -140,9 +141,23 @@ export function ColumnEyeExerciseClient({
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
-  const [jumpSpeed, setJumpSpeed] = useState<JumpSpeed>(1000);
-  const [columnCount, setColumnCount] = useState<ColumnCount>(5);
-  const [flowDirection, setFlowDirection] = useState<FlowDirection>("column");
+  // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayarlar
+  // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;
+  // deger yoksa/gecersizse mevcut client varsayilanina duser (crash olmaz).
+  const [jumpSpeed, setJumpSpeed] = useState<JumpSpeed>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "jumpSpeed", JUMP_SPEED_OPTIONS, 1000),
+  );
+  const [columnCount, setColumnCount] = useState<ColumnCount>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "columnCount", COLUMN_OPTIONS, 5),
+  );
+  const [flowDirection, setFlowDirection] = useState<FlowDirection>(() =>
+    pickEducationProgramSettingOption(
+      educationProgramLaunch?.settings,
+      "flowDirection",
+      ["column", "row"] as const,
+      "column",
+    ),
+  );
   const [words, setWords] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -395,6 +410,7 @@ export function ColumnEyeExerciseClient({
         </span>
         <select
           value={jumpSpeed}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             setJumpSpeed(Number(event.target.value) as JumpSpeed);
             resetExercise();
@@ -415,6 +431,7 @@ export function ColumnEyeExerciseClient({
         </span>
         <select
           value={flowDirection}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             setFlowDirection(event.target.value as FlowDirection);
             resetExercise();
@@ -432,6 +449,7 @@ export function ColumnEyeExerciseClient({
         </span>
         <select
           value={columnCount}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             setColumnCount(Number(event.target.value) as ColumnCount);
             resetExercise();
@@ -637,6 +655,7 @@ export function ColumnEyeExerciseClient({
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Atlama Hızı</span>
               <select
                 value={jumpSpeed}
+                disabled={isEducationProgramMode}
                 onChange={(event) => {
                   setJumpSpeed(Number(event.target.value) as JumpSpeed);
                   resetExercise();
@@ -652,6 +671,7 @@ export function ColumnEyeExerciseClient({
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Akış Yönü</span>
               <select
                 value={flowDirection}
+                disabled={isEducationProgramMode}
                 onChange={(event) => {
                   setFlowDirection(event.target.value as FlowDirection);
                   resetExercise();
@@ -666,6 +686,7 @@ export function ColumnEyeExerciseClient({
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kolon Sayısı</span>
               <select
                 value={columnCount}
+                disabled={isEducationProgramMode}
                 onChange={(event) => {
                   setColumnCount(Number(event.target.value) as ColumnCount);
                   resetExercise();
