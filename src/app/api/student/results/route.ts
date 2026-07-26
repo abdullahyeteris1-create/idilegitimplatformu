@@ -104,6 +104,17 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     soundEnabled: { type: "boolean" },
     answeredCount: { type: "integer", min: 0, max: 100_000 },
   },
+  "eye-columns": {
+    durationMinutes: { type: "integer", min: 1, max: 5 },
+    jumpSpeed: { type: "integer", min: 200, max: 5_000 },
+    intervalMs: { type: "integer", min: 200, max: 5_000 },
+    columnCount: { type: "integer", min: 3, max: 7 },
+    flowDirection: { type: "string", values: ["column", "row"] },
+    completedSteps: { type: "integer", min: 0, max: 100_000 },
+    totalSteps: { type: "integer", min: 0, max: 100_000 },
+    visibleWordCount: { type: "integer", min: 0, max: 1_000 },
+    allWordsUnique: { type: "boolean" },
+  },
   "reading-speed-test": {
     textId: { type: "string", maxLength: 128 },
     textTitle: { type: "string", maxLength: 160 },
