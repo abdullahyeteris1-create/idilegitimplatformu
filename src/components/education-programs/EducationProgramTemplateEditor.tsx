@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { type MouseEvent, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { saveEducationProgramDayAction } from "@/app/ogretmen/idil-panel/egitim-programlari/actions";
 import {
   EDUCATION_PROGRAM_EXERCISE_CATALOG,
@@ -26,6 +26,13 @@ const INITIAL_STATE: EducationProgramActionState = {
   status: "idle",
   message: "",
 };
+
+function errorStateFallback(): EducationProgramActionState {
+  return {
+    status: "error",
+    message: "Gün kaydedilemedi. Bağlantınızı kontrol edip tekrar deneyin.",
+  };
+}
 
 const FIELD_CLASS =
   "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
@@ -77,6 +84,50 @@ function createDrafts(template: EducationProgramTemplate): DraftsByDay {
   return result;
 }
 
+// Kaydedilmemis degisiklik (dirty) karsilastirmasi icin sabit alan sirali,
+// deterministik bir string uretir - settings anahtarlari da sirali eklenir ki
+// ayni icerik farkli ekleme sirasiyla girilse bile ayni serilestirme cikssin.
+function serializeSlots(slots: SlotDraft[]): string {
+  return JSON.stringify(
+    slots.map((slot) => ({
+      exerciseSlug: slot.exerciseSlug,
+      durationSeconds: slot.durationSeconds,
+      startingLevel: slot.startingLevel,
+      settings: Object.keys(slot.settings)
+        .sort()
+        .map((key) => [key, slot.settings[key]]),
+    })),
+  );
+}
+
+// saveEducationProgramDayAction'in native form gonderiminde urettigi FormData
+// ile birebir ayni alanlari programatik olarak uretir - readTaskInputs
+// (actions.ts) bu alanlari degistirmeden okuyabilsin diye.
+function buildDayFormData(slots: SlotDraft[], intent: "draft" | "publish"): FormData {
+  const formData = new FormData();
+  formData.set("intent", intent);
+
+  slots.forEach((slot, index) => {
+    const orderNumber = index + 1;
+    const prefix = `task-${orderNumber}`;
+    formData.set(`${prefix}-exerciseSlug`, slot.exerciseSlug);
+    formData.set(`${prefix}-durationSeconds`, slot.durationSeconds);
+    formData.set(`${prefix}-startingLevel`, slot.startingLevel);
+
+    const schema = slot.exerciseSlug ? getExerciseSettingsSchema(slot.exerciseSlug) : undefined;
+    if (schema) {
+      for (const field of schema.fields) {
+        formData.set(
+          `${prefix}-settings-${field.key}`,
+          slot.settings[field.key] ?? String(field.defaultValue),
+        );
+      }
+    }
+  });
+
+  return formData;
+}
+
 export function EducationProgramTemplateEditor({
   template,
 }: {
@@ -84,16 +135,118 @@ export function EducationProgramTemplateEditor({
 }) {
   const [selectedDayNumber, setSelectedDayNumber] = useState(1);
   const [draftsByDay, setDraftsByDay] = useState<DraftsByDay>(() => createDrafts(template));
+  // Sunucudan gelen/en son basariyla kaydedilen durumun anlik goruntusu -
+  // draftsByDay ile karsilastirilarak hangi gunlerin kaydedilmemis
+  // (dirty) degisiklik tasidigi turetilir.
+  const [savedSnapshotByDay, setSavedSnapshotByDay] = useState<DraftsByDay>(() =>
+    createDrafts(template),
+  );
+  const [isSwitchingDay, setIsSwitchingDay] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
+  const [switchNotice, setSwitchNotice] = useState<{ tone: "success" | "warning"; message: string } | null>(
+    null,
+  );
+  // Efekt/olay handler'lari icinde stale closure olusmadan en son
+  // draftsByDay'e erismek icin kullanilan referans - degeri yalnizca bir
+  // efekt icinde (render disinda) guncellenir.
+  const draftsByDayRef = useRef(draftsByDay);
+  useEffect(() => {
+    draftsByDayRef.current = draftsByDay;
+  }, [draftsByDay]);
+
   const boundAction = useMemo(
     () => saveEducationProgramDayAction.bind(null, template.id, selectedDayNumber),
     [selectedDayNumber, template.id],
   );
   const [state, formAction, pending] = useActionState(boundAction, INITIAL_STATE);
 
+  // Native form (Taslak Kaydet/Yayinla) basariyla tamamlaninca ilgili gunun
+  // saved snapshot'ini guncelle - boylece o gun artik dirty gorunmez.
+  // Native submit hicbir zaman selectedDayNumber'i degistirmez (yalniz gun
+  // secici handleDayChange bunu yapar), bu yuzden state degistiginde
+  // selectedDayNumber halen kaydedilen gune aittir.
+  useEffect(() => {
+    if (state.status !== "success" && state.status !== "warning") return;
+
+    const savedDay = selectedDayNumber;
+    setSavedSnapshotByDay((current) => ({
+      ...current,
+      [savedDay]: draftsByDayRef.current[savedDay] ?? [],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   const selectedSlots = draftsByDay[selectedDayNumber] ?? [];
   const selectedExerciseSlugs = new Set(
     selectedSlots.map((slot) => slot.exerciseSlug).filter(Boolean),
   );
+
+  const isDayDirty = (dayNumber: number): boolean => {
+    const current = draftsByDay[dayNumber];
+    const saved = savedSnapshotByDay[dayNumber];
+    if (!current || !saved) return false;
+    return serializeSlots(current) !== serializeSlots(saved);
+  };
+
+  const dirtyDayNumbers = Array.from({ length: template.dayCount }, (_, index) => index + 1).filter(
+    (dayNumber) => isDayDirty(dayNumber),
+  );
+
+  async function handleDayChange(nextDayNumber: number) {
+    if (nextDayNumber === selectedDayNumber || isSwitchingDay || pending) return;
+
+    if (!isDayDirty(selectedDayNumber)) {
+      setSwitchError(null);
+      setSwitchNotice(null);
+      setSelectedDayNumber(nextDayNumber);
+      return;
+    }
+
+    setIsSwitchingDay(true);
+    setSwitchError(null);
+    setSwitchNotice(null);
+
+    const currentDayNumber = selectedDayNumber;
+    const currentSlots = draftsByDay[currentDayNumber] ?? [];
+
+    let result: EducationProgramActionState;
+    try {
+      result = await saveEducationProgramDayAction(
+        template.id,
+        currentDayNumber,
+        INITIAL_STATE,
+        buildDayFormData(currentSlots, "draft"),
+      );
+    } catch {
+      result = errorStateFallback();
+    }
+
+    setIsSwitchingDay(false);
+
+    if (result.status === "error") {
+      setSwitchError(result.message);
+      return;
+    }
+
+    setSavedSnapshotByDay((current) => ({ ...current, [currentDayNumber]: currentSlots }));
+    setSwitchNotice({
+      tone: result.status === "warning" ? "warning" : "success",
+      message: result.status === "warning" ? result.message : "Gün kaydedildi.",
+    });
+    setSelectedDayNumber(nextDayNumber);
+  }
+
+  function handlePublishClick(event: MouseEvent<HTMLButtonElement>) {
+    const otherDirtyDays = dirtyDayNumbers.filter((dayNumber) => dayNumber !== selectedDayNumber);
+    if (otherDirtyDays.length === 0) return;
+
+    event.preventDefault();
+    setSwitchError(
+      `Kaydedilmemiş günler var. Lütfen bu günleri kaydedin: ${otherDirtyDays
+        .map((dayNumber) => `${dayNumber}. gün`)
+        .join(", ")}.`,
+    );
+  }
 
   const updateSlot = (index: number, update: Partial<SlotDraft>) => {
     setDraftsByDay((current) => ({
@@ -131,20 +284,24 @@ export function EducationProgramTemplateEditor({
       <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900/70">
         <div className="mb-3 px-1">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Program günleri</p>
-          <p className="mt-1 text-xs text-slate-500">Düzenlemek istediğiniz günü seçin.</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {isSwitchingDay ? "Kaydediliyor..." : "Düzenlemek istediğiniz günü seçin."}
+          </p>
         </div>
         <nav className="max-h-[620px] space-y-1.5 overflow-y-auto pr-1" aria-label="Program günleri">
           {Array.from({ length: template.dayCount }, (_, index) => {
             const dayNumber = index + 1;
             const filledCount = filledCountByDay(dayNumber);
             const selected = selectedDayNumber === dayNumber;
+            const dirty = isDayDirty(dayNumber);
 
             return (
               <button
                 key={dayNumber}
                 type="button"
-                onClick={() => setSelectedDayNumber(dayNumber)}
-                className={`flex min-h-11 w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
+                onClick={() => void handleDayChange(dayNumber)}
+                disabled={isSwitchingDay || pending}
+                className={`flex min-h-11 w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   selected
                     ? "border-red-500 bg-red-600 text-white shadow-sm"
                     : filledCount === 5
@@ -152,7 +309,10 @@ export function EducationProgramTemplateEditor({
                       : "border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:bg-red-50"
                 }`}
               >
-                <span>Gün {dayNumber}</span>
+                <span>
+                  Gün {dayNumber}
+                  {dirty ? <span aria-label="Kaydedilmemiş değişiklik" className={selected ? "text-amber-200" : "text-amber-600"}> •</span> : null}
+                </span>
                 <span className={`text-xs ${selected ? "text-red-100" : "text-slate-500"}`}>
                   {filledCount}/5
                 </span>
@@ -188,6 +348,26 @@ export function EducationProgramTemplateEditor({
             </p>
           </div>
         </div>
+
+        {switchError ? (
+          <div
+            role="alert"
+            className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+          >
+            <p>{switchError}</p>
+          </div>
+        ) : switchNotice ? (
+          <div
+            role="status"
+            className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-medium ${
+              switchNotice.tone === "warning"
+                ? "border-amber-200 bg-amber-50 text-amber-900"
+                : "border-emerald-200 bg-emerald-50 text-emerald-800"
+            }`}
+          >
+            <p>{switchNotice.message}</p>
+          </div>
+        ) : null}
 
         <form action={formAction} className="space-y-4">
           {state.status !== "idle" ? (
@@ -364,7 +544,7 @@ export function EducationProgramTemplateEditor({
               type="submit"
               name="intent"
               value="draft"
-              disabled={pending}
+              disabled={pending || isSwitchingDay}
               className="min-h-11 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-800 transition hover:bg-red-50 disabled:opacity-60"
             >
               {pending ? "Kaydediliyor..." : "Taslak Kaydet"}
@@ -373,7 +553,8 @@ export function EducationProgramTemplateEditor({
               type="submit"
               name="intent"
               value="publish"
-              disabled={pending}
+              disabled={pending || isSwitchingDay}
+              onClick={handlePublishClick}
               className="min-h-11 rounded-xl bg-[var(--brand)] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--brand-strong)] disabled:opacity-60"
             >
               {pending ? "Doğrulanıyor..." : "Yayınla"}
