@@ -81,15 +81,21 @@ test("öğrenci ekranı empty state, program bilgisi ve beş görev yuvasını i
   const source = await read(
     "src/components/education-programs/StudentEducationProgramStudentView.tsx",
   );
+  // FAZ 4-2B-1: hero JSX'i (program adı/mesajı ve genel ilerleme progressbar'ı
+  // dahil) StudentEducationProgramHero.tsx'e çıkarıldı; bu ekran hâlâ o
+  // bileşen üzerinden aynı bilgiyi gösteriyor.
+  const heroSource = await read(
+    "src/components/education-programs/StudentEducationProgramHero.tsx",
+  );
 
   assert.match(source, /Henüz aktif bir eğitim programınız bulunmuyor/);
   assert.match(
     source,
     /Öğretmeniniz size bir eğitim programı atadığında burada\s+görüntülenecektir\./,
   );
-  assert.match(source, /\{visibleName\}/);
-  assert.match(source, /program\.studentMessage/);
-  assert.match(source, /role="progressbar"/);
+  assert.match(source, /visibleName=\{visibleName\}/);
+  assert.match(source, /studentMessage=\{program\.studentMessage\}/);
+  assert.match(heroSource, /role="progressbar"/);
   assert.match(source, /aria-current=\{isCurrent \? "step" : undefined\}/);
   assert.match(source, /Array\.from\(\{ length: 5 \}/);
   assert.match(source, /STUDENT_PROGRAM_DAY_STATUS_LABELS\[day\.status\]/);

@@ -162,16 +162,33 @@ test("8/9) StudentEducationProgramDaysExplorer'a gun basina data-day-id ile isar
 
   assert.match(source, /<StudentEducationProgramDaysExplorer/);
   assert.match(source, /data-day-id=\{day\.id\}/);
-  assert.match(source, /initialSelectedDayId=\{initialSelectedDayId\}/);
+});
+
+test("FAZ 4-2B-2) gun secimi kontrollu: parent selectedDayId state'ini tutar, Explorer'a selectedDayId\\/onSelectDayId olarak gecirilir", async () => {
+  const viewSource = await read(VIEW_PATH);
+  const explorerSource = await read(EXPLORER_PATH);
+
+  assert.match(viewSource, /useState\(initialSelectedDayId\)/);
+  assert.match(viewSource, /selectedDayId=\{selectedDayId\}/);
+  assert.match(viewSource, /onSelectDayId=\{setSelectedDayId\}/);
+  assert.doesNotMatch(explorerSource, /useState/);
+  assert.match(explorerSource, /onSelectDayId: \(dayId: string\) => void/);
 });
 
 test("15/16) genel ilerleme gorev bazli, NaN/0'a bolme guvenlidir", async () => {
   const source = await read(VIEW_PATH);
 
   assert.match(source, /allTasks = program\.days\.flatMap\(\(day\) => day\.tasks\)/);
+  // FAZ 4-2B-2: completedTaskCount tek yerde adlandirilip hem ilerleme
+  // hesabinda hem de sag panele gecirilirken yeniden kullanilir (cift
+  // hesaplama yok).
   assert.match(
     source,
-    /overallTaskProgress = calculateStudentProgramProgress\(\s*countCompletedStudentProgramTasks\(allTasks\),\s*allTasks\.length,?\s*\)/,
+    /completedTaskCount = countCompletedStudentProgramTasks\(allTasks\)/,
+  );
+  assert.match(
+    source,
+    /overallTaskProgress = calculateStudentProgramProgress\(\s*completedTaskCount,\s*allTasks\.length,?\s*\)/,
   );
 });
 

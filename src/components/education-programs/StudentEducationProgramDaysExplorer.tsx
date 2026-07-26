@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, isValidElement, useState, type ReactNode } from "react";
+import { Children, isValidElement, type ReactNode } from "react";
 import { Icon } from "@/components/student-panel-preview/icons";
 import { STUDENT_PROGRAM_DAY_STATUS_LABELS } from "@/lib/education-programs/studentProgramPresentation";
 import type { StudentEducationProgramDayStatus } from "@/lib/education-programs/studentProgramTypes";
@@ -29,22 +29,25 @@ function dayStatusClassName(status: StudentEducationProgramDayStatus): string {
   return styles.navItemLocked;
 }
 
-// Sunucuda onceden render edilmis gun kartlarini (server component cikti)
-// data-day-id ile isaretlenmis children olarak alir, yalniz secili olanin
-// gorunmesini saglar. Bu bileşen kendisi hicbir gun/gorev verisini render
-// etmez - yalniz HANGI onceden-render-edilmis cocugun gosterilecegine karar
-// verir. Gorev baslatma butonu ve gorev alanlari sunucu tarafinda kalir.
+// Onceden render edilmis gun kartlarini ("data-day-id" ile isaretlenmis
+// children olarak) alir, yalniz secili olanin gorunmesini saglar. Bu bileşen
+// kendisi hicbir gun/gorev verisini render etmez - yalniz HANGI cocugun
+// gosterilecegine karar verir. Gorev baslatma butonu ve gorev alanlari
+// degismedi. Secim durumu KONTROLLU (controlled): parent (Egitim Programi
+// sag panelinin de ayni secili gune ihtiyaci oldugu icin) selectedDayId'yi
+// tutar ve onSelectDayId ile guncellenir - bu bileşen kendi basina state
+// tutmaz, boylece secim tek bir kaynaktan (parent) yonetilir.
 export function StudentEducationProgramDaysExplorer({
-  initialSelectedDayId,
+  selectedDayId,
+  onSelectDayId,
   days,
   children,
 }: {
-  initialSelectedDayId: string;
+  selectedDayId: string;
+  onSelectDayId: (dayId: string) => void;
   days: StudentEducationProgramDayNavItem[];
   children: ReactNode;
 }) {
-  const [selectedDayId, setSelectedDayId] = useState(initialSelectedDayId);
-
   const visibleChild = Children.toArray(children).find((child) => {
     if (!isValidElement<{ "data-day-id"?: string }>(child)) return false;
     return child.props["data-day-id"] === selectedDayId;
@@ -65,7 +68,7 @@ export function StudentEducationProgramDaysExplorer({
                 type="button"
                 disabled={isLocked}
                 aria-current={isSelected ? "true" : undefined}
-                onClick={() => setSelectedDayId(day.id)}
+                onClick={() => onSelectDayId(day.id)}
                 className={`${styles.navItem} ${dayStatusClassName(day.status)} ${
                   isSelected ? styles.navItemSelected : ""
                 }`}

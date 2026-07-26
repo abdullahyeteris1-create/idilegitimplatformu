@@ -81,7 +81,13 @@ test("service role istemcisi client component veya hassas DTO içine taşınmaz"
   const studentTypes =
     types.split("export type StudentEducationProgramStudentTask")[1] ?? "";
 
-  assert.doesNotMatch(component, /"use client"/);
+  // FAZ 4-2B-2: bu bileşen artik "use client" (sag ilerleme paneli icin gun
+  // secim state'ini tutuyor). Next.js zaten client component'lerin
+  // server-only modulleri (service-role client, gizli anahtarlar) import
+  // etmesine izin vermez - bu yuzden asil guvenlik ozelligi "use client"
+  // OLMAMASI degil, service-role/secret/hassas alanlarin hicbir zaman bu
+  // dosyaya (veya ogrenciye giden DTO'ya) girmemesidir; bu asagida ayrica
+  // dogrulanir.
   assert.doesNotMatch(component, /getSupabaseServiceRoleClient/);
   assert.doesNotMatch(component, /SUPABASE_SERVICE_ROLE/);
   for (const forbidden of [

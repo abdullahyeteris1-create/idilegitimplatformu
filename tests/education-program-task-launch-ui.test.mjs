@@ -38,10 +38,21 @@ test("TaskLaunchForm eski Assignment System V2'ye bagli degildir", async () => {
   assert.doesNotMatch(source, /AssignmentTaskProvider/);
 });
 
-test("FAZ 2B izolasyon testleri hala gecerlidir: yeni buton mevcut view dosyasina 'use client' eklemez", async () => {
+test("FAZ 2B izolasyon testleri hala gecerlidir: TaskLaunchForm butonu Assignment V2/service-role'e sizinti yaratmaz", async () => {
+  // NOT: bu test onceden view dosyasinin "use client" ICERMEDIGINI kontrol
+  // ediyordu. FAZ 4-2B-2'de view dosyasi, sag ilerleme panelinin secili gune
+  // erismesi icin BILINCLI olarak "use client" oldu (gun secim state'i artik
+  // parent'ta) - bu, TaskLaunchForm butonuyla ilgisiz, ayri bir karar. Asil
+  // izolasyon garantisi (Assignment V2/service-role sizintisi olmamasi) asagida
+  // dogrudan kontrol edilir; "use client" olup olmamasi bunun bir garantisi
+  // degildi zaten (Next.js zaten client component'lerin service-role gibi
+  // server-only moduller import etmesine izin vermez).
   const source = await read(
     "src/components/education-programs/StudentEducationProgramStudentView.tsx",
   );
 
-  assert.doesNotMatch(source, /"use client"/);
+  assert.doesNotMatch(source, /@\/lib\/assignments\//);
+  assert.doesNotMatch(source, /@\/components\/assignments\//);
+  assert.doesNotMatch(source, /getSupabaseServiceRoleClient/);
+  assert.doesNotMatch(source, /SUPABASE_SERVICE_ROLE/);
 });

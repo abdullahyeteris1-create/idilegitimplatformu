@@ -83,6 +83,25 @@
   line-height: 1.6;
 }
 
+/*
+ * Sol (gun navigasyonu + gorevler, StudentEducationProgramDaysExplorer'in
+ * kendi ic 2 kolonlu grid'i) + sag (EducationProgramProgressPanel) govde.
+ * DaysExplorer'in kendi .layout grid'ine hic dokunulmadi - 980px altindaki
+ * yatay gun navigasyonu davranisi bu sayede degismeden korunuyor.
+ */
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  align-items: start;
+  gap: 20px;
+}
+
+@media (max-width: 1200px) {
+  .workspaceGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .dayCard {
   border-radius: 22px;
   padding: 20px;

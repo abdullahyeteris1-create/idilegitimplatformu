@@ -1,8 +1,11 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import { TaskLaunchForm } from "@/components/education-programs/TaskLaunchForm";
 import { StudentEducationProgramHero } from "@/components/education-programs/StudentEducationProgramHero";
+import { EducationProgramProgressPanel } from "@/components/education-programs/EducationProgramProgressPanel";
 import {
   StudentEducationProgramDaysExplorer,
   type StudentEducationProgramDayNavItem,
@@ -232,8 +235,9 @@ export function StudentEducationProgramStudentView({
   const todayTotalTaskCount = todayDay ? todayDay.tasks.length : 0;
 
   const allTasks = program.days.flatMap((day) => day.tasks);
+  const completedTaskCount = countCompletedStudentProgramTasks(allTasks);
   const overallTaskProgress = calculateStudentProgramProgress(
-    countCompletedStudentProgramTasks(allTasks),
+    completedTaskCount,
     allTasks.length,
   );
 
@@ -252,6 +256,17 @@ export function StudentEducationProgramStudentView({
     selectInitialStudentProgramDayId(program.days, program.currentDayNumber) ??
     program.days[0]?.id ??
     "";
+
+  // Gun secim durumu burada (parent) tutulur, StudentEducationProgramDaysExplorer
+  // kontrollu bir bileşen olarak calisir - boylece sag ilerleme paneli de
+  // (secili gunun sure toplami icin) AYNI secime, yeni bir state mimarisi
+  // kurmadan erisebilir. Gorev baslatma/gun degistirme davranisi degismedi.
+  const [selectedDayId, setSelectedDayId] = useState(initialSelectedDayId);
+  const selectedDay =
+    program.days.find((day) => day.id === selectedDayId) ?? null;
+  const selectedDayDurationSeconds = selectedDay
+    ? selectedDay.tasks.reduce((total, task) => total + task.durationSeconds, 0)
+    : 0;
 
   return (
     <PageFrame>
@@ -291,16 +306,31 @@ export function StudentEducationProgramStudentView({
           <p>Kilitli günler zamanı geldiğinde öğretmeninizin planına göre açılır.</p>
         </div>
 
-        <StudentEducationProgramDaysExplorer
-          initialSelectedDayId={initialSelectedDayId}
-          days={dayNavItems}
-        >
-          {program.days.map((day) => (
-            <div key={day.id} data-day-id={day.id}>
-              <DayArticle day={day} isCurrent={currentDay?.id === day.id} />
-            </div>
-          ))}
-        </StudentEducationProgramDaysExplorer>
+        <div className={styles.workspaceGrid}>
+          <StudentEducationProgramDaysExplorer
+            selectedDayId={selectedDayId}
+            onSelectDayId={setSelectedDayId}
+            days={dayNavItems}
+          >
+            {program.days.map((day) => (
+              <div key={day.id} data-day-id={day.id}>
+                <DayArticle day={day} isCurrent={currentDay?.id === day.id} />
+              </div>
+            ))}
+          </StudentEducationProgramDaysExplorer>
+
+          <EducationProgramProgressPanel
+            overallTaskProgress={overallTaskProgress}
+            completedTaskCount={completedTaskCount}
+            totalTaskCount={allTasks.length}
+            completedDays={program.completedDays}
+            totalDays={program.totalDays}
+            currentDayNumber={program.currentDayNumber}
+            todayCompletedTaskCount={todayCompletedTaskCount}
+            todayTotalTaskCount={todayTotalTaskCount}
+            selectedDayDurationSeconds={selectedDayDurationSeconds}
+          />
+        </div>
       </section>
     </PageFrame>
   );
