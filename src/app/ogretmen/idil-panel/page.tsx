@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
+import {
+  ASSIGNMENT_PROGRAM_HREF,
+  SHOW_ASSIGNMENT_PROGRAM,
+  TEACHER_NAV_ITEMS,
+} from "@/lib/constants/teacherNavigation";
 import { getIdilPanelSummary } from "@/lib/idil-panel/summaryStorage";
 
 type SummaryStat = {
@@ -87,6 +91,10 @@ const MODULE_CARDS: ModuleCard[] = [
     href: "/ogretmen/icerik-yonetimi",
   },
 ];
+
+const visibleModuleCards = MODULE_CARDS.filter(
+  (module) => SHOW_ASSIGNMENT_PROGRAM || module.href !== ASSIGNMENT_PROGRAM_HREF,
+);
 
 export default function IdilPanelPage() {
   const [stats, setStats] = useState<SummaryStat[]>(INITIAL_STATS);
@@ -179,7 +187,7 @@ export default function IdilPanelPage() {
 
         <PanelCard title="Yonetim Modulleri" subtitle="Masaustu Idilpanel akisi icin web modulleri">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {MODULE_CARDS.map((module) => (
+            {visibleModuleCards.map((module) => (
               <article key={module.title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-[18px]">
                 <div className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
                   {module.status}
