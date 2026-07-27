@@ -31,6 +31,30 @@ const EXERCISES = [
     pagePath: "src/app/egzersizler/goz-egzersizleri-kolonlar/page.tsx",
     clientImport: "ColumnEyeExerciseClient",
   },
+  {
+    name: "Takistoskop",
+    slug: "takistoskop",
+    pagePath: "src/app/egzersizler/takistoskop/page.tsx",
+    clientImport: "TachistoscopeExerciseClient",
+  },
+  {
+    name: "Harf / Rakam Sayma",
+    slug: "harf-rakam-sayma",
+    pagePath: "src/app/egzersizler/harf-rakam-sayma/page.tsx",
+    clientImport: "LetterNumberCountingFocusClient",
+  },
+  {
+    name: "Hafıza Geliştirme",
+    slug: "hafiza-gelistirme",
+    pagePath: "src/app/egzersizler/hafiza-gelistirme/page.tsx",
+    clientImport: "MemoryGameExerciseClient",
+  },
+  {
+    name: "Kart Eşleştirme",
+    slug: "kart-eslestirme",
+    pagePath: "src/app/egzersizler/kart-eslestirme/page.tsx",
+    clientImport: "CardMatchingExerciseClient",
+  },
 ];
 
 for (const exercise of EXERCISES) {

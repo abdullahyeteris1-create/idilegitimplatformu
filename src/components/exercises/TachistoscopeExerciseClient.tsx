@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExerciseShell";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
@@ -33,8 +37,15 @@ type RoundSettings = {
 
 const SPEED_OPTIONS: SpeedMs[] = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const LEVEL_OPTIONS: Level[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const WORK_MODE_OPTIONS: WorkMode[] = ["automatic", "manual"];
+const CONTENT_TYPE_OPTIONS: ContentType[] = ["letter", "number", "mixed"];
 const AUTO_ADVANCE_DELAY_MS = 500;
 const WORD_FONT_CLASS = "text-3xl md:text-4xl";
+const EXPECTED_RESULT_EXERCISE_TYPE = "tachistoscope";
+
+function isValidLevel(value: number | null): value is Level {
+  return value !== null && (LEVEL_OPTIONS as number[]).includes(value);
+}
 
 function formatElapsed(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
@@ -78,7 +89,11 @@ const FEEDBACK_TONE_CLASS = {
   neutral: tkStyles.feedbackNeutral,
 } as const;
 
-export function TachistoscopeExerciseClient() {
+export function TachistoscopeExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -89,13 +104,22 @@ export function TachistoscopeExerciseClient() {
   const hasSavedResultRef = useRef(false);
   const saveInFlightRef = useRef(false);
   const pendingResultRef = useRef<{ payload: SecureExerciseResultInput; resultUrl: string } | null>(null);
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
 
   const [phase, setPhase] = useState<ExercisePhase>("ready");
   const [responsePhase, setResponsePhase] = useState<ResponsePhase>("show");
-  const [speedMs, setSpeedMs] = useState<SpeedMs>(300);
-  const [level, setLevel] = useState<Level>(1);
-  const [workMode, setWorkMode] = useState<WorkMode>("manual");
-  const [contentType, setContentType] = useState<ContentType>("letter");
+  const [speedMs, setSpeedMs] = useState<SpeedMs>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMs", SPEED_OPTIONS, 300),
+  );
+  const [level, setLevel] = useState<Level>(() =>
+    isValidLevel(educationProgramLaunch?.initialLevel ?? null) ? (educationProgramLaunch!.initialLevel as Level) : 1,
+  );
+  const [workMode, setWorkMode] = useState<WorkMode>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "workMode", WORK_MODE_OPTIONS, "manual"),
+  );
+  const [contentType, setContentType] = useState<ContentType>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "contentType", CONTENT_TYPE_OPTIONS, "letter"),
+  );
 
   const [currentRound, setCurrentRound] = useState<TachistoscopeRound | null>(null);
   const [currentInput, setCurrentInput] = useState("");
@@ -126,6 +150,21 @@ export function TachistoscopeExerciseClient() {
   const totalAnswered = totalCorrect + totalWrong;
   const totalNet = totalCorrect - totalWrong;
   const liveScore = totalCorrect * 10 - totalWrong * 5;
+
+  // Odev modunda ogretmenin belirledigi sure, Egitim Programi modunda gorev
+  // snapshot'inin durationSeconds degeri, serbest calismada sinirsizdir
+  // (mevcut davranis: Bitir'e basana kadar devam eder).
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY,
+  );
+  const isAssignmentMode = useIsAssignmentMode();
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   useEffect(() => {
     latestSettingsRef.current = { level, speedMs, contentType };
@@ -250,34 +289,38 @@ export function TachistoscopeExerciseClient() {
     startNextRound({ level, speedMs, contentType });
   };
 
-  const persistPendingResult = async (pending: { payload: SecureExerciseResultInput; resultUrl: string }) => {
-    if (saveInFlightRef.current || hasSavedResultRef.current) {
-      return;
-    }
-
-    saveInFlightRef.current = true;
-    setSaveStatus("saving");
-    setSaveMessage("Sonuç kaydediliyor...");
-
-    try {
-      const saved = await saveExerciseResultSecure(pending.payload);
-      hasSavedResultRef.current = true;
-      setSaveStatus("success");
-      if (saved.assignmentCompletionStatus === "failed") {
-        setSaveMessage("Sonuç kaydedildi ancak görev tamamlanamadı. Sonuç ekranına devam edebilirsin.");
+  const persistPendingResult = useCallback(
+    async (pending: { payload: SecureExerciseResultInput; resultUrl: string }) => {
+      if (saveInFlightRef.current || hasSavedResultRef.current) {
         return;
       }
-      setSaveMessage("Sonuç kaydedildi.");
-      router.push(pending.resultUrl);
-    } catch {
-      setSaveStatus("error");
-      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
-    } finally {
-      saveInFlightRef.current = false;
-    }
-  };
 
-  const finishExercise = () => {
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(pending.payload);
+        hasSavedResultRef.current = true;
+        setSaveStatus("success");
+        await completeTaskAfterResultSave();
+        if (saved.assignmentCompletionStatus === "failed") {
+          setSaveMessage("Sonuç kaydedildi ancak görev tamamlanamadı. Sonuç ekranına devam edebilirsin.");
+          return;
+        }
+        setSaveMessage("Sonuç kaydedildi.");
+        router.push(pending.resultUrl);
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave, router],
+  );
+
+  const finishExercise = useCallback(() => {
     if (hasSavedResultRef.current || saveInFlightRef.current || saveStatus !== "idle") return;
 
     if (revealTimerRef.current) {
@@ -316,7 +359,32 @@ export function TachistoscopeExerciseClient() {
     pendingResultRef.current = pending;
     setSavedResultUrl(pending.resultUrl);
     void persistPendingResult(pending);
-  };
+  }, [
+    autoLevelUpCount,
+    contentType,
+    level,
+    persistPendingResult,
+    reachedLevel,
+    saveStatus,
+    sessionStartedAt,
+    speedMs,
+    totalAnswered,
+    totalCorrect,
+    totalNet,
+    totalWrong,
+    workMode,
+  ]);
+
+  // Egitim Programi/odev gorev suresi dolunca mevcut guvenli bitirme akisini
+  // (finishExercise, zaten idempotent) tetikler. Serbest calismada
+  // totalDurationSeconds sonsuz oldugu icin bu efekt hicbir zaman tetiklenmez
+  // - mevcut sinirsiz standalone davranis degismez.
+  useEffect(() => {
+    if (phase !== "play" || !Number.isFinite(totalDurationSeconds)) return;
+    if (elapsedSeconds >= totalDurationSeconds) {
+      finishExercise();
+    }
+  }, [elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
 
   const retrySave = () => {
     if (pendingResultRef.current) void persistPendingResult(pendingResultRef.current);
@@ -469,10 +537,10 @@ export function TachistoscopeExerciseClient() {
 
   const stageSettings = (
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 landscape:grid-cols-4 landscape:gap-1.5">
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Hız</span><select className={tkStyles.select} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Seviye</span><select className={tkStyles.select} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Çalışma şekli</span><select className={tkStyles.select} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>İçerik türü</span><select className={tkStyles.select} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Hız</span><select className={tkStyles.select} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)} disabled={isEducationProgramMode}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Seviye</span><select className={tkStyles.select} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)} disabled={isEducationProgramMode}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Çalışma şekli</span><select className={tkStyles.select} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)} disabled={isEducationProgramMode}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>İçerik türü</span><select className={tkStyles.select} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)} disabled={isEducationProgramMode}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
     </div>
   );
 
@@ -543,6 +611,17 @@ export function TachistoscopeExerciseClient() {
     </div>
   );
 
+  const completionNotice = completionStatus.state === "idle" ? null : (
+    <div className={`mx-auto grid w-full max-w-xl gap-2 rounded-xl border px-3 py-2 text-center text-sm font-semibold ${completionStatus.state === "error" ? tkStyles.noticeError : tkStyles.noticeInfo}`}>
+      <p>{completionStatus.message}</p>
+      {completionStatus.state === "error" && completionStatus.canRetry ? (
+        <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={() => void retryTaskCompletion()}>
+          Program ilerlemesini yeniden dene
+        </button>
+      ) : null}
+    </div>
+  );
+
   if (phase === "ready") {
     return (
       <div className={themeRootClassName}>
@@ -581,7 +660,7 @@ export function TachistoscopeExerciseClient() {
         subtitle="Odakli calisma modu"
         topStats={topStats}
         bottomSettings={stageSettings}
-        controls={<div className="grid gap-2">{saveNotice}{playFooter}</div>}
+        controls={<div className="grid gap-2">{saveNotice}{completionNotice}{playFooter}</div>}
         onExit={() => router.push("/egzersizler")}
       >
         <div data-testid="tachistoscope-game-frame" className={`flex aspect-video max-h-full w-full max-w-5xl min-h-0 flex-col items-center justify-center overflow-hidden rounded-xl p-2 md:p-4 ${tkStyles.gameFrame}`}>

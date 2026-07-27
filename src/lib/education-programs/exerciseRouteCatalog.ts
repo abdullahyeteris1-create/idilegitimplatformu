@@ -9,6 +9,10 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "benzer-kelimeler": "/egzersizler/benzer-kelimeler",
   "kelime-bulma": "/egzersizler/kelime-bulma",
   "goz-egzersizleri-kolonlar": "/egzersizler/goz-egzersizleri-kolonlar",
+  "takistoskop": "/egzersizler/takistoskop",
+  "harf-rakam-sayma": "/egzersizler/harf-rakam-sayma",
+  "hafiza-gelistirme": "/egzersizler/hafiza-gelistirme",
+  "kart-eslestirme": "/egzersizler/kart-eslestirme",
 };
 
 export function resolveEducationProgramExerciseRoute(exerciseSlug: string): string | null {

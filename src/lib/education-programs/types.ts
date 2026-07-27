@@ -31,6 +31,38 @@ export type SquareVisionTaskSettings = {
   gridSize?: 7 | 9 | 11 | 13 | 15;
 };
 
+export type CatchSameTaskSettings = {
+  mode?: "word" | "letter" | "symbol" | "number";
+  speed?: 1500 | 1000 | 750 | 500;
+};
+
+export type SimilarWordsTaskSettings = {
+  boxCount?: 12 | 16 | 20 | 24;
+  targetDifferentCount?: 3 | 4 | 5 | 6 | 7 | 8;
+};
+
+export type TachistoscopeTaskSettings = {
+  speedMs?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
+  workMode?: "automatic" | "manual";
+  contentType?: "letter" | "number" | "mixed";
+};
+
+export type LetterNumberCountingFocusTaskSettings = {
+  mode?: "letters" | "numbers" | "mixed";
+  difficulty?: "normal" | "hard";
+  speedSeconds?: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+};
+
+export type MemoryGameTaskSettings = {
+  gridLayout?: "5x5" | "5x10" | "10x10";
+  displayMs?: 500 | 750 | 1000 | 1500 | 2000;
+};
+
+export type CardMatchingTaskSettings = {
+  previewDurationMs?: 2000 | 3000 | 4000 | 5000 | 7000 | 10000;
+  flipBackDelayMs?: 500 | 750 | 1000 | 1250 | 1500 | 2000;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

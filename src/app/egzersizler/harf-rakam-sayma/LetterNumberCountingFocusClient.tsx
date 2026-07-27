@@ -14,6 +14,10 @@ import {
   type CountingRound,
 } from "@/lib/exercise-engine/letterNumberCountingFocus";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -44,9 +48,17 @@ type CountingResult = {
 };
 
 const SPEED_OPTIONS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const MODE_OPTIONS: CountingMode[] = ["letters", "numbers", "mixed"];
+const DIFFICULTY_OPTIONS: CountingDifficulty[] = ["normal", "hard"];
+const START_LEVEL_OPTIONS = [1, 2, 3, 4];
 const ANSWER_OPTIONS = Array.from({ length: 30 }, (_, index) => index + 1);
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
+const EXPECTED_RESULT_EXERCISE_TYPE = "letter-number-counting-focus";
+
+function isValidStartLevel(value: number | null): boolean {
+  return value !== null && START_LEVEL_OPTIONS.includes(value);
+}
 
 const TOUCH_STYLE: CSSProperties = {
   touchAction: "manipulation",
@@ -65,7 +77,11 @@ function getFeedbackClass(tone: FeedbackTone): string {
   return `border-red-200 bg-red-50 text-red-800 ${styles.feedbackBad}`;
 }
 
-export function LetterNumberCountingFocusClient() {
+export function LetterNumberCountingFocusClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -77,13 +93,23 @@ export function LetterNumberCountingFocusClient() {
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const initialStartLevel = isValidStartLevel(educationProgramLaunch?.initialLevel ?? null)
+    ? (educationProgramLaunch!.initialLevel as number)
+    : 1;
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
-  const [mode, setMode] = useState<CountingMode>("letters");
-  const [difficulty, setDifficulty] = useState<CountingDifficulty>("normal");
-  const [startLevel, setStartLevel] = useState(1);
-  const [level, setLevel] = useState(1);
-  const [speedSeconds, setSpeedSeconds] = useState(8);
+  const [mode, setMode] = useState<CountingMode>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "mode", MODE_OPTIONS, "letters"),
+  );
+  const [difficulty, setDifficulty] = useState<CountingDifficulty>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "difficulty", DIFFICULTY_OPTIONS, "normal"),
+  );
+  const [startLevel, setStartLevel] = useState(initialStartLevel);
+  const [level, setLevel] = useState(initialStartLevel);
+  const [speedSeconds, setSpeedSeconds] = useState(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedSeconds", SPEED_OPTIONS, 8),
+  );
   const [remainingSeconds, setRemainingSeconds] = useState(8);
   const [round, setRound] = useState<CountingRound | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
@@ -98,6 +124,21 @@ export function LetterNumberCountingFocusClient() {
 
   const net = calculateNet(correctCount, wrongCount);
   const safeSpeedSeconds = getRoundDurationBySpeed(speedSeconds);
+
+  // Odev modunda ogretmenin belirledigi sure, Egitim Programi modunda gorev
+  // snapshot'inin durationSeconds degeri, serbest calismada sinirsizdir
+  // (mevcut davranis: yalniz Bitir/Sifirla ile durur).
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY,
+  );
+  const isAssignmentMode = useIsAssignmentMode();
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -233,20 +274,6 @@ export function LetterNumberCountingFocusClient() {
   }, [handleKeyDown, phase]);
 
   useEffect(() => {
-    if (phase !== "running") { clearTimer(); return; }
-    timerRef.current = window.setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          window.setTimeout(() => submitAnswer(null, "timeout"), 0);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearTimer();
-  }, [clearTimer, phase, submitAnswer]);
-
-  useEffect(() => {
     return () => { clearTimer(); clearFeedbackTimer(); };
   }, [clearFeedbackTimer, clearTimer]);
 
@@ -261,27 +288,31 @@ export function LetterNumberCountingFocusClient() {
     setPhase("running");
   };
 
-  const persistResult = async (payload: SecureExerciseResultInput) => {
-    if (saveInFlightRef.current || saveCompletedRef.current) return;
-    saveInFlightRef.current = true;
-    setSaveStatus("saving");
-    setSaveMessage("Sonuç kaydediliyor...");
-    try {
-      const saved = await saveExerciseResultSecure(payload);
-      saveCompletedRef.current = true;
-      setSaveStatus("success");
-      setSaveMessage(saved.assignmentCompletionStatus === "failed"
-        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
-        : "Sonuç başarıyla kaydedildi.");
-    } catch {
-      setSaveStatus("error");
-      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
-    } finally {
-      saveInFlightRef.current = false;
-    }
-  };
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) return;
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(saved.assignmentCompletionStatus === "failed"
+          ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+          : "Sonuç başarıyla kaydedildi.");
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
 
-  const finishExercise = () => {
+  const finishExercise = useCallback(() => {
     if (hasSavedResultRef.current) return;
     hasSavedResultRef.current = true;
     clearTimer();
@@ -317,7 +348,47 @@ export function LetterNumberCountingFocusClient() {
     });
     setPhase("completed");
     void persistResult(payload);
-  };
+  }, [
+    clearFeedbackTimer,
+    clearTimer,
+    correctCount,
+    difficulty,
+    level,
+    levelUpCount,
+    mode,
+    persistResult,
+    safeSpeedSeconds,
+    startLevel,
+    totalRounds,
+    unansweredCount,
+    wrongCount,
+  ]);
+
+  // Tur bazli cevap suresini sayan mevcut interval'in AYNISI - ikinci bir
+  // zamanlayici kurulmaz. Egitim Programi/odev gorev suresi
+  // (totalDurationSeconds, sinirsizsa serbest calisma) dolunca mevcut guvenli
+  // finishExercise akisini tetikler; dolmadiysa tur suresi eskisi gibi geri
+  // sayar.
+  useEffect(() => {
+    if (phase !== "running") { clearTimer(); return; }
+    timerRef.current = window.setInterval(() => {
+      if (Number.isFinite(totalDurationSeconds) && startedAtRef.current !== null) {
+        const elapsedTotalSeconds = Math.floor((Date.now() - startedAtRef.current) / 1000);
+        if (elapsedTotalSeconds >= totalDurationSeconds) {
+          window.setTimeout(() => finishExercise(), 0);
+          return;
+        }
+      }
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          window.setTimeout(() => submitAnswer(null, "timeout"), 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearTimer();
+  }, [clearTimer, finishExercise, phase, submitAnswer, totalDurationSeconds]);
 
   const handleSettingChange = (callback: () => void) => {
     callback();
@@ -337,7 +408,7 @@ export function LetterNumberCountingFocusClient() {
     <div className="flex flex-wrap items-end gap-1.5">
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Mod</span>
-        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
+        <select value={mode} onChange={(e) => handleSettingChange(() => setMode(e.target.value as CountingMode))} disabled={isEducationProgramMode} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           <option value="letters">Harf</option>
           <option value="numbers">Rakam</option>
           <option value="mixed">Harf+Rakam</option>
@@ -345,20 +416,20 @@ export function LetterNumberCountingFocusClient() {
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Seviye</span>
-        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
+        <select value={startLevel} onChange={(e) => { setStartLevel(Number(e.target.value)); resetToReady(Number(e.target.value)); }} disabled={isEducationProgramMode} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           {[1, 2, 3, 4].map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Zorluk</span>
-        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
+        <select value={difficulty} onChange={(e) => handleSettingChange(() => setDifficulty(e.target.value as CountingDifficulty))} disabled={isEducationProgramMode} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           <option value="normal">Normal</option>
           <option value="hard">Zor</option>
         </select>
       </label>
       <label className="flex shrink-0 flex-col gap-0.5">
         <span className={`text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 ${styles.settingsLabel}`}>Hiz</span>
-        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
+        <select value={speedSeconds} onChange={(e) => handleSettingChange(() => { const v = Number(e.target.value); setSpeedSeconds(v); setRemainingSeconds(v); })} disabled={isEducationProgramMode} className={`min-h-11 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.selectOverride}`}>
           {SPEED_OPTIONS.map((v) => <option key={v} value={v}>{v}s</option>)}
         </select>
       </label>
@@ -421,6 +492,16 @@ export function LetterNumberCountingFocusClient() {
         <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Harf / Rakam Sayma Odak Sonucu</h2>
         <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>{saveStatus === "success" ? "Calisma sonucu kaydedildi." : saveMessage}</p>
         {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
+        {completionStatus.state !== "idle" ? (
+          <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}>
+            <p>{completionStatus.message}</p>
+            {completionStatus.state === "error" && completionStatus.canRetry ? (
+              <button type="button" className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`} onClick={() => void retryTaskCompletion()}>
+                Program ilerlemesini yeniden dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
             <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Puan</p>

@@ -34,6 +34,27 @@ function errorStateFallback(): EducationProgramActionState {
   };
 }
 
+const CATCH_SAME_MODE_LABELS: Record<string, string> = {
+  word: "Kelime",
+  letter: "Harf",
+  symbol: "Sembol",
+  number: "Rakam",
+};
+
+// Sema-guduml formda enum alanlarin ham (kod) degerleri yerine gosterilecek
+// Turkce etiketler - anahtar "exerciseSlug:fieldKey" seklindedir, cunku ayni
+// alan adi (orn. "mode") farkli egzersizlerde farkli deger kumelerine
+// sahiptir. Eslesme yoksa ham deger (+ varsa unit) gosterilir.
+const ENUM_OPTION_LABELS: Record<string, Record<string, string>> = {
+  "goz-egzersizleri-kolonlar:flowDirection": { column: "Sütun Şeklinde", row: "Satır Şeklinde" },
+  "ayni-olani-yakala:mode": CATCH_SAME_MODE_LABELS,
+  "takistoskop:workMode": { automatic: "Otomatik", manual: "Manuel" },
+  "takistoskop:contentType": { letter: "Harf", number: "Rakam", mixed: "Karışık" },
+  "harf-rakam-sayma:mode": { letters: "Harfler", numbers: "Rakamlar", mixed: "Karışık" },
+  "harf-rakam-sayma:difficulty": { normal: "Normal", hard: "Zor" },
+  "hafiza-gelistirme:gridLayout": { "5x5": "5 x 5", "5x10": "5 x 10", "10x10": "10 x 10" },
+};
+
 const FIELD_CLASS =
   "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
 
@@ -499,15 +520,17 @@ export function EducationProgramTemplateEditor({
                           }
                           className={FIELD_CLASS}
                         >
-                          {field.options.map((option) => (
-                            <option key={option} value={option}>
-                              {field.key === "flowDirection"
-                                ? option === "column"
-                                  ? "Sütun Şeklinde"
-                                  : "Satır Şeklinde"
-                                : `${option}${field.unit ? ` ${field.unit}` : ""}`}
-                            </option>
-                          ))}
+                          {field.options.map((option) => {
+                            const enumLabel =
+                              ENUM_OPTION_LABELS[`${settingsSchema.exerciseSlug}:${field.key}`]?.[
+                                option as string
+                              ];
+                            return (
+                              <option key={option} value={option}>
+                                {enumLabel ?? `${option}${field.unit ? ` ${field.unit}` : ""}`}
+                              </option>
+                            );
+                          })}
                         </select>
                       </label>
                     ))

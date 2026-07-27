@@ -7,6 +7,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import styles from "@/components/exercises/catch-same-theme.module.css";
 
@@ -21,6 +22,7 @@ const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M"
 const SYMBOLS = ["★", "☆", "●", "○", "■", "□", "▲", "△", "◆", "◇", "♥", "♣", "♠"];
 const NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
+const MODE_OPTIONS: GameMode[] = ["word", "letter", "symbol", "number"];
 const SPEED_OPTIONS: SpeedOption[] = [1500, 1000, 750, 500];
 const DURATION_OPTIONS: DurationOption[] = [30, 60, 90];
 const EXPECTED_RESULT_EXERCISE_TYPE = "catch-same";
@@ -55,8 +57,12 @@ export function CatchSameExerciseClient({
     styles.themeRoot,
     isLight ? styles.lightTheme : styles.darkTheme,
   ].join(" ");
-  const [mode, setMode] = useState<GameMode>("word");
-  const [speed, setSpeed] = useState<SpeedOption>(1000);
+  const [mode, setMode] = useState<GameMode>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "mode", MODE_OPTIONS, "word"),
+  );
+  const [speed, setSpeed] = useState<SpeedOption>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speed", SPEED_OPTIONS, 1000),
+  );
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(60);
   const [status, setStatus] = useState<GameStatus>("ready");
   const [timeLeft, setTimeLeft] = useState<number>(60);
@@ -375,7 +381,7 @@ export function CatchSameExerciseClient({
         title="Aynı Olanı Yakala"
         subtitle={statusLabel}
         topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
-        bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5" hidden={isAssignmentMode || isEducationProgramMode}><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
+        bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused" || isEducationProgramMode} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused" || isEducationProgramMode} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5" hidden={isAssignmentMode || isEducationProgramMode}><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
         controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}>Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button> : <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>{saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
         onExit={() => router.push("/egzersizler")}
       >

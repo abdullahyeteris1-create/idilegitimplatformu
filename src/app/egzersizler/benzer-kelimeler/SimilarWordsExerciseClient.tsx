@@ -8,6 +8,7 @@ import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
@@ -180,6 +181,9 @@ function getGridClass(boxCount: BoxCount): string {
   return "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6";
 }
 
+const BOX_COUNT_OPTIONS: BoxCount[] = [12, 16, 20, 24];
+const TARGET_DIFFERENT_COUNT_OPTIONS: TargetDifferentCount[] = [3, 4, 5, 6, 7, 8];
+
 function formatDuration(seconds: number): string {
   const min = Math.floor(seconds / 60)
     .toString()
@@ -206,8 +210,17 @@ export function SimilarWordsExerciseClient({
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [durationSeconds, setDurationSeconds] = useState<DurationSeconds>(60);
-  const [boxCount, setBoxCount] = useState<BoxCount>(16);
-  const [targetDifferentCount, setTargetDifferentCount] = useState<TargetDifferentCount>(4);
+  const [boxCount, setBoxCount] = useState<BoxCount>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "boxCount", BOX_COUNT_OPTIONS, 16),
+  );
+  const [targetDifferentCount, setTargetDifferentCount] = useState<TargetDifferentCount>(() =>
+    pickEducationProgramSettingOption(
+      educationProgramLaunch?.settings,
+      "targetDifferentCount",
+      TARGET_DIFFERENT_COUNT_OPTIONS,
+      4,
+    ),
+  );
   const [remainingSeconds, setRemainingSeconds] = useState(60);
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
@@ -538,6 +551,7 @@ export function SimilarWordsExerciseClient({
                 <select
                   value={boxCount}
                   onChange={(event) => setBoxCount(Number(event.target.value) as BoxCount)}
+                  disabled={isEducationProgramMode}
                   className={swStyles.select}
                 >
                   <option value={12}>12</option>
@@ -551,6 +565,7 @@ export function SimilarWordsExerciseClient({
                 <select
                   value={targetDifferentCount}
                   onChange={(event) => setTargetDifferentCount(Number(event.target.value) as TargetDifferentCount)}
+                  disabled={isEducationProgramMode}
                   className={swStyles.select}
                 >
                   <option value={3}>3</option>
@@ -709,7 +724,7 @@ export function SimilarWordsExerciseClient({
         }
         bottomSettings={
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode}>
+            <label className="flex min-w-0 flex-col gap-1" hidden={isAssignmentMode || isEducationProgramMode}>
               <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${swStyles.settingsLabel}`}>Sure</span>
               <select
                 value={durationSeconds}
@@ -732,6 +747,7 @@ export function SimilarWordsExerciseClient({
               <select
                 value={boxCount}
                 onChange={(event) => setBoxCount(Number(event.target.value) as BoxCount)}
+                disabled={isEducationProgramMode}
                 className={swStyles.select}
               >
                 <option value={12}>12</option>
@@ -745,6 +761,7 @@ export function SimilarWordsExerciseClient({
               <select
                 value={targetDifferentCount}
                 onChange={(event) => setTargetDifferentCount(Number(event.target.value) as TargetDifferentCount)}
+                disabled={isEducationProgramMode}
                 className={swStyles.select}
               >
                 <option value={3}>3</option>

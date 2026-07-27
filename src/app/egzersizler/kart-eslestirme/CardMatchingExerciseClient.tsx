@@ -19,7 +19,11 @@ import {
   shouldLevelUp,
   type MatchingCard,
 } from "@/lib/exercise-engine/cardMatching";
-import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -40,6 +44,7 @@ type ExercisePhase =
   | "completed";
 
 type FeedbackTone = "ok" | "bad" | "info";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type FeedbackState = {
   tone: FeedbackTone;
@@ -63,6 +68,11 @@ const LEVEL_OPTIONS = [1, 2, 3, 4, 5];
 const DELAY_OPTIONS = [500, 750, 1000, 1250, 1500, 2000];
 const PREVIEW_OPTIONS = [2000, 3000, 4000, 5000, 7000, 10000];
 const CARD_MATCHING_SELECT_CLASS = `${FULLSCREEN_SELECT_CLASS} !h-8 ${styles.selectOverride}`;
+const EXPECTED_RESULT_EXERCISE_TYPE = "card-matching";
+
+function isValidLevel(value: number | null): boolean {
+  return value !== null && LEVEL_OPTIONS.includes(value);
+}
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -115,22 +125,39 @@ function getGridClass(cardCount: number): string {
   return "grid-cols-6 grid-rows-4 lg:grid-cols-8 lg:grid-rows-3";
 }
 
-export function CardMatchingExerciseClient() {
+export function CardMatchingExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const initialLevel = isValidLevel(educationProgramLaunch?.initialLevel ?? null)
+    ? (educationProgramLaunch!.initialLevel as number)
+    : 1;
 
   const timerRef = useRef<number | null>(null);
   const resolveRef = useRef<number | null>(null);
   const previewRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
-  const [startLevel, setStartLevel] = useState(1);
-  const [level, setLevel] = useState(1);
-  const [previewDurationMs, setPreviewDurationMs] = useState(4000);
-  const [flipBackDelayMs, setFlipBackDelayMs] = useState(1000);
+  const [startLevel, setStartLevel] = useState(initialLevel);
+  const [level, setLevel] = useState(initialLevel);
+  const [previewDurationMs, setPreviewDurationMs] = useState(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "previewDurationMs", PREVIEW_OPTIONS, 4000),
+  );
+  const [flipBackDelayMs, setFlipBackDelayMs] = useState(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "flipBackDelayMs", DELAY_OPTIONS, 1000),
+  );
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const [cards, setCards] = useState<MatchingCard[]>([]);
   const [openedCardIds, setOpenedCardIds] = useState<string[]>([]);
@@ -151,6 +178,21 @@ export function CardMatchingExerciseClient() {
   const net = calculateNet(levelCorrectCount, levelWrongCount);
   const totalMoves = correctCount + wrongCount;
   const pairCount = getPairCountByLevel(level);
+
+  // Odev modunda ogretmenin belirledigi sure, Egitim Programi modunda gorev
+  // snapshot'inin durationSeconds degeri, serbest calismada sinirsizdir
+  // (mevcut davranis: yalniz Bitir/Yeniden Baslat ile durur).
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY,
+  );
+  const isAssignmentMode = useIsAssignmentMode();
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -186,6 +228,9 @@ export function CardMatchingExerciseClient() {
       clearPreviewTimer();
 
       hasSavedResultRef.current = false;
+      saveInFlightRef.current = false;
+      saveCompletedRef.current = false;
+      pendingResultRef.current = null;
 
       setLevel(nextStartLevel);
       setElapsedSeconds(0);
@@ -198,6 +243,8 @@ export function CardMatchingExerciseClient() {
       setFeedback(null);
       setResult(null);
       setBrokenVisualIds([]);
+      setSaveStatus("idle");
+      setSaveMessage("");
 
       createDeck(nextStartLevel);
       setPhase("ready");
@@ -441,7 +488,33 @@ export function CardMatchingExerciseClient() {
     });
   };
 
-  const finishExercise = () => {
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) return;
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
+  const finishExercise = useCallback(() => {
     if (hasSavedResultRef.current) {
       return;
     }
@@ -459,7 +532,7 @@ export function CardMatchingExerciseClient() {
     // Sunucu tarafli guvenli kayit: ogrenci kimligi imzali oturum
     // cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev, ogrenci
     // calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
-    void saveExerciseResultSecure({
+    const payload = {
       exerciseType: "card-matching",
       exerciseTitle: "Kart Eşleştirme Çalışması",
       durationSeconds,
@@ -485,7 +558,9 @@ export function CardMatchingExerciseClient() {
         scoreRule: "correctCount * 10 - wrongCount * 5",
         maxLevel: 5,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    pendingResultRef.current = payload;
 
     setResult({
       correctCount,
@@ -501,7 +576,43 @@ export function CardMatchingExerciseClient() {
     });
 
     setPhase("completed");
-  };
+    void persistResult(payload);
+  }, [
+    clearPreviewTimer,
+    clearResolveTimer,
+    clearTimer,
+    completedRounds,
+    correctCount,
+    elapsedSeconds,
+    flipBackDelayMs,
+    level,
+    levelCorrectCount,
+    levelUpCount,
+    levelWrongCount,
+    pairCount,
+    persistResult,
+    previewDurationMs,
+    startLevel,
+    totalMoves,
+    wrongCount,
+  ]);
+
+  // Egitim Programi/odev gorev suresi dolunca mevcut guvenli bitirme akisini
+  // (finishExercise, hasSavedResultRef ile idempotent, mevcut clearTimer/
+  // clearResolveTimer/clearPreviewTimer cagrilarini zaten yapiyor) tetikler.
+  // Serbest calismada totalDurationSeconds sonsuz oldugu icin bu efekt
+  // hicbir zaman tetiklenmez - mevcut sinirsiz standalone davranis degismez.
+  useEffect(() => {
+    if (
+      (phase !== "playing" && phase !== "preview") ||
+      !Number.isFinite(totalDurationSeconds)
+    ) {
+      return;
+    }
+    if (elapsedSeconds >= totalDurationSeconds) {
+      finishExercise();
+    }
+  }, [elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
 
   const handleStartLevelChange = (nextLevel: number) => {
     setStartLevel(nextLevel);
@@ -534,7 +645,7 @@ export function CardMatchingExerciseClient() {
           value={startLevel}
           onChange={(event) => handleStartLevelChange(Number(event.target.value))}
           className={CARD_MATCHING_SELECT_CLASS}
-          disabled={phase === "playing" || phase === "preview"}
+          disabled={phase === "playing" || phase === "preview" || isEducationProgramMode}
         >
           {LEVEL_OPTIONS.map((item) => (
             <option key={item} value={item}>
@@ -552,7 +663,7 @@ export function CardMatchingExerciseClient() {
           value={previewDurationMs}
           onChange={(event) => setPreviewDurationMs(Number(event.target.value))}
           className={CARD_MATCHING_SELECT_CLASS}
-          disabled={phase === "playing" || phase === "preview"}
+          disabled={phase === "playing" || phase === "preview" || isEducationProgramMode}
         >
           {PREVIEW_OPTIONS.map((item) => (
             <option key={item} value={item}>
@@ -570,7 +681,7 @@ export function CardMatchingExerciseClient() {
           value={flipBackDelayMs}
           onChange={(event) => setFlipBackDelayMs(Number(event.target.value))}
           className={CARD_MATCHING_SELECT_CLASS}
-          disabled={phase === "playing" || phase === "preview"}
+          disabled={phase === "playing" || phase === "preview" || isEducationProgramMode}
         >
           {DELAY_OPTIONS.map((item) => (
             <option key={item} value={item}>
@@ -718,8 +829,50 @@ export function CardMatchingExerciseClient() {
           <h2 className="text-2xl font-bold">Kart Eşleştirme Sonucu</h2>
 
           <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
-            Çalışma sonucu kaydedildi.
+            {saveStatus === "success" ? "Çalışma sonucu kaydedildi." : saveMessage}
           </p>
+
+          {saveStatus !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                saveStatus === "error" || saveMessage.includes("görev")
+                  ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                  : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`
+              }`}
+            >
+              <p>{saveMessage}</p>
+              {saveStatus === "error" ? (
+                <button
+                  type="button"
+                  className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`}
+                  onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}
+                >
+                  Yeniden Dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {completionStatus.state !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                completionStatus.state === "error"
+                  ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                  : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`
+              }`}
+            >
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button
+                  type="button"
+                  className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`}
+                  onClick={() => void retryTaskCompletion()}
+                >
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -789,6 +942,7 @@ export function CardMatchingExerciseClient() {
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <button
               type="button"
+              disabled={saveStatus !== "success"}
               className={ACTION_BUTTON_CLASS}
               style={TOUCH_STYLE}
               onClick={() => resetToReady()}
@@ -798,6 +952,7 @@ export function CardMatchingExerciseClient() {
 
             <button
               type="button"
+              disabled={saveStatus !== "success"}
               className={ACTION_BUTTON_CLASS}
               style={TOUCH_STYLE}
               onClick={() =>

@@ -10,7 +10,11 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -28,6 +32,7 @@ type MemoryGridLayout = "5x5" | "5x10" | "10x10";
 type DisplayMs = 500 | 750 | 1000 | 1500 | 2000;
 type FontSizePx = 12 | 16 | 20 | 24;
 type FeedbackType = "correct" | "wrong" | "level-up" | "info";
+type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type GridInfo = {
   rows: number;
@@ -37,10 +42,16 @@ type GridInfo = {
 };
 
 const LEVEL_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+const GRID_LAYOUT_OPTIONS: MemoryGridLayout[] = ["5x5", "5x10", "10x10"];
 const DISPLAY_OPTIONS: DisplayMs[] = [500, 750, 1000, 1500, 2000];
 const FONT_OPTIONS: FontSizePx[] = [12, 16, 20, 24];
 const NET_TARGET = 10;
 const MAX_LEVEL = 10;
+const EXPECTED_RESULT_EXERCISE_TYPE = "memory-game";
+
+function isValidLevel(value: number | null): boolean {
+  return value !== null && LEVEL_OPTIONS.includes(value);
+}
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation pointer-events-auto rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -133,13 +144,24 @@ function getRoundPhaseLabel(roundPhase: RoundPhase): string {
   return "Sonuç";
 }
 
-export function MemoryGameExerciseClient() {
+export function MemoryGameExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const initialLevel = isValidLevel(educationProgramLaunch?.initialLevel ?? null)
+    ? (educationProgramLaunch!.initialLevel as number)
+    : 2;
 
   const hasSavedResultRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const prepareTimerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
@@ -148,10 +170,16 @@ export function MemoryGameExerciseClient() {
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [roundPhase, setRoundPhase] = useState<RoundPhase>("prepare");
 
-  const [gridLayout, setGridLayout] = useState<MemoryGridLayout>("5x5");
-  const [level, setLevel] = useState(2);
-  const [displayMs, setDisplayMs] = useState<DisplayMs>(1000);
+  const [gridLayout, setGridLayout] = useState<MemoryGridLayout>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "gridLayout", GRID_LAYOUT_OPTIONS, "5x5"),
+  );
+  const [level, setLevel] = useState(initialLevel);
+  const [displayMs, setDisplayMs] = useState<DisplayMs>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "displayMs", DISPLAY_OPTIONS, 1000),
+  );
   const [fontSize, setFontSize] = useState<FontSizePx>(16);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   const [roundNumber, setRoundNumber] = useState(1);
   const [levelCorrectCount, setLevelCorrectCount] = useState(0);
@@ -174,6 +202,22 @@ export function MemoryGameExerciseClient() {
   const net = levelCorrectCount - levelWrongCount;
   const score = calculateScore(totalCorrectCount, totalWrongCount);
   const successRate = calculateSuccessRate(totalCorrectCount, totalWrongCount);
+
+  // Odev modunda ogretmenin belirledigi sure, Egitim Programi modunda gorev
+  // snapshot'inin durationSeconds degeri, serbest calismada sinirsizdir
+  // (mevcut davranis: yalniz Bitir/Yeniden Baslat ile durur).
+  const totalDurationSeconds = useAssignedDurationSeconds(
+    educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY,
+  );
+  const isAssignmentMode = useIsAssignmentMode();
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const {
+    completionStatus,
+    completeTaskAfterResultSave,
+    retryTaskCompletion,
+  } = useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
+
   const clearRoundTimers = useCallback(() => {
     if (prepareTimerRef.current !== null) {
       window.clearTimeout(prepareTimerRef.current);
@@ -225,6 +269,9 @@ export function MemoryGameExerciseClient() {
   const resetToReady = useCallback(() => {
     clearRoundTimers();
     hasSavedResultRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
     startedAtRef.current = null;
 
     setPhase("ready");
@@ -241,6 +288,8 @@ export function MemoryGameExerciseClient() {
     setSelectedWrong(null);
     setFeedbackType(null);
     setFeedbackMessage("");
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, [clearRoundTimers]);
 
   const handleIntroStart = () => {
@@ -356,6 +405,32 @@ export function MemoryGameExerciseClient() {
     }
   };
 
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) return;
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
   const finishExercise = useCallback(() => {
     if (hasSavedResultRef.current) return;
 
@@ -376,7 +451,7 @@ export function MemoryGameExerciseClient() {
     // Sunucu tarafli guvenli kayit: ogrenci kimligi imzali oturum
     // cookie'sinden turetilir ve sonuc odev gorevine baglanir (gorev, ogrenci
     // calismayi bitirdigi anda tamamlanir - sure dolmasi beklenmez).
-    void saveExerciseResultSecure({
+    const payload = {
       exerciseType: "memory-game",
       exerciseTitle: "Hafıza Geliştirme",
       durationSeconds,
@@ -398,9 +473,11 @@ export function MemoryGameExerciseClient() {
         roundNumber,
         rule: "Seviye 2-10. Seviye sayısı kadar kutu yanar. 10 net olunca otomatik seviye artar.",
       },
-    });
+    } satisfies SecureExerciseResultInput;
 
+    pendingResultRef.current = payload;
     setPhase("result");
+    void persistResult(payload);
   }, [
     clearRoundTimers,
     displayMs,
@@ -414,10 +491,22 @@ export function MemoryGameExerciseClient() {
     levelUpCount,
     levelWrongCount,
     net,
+    persistResult,
     roundNumber,
     totalCorrectCount,
     totalWrongCount,
   ]);
+
+  // Egitim Programi/odev gorev suresi dolunca mevcut guvenli bitirme akisini
+  // (finishExercise, hasSavedResultRef ile idempotent) tetikler. Serbest
+  // calismada totalDurationSeconds sonsuz oldugu icin bu efekt hicbir zaman
+  // tetiklenmez - mevcut sinirsiz standalone davranis degismez.
+  useEffect(() => {
+    if (phase !== "play" || !Number.isFinite(totalDurationSeconds)) return;
+    if (elapsedSeconds >= totalDurationSeconds) {
+      finishExercise();
+    }
+  }, [elapsedSeconds, finishExercise, phase, totalDurationSeconds]);
 
   useEffect(() => {
     if (phase !== "play") return;
@@ -449,7 +538,7 @@ export function MemoryGameExerciseClient() {
             setGridLayout(event.target.value as MemoryGridLayout)
           }
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-          disabled={phase === "play"}
+          disabled={phase === "play" || isEducationProgramMode}
         >
           <option value="5x5">5 x 5</option>
           <option value="5x10">5 x 10</option>
@@ -465,7 +554,7 @@ export function MemoryGameExerciseClient() {
           value={level}
           onChange={(event) => setLevel(Number(event.target.value))}
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-          disabled={phase === "play"}
+          disabled={phase === "play" || isEducationProgramMode}
         >
           {LEVEL_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -483,7 +572,7 @@ export function MemoryGameExerciseClient() {
           value={displayMs}
           onChange={(event) => setDisplayMs(Number(event.target.value) as DisplayMs)}
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-          disabled={phase === "play"}
+          disabled={phase === "play" || isEducationProgramMode}
         >
           {DISPLAY_OPTIONS.map((value) => (
             <option key={value} value={value}>
@@ -599,8 +688,50 @@ export function MemoryGameExerciseClient() {
           <h2 className="text-2xl font-bold">Hafıza Geliştirme Sonucu</h2>
 
           <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
-            Çalışma sonucu kaydedildi.
+            {saveStatus === "success" ? "Çalışma sonucu kaydedildi." : saveMessage}
           </p>
+
+          {saveStatus !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                saveStatus === "error" || saveMessage.includes("görev")
+                  ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                  : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`
+              }`}
+            >
+              <p>{saveMessage}</p>
+              {saveStatus === "error" ? (
+                <button
+                  type="button"
+                  className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`}
+                  onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}
+                >
+                  Yeniden Dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {completionStatus.state !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                completionStatus.state === "error"
+                  ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                  : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`
+              }`}
+            >
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button
+                  type="button"
+                  className={`mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white ${styles.retryButtonOverride}`}
+                  onClick={() => void retryTaskCompletion()}
+                >
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -661,6 +792,7 @@ export function MemoryGameExerciseClient() {
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
+              disabled={saveStatus !== "success"}
               className={ACTION_BUTTON_CLASS}
               style={TOUCH_STYLE}
               onClick={handleRestart}
@@ -670,6 +802,7 @@ export function MemoryGameExerciseClient() {
 
             <button
               type="button"
+              disabled={saveStatus !== "success"}
               className={ACTION_BUTTON_CLASS}
               style={TOUCH_STYLE}
               onClick={() =>

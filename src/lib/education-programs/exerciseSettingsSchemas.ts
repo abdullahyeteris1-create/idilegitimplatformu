@@ -1,15 +1,16 @@
 import type { EducationProgramTaskSettings } from "@/lib/education-programs/types";
 
-// Faz 1 kapsaminda yalniz 3 egzersiz icin ogretmen tarafindan gorev bazinda
-// duzenlenebilir ayar semasi tanimlanir: goz-egzersizleri-kolonlar,
-// kelime-bulma, kare-gorme-alani. Alan adlari ve izin verilen degerler ilgili
-// egzersiz client component'lerindeki gercek state/option tanimlarindan
-// birebir alinmistir (bkz. ColumnEyeExerciseClient.tsx, WordFindingExerciseClient.tsx,
-// SquareVisionExerciseClient.tsx). Sure (durationSeconds) ve seviye
-// (startingLevel) zaten ayri kolonlar/prop'lar uzerinden calistigi icin bu
-// semanin disindadir. Bu dosya "use client" icermez, hem sunucu (server
-// action/validation) hem istemci (egzersiz client'lari, sablon editoru)
-// tarafindan guvenle import edilebilir.
+// Ogretmen tarafindan gorev bazinda duzenlenebilir ayar semasi tanimlanmis
+// egzersizler: goz-egzersizleri-kolonlar, kelime-bulma, kare-gorme-alani,
+// ayni-olani-yakala, benzer-kelimeler. Alan adlari ve izin verilen degerler
+// ilgili egzersiz client component'lerindeki gercek state/option
+// tanimlarindan birebir alinmistir (bkz. ColumnEyeExerciseClient.tsx,
+// WordFindingExerciseClient.tsx, SquareVisionExerciseClient.tsx,
+// CatchSameExerciseClient.tsx, SimilarWordsExerciseClient.tsx). Sure
+// (durationSeconds) ve seviye (startingLevel) zaten ayri kolonlar/prop'lar
+// uzerinden calistigi icin bu semanin disindadir. Bu dosya "use client"
+// icermez, hem sunucu (server action/validation) hem istemci (egzersiz
+// client'lari, sablon editoru) tarafindan guvenle import edilebilir.
 export type ExerciseSettingsFieldType = "integer" | "enum";
 
 export type ExerciseSettingsFieldDef = {
@@ -80,10 +81,158 @@ const SQUARE_VISION_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const CATCH_SAME_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "ayni-olani-yakala",
+  fields: [
+    {
+      key: "mode",
+      label: "Mod",
+      type: "enum",
+      options: ["word", "letter", "symbol", "number"],
+      defaultValue: "word",
+    },
+    {
+      key: "speed",
+      label: "Hız",
+      type: "integer",
+      options: [1500, 1000, 750, 500],
+      defaultValue: 1000,
+      unit: "ms",
+    },
+  ],
+};
+
+const SIMILAR_WORDS_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "benzer-kelimeler",
+  fields: [
+    {
+      key: "boxCount",
+      label: "Kutu Sayısı",
+      type: "integer",
+      options: [12, 16, 20, 24],
+      defaultValue: 16,
+    },
+    {
+      key: "targetDifferentCount",
+      label: "Hedef Kelime Sayısı",
+      type: "integer",
+      options: [3, 4, 5, 6, 7, 8],
+      defaultValue: 4,
+    },
+  ],
+};
+
+const TACHISTOSCOPE_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "takistoskop",
+  fields: [
+    {
+      key: "speedMs",
+      label: "Gösterim Hızı",
+      type: "integer",
+      options: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+      defaultValue: 300,
+      unit: "ms",
+    },
+    {
+      key: "workMode",
+      label: "Çalışma Şekli",
+      type: "enum",
+      options: ["automatic", "manual"],
+      defaultValue: "manual",
+    },
+    {
+      key: "contentType",
+      label: "İçerik Türü",
+      type: "enum",
+      options: ["letter", "number", "mixed"],
+      defaultValue: "letter",
+    },
+  ],
+};
+
+const LETTER_NUMBER_COUNTING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "harf-rakam-sayma",
+  fields: [
+    {
+      key: "mode",
+      label: "Mod",
+      type: "enum",
+      options: ["letters", "numbers", "mixed"],
+      defaultValue: "letters",
+    },
+    {
+      key: "difficulty",
+      label: "Zorluk",
+      type: "enum",
+      options: ["normal", "hard"],
+      defaultValue: "normal",
+    },
+    {
+      key: "speedSeconds",
+      label: "Hız",
+      type: "integer",
+      options: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      defaultValue: 8,
+      unit: "saniye",
+    },
+  ],
+};
+
+const MEMORY_GAME_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "hafiza-gelistirme",
+  fields: [
+    {
+      key: "gridLayout",
+      label: "Izgara Düzeni",
+      type: "enum",
+      options: ["5x5", "5x10", "10x10"],
+      defaultValue: "5x5",
+    },
+    {
+      key: "displayMs",
+      label: "Gösterim Süresi",
+      type: "integer",
+      options: [500, 750, 1000, 1500, 2000],
+      defaultValue: 1000,
+      unit: "ms",
+    },
+  ],
+};
+
+const CARD_MATCHING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "kart-eslestirme",
+  fields: [
+    {
+      key: "previewDurationMs",
+      label: "Kartları Görme Süresi",
+      type: "integer",
+      options: [2000, 3000, 4000, 5000, 7000, 10000],
+      defaultValue: 4000,
+      unit: "ms",
+    },
+    {
+      key: "flipBackDelayMs",
+      label: "Yanlış Eşleşme Kapanma Süresi",
+      type: "integer",
+      options: [500, 750, 1000, 1250, 1500, 2000],
+      defaultValue: 1000,
+      unit: "ms",
+    },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
-  [EYE_COLUMNS_SETTINGS_SCHEMA, WORD_FINDING_SETTINGS_SCHEMA, SQUARE_VISION_SETTINGS_SCHEMA].map(
-    (schema) => [schema.exerciseSlug, schema],
-  ),
+  [
+    EYE_COLUMNS_SETTINGS_SCHEMA,
+    WORD_FINDING_SETTINGS_SCHEMA,
+    SQUARE_VISION_SETTINGS_SCHEMA,
+    CATCH_SAME_SETTINGS_SCHEMA,
+    SIMILAR_WORDS_SETTINGS_SCHEMA,
+    TACHISTOSCOPE_SETTINGS_SCHEMA,
+    LETTER_NUMBER_COUNTING_SETTINGS_SCHEMA,
+    MEMORY_GAME_SETTINGS_SCHEMA,
+    CARD_MATCHING_SETTINGS_SCHEMA,
+  ].map((schema) => [schema.exerciseSlug, schema]),
 );
 
 export function getExerciseSettingsSchema(
