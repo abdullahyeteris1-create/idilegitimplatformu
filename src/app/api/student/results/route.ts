@@ -161,6 +161,24 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     scoreRule: { type: "string", maxLength: 120 },
     maxLevel: { type: "integer", min: 1, max: 5 },
   },
+  "block-reading": {
+    category: { type: "string", maxLength: 80 },
+    textTitle: { type: "string", maxLength: 160 },
+    totalWords: { type: "integer", min: 0, max: 1_000_000 },
+    totalBlocks: { type: "integer", min: 0, max: 1_000_000 },
+    blockSize: { type: "integer", min: 1, max: 5 },
+    speedMode: { type: "string", values: ["interval", "wpm"] },
+    intervalMs: { type: "integer", min: 100, max: 60_000 },
+    wordsPerMinute: { type: "integer", min: 1, max: 10_000 },
+    fontSize: { type: "integer", min: 24, max: 56 },
+    // Egitim Programi coklu-metin biriken sure modeli icin eklendi (bkz.
+    // BlockReadingExerciseClient.tsx) - completedTextCount yalniz sonuna
+    // kadar tamamlanan metinleri sayar, yarida birakilanlari saymaz.
+    completedTextCount: { type: "integer", min: 0, max: 1_000 },
+    assignedDurationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    lastTextId: { type: "string", maxLength: 128 },
+  },
 };
 
 type ValidatedResultBody = {

@@ -111,6 +111,15 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
+  {
+    slug: "blok-okuma",
+    title: "Blok Okuma",
+    resultExerciseType: "block-reading",
+    supportsLevel: false,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
 ] as const;
 
 export const EDUCATION_PROGRAM_EXERCISE_BY_SLUG = new Map<

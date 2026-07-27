@@ -63,6 +63,16 @@ export type CardMatchingTaskSettings = {
   flipBackDelayMs?: 500 | 750 | 1000 | 1250 | 1500 | 2000;
 };
 
+// intervalMs ve wordsPerMinute her ikisi de semada bagimsiz alan olarak
+// bulunur (bkz. exerciseSettingsSchemas.ts) - client yalniz aktif speedMode
+// ile eslesen degeri kullanir; semada kosullu/bagimli alan destegi yoktur.
+export type BlockReadingTaskSettings = {
+  blockSize?: 1 | 2 | 3 | 4 | 5;
+  speedMode?: "interval" | "wpm";
+  intervalMs?: 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 5000;
+  wordsPerMinute?: 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

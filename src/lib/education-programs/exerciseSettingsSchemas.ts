@@ -221,6 +221,48 @@ const CARD_MATCHING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+// intervalMs ve wordsPerMinute ikisi de her zaman semada bulunur: mevcut
+// ExerciseSettingsFieldDef yapisi kosullu/bagimli alan (bir alanin baska bir
+// alanin degerine gore gorunur/gecerli olmasi) desteklemez - yalniz duz
+// "type: integer|enum" + sabit options listesi vardir. Bu yuzden speedMode'a
+// gore yalniz biri anlamli olsa da iki alan da bagimsiz sekilde tanimlanir;
+// BlockReadingExerciseClient yalniz aktif speedMode ile eslesen degeri
+// gercekten kullanir, digeri sessizce goz ardi edilir.
+const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "blok-okuma",
+  fields: [
+    {
+      key: "blockSize",
+      label: "Blok Boyutu",
+      type: "integer",
+      options: [1, 2, 3, 4, 5],
+      defaultValue: 3,
+    },
+    {
+      key: "speedMode",
+      label: "Hız Modu",
+      type: "enum",
+      options: ["interval", "wpm"],
+      defaultValue: "interval",
+    },
+    {
+      key: "intervalMs",
+      label: "Blok Aralığı",
+      type: "integer",
+      options: [250, 500, 750, 1000, 1500, 2000, 3000, 5000],
+      defaultValue: 750,
+      unit: "ms",
+    },
+    {
+      key: "wordsPerMinute",
+      label: "Dakikadaki Kelime Sayısı",
+      type: "integer",
+      options: [50, 100, 150, 200, 250, 300, 400, 500],
+      defaultValue: 150,
+    },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -232,6 +274,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     LETTER_NUMBER_COUNTING_SETTINGS_SCHEMA,
     MEMORY_GAME_SETTINGS_SCHEMA,
     CARD_MATCHING_SETTINGS_SCHEMA,
+    BLOCK_READING_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

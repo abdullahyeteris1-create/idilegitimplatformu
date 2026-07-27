@@ -42,3 +42,42 @@ export function calculateIntervalMs(options: CalculateIntervalOptions): number {
   return wordsPerMinuteToDelay(safeWordsPerMinute, normalizedBlockSize);
 }
 
+// Egitim Programi coklu-metin sure modeli icin saf (side-effect'siz) yardimci
+// fonksiyonlar. Toplam aktif sure = onceki metinlerde biriken sure +
+// su anki metinde gecen sure; bu deger yalniz "phase === running && !paused"
+// iken artan mevcut elapsedSeconds sayacindan turetilir (Date.now() farki
+// KULLANILMAZ, cunku o fark pause suresini de icerir).
+export function calculateTotalActiveSeconds(
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): number {
+  return Math.max(0, cumulativeActiveSeconds) + Math.max(0, currentTextActiveSeconds);
+}
+
+export function calculateRemainingActiveSeconds(
+  assignedDurationSeconds: number,
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): number {
+  if (!Number.isFinite(assignedDurationSeconds)) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const totalActiveSeconds = calculateTotalActiveSeconds(cumulativeActiveSeconds, currentTextActiveSeconds);
+  return Math.max(assignedDurationSeconds - totalActiveSeconds, 0);
+}
+
+export function hasReachedAssignedDuration(
+  assignedDurationSeconds: number,
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): boolean {
+  if (!Number.isFinite(assignedDurationSeconds)) {
+    return false;
+  }
+
+  return (
+    calculateTotalActiveSeconds(cumulativeActiveSeconds, currentTextActiveSeconds) >= assignedDurationSeconds
+  );
+}
+
