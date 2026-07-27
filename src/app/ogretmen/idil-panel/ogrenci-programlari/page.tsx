@@ -47,8 +47,7 @@ export default async function StudentEducationProgramsPage() {
                 Atanmış programlar
               </h2>
               <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
-                Bu ekranda yalnız görüntüleme yapılır; ilerleme davranışları sonraki
-                fazın kapsamındadır.
+                Programları görüntüleyebilir veya kalıcı olarak silebilirsiniz.
               </p>
             </div>
             <Link

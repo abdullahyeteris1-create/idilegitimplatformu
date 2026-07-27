@@ -670,6 +670,49 @@ export async function listStudentEducationPrograms(
   }
 }
 
+// Kalici (hard) silme - deneme ogrencilerine atanmis programlarin
+// kaldirilip ayni ogrenciye yeniden program atanabilmesi icin. student_
+// education_program_days/_tasks ON DELETE CASCADE ile otomatik temizlenir.
+// Ogrencinin kendisi (students tablosu), kaynak sablon (education_program_
+// templates) ve sonuc kayitlari (exercise_results, okuma testi gecmisi) bu
+// tabloya hicbir FK ile bagli degildir - bu fonksiyon yalniz tek bir
+// student_education_programs satirini hedefler, baska hicbir tabloya
+// insert/update/delete uygulamaz.
+export async function deleteStudentEducationProgram(
+  supabase: SupabaseClient,
+  programId: string,
+): Promise<StudentEducationProgramRepositoryResult<{ programId: string }>> {
+  if (!isEducationProgramUuid(programId)) {
+    return studentEducationProgramFailure("not_found", "Öğrenci programı bulunamadı.");
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(STUDENT_EDUCATION_PROGRAMS_TABLE)
+      .delete()
+      .eq("id", programId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      return studentEducationProgramFailure(
+        "database",
+        getStudentEducationProgramDatabaseMessage(error),
+      );
+    }
+    if (!data) {
+      return studentEducationProgramFailure("not_found", "Öğrenci programı bulunamadı.");
+    }
+
+    return { ok: true, value: { programId } };
+  } catch (error) {
+    return studentEducationProgramFailure(
+      "database",
+      getStudentEducationProgramDatabaseMessage(error),
+    );
+  }
+}
+
 export async function getStudentEducationProgramDetail(
   supabase: SupabaseClient,
   programId: string,
