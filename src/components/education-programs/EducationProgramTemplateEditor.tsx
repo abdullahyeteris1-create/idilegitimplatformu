@@ -54,6 +54,7 @@ const ENUM_OPTION_LABELS: Record<string, Record<string, string>> = {
   "harf-rakam-sayma:difficulty": { normal: "Normal", hard: "Zor" },
   "hafiza-gelistirme:gridLayout": { "5x5": "5 x 5", "5x10": "5 x 10", "10x10": "10 x 10" },
   "blok-okuma:speedMode": { interval: "Atlama Hızı (ms)", wpm: "Kelime / Dakika" },
+  "golgeleme:speedMode": { interval: "Atlama Hızı (ms)", wpm: "Kelime / Dakika" },
 };
 
 const FIELD_CLASS =

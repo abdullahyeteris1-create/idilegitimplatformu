@@ -9,15 +9,22 @@ import {
   calculateCharacterCount,
   calculateIntervalMs,
   calculateReadingDuration,
+  calculateShadowReadingRemainingActiveSeconds,
+  calculateShadowReadingTotalActiveSeconds,
   createWordBlocks,
   formatDuration,
   getActiveBlockRange,
+  hasShadowReadingReachedAssignedDuration,
   splitTextIntoWords,
   type ShadowReadingSpeedMode,
 } from "@/lib/exercise-engine/shadowReading";
-import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
+import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
@@ -55,6 +62,20 @@ type ShadowReadingResult = {
   intervalMs: number;
 };
 
+type SaveStatus = "idle" | "saving" | "success" | "error";
+type NewTextNotice = {
+  cumulativeActiveSeconds: number;
+  remainingSeconds: number;
+  completedTextCount: number;
+};
+
+const EXPECTED_RESULT_EXERCISE_TYPE = "shadow-reading";
+// Result API whitelist ust siniriyla ayni (bkz. route.ts MAX_DURATION_SECONDS)
+// - gercek biriken aktif sure gonderilir, yalniz bu guvenlik siniriyla kirpilir.
+const MAX_RESULT_DURATION_SECONDS = 21_600;
+const SPEED_MODE_OPTIONS: ShadowReadingSpeedMode[] = ["interval", "wpm"];
+const WORDS_PER_MINUTE_OPTIONS = [50, 100, 150, 200, 250, 300, 400, 500];
+
 const BLOCK_SIZE_OPTIONS: BlockSize[] = [1, 2, 3, 4, 5];
 const JUMP_SPEED_OPTIONS: JumpSpeedMs[] = [
   ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
@@ -77,7 +98,11 @@ function normalizeWordsPerMinute(value: number): number {
   return normalizeReadingSpeed(value, 150, 1);
 }
 
-export function ShadowReadingExerciseClient() {
+export function ShadowReadingExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -86,6 +111,20 @@ export function ShadowReadingExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
   const readingAreaRef = useRef<HTMLDivElement | null>(null);
   const activeWordRef = useRef<HTMLSpanElement | null>(null);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  // Egitim Programi coklu-metin biriken sure modeli: bu iki ref, ayni client
+  // yasam dongusu icinde onceki metinlerde biriken aktif saniyeyi ve
+  // tamamen bitirilen metin sayisini tutar - sayfa yenilenirse kaybolur
+  // (kasitli, bu ilk surumun bilinen siniri).
+  const cumulativeActiveSecondsRef = useRef(0);
+  const completedTextCountRef = useRef(0);
+  const textEndInFlightRef = useRef(false);
+
+  const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const assignedDurationSeconds = educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY;
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
@@ -95,11 +134,21 @@ export function ShadowReadingExerciseClient() {
   const [isLoadingTexts, setIsLoadingTexts] = useState(true);
   const [textLoadError, setTextLoadError] = useState<string | null>(null);
   const [textDiagnostics, setTextDiagnostics] = useState<TextLibraryLoadResult["diagnostics"] | null>(null);
-  const [blockSize, setBlockSize] = useState<BlockSize>(2);
-  const [speedMode, setSpeedMode] = useState<ShadowReadingSpeedMode>("interval");
-  const [intervalInputMs, setIntervalInputMs] = useState<JumpSpeedMs>(500);
-  const [wordsPerMinute, setWordsPerMinute] = useState<WordsPerMinute>(150);
-  const [wordsPerMinuteInput, setWordsPerMinuteInput] = useState("150");
+  const [blockSize, setBlockSize] = useState<BlockSize>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "blockSize", BLOCK_SIZE_OPTIONS, 2),
+  );
+  const [speedMode, setSpeedMode] = useState<ShadowReadingSpeedMode>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"),
+  );
+  const [intervalInputMs, setIntervalInputMs] = useState<JumpSpeedMs>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "intervalMs", JUMP_SPEED_OPTIONS, 500),
+  );
+  const [wordsPerMinute, setWordsPerMinute] = useState<WordsPerMinute>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "wordsPerMinute", WORDS_PER_MINUTE_OPTIONS, 150),
+  );
+  const [wordsPerMinuteInput, setWordsPerMinuteInput] = useState(() =>
+    String(pickEducationProgramSettingOption(educationProgramLaunch?.settings, "wordsPerMinute", WORDS_PER_MINUTE_OPTIONS, 150)),
+  );
   const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSizePx>(20);
 
@@ -107,6 +156,14 @@ export function ShadowReadingExerciseClient() {
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [result, setResult] = useState<ShadowReadingResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [newTextNotice, setNewTextNotice] = useState<NewTextNotice | null>(null);
+
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const { completionStatus, completeTaskAfterResultSave, retryTaskCompletion } =
+    useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -269,6 +326,36 @@ export function ShadowReadingExerciseClient() {
     });
   }, []);
 
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) {
+        return;
+      }
+
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
   const finalizeExercise = useCallback((completed: boolean) => {
     if (!selectedText || totalBlocks === 0 || saveLockRef.current) {
       return;
@@ -279,16 +366,15 @@ export function ShadowReadingExerciseClient() {
     const completedPercent = Math.round((safeCompletedBlocks / totalBlocks) * 100);
     const score = completedPercent;
     const startedAt = startedAtRef.current;
-    const durationSeconds = Math.max(
-      1,
-      startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
-    );
+    // Egitim Programi modunda sure, biriken (onceki metinler + bu metin)
+    // yalniz-aktif-calisirken-artan toplam saniyeden gelir - Date.now() farki
+    // KULLANILMAZ (pause suresini de icerebilir). Standalone modda mevcut
+    // davranis (Date.now() farki, yoksa elapsedSeconds) aynen korunur.
+    const durationSeconds = isEducationProgramMode
+      ? Math.max(1, cumulativeActiveSecondsRef.current)
+      : Math.max(1, startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds);
 
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "shadow-reading",
       exerciseTitle: "Golgeleme",
       durationSeconds,
@@ -312,8 +398,18 @@ export function ShadowReadingExerciseClient() {
         completedPercent,
         estimatedDurationSeconds,
         actualDurationSeconds: durationSeconds,
+        ...(isEducationProgramMode
+          ? {
+              completedTextCount: completed
+                ? completedTextCountRef.current + 1
+                : completedTextCountRef.current,
+              assignedDurationSeconds: educationProgramLaunch?.durationSeconds ?? 0,
+              cumulativeActiveSeconds: Math.min(cumulativeActiveSecondsRef.current, MAX_RESULT_DURATION_SECONDS),
+              lastTextId: selectedText.id,
+            }
+          : {}),
       },
-    });
+    } satisfies SecureExerciseResultInput;
 
     setResult({
       completed,
@@ -329,13 +425,18 @@ export function ShadowReadingExerciseClient() {
     });
     setPhase("result");
     setIsPaused(false);
+    pendingResultRef.current = payload;
+    void persistResult(payload);
   }, [
     blockSize,
     currentBlockIndex,
+    educationProgramLaunch?.durationSeconds,
     elapsedSeconds,
     estimatedDurationSeconds,
     fontSize,
     intervalMs,
+    isEducationProgramMode,
+    persistResult,
     selectedText,
     safeWordsPerMinute,
     speedMode,
@@ -343,6 +444,22 @@ export function ShadowReadingExerciseClient() {
     totalBlocks,
     totalWords,
   ]);
+
+  const resetFlowToReady = useCallback(() => {
+    saveLockRef.current = true;
+    startedAtRef.current = null;
+    setCurrentBlockIndex(0);
+    setElapsedSeconds(0);
+    setResult(null);
+    setIsPaused(false);
+    setPhase("ready");
+    scrollReadingAreaToTop();
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
+  }, [scrollReadingAreaToTop]);
 
   const handleStart = () => {
     saveLockRef.current = false;
@@ -353,6 +470,7 @@ export function ShadowReadingExerciseClient() {
     setIsPaused(false);
     setPhase("ready");
     scrollReadingAreaToTop();
+    textEndInFlightRef.current = false;
   };
 
   const handleBeginPlay = () => {
@@ -372,35 +490,76 @@ export function ShadowReadingExerciseClient() {
     setIsPaused(false);
     setPhase("running");
     scrollReadingAreaToTop();
-  };
-
-  const resetFlowToReady = () => {
-    saveLockRef.current = true;
-    startedAtRef.current = null;
-    setCurrentBlockIndex(0);
-    setElapsedSeconds(0);
-    setResult(null);
-    setIsPaused(false);
-    setPhase("ready");
-    scrollReadingAreaToTop();
+    setNewTextNotice(null);
+    textEndInFlightRef.current = false;
   };
 
   const handleRestart = () => {
+    // "Yeniden Baslat", ayni Egitim Programi gorevi icinde yeni bir metne
+    // gecmekten FARKLI bir eylemdir: butun gorevi bastan baslatir, bu yuzden
+    // biriken sure/tamamlanan metin sayacini da sifirlar. resetFlowToReady
+    // (metinler arasi gecis) bunlara bilerek dokunmaz.
+    cumulativeActiveSecondsRef.current = 0;
+    completedTextCountRef.current = 0;
+    textEndInFlightRef.current = false;
+    setNewTextNotice(null);
     resetFlowToReady();
   };
 
+  const handleTextEnd = useCallback(
+    (completedText: boolean) => {
+      if (!isEducationProgramMode) {
+        finalizeExercise(completedText);
+        return;
+      }
+
+      if (textEndInFlightRef.current) {
+        return;
+      }
+      textEndInFlightRef.current = true;
+
+      const nextTotalActiveSeconds = calculateShadowReadingTotalActiveSeconds(
+        cumulativeActiveSecondsRef.current,
+        elapsedSeconds,
+      );
+      cumulativeActiveSecondsRef.current = nextTotalActiveSeconds;
+
+      if (completedText) {
+        completedTextCountRef.current += 1;
+      }
+
+      if (hasShadowReadingReachedAssignedDuration(assignedDurationSeconds, nextTotalActiveSeconds, 0)) {
+        finalizeExercise(completedText);
+        return;
+      }
+
+      textEndInFlightRef.current = false;
+      setNewTextNotice({
+        cumulativeActiveSeconds: nextTotalActiveSeconds,
+        remainingSeconds: calculateShadowReadingRemainingActiveSeconds(
+          assignedDurationSeconds,
+          nextTotalActiveSeconds,
+          0,
+        ),
+        completedTextCount: completedTextCountRef.current,
+      });
+      resetFlowToReady();
+    },
+    [assignedDurationSeconds, elapsedSeconds, finalizeExercise, isEducationProgramMode, resetFlowToReady],
+  );
+
   const handleFinishEarly = () => {
-    finalizeExercise(false);
+    handleTextEnd(false);
   };
 
   const advanceBlock = useCallback(() => {
     if (currentBlockIndex >= totalBlocks - 1) {
-      finalizeExercise(true);
+      handleTextEnd(true);
       return;
     }
 
     setCurrentBlockIndex((current) => Math.min(current + 1, totalBlocks - 1));
-  }, [currentBlockIndex, finalizeExercise, totalBlocks]);
+  }, [currentBlockIndex, handleTextEnd, totalBlocks]);
 
   useExerciseTimer({
     running: phase === "running" && totalBlocks > 0,
@@ -408,6 +567,21 @@ export function ShadowReadingExerciseClient() {
     delayMs: totalBlocks > 0 ? timerDelayMs : null,
     onTick: advanceBlock,
   });
+
+  // Ogretmenin belirledigi gorev suresi bir metnin ORTASINDA dolabilir - bu
+  // efekt, mevcut tek aktif-saniye sayacini (elapsedSeconds) izleyerek bunu
+  // yakalar; ikinci/bagimsiz bir setInterval KURULMAZ.
+  useEffect(() => {
+    if (!isEducationProgramMode || phase !== "running" || isPaused) {
+      return;
+    }
+
+    if (
+      hasShadowReadingReachedAssignedDuration(assignedDurationSeconds, cumulativeActiveSecondsRef.current, elapsedSeconds)
+    ) {
+      handleTextEnd(false);
+    }
+  }, [assignedDurationSeconds, elapsedSeconds, handleTextEnd, isEducationProgramMode, isPaused, phase]);
 
   useEffect(() => {
     if (phase !== "running" || isPaused) {
@@ -488,7 +662,7 @@ export function ShadowReadingExerciseClient() {
       </label>
       <label className="flex min-w-0 flex-col gap-1">
         <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Kelime Sayısı</span>
-        <select value={blockSize} onChange={(event) => {
+        <select value={blockSize} disabled={isEducationProgramMode} onChange={(event) => {
           const nextBlockSize = Number(event.target.value);
           if (!Number.isFinite(nextBlockSize)) return;
           setBlockSize(nextBlockSize as BlockSize);
@@ -503,7 +677,7 @@ export function ShadowReadingExerciseClient() {
       </label>
       <label className="flex min-w-0 flex-col gap-1">
         <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Hız Modu</span>
-        <select value={speedMode} onChange={(event) => {
+        <select value={speedMode} disabled={isEducationProgramMode} onChange={(event) => {
           const nextMode = event.target.value as ShadowReadingSpeedMode;
           setSpeedMode(nextMode);
           if (nextMode === "wpm") {
@@ -520,7 +694,7 @@ export function ShadowReadingExerciseClient() {
           {speedMode === "interval" ? "Hız" : "Okuma Hızı (kelime/dk)"}
         </span>
         {speedMode === "interval" ? (
-          <select value={intervalInputMs} onChange={(event) => {
+          <select value={intervalInputMs} disabled={isEducationProgramMode} onChange={(event) => {
             const nextSpeed = Number(event.target.value);
             if (!Number.isFinite(nextSpeed)) return;
             setIntervalInputMs(nextSpeed as JumpSpeedMs);
@@ -538,6 +712,7 @@ export function ShadowReadingExerciseClient() {
               step={1}
               inputMode="numeric"
               value={wordsPerMinuteInput}
+              disabled={isEducationProgramMode}
               onChange={(event) => {
                 const rawValue = event.target.value;
                 setWordsPerMinuteInput(rawValue);
@@ -590,7 +765,7 @@ export function ShadowReadingExerciseClient() {
       <div className="col-span-2 grid gap-2 sm:col-span-3 sm:grid-cols-3 lg:col-span-1 lg:grid-cols-1">
         {phase === "ready" ? (
           <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay} disabled={!selectedText || totalBlocks === 0}>
-            Başlat
+            {newTextNotice ? "Yeni Metinle Devam Et" : "Başlat"}
           </button>
         ) : (
           <>
@@ -641,6 +816,22 @@ export function ShadowReadingExerciseClient() {
         stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 overflow-y-auto rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur"
         footer={footerControls}
       >
+        {isEducationProgramMode && newTextNotice ? (
+          <div className={`mx-auto mb-4 flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center ${styles.noticeInfo}`}>
+            <p className="text-sm font-bold text-slate-900">Görev süreniz henüz dolmadı</p>
+            <p className="text-xs text-slate-700">
+              Bu metni tamamladınız. Görevi tamamlamak için yeni bir metin seçerek devam etmelisiniz.
+            </p>
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-800">
+              <span>Tamamlanan süre: {formatDuration(newTextNotice.cumulativeActiveSeconds)}</span>
+              <span>
+                Kalan süre:{" "}
+                {Number.isFinite(newTextNotice.remainingSeconds) ? formatDuration(newTextNotice.remainingSeconds) : "—"}
+              </span>
+              <span>Tamamlanan metin: {newTextNotice.completedTextCount}</span>
+            </div>
+          </div>
+        ) : null}
         {isLoadingTexts ? (
           <div className={`mx-auto flex w-full max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-center ${styles.noticeInfo}`}>
             <p className="text-sm font-bold text-slate-900">Metinler yükleniyor...</p>
@@ -699,8 +890,50 @@ export function ShadowReadingExerciseClient() {
       <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
         <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Golgeleme Sonucu</h2>
         <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
-          {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
+          {saveStatus === "success"
+            ? result.completed
+              ? "Metin tamamlandi."
+              : "Egzersiz erken bitirildi."
+            : saveMessage}
         </p>
+        {saveStatus === "error" ? (
+          <div className={`mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 ${styles.noticeError}`}>
+            <p>{saveMessage}</p>
+            <button
+              type="button"
+              className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => {
+                const pending = pendingResultRef.current;
+                if (pending) {
+                  saveCompletedRef.current = false;
+                  void persistResult(pending);
+                }
+              }}
+            >
+              Yeniden Dene
+            </button>
+          </div>
+        ) : null}
+        {completionStatus.state !== "idle" ? (
+          <div
+            className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+              completionStatus.state === "error"
+                ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                : `border-slate-200 bg-white text-slate-800 ${styles.noticeInfo}`
+            }`}
+          >
+            <p>{completionStatus.message}</p>
+            {completionStatus.state === "error" && completionStatus.canRetry ? (
+              <button
+                type="button"
+                className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                onClick={() => void retryTaskCompletion()}
+              >
+                Program ilerlemesini yeniden dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -737,13 +970,14 @@ export function ShadowReadingExerciseClient() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
+          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart} disabled={saveStatus !== "success"}>
             Yeniden Baslat
           </button>
           <button
             type="button"
             className={ACTION_BUTTON_CLASS}
             style={TOUCH_STYLE}
+            disabled={saveStatus !== "success"}
             onClick={() =>
               router.push(
                 `/sonuc?exerciseType=shadow-reading&correct=0&wrong=0&successRate=${result.successRate}&score=${result.score}`,

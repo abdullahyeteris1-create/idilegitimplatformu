@@ -263,6 +263,48 @@ const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+// Golgeleme'nin intervalMs alani, Blok Okuma'nin aksine GERCEK bir sabit
+// secim listesidir (client'ta serbest input degil, <select> ile JUMP_SPEED_OPTIONS
+// kullanilir) - bu yuzden buradaki options listesi kurasyon degil, ShadowReadingExerciseClient.tsx
+// icindeki JUMP_SPEED_OPTIONS ile birebir aynidir.
+const SHADOW_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "golgeleme",
+  fields: [
+    {
+      key: "blockSize",
+      label: "Blok Boyutu",
+      type: "integer",
+      options: [1, 2, 3, 4, 5],
+      defaultValue: 2,
+    },
+    {
+      key: "speedMode",
+      label: "Hız Modu",
+      type: "enum",
+      options: ["interval", "wpm"],
+      defaultValue: "interval",
+    },
+    {
+      key: "intervalMs",
+      label: "Atlama Hızı",
+      type: "integer",
+      options: [
+        50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900,
+        950, 1000, 1100, 2000, 5000,
+      ],
+      defaultValue: 500,
+      unit: "ms",
+    },
+    {
+      key: "wordsPerMinute",
+      label: "Dakikadaki Kelime Sayısı",
+      type: "integer",
+      options: [50, 100, 150, 200, 250, 300, 400, 500],
+      defaultValue: 150,
+    },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -275,6 +317,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     MEMORY_GAME_SETTINGS_SCHEMA,
     CARD_MATCHING_SETTINGS_SCHEMA,
     BLOCK_READING_SETTINGS_SCHEMA,
+    SHADOW_READING_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

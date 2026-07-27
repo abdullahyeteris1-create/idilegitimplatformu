@@ -437,13 +437,13 @@ test("55) navigasyon butonlari (Yeniden Baslat / Ortak Sonuc Ekrani) saveStatus 
   assert.equal(disabledMatches.length, 2, "hem Yeniden Baslat hem Ortak Sonuc Ekrani butonu kilitlenmeli");
 });
 
-test("Golgeleme ve Gruplama dosyalari bu turda degismedi (dokunulmadi)", async () => {
-  const shadowSource = await read("src/app/egzersizler/golgeleme/ShadowReadingExerciseClient.tsx").catch(() => null);
+// NOT: Golgeleme, Blok Okuma'dan SONRAKI bir turda kasitli olarak Egitim
+// Programi'na entegre edildi (bkz. education-program-shadow-reading-*.test.mjs)
+// - bu yuzden Golgeleme artik educationProgramLaunch icerir, bu beklenen ve
+// dogru bir durumdur. Gruplama ise hala hicbir turda degistirilmedi.
+test("Gruplama dosyalari bu turda degismedi (dokunulmadi)", async () => {
   const groupingSource = await read("src/app/egzersizler/gruplama/GroupingReadingExerciseClient.tsx").catch(() => null);
 
-  if (shadowSource !== null) {
-    assert.doesNotMatch(shadowSource, /educationProgramLaunch/);
-  }
   if (groupingSource !== null) {
     assert.doesNotMatch(groupingSource, /educationProgramLaunch/);
   }

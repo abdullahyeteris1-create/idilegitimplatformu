@@ -73,6 +73,18 @@ export type BlockReadingTaskSettings = {
   wordsPerMinute?: 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500;
 };
 
+// intervalMs burada GERCEK client secim listesidir (ShadowReadingExerciseClient.tsx
+// icindeki JUMP_SPEED_OPTIONS ile birebir ayni) - Blok Okuma'daki kurasyon
+// listeden farklidir.
+export type ShadowReadingTaskSettings = {
+  blockSize?: 1 | 2 | 3 | 4 | 5;
+  speedMode?: "interval" | "wpm";
+  intervalMs?:
+    | 50 | 100 | 150 | 200 | 250 | 300 | 350 | 400 | 450 | 500 | 550 | 600 | 650 | 700 | 750
+    | 800 | 850 | 900 | 950 | 1000 | 1100 | 2000 | 5000;
+  wordsPerMinute?: 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

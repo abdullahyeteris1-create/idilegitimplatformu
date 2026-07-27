@@ -95,3 +95,45 @@ export function getActiveBlockRange(currentBlockIndex: number, blockSize: number
   };
 }
 
+// Egitim Programi coklu-metin sure modeli icin saf (side-effect'siz) yardimci
+// fonksiyonlar. Bilerek Blok Okuma'nin blockReading.ts icindeki esdeger
+// fonksiyonlarindan bagimsiz tutulur (bu turda ortak/genel bir helper'a
+// cikarilmadi - iki egzersizin davranisi once ayri ayri kanitlansin).
+export function calculateShadowReadingTotalActiveSeconds(
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): number {
+  return Math.max(0, cumulativeActiveSeconds) + Math.max(0, currentTextActiveSeconds);
+}
+
+export function calculateShadowReadingRemainingActiveSeconds(
+  assignedDurationSeconds: number,
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): number {
+  if (!Number.isFinite(assignedDurationSeconds)) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const totalActiveSeconds = calculateShadowReadingTotalActiveSeconds(
+    cumulativeActiveSeconds,
+    currentTextActiveSeconds,
+  );
+  return Math.max(assignedDurationSeconds - totalActiveSeconds, 0);
+}
+
+export function hasShadowReadingReachedAssignedDuration(
+  assignedDurationSeconds: number,
+  cumulativeActiveSeconds: number,
+  currentTextActiveSeconds: number,
+): boolean {
+  if (!Number.isFinite(assignedDurationSeconds)) {
+    return false;
+  }
+
+  return (
+    calculateShadowReadingTotalActiveSeconds(cumulativeActiveSeconds, currentTextActiveSeconds) >=
+    assignedDurationSeconds
+  );
+}
+

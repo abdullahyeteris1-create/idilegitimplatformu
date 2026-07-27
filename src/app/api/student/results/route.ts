@@ -179,6 +179,30 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
     lastTextId: { type: "string", maxLength: 128 },
   },
+  "shadow-reading": {
+    category: { type: "string", maxLength: 80 },
+    textTitle: { type: "string", maxLength: 160 },
+    totalWords: { type: "integer", min: 0, max: 1_000_000 },
+    totalCharacters: { type: "integer", min: 0, max: 10_000_000 },
+    blockSize: { type: "integer", min: 1, max: 5 },
+    speedMode: { type: "string", values: ["interval", "wpm"] },
+    intervalMs: { type: "integer", min: 50, max: 5_000 },
+    wordsPerMinute: { type: "integer", min: 1, max: 10_000 },
+    fontSize: { type: "integer", min: 12, max: 28 },
+    completedBlocks: { type: "integer", min: 0, max: 1_000_000 },
+    totalBlocks: { type: "integer", min: 0, max: 1_000_000 },
+    progressPercent: { type: "integer", min: 0, max: 100 },
+    completedPercent: { type: "integer", min: 0, max: 100 },
+    estimatedDurationSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    actualDurationSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    // Egitim Programi coklu-metin biriken sure modeli icin eklendi (bkz.
+    // ShadowReadingExerciseClient.tsx) - completedTextCount yalniz sonuna
+    // kadar tamamlanan metinleri sayar, yarida birakilanlari saymaz.
+    completedTextCount: { type: "integer", min: 0, max: 1_000 },
+    assignedDurationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    lastTextId: { type: "string", maxLength: 128 },
+  },
 };
 
 type ValidatedResultBody = {
