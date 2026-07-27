@@ -59,14 +59,15 @@ test("FAZ 3A-2 yeni dosyalari eski Assignment System V2'ye bagimlilik icermez", 
 });
 
 test("FAZ 3A-2'de yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ayni)", async () => {
-  // NOT: Bu sayi yalniz FAZ 3A-2 anini tanimliyordu. FAZ 3B-1A'da kasitli
-  // olarak yeni bir migration (gorev tamamlama RPC'si) eklendi - bu artik
-  // beklenen bir durum, regresyon degil (bkz.
-  // education-program-complete-task-migration.test.mjs).
+  // NOT: Bu sayi yalniz FAZ 3A-2 anini tanimliyordu. Sonraki turlarda kasitli
+  // olarak yeni migration'lar eklendi - bu artik beklenen bir durum,
+  // regresyon degil (bkz. education-program-complete-task-migration.test.mjs
+  // ve duplicate_education_program_template_rpc migration'i, bkz.
+  // education-program-template-duplicate.test.mjs).
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 16);
+  assert.equal(sqlFiles.length, 17);
   assert.ok(sqlFiles.includes("20260725190000_start_education_program_task_rpc.sql"));
 
   const migrationSource = await read(

@@ -454,6 +454,134 @@ export async function saveEducationProgramTemplateDay(
   }
 }
 
+const TEMPLATE_NAME_MAX_LENGTH = 120;
+const DUPLICATE_NAME_SUFFIX = " - Kopya";
+
+// Saf (side-effect'siz) fonksiyon - "Ad - Kopya" cakisiyorsa "Ad - Kopya 2",
+// "Ad - Kopya 3" ... seklinde ilk bos ismi bulur. DB'deki
+// education_program_templates_name_check (1-120 karakter) sinirini asmamak
+// icin gerekirse kaynak adin sonu kirpilir.
+export function generateDuplicateTemplateName(
+  existingNames: readonly string[],
+  sourceName: string,
+): string {
+  const existing = new Set(existingNames.map((name) => name.trim()));
+  const trimmedSource = sourceName.trim();
+
+  function buildCandidate(counterSuffix: string): string {
+    const maxSourceLength = TEMPLATE_NAME_MAX_LENGTH - DUPLICATE_NAME_SUFFIX.length - counterSuffix.length;
+    const safeSource =
+      trimmedSource.length > maxSourceLength
+        ? trimmedSource.slice(0, Math.max(0, maxSourceLength)).trim()
+        : trimmedSource;
+    return `${safeSource}${DUPLICATE_NAME_SUFFIX}${counterSuffix}`;
+  }
+
+  const baseCandidate = buildCandidate("");
+  if (!existing.has(baseCandidate)) {
+    return baseCandidate;
+  }
+
+  let counter = 2;
+  while (true) {
+    const candidate = buildCandidate(` ${counter}`);
+    if (!existing.has(candidate)) {
+      return candidate;
+    }
+    counter += 1;
+  }
+}
+
+export async function duplicateEducationProgramTemplate(
+  supabase: SupabaseClient,
+  templateId: string,
+  createdBy: string,
+): Promise<EducationProgramRepositoryResult<{ templateId: string }>> {
+  if (!templateId.trim()) {
+    return educationProgramFailure("not_found", "Eğitim programı bulunamadı.");
+  }
+
+  try {
+    const { data: sourceRow, error: sourceError } = await supabase
+      .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
+      .select("id,name")
+      .eq("id", templateId)
+      .maybeSingle();
+
+    if (sourceError) {
+      return educationProgramFailure("database", getEducationProgramDatabaseMessage(sourceError));
+    }
+    if (!sourceRow || typeof sourceRow.name !== "string") {
+      return educationProgramFailure("not_found", "Eğitim programı bulunamadı.");
+    }
+
+    const { data: nameRows, error: nameError } = await supabase
+      .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
+      .select("name");
+
+    if (nameError || !Array.isArray(nameRows)) {
+      return educationProgramFailure("database", getEducationProgramDatabaseMessage(nameError));
+    }
+
+    const existingNames = nameRows
+      .map((row) => (typeof row.name === "string" ? row.name : ""))
+      .filter(Boolean);
+    const newName = generateDuplicateTemplateName(existingNames, sourceRow.name);
+
+    const { data: newTemplateId, error: rpcError } = await supabase.rpc(
+      "duplicate_education_program_template_v1",
+      {
+        p_source_template_id: templateId,
+        p_new_name: newName,
+        p_created_by: createdBy,
+      },
+    );
+
+    if (rpcError || typeof newTemplateId !== "string") {
+      return educationProgramFailure("database", getEducationProgramDatabaseMessage(rpcError));
+    }
+
+    return { ok: true, value: { templateId: newTemplateId } };
+  } catch (error) {
+    return educationProgramFailure("database", getEducationProgramDatabaseMessage(error));
+  }
+}
+
+// Kalici (hard) silme - kullanicinin acikca istedigi davranis ("Kalici Olarak
+// Sil", "Bu islem geri alinamaz"). education_program_template_days/_tasks
+// ON DELETE CASCADE ile otomatik temizlenir. Ogrenciye atanmis programlar
+// (ayri, bagimsiz snapshot tablolari - bkz. studentProgramRepository.ts)
+// yalniz kaynak sablon referansini kaybeder (DB tarafinda ON DELETE SET
+// NULL), veri olarak hicbir sekilde etkilenmez veya silinmez.
+export async function deleteEducationProgramTemplate(
+  supabase: SupabaseClient,
+  templateId: string,
+): Promise<EducationProgramRepositoryResult<{ templateId: string }>> {
+  if (!templateId.trim()) {
+    return educationProgramFailure("not_found", "Eğitim programı bulunamadı.");
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(EDUCATION_PROGRAM_TEMPLATES_TABLE)
+      .delete()
+      .eq("id", templateId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      return educationProgramFailure("database", getEducationProgramDatabaseMessage(error));
+    }
+    if (!data) {
+      return educationProgramFailure("not_found", "Eğitim programı bulunamadı.");
+    }
+
+    return { ok: true, value: { templateId } };
+  } catch (error) {
+    return educationProgramFailure("database", getEducationProgramDatabaseMessage(error));
+  }
+}
+
 export async function publishEducationProgramTemplate(
   supabase: SupabaseClient,
   templateId: string,
