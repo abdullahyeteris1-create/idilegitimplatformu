@@ -58,6 +58,14 @@ const ENUM_OPTION_LABELS: Record<string, Record<string, string>> = {
   "gruplama-calismasi:speedMode": { milliseconds: "Atlama Hızı (ms)", wordsPerMinute: "Okuma Hızı (kelime/dk)" },
 };
 
+// supportsDuration:false olan calismalarda (Anlama Testi, Okuma Hizi Testi)
+// ogretmen sure alanini hic gormez; backend (validation.ts,
+// studentProgramRepository.ts) ise HER gorev icin 1-21600 araliginda pozitif
+// bir tam sayi zorunlu kilar. Bu sabit yalniz bu teknik zorunlulugu
+// karsilamak icin gizli input'a yazilir - ilgili egzersiz client'lari bu
+// degeri hicbir zaman okumaz/kullanmaz.
+const DURATIONLESS_TASK_PLACEHOLDER_SECONDS = 60;
+
 const FIELD_CLASS =
   "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
 
@@ -89,9 +97,12 @@ function createDrafts(template: EducationProgramTemplate): DraftsByDay {
 
       return {
         exerciseSlug: task?.exerciseSlug ?? "",
-        durationSeconds: task?.durationSeconds
-          ? String(task.durationSeconds)
-          : String(definition?.defaultDurationSeconds ?? 300),
+        durationSeconds:
+          definition?.supportsDuration === false
+            ? ""
+            : task?.durationSeconds
+              ? String(task.durationSeconds)
+              : String(definition?.defaultDurationSeconds ?? 300),
         startingLevel:
           task?.startingLevel !== null && task?.startingLevel !== undefined
             ? String(task.startingLevel)
@@ -134,8 +145,14 @@ function buildDayFormData(slots: SlotDraft[], intent: "draft" | "publish"): Form
   slots.forEach((slot, index) => {
     const orderNumber = index + 1;
     const prefix = `task-${orderNumber}`;
+    const definition = slot.exerciseSlug ? getEducationProgramExercise(slot.exerciseSlug) : undefined;
     formData.set(`${prefix}-exerciseSlug`, slot.exerciseSlug);
-    formData.set(`${prefix}-durationSeconds`, slot.durationSeconds);
+    formData.set(
+      `${prefix}-durationSeconds`,
+      definition?.supportsDuration === false
+        ? String(DURATIONLESS_TASK_PLACEHOLDER_SECONDS)
+        : slot.durationSeconds,
+    );
     formData.set(`${prefix}-startingLevel`, slot.startingLevel);
 
     const schema = slot.exerciseSlug ? getExerciseSettingsSchema(slot.exerciseSlug) : undefined;
@@ -285,7 +302,12 @@ export function EducationProgramTemplateEditor({
     const definition = getEducationProgramExercise(exerciseSlug);
     updateSlot(index, {
       exerciseSlug,
-      durationSeconds: definition ? String(definition.defaultDurationSeconds) : "300",
+      durationSeconds:
+        definition?.supportsDuration === false
+          ? ""
+          : definition
+            ? String(definition.defaultDurationSeconds ?? 300)
+            : "300",
       startingLevel: definition?.supportsLevel ? String(definition.levelMin ?? 1) : "",
       settings: exerciseSlug ? createSlotSettings(exerciseSlug) : {},
     });
@@ -473,22 +495,44 @@ export function EducationProgramTemplateEditor({
                     </select>
                   </label>
 
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
-                      Süre (saniye)
-                    </span>
-                    <input
-                      name={`task-${orderNumber}-durationSeconds`}
-                      type="number"
-                      min={1}
-                      max={21600}
-                      step={1}
-                      disabled={!definition}
-                      value={slot.durationSeconds}
-                      onChange={(event) => updateSlot(index, { durationSeconds: event.target.value })}
-                      className={FIELD_CLASS}
-                    />
-                  </label>
+                  {definition && definition.supportsDuration === false ? (
+                    <>
+                      <input
+                        type="hidden"
+                        name={`task-${orderNumber}-durationSeconds`}
+                        value={DURATIONLESS_TASK_PLACEHOLDER_SECONDS}
+                      />
+                      <label className="grid gap-1.5">
+                        <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                          Süre (saniye)
+                        </span>
+                        <input
+                          type="text"
+                          readOnly
+                          disabled
+                          value="Bu çalışmada süre yok"
+                          className={FIELD_CLASS}
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <label className="grid gap-1.5">
+                      <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                        Süre (saniye)
+                      </span>
+                      <input
+                        name={`task-${orderNumber}-durationSeconds`}
+                        type="number"
+                        min={1}
+                        max={21600}
+                        step={1}
+                        disabled={!definition}
+                        value={slot.durationSeconds}
+                        onChange={(event) => updateSlot(index, { durationSeconds: event.target.value })}
+                        className={FIELD_CLASS}
+                      />
+                    </label>
+                  )}
 
                   <label className="grid gap-1.5">
                     <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">

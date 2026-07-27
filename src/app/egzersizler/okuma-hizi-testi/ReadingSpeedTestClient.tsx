@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { calculateReadingSpeed, countCharacters, countWords, formatDuration } from "@/lib/exercise-engine/readingComprehension";
-import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
@@ -41,6 +44,9 @@ type ReadingSpeedResult = {
   pausedCount: number;
   totalPausedSeconds: number;
 };
+type SaveStatus = "idle" | "saving" | "success" | "error";
+
+const EXPECTED_RESULT_EXERCISE_TYPE = "reading-speed-test";
 
 const ACTION_BUTTON_CLASS =
   "relative z-50 w-full min-h-[56px] cursor-pointer select-none touch-manipulation rounded-2xl border border-red-900/30 bg-[var(--brand)] px-5 py-4 text-base font-bold text-white shadow-md shadow-red-200 transition active:scale-[0.98] hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -60,7 +66,11 @@ const EMPTY_TEXT: ReadableText = {
   text: "",
 };
 
-export function ReadingSpeedTestClient() {
+export function ReadingSpeedTestClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -68,6 +78,16 @@ export function ReadingSpeedTestClient() {
   const timerRef = useRef<number | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const saveLockRef = useRef(true);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+
+  const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const { completionStatus, completeTaskAfterResultSave, retryTaskCompletion } =
+    useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   const [phase, setPhase] = useState<TestPhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
@@ -82,6 +102,8 @@ export function ReadingSpeedTestClient() {
   const [pausedCount, setPausedCount] = useState(0);
   const [totalPausedSeconds, setTotalPausedSeconds] = useState(0);
   const [result, setResult] = useState<ReadingSpeedResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -200,6 +222,11 @@ export function ReadingSpeedTestClient() {
     setTotalPausedSeconds(0);
     setResult(null);
     setPhase("ready");
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, [clearTimers]);
 
   const handleIntroStart = () => {
@@ -247,6 +274,36 @@ export function ReadingSpeedTestClient() {
     setPhase("reading");
   };
 
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) {
+        return;
+      }
+
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
   const handleFinishReading = () => {
     if (saveLockRef.current || (phase !== "reading" && phase !== "paused")) {
       return;
@@ -272,7 +329,7 @@ export function ReadingSpeedTestClient() {
     });
     setPhase("result");
 
-    void saveExerciseResultSecure({
+    const payload = {
       exerciseType: "reading-speed-test",
       exerciseTitle: "Okuma Hızı Testi",
       durationSeconds: duration,
@@ -294,7 +351,10 @@ export function ReadingSpeedTestClient() {
         totalPausedSeconds,
         completedAt,
       },
-    }).catch(() => undefined);
+    } satisfies SecureExerciseResultInput;
+
+    pendingResultRef.current = payload;
+    void persistResult(payload);
   };
 
   const readingStats = [
@@ -486,7 +546,47 @@ export function ReadingSpeedTestClient() {
       <div className={themeRootClassName}>
         <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
           <h2 className="text-2xl font-bold">Okuma Hızı Testi Sonucu</h2>
-          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>Okuma süresi ve okuma hızı kaydedildi.</p>
+          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
+            {saveStatus === "success" ? "Okuma süresi ve okuma hızı kaydedildi." : saveMessage}
+          </p>
+          {saveStatus === "error" ? (
+            <div className={`mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 ${styles.noticeError}`}>
+              <p>{saveMessage}</p>
+              <button
+                type="button"
+                className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                onClick={() => {
+                  const pending = pendingResultRef.current;
+                  if (pending) {
+                    saveCompletedRef.current = false;
+                    void persistResult(pending);
+                  }
+                }}
+              >
+                Yeniden Dene
+              </button>
+            </div>
+          ) : null}
+          {completionStatus.state !== "idle" ? (
+            <div
+              className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+                completionStatus.state === "error"
+                  ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                  : `border-slate-200 bg-white text-slate-800 ${styles.noticeInfo}`
+              }`}
+            >
+              <p>{completionStatus.message}</p>
+              {completionStatus.state === "error" && completionStatus.canRetry ? (
+                <button
+                  type="button"
+                  className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                  onClick={() => void retryTaskCompletion()}
+                >
+                  Program ilerlemesini yeniden dene
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -512,16 +612,17 @@ export function ReadingSpeedTestClient() {
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady}>
+            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
               Tekrar Ölç
             </button>
-            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady}>
+            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
               Başka Metin Seç
             </button>
             <button
               type="button"
               className={ACTION_BUTTON_CLASS}
               style={TOUCH_STYLE}
+              disabled={saveStatus !== "success"}
               onClick={() => router.push("/sonuc?exerciseType=reading-speed-test")}
             >
               Ortak Sonuç Ekranı

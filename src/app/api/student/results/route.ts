@@ -227,6 +227,30 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
     lastTextId: { type: "string", maxLength: 128 },
   },
+  // Anlama Testi ve Okuma Hizi Testi sure/cumulative kavrami OLMAYAN sinama
+  // tipi calismalardir - Egitim Programi'na entegrasyonlari yalniz secure
+  // kayit + gorev tamamlama ile sinirlidir, bu yuzden burada
+  // completedTextCount/assignedDurationSeconds/cumulativeActiveSeconds/
+  // lastTextId gibi coklu-metin alanlari YOKTUR (bkz.
+  // ReadingComprehensionTestClient.tsx gercek details payload'i).
+  "reading-comprehension": {
+    category: { type: "string", maxLength: 120 },
+    textTitle: { type: "string", maxLength: 160 },
+    totalWords: { type: "integer", min: 0, max: 1_000_000 },
+    totalCharacters: { type: "integer", min: 0, max: 10_000_000 },
+    readingDurationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    readingSpeedWpm: { type: "number", min: 0, max: 1_000_000 },
+    totalQuestions: { type: "integer", min: 0, max: 100_000 },
+    correctAnswers: { type: "integer", min: 0, max: 100_000 },
+    wrongAnswers: { type: "integer", min: 0, max: 100_000 },
+    emptyAnswers: { type: "integer", min: 0, max: 100_000 },
+    comprehensionScore: { type: "integer", min: 0, max: 100 },
+    fontSize: { type: "integer", min: 12, max: 28 },
+    pausedCount: { type: "integer", min: 0, max: 100_000 },
+    totalPausedSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    activeReadingSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    completedAt: { type: "string", maxLength: 40 },
+  },
 };
 
 type ValidatedResultBody = {

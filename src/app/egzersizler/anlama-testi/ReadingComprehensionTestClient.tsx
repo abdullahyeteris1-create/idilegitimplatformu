@@ -17,8 +17,11 @@ import {
   formatDuration,
   type AnswerEvaluation,
 } from "@/lib/exercise-engine/readingComprehension";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
+import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
 import { DEFAULT_TEXT_CATEGORY, getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
@@ -35,6 +38,9 @@ import styles from "@/components/exercises/reading-comprehension-theme.module.cs
 
 type TestPhase = "setup" | "ready" | "reading" | "paused" | "questions" | "result";
 type FontSizePx = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 26 | 28;
+type SaveStatus = "idle" | "saving" | "success" | "error";
+
+const EXPECTED_RESULT_EXERCISE_TYPE = "reading-comprehension";
 
 type ReadingResult = {
   category: string;
@@ -89,7 +95,11 @@ function getOptionClass(evaluation: AnswerEvaluation | undefined, optionIndex: n
   return `border-slate-200 bg-white text-slate-700 ${styles.optionDefault}`;
 }
 
-export function ReadingComprehensionTestClient() {
+export function ReadingComprehensionTestClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -97,6 +107,16 @@ export function ReadingComprehensionTestClient() {
   const timerRef = useRef<number | null>(null);
   const pauseTimerRef = useRef<number | null>(null);
   const saveLockRef = useRef(true);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+
+  const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const { completionStatus, completeTaskAfterResultSave, retryTaskCompletion } =
+    useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   const [phase, setPhase] = useState<TestPhase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
@@ -112,6 +132,8 @@ export function ReadingComprehensionTestClient() {
   const [totalPausedSeconds, setTotalPausedSeconds] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number | undefined>>({});
   const [result, setResult] = useState<ReadingResult | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -236,6 +258,11 @@ export function ReadingComprehensionTestClient() {
     setSelectedAnswers({});
     setResult(null);
     setPhase("ready");
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, [clearTimers]);
 
   const handleIntroStart = () => {
@@ -303,6 +330,36 @@ export function ReadingComprehensionTestClient() {
     }));
   };
 
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) {
+        return;
+      }
+
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
   const handleFinishTest = () => {
     if (saveLockRef.current || selectedText.questions.length === 0) {
       return;
@@ -318,9 +375,7 @@ export function ReadingComprehensionTestClient() {
     const student = getCurrentStudent();
     const completedAt = new Date().toISOString();
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "reading-comprehension",
       exerciseTitle: "Anlama Testi",
       durationSeconds: duration,
@@ -328,6 +383,7 @@ export function ReadingComprehensionTestClient() {
       wrongCount: evaluation.wrongCount,
       score: comprehensionScore,
       successRate: comprehensionScore,
+      completedAt,
       details: {
         category: selectedText.category,
         textTitle: selectedText.title,
@@ -346,7 +402,10 @@ export function ReadingComprehensionTestClient() {
         activeReadingSeconds: duration,
         completedAt,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    pendingResultRef.current = payload;
+    void persistResult(payload);
 
     saveReadingTestResult({
       studentId: student?.id ?? "no-student",
@@ -649,7 +708,47 @@ export function ReadingComprehensionTestClient() {
       <div className={themeRootClassName}>
       <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
         <h2 className="text-2xl font-bold">Anlama Testi Sonucu</h2>
-        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>Okuma hizi ve anlama orani kaydedildi.</p>
+        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
+          {saveStatus === "success" ? "Okuma hizi ve anlama orani kaydedildi." : saveMessage}
+        </p>
+        {saveStatus === "error" ? (
+          <div className={`mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 ${styles.noticeError}`}>
+            <p>{saveMessage}</p>
+            <button
+              type="button"
+              className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => {
+                const pending = pendingResultRef.current;
+                if (pending) {
+                  saveCompletedRef.current = false;
+                  void persistResult(pending);
+                }
+              }}
+            >
+              Yeniden Dene
+            </button>
+          </div>
+        ) : null}
+        {completionStatus.state !== "idle" ? (
+          <div
+            className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+              completionStatus.state === "error"
+                ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}`
+                : `border-slate-200 bg-white text-slate-800 ${styles.noticeInfo}`
+            }`}
+          >
+            <p>{completionStatus.message}</p>
+            {completionStatus.state === "error" && completionStatus.canRetry ? (
+              <button
+                type="button"
+                className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                onClick={() => void retryTaskCompletion()}
+              >
+                Program ilerlemesini yeniden dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
           <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -722,10 +821,10 @@ export function ReadingComprehensionTestClient() {
         </section>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady}>
+          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
             Yeniden Baslat
           </button>
-          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={() => router.push(`/sonuc?exerciseType=reading-comprehension&correct=${result.correctAnswers}&wrong=${result.wrongAnswers}&successRate=${result.comprehensionScore}&score=${result.comprehensionScore}`)}>
+          <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} disabled={saveStatus !== "success"} onClick={() => router.push(`/sonuc?exerciseType=reading-comprehension&correct=${result.correctAnswers}&wrong=${result.wrongAnswers}&successRate=${result.comprehensionScore}&score=${result.comprehensionScore}`)}>
             Ortak Sonuc Ekrani
           </button>
           <div className="flex justify-end sm:col-span-3">

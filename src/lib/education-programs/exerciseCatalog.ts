@@ -5,7 +5,14 @@ export type EducationProgramExerciseDefinition = {
   supportsLevel: boolean;
   levelMin?: number;
   levelMax?: number;
-  defaultDurationSeconds: number;
+  // Yoksa (undefined) sure destekliyor sayilir - mevcut 12 egzersizin hepsi
+  // bu alani hic tanimlamaz, geriye donuk davranislari degismez. Yalniz
+  // dogasi geregi sure/zamanlayici kavrami olmayan calismalar (Anlama Testi,
+  // Okuma Hizi Testi gibi) bunu acikca false yapar.
+  supportsDuration?: boolean;
+  // supportsDuration:false olan calismalarda bilincli olarak atlanir -
+  // Template Editor bu calismalar icin sure alanini hic gostermez.
+  defaultDurationSeconds?: number;
   settingsSchemaVersion: number;
   settingsPlaceholder: string;
 };
@@ -135,6 +142,24 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     resultExerciseType: "grouping-reading",
     supportsLevel: false,
     defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
+    slug: "anlama-testi",
+    title: "Anlama Testi",
+    resultExerciseType: "reading-comprehension",
+    supportsLevel: false,
+    supportsDuration: false,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
+    slug: "okuma-hizi-testi",
+    title: "Okuma Hızı Testi",
+    resultExerciseType: "reading-speed-test",
+    supportsLevel: false,
+    supportsDuration: false,
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },

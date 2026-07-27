@@ -16,6 +16,8 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "blok-okuma": "/egzersizler/blok-okuma",
   "golgeleme": "/egzersizler/golgeleme",
   "gruplama-calismasi": "/egzersizler/gruplama-calismasi",
+  "anlama-testi": "/egzersizler/anlama-testi",
+  "okuma-hizi-testi": "/egzersizler/okuma-hizi-testi",
 };
 
 export function resolveEducationProgramExerciseRoute(exerciseSlug: string): string | null {
