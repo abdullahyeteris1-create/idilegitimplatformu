@@ -164,6 +164,74 @@ test("TachistoscopeExerciseClient: sonuc kaydi + gorev tamamlama akisi kablolanm
   assert.match(source, /exerciseType: "tachistoscope"/);
 });
 
+test("TachistoscopeExerciseClient: completion basarisiz olursa router.push CAGRILMAZ, retry banner'i gorunur kalir", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+  const persistStart = source.indexOf("const persistPendingResult = useCallback(");
+  const persistBlock = source.slice(persistStart, source.indexOf("const finishExercise", persistStart));
+
+  // completeTaskAfterResultSave'in donen boolean sonucu yakalanip
+  // router.push'tan ONCE kontrol edilmeli - bu, completion basarisizsa
+  // otomatik yonlendirmenin engellendigini gosterir.
+  assert.match(persistBlock, /const completionOk = await completeTaskAfterResultSave\(\);/);
+  assert.match(persistBlock, /if \(!completionOk\) \{\s*\n\s*return;\s*\n\s*\}/);
+
+  // router.push, completionOk kontrolunden SONRA gelmeli (kod sirasi onemli)
+  const completionCheckIndex = persistBlock.indexOf("if (!completionOk)");
+  const routerPushIndex = persistBlock.indexOf("router.push(pending.resultUrl)");
+  assert.ok(completionCheckIndex !== -1 && routerPushIndex !== -1);
+  assert.ok(
+    completionCheckIndex < routerPushIndex,
+    "completionOk kontrolu router.push'tan once calismali",
+  );
+});
+
+test("TachistoscopeExerciseClient: retryTaskCompletion (completeTaskAfterResultSave ile ayni fonksiyon) sonucu tekrar kaydetmez", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+
+  // retryTaskCompletion butonu yalniz useEducationProgramTaskCompletion
+  // hook'undan gelen fonksiyonu cagirir - saveExerciseResultSecure'a
+  // (sonuc kaydina) hicbir dogrudan referans icermez.
+  const retryButtonIndex = source.indexOf("void retryTaskCompletion()");
+  assert.ok(retryButtonIndex !== -1);
+  assert.doesNotMatch(source, /onClick=\{\(\) => \{\s*void retryTaskCompletion\(\);\s*void saveExerciseResultSecure/);
+});
+
+test("TachistoscopeExerciseClient: Egitim Programi modunda gorev basarili tamamlaninca mevcut guvenli yonlendirme akisi calisir", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+  const persistStart = source.indexOf("const persistPendingResult = useCallback(");
+  const persistBlock = source.slice(persistStart, source.indexOf("const finishExercise", persistStart));
+
+  assert.match(persistBlock, /setSaveMessage\("Sonuç kaydedildi\."\);/);
+  assert.match(persistBlock, /router\.push\(pending\.resultUrl\);/);
+});
+
+test("TachistoscopeExerciseClient: standalone/Assignment V2 modunda (educationProgramTaskId yok) mevcut yonlendirme davranisi degismez", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+
+  // educationProgramTaskId yalniz isEducationProgramMode && !isAssignmentMode
+  // durumunda tanimli - taskId yoksa completeTaskAfterResultSave hook'u
+  // (useEducationProgramTaskCompletion.ts) her zaman Promise.resolve(true)
+  // doner, bu yuzden completionOk kontrolu standalone/Assignment V2'de
+  // hicbir zaman false olmaz ve router.push eskisi gibi calisir.
+  assert.match(
+    source,
+    /const educationProgramTaskId =\s*\n\s*isEducationProgramMode && !isAssignmentMode \? educationProgramLaunch\?\.taskId : undefined;/,
+  );
+});
+
+test("TachistoscopeExerciseClient: cift router.push veya cift sonuc kaydi riski yok (hasSavedResultRef + saveInFlightRef guard'lari korunmus)", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+
+  assert.match(source, /if \(saveInFlightRef\.current \|\| hasSavedResultRef\.current\) \{\s*\n\s*return;\s*\n\s*\}/);
+  assert.match(source, /hasSavedResultRef\.current = true;/);
+
+  // finishExercise'in kendisi de hasSavedResultRef ile korunuyor - persistResult
+  // ve finishExercise birlikte tek bir kayit/yonlendirme garanti eder.
+  const finishStart = source.indexOf("const finishExercise = useCallback(() => {");
+  const finishGuardLine = source.slice(finishStart, finishStart + 200);
+  assert.match(finishGuardLine, /if \(hasSavedResultRef\.current \|\| saveInFlightRef\.current \|\| saveStatus !== "idle"\) return;/);
+});
+
 test("TachistoscopeExerciseClient: mevcut result payload alanlari korunmus (speedMs/level/contentType/mode/net/reachedLevel/autoLevelUpCount)", async () => {
   const source = await read(TACHISTOSCOPE_CLIENT_PATH);
   const detailsStart = source.indexOf("exerciseType: \"tachistoscope\"");

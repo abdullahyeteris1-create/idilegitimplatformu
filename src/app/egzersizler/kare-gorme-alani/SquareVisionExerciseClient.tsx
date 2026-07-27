@@ -477,6 +477,7 @@ export function SquareVisionExerciseClient({
         </span>
         <select
           value={level}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             const nextLevel = Number(event.target.value) as Level;
             setLevel(nextLevel);

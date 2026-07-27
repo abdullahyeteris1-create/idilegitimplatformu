@@ -32,12 +32,12 @@ test("FAZ 3A-3A'da yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle a
   assert.equal(sqlFiles.length, 16);
 });
 
-test("Kare Gorme Alani route'u FAZ 3A-3A'da degistirilmedi (paylasilan helper'a gecirilmedi)", async () => {
+test("Kare Gorme Alani route'u sonraki bir turda paylasilan helper'a gecirildi (kopyalanmis ozel dogrulama kaldirildi)", async () => {
   const source = await read("src/app/egzersizler/kare-gorme-alani/page.tsx");
 
-  assert.doesNotMatch(source, /resolveEducationProgramExerciseLaunch/);
-  assert.match(source, /await cookies\(\)/);
-  assert.match(source, /getEducationProgramTaskLaunchContext/);
+  assert.match(source, /resolveEducationProgramExerciseLaunch/);
+  assert.doesNotMatch(source, /await cookies\(\)/);
+  assert.doesNotMatch(source, /getEducationProgramTaskLaunchContext/);
 });
 
 test("Eklenen yeni dosyalar eski Assignment System V2'ye bagimlilik icermez", async () => {

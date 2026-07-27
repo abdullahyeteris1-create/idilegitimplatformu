@@ -55,6 +55,12 @@ const EXERCISES = [
     pagePath: "src/app/egzersizler/kart-eslestirme/page.tsx",
     clientImport: "CardMatchingExerciseClient",
   },
+  {
+    name: "Kare Görme Alanı",
+    slug: "kare-gorme-alani",
+    pagePath: "src/app/egzersizler/kare-gorme-alani/page.tsx",
+    clientImport: "SquareVisionExerciseClient",
+  },
 ];
 
 for (const exercise of EXERCISES) {

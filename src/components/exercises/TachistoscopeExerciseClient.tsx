@@ -303,12 +303,21 @@ export function TachistoscopeExerciseClient({
         const saved = await saveExerciseResultSecure(pending.payload);
         hasSavedResultRef.current = true;
         setSaveStatus("success");
-        await completeTaskAfterResultSave();
+        const completionOk = await completeTaskAfterResultSave();
         if (saved.assignmentCompletionStatus === "failed") {
           setSaveMessage("Sonuç kaydedildi ancak görev tamamlanamadı. Sonuç ekranına devam edebilirsin.");
           return;
         }
         setSaveMessage("Sonuç kaydedildi.");
+        // Egitim Programi gorev tamamlama basarisizsa otomatik yonlendirme
+        // yapilmaz - completionNotice (retryTaskCompletion) banner'i gorunur
+        // kalir, "Sonuç Ekranına Devam" butonu zaten saveStatus="success"
+        // oldugu icin kullanilabilir durumda. Standalone/Assignment V2'de
+        // (gorev id'si olmadigi icin) completionOk hep true doner, davranis
+        // degismez.
+        if (!completionOk) {
+          return;
+        }
         router.push(pending.resultUrl);
       } catch {
         setSaveStatus("error");

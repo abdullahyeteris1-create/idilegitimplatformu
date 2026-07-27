@@ -43,6 +43,23 @@ test("Egitim Programi modunda sure secici gizlenir (Assignment modundaki gibi)",
   assert.match(source, /isAssignmentMode \|\| isEducationProgramMode \? null : \(/);
 });
 
+test("Egitim Programi modunda Seviye secicisi kilitlenir (Kare Boyutu ile ayni desen)", async () => {
+  const source = await read(CLIENT_PATH);
+  const levelLabelIndex = source.indexOf("Seviye");
+  assert.ok(levelLabelIndex !== -1, "Seviye label'i bulunamadi");
+
+  const selectBlock = source.slice(levelLabelIndex, source.indexOf("</select>", levelLabelIndex));
+  assert.match(selectBlock, /disabled=\{isEducationProgramMode\}/);
+});
+
+test("standalone modda Seviye secicisi serbest kalir (phase bazli ek kilit eklenmedi)", async () => {
+  const source = await read(CLIENT_PATH);
+  const levelLabelIndex = source.indexOf("Seviye");
+  const selectBlock = source.slice(levelLabelIndex, source.indexOf("</select>", levelLabelIndex));
+
+  assert.doesNotMatch(selectBlock, /disabled=\{isEducationProgramMode \|\| phase/);
+});
+
 test("9) normal serbest akista educationProgramLaunch olmadan bilesen calisir (varsayilan {} parametresi)", async () => {
   const source = await read(CLIENT_PATH);
 
