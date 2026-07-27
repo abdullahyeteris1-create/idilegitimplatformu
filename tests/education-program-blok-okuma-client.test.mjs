@@ -437,14 +437,14 @@ test("55) navigasyon butonlari (Yeniden Baslat / Ortak Sonuc Ekrani) saveStatus 
   assert.equal(disabledMatches.length, 2, "hem Yeniden Baslat hem Ortak Sonuc Ekrani butonu kilitlenmeli");
 });
 
-// NOT: Golgeleme, Blok Okuma'dan SONRAKI bir turda kasitli olarak Egitim
-// Programi'na entegre edildi (bkz. education-program-shadow-reading-*.test.mjs)
-// - bu yuzden Golgeleme artik educationProgramLaunch icerir, bu beklenen ve
-// dogru bir durumdur. Gruplama ise hala hicbir turda degistirilmedi.
-test("Gruplama dosyalari bu turda degismedi (dokunulmadi)", async () => {
-  const groupingSource = await read("src/app/egzersizler/gruplama/GroupingReadingExerciseClient.tsx").catch(() => null);
-
-  if (groupingSource !== null) {
-    assert.doesNotMatch(groupingSource, /educationProgramLaunch/);
-  }
-});
+// NOT: Golgeleme VE Gruplama Calismasi, Blok Okuma'dan SONRAKI turlarda
+// kasitli olarak Egitim Programi'na entegre edildi (bkz.
+// education-program-shadow-reading-*.test.mjs ve
+// education-program-grouping-reading-*.test.mjs) - ikisi de artik
+// educationProgramLaunch icerir, bu beklenen ve dogru bir durumdur. Bu
+// dosyanin kapsami artik yalniz Blok Okuma'nin kendisini dogrulamaktir;
+// diger egzersizlerin degisip degismedigini izleme sorumlulugu kendi test
+// dosyalarina aittir (bu yuzden eski "Gruplama degismedi" kontrolu
+// kaldirildi - eskiden zaten YANLIS bir dosya yolunu kontrol ediyordu:
+// src/app/egzersizler/gruplama/GroupingReadingExerciseClient.tsx hicbir
+// zaman var olmadi, gercek dosya gruplama-calismasi/GroupingExerciseClient.tsx'tir).

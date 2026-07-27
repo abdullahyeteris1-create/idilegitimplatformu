@@ -85,6 +85,17 @@ export type ShadowReadingTaskSettings = {
   wordsPerMinute?: 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500;
 };
 
+// displayMode ve scrollMode BILEREK bu tipe dahil edilmedi - gercek client
+// kodu incelendiginde bunlarin yalniz gorsel/kisisel tercih oldugu (fontSize
+// ile ayni kategoride) goruldu, ogretmen ayari olarak semaya alinmadi (bkz.
+// exerciseSettingsSchemas.ts).
+export type GroupingReadingTaskSettings = {
+  groupSize?: 2 | 3 | 4 | 5;
+  speedMode?: "milliseconds" | "wordsPerMinute";
+  customMilliseconds?: 100 | 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 5000 | 7500 | 10000;
+  customWordsPerMinute?: 100 | 150 | 200 | 250 | 300 | 400 | 500 | 600 | 800 | 1000;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

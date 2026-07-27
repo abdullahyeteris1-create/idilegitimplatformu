@@ -5,9 +5,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useExerciseTimer } from "@/hooks/useExerciseTimer";
 import { calculateCharacterCount, formatDuration, splitTextIntoWords } from "@/lib/exercise-engine/shadowReading";
+import {
+  calculateGroupingReadingRemainingActiveSeconds,
+  calculateGroupingReadingTotalActiveSeconds,
+  hasGroupingReadingReachedAssignedDuration,
+} from "@/lib/exercise-engine/groupingReading";
 import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
-import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { getResolvedCurrentUser } from "@/lib/auth/auth";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
@@ -39,6 +48,22 @@ type Result = {
   successRate: number;
 };
 
+type SaveStatus = "idle" | "saving" | "success" | "error";
+type NewTextNotice = {
+  cumulativeActiveSeconds: number;
+  remainingSeconds: number;
+  completedTextCount: number;
+};
+
+const EXPECTED_RESULT_EXERCISE_TYPE = "grouping-reading";
+// Result API whitelist ust siniriyla ayni (bkz. route.ts MAX_DURATION_SECONDS)
+// - gercek biriken aktif sure gonderilir, yalniz bu guvenlik siniriyla kirpilir.
+const MAX_RESULT_DURATION_SECONDS = 21_600;
+const GROUP_SIZE_OPTIONS: GroupSize[] = [2, 3, 4, 5];
+const SPEED_MODE_OPTIONS: SpeedMode[] = ["milliseconds", "wordsPerMinute"];
+const CUSTOM_MILLISECONDS_OPTIONS = [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000];
+const CUSTOM_WORDS_PER_MINUTE_OPTIONS = [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000];
+
 const ALL = "all";
 const GROUPS: GroupSize[] = [2, 3, 4, 5];
 const FONTS: FontSize[] = [14, 16, 18, 20, 22, 24, 26, 28];
@@ -53,7 +78,11 @@ function groupWords(words: string[], size: GroupSize): string[][] {
   return output;
 }
 
-export function GroupingExerciseClient() {
+export function GroupingExerciseClient({
+  educationProgramLaunch,
+}: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
+} = {}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -62,6 +91,20 @@ export function GroupingExerciseClient() {
   const savedRef = useRef(false);
   const areaRef = useRef<HTMLDivElement | null>(null);
   const activeRef = useRef<HTMLSpanElement | null>(null);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  // Egitim Programi coklu-metin biriken sure modeli: bu iki ref, ayni client
+  // yasam dongusu icinde onceki metinlerde biriken aktif saniyeyi ve
+  // tamamen bitirilen metin sayisini tutar - sayfa yenilenirse kaybolur
+  // (kasitli, bu ilk surumun bilinen siniri).
+  const cumulativeActiveSecondsRef = useRef(0);
+  const completedTextCountRef = useRef(0);
+  const textEndInFlightRef = useRef(false);
+
+  const isAssignmentMode = useIsAssignmentMode();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const assignedDurationSeconds = educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY;
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [isTeacher, setIsTeacher] = useState(false);
@@ -71,20 +114,38 @@ export function GroupingExerciseClient() {
 
   const [category, setCategory] = useState(ALL);
   const [textId, setTextId] = useState("");
-  const [groupSize, setGroupSize] = useState<GroupSize>(2);
+  const [groupSize, setGroupSize] = useState<GroupSize>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "groupSize", GROUP_SIZE_OPTIONS, 2),
+  );
   const [fontSize, setFontSize] = useState<FontSize>(20);
   const [displayMode, setDisplayMode] = useState<DisplayMode>("keep");
   const [scrollMode, setScrollMode] = useState<ScrollMode>("page");
-  const [speedMode, setSpeedMode] = useState<SpeedMode>("milliseconds");
-  const [customMilliseconds, setCustomMilliseconds] = useState(1000);
-  const [customWordsPerMinute, setCustomWordsPerMinute] = useState(300);
-  const [customWordsPerMinuteInput, setCustomWordsPerMinuteInput] = useState("300");
+  const [speedMode, setSpeedMode] = useState<SpeedMode>(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMode", SPEED_MODE_OPTIONS, "milliseconds"),
+  );
+  const [customMilliseconds, setCustomMilliseconds] = useState(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 1000),
+  );
+  const [customWordsPerMinute, setCustomWordsPerMinute] = useState(() =>
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customWordsPerMinute", CUSTOM_WORDS_PER_MINUTE_OPTIONS, 300),
+  );
+  const [customWordsPerMinuteInput, setCustomWordsPerMinuteInput] = useState(() =>
+    String(pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customWordsPerMinute", CUSTOM_WORDS_PER_MINUTE_OPTIONS, 300)),
+  );
   const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
 
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [newTextNotice, setNewTextNotice] = useState<NewTextNotice | null>(null);
+
+  const educationProgramTaskId =
+    isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
+  const { completionStatus, completeTaskAfterResultSave, retryTaskCompletion } =
+    useEducationProgramTaskCompletion(educationProgramTaskId, EXPECTED_RESULT_EXERCISE_TYPE);
 
   useEffect(() => {
     void (async () => {
@@ -180,6 +241,36 @@ export function GroupingExerciseClient() {
   const completedGroups = phase === "running" ? Math.min(index + 1, totalGroups) : 0;
   const progress = totalGroups ? Math.round((completedGroups / totalGroups) * 100) : 0;
 
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) {
+        return;
+      }
+
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
   const reset = useCallback(() => {
     savedRef.current = true;
     startedAtRef.current = null;
@@ -189,6 +280,11 @@ export function GroupingExerciseClient() {
     setResult(null);
     setPhase("ready");
     areaRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
   }, []);
 
   const finish = useCallback(
@@ -201,16 +297,15 @@ export function GroupingExerciseClient() {
 
       const done = completed ? totalGroups : Math.min(index + 1, totalGroups);
       const successRate = Math.round((done / totalGroups) * 100);
-      const durationSeconds = Math.max(
-        1,
-        startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : elapsed,
-      );
+      // Egitim Programi modunda sure, biriken (onceki metinler + bu metin)
+      // yalniz-aktif-calisirken-artan toplam saniyeden gelir - Date.now() farki
+      // KULLANILMAZ (pause suresini de icerebilir). Standalone modda mevcut
+      // davranis (Date.now() farki, yoksa elapsed) aynen korunur.
+      const durationSeconds = isEducationProgramMode
+        ? Math.max(1, cumulativeActiveSecondsRef.current)
+        : Math.max(1, startedAtRef.current ? Math.round((Date.now() - startedAtRef.current) / 1000) : elapsed);
 
-      const student = getCurrentStudent();
-
-      saveExerciseResult({
-        studentId: student?.id ?? "no-student",
-        studentName: student?.name ?? "Secilmemis Ogrenci",
+      const payload = {
         exerciseType: "grouping-reading",
         exerciseTitle: "Gruplama Calismasi",
         durationSeconds,
@@ -234,8 +329,18 @@ export function GroupingExerciseClient() {
           completedGroups: done,
           totalGroups,
           estimatedWordsPerMinute: estimatedWpm,
+          ...(isEducationProgramMode
+            ? {
+                completedTextCount: completed
+                  ? completedTextCountRef.current + 1
+                  : completedTextCountRef.current,
+                assignedDurationSeconds: educationProgramLaunch?.durationSeconds ?? 0,
+                cumulativeActiveSeconds: Math.min(cumulativeActiveSecondsRef.current, MAX_RESULT_DURATION_SECONDS),
+                lastTextId: selected.id,
+              }
+            : {}),
         },
-      });
+      } satisfies SecureExerciseResultInput;
 
       setResult({
         completed,
@@ -250,15 +355,20 @@ export function GroupingExerciseClient() {
 
       setPaused(false);
       setPhase("result");
+      pendingResultRef.current = payload;
+      void persistResult(payload);
     },
     [
       displayMode,
+      educationProgramLaunch?.durationSeconds,
       elapsed,
       estimatedWpm,
       fontSize,
       groupSize,
       index,
       intervalMs,
+      isEducationProgramMode,
+      persistResult,
       safeMilliseconds,
       safeWordsPerMinute,
       scrollMode,
@@ -270,14 +380,68 @@ export function GroupingExerciseClient() {
     ],
   );
 
+  const handleTextEnd = useCallback(
+    (completedText: boolean) => {
+      if (!isEducationProgramMode) {
+        finish(completedText);
+        return;
+      }
+
+      if (textEndInFlightRef.current) {
+        return;
+      }
+      textEndInFlightRef.current = true;
+
+      const nextTotalActiveSeconds = calculateGroupingReadingTotalActiveSeconds(
+        cumulativeActiveSecondsRef.current,
+        elapsed,
+      );
+      cumulativeActiveSecondsRef.current = nextTotalActiveSeconds;
+
+      if (completedText) {
+        completedTextCountRef.current += 1;
+      }
+
+      if (hasGroupingReadingReachedAssignedDuration(assignedDurationSeconds, nextTotalActiveSeconds, 0)) {
+        finish(completedText);
+        return;
+      }
+
+      textEndInFlightRef.current = false;
+      setNewTextNotice({
+        cumulativeActiveSeconds: nextTotalActiveSeconds,
+        remainingSeconds: calculateGroupingReadingRemainingActiveSeconds(
+          assignedDurationSeconds,
+          nextTotalActiveSeconds,
+          0,
+        ),
+        completedTextCount: completedTextCountRef.current,
+      });
+      reset();
+    },
+    [assignedDurationSeconds, elapsed, finish, isEducationProgramMode, reset],
+  );
+
+  const handleRestart = () => {
+    // "Yeniden Baslat", ayni Egitim Programi gorevi icinde yeni bir metne
+    // gecmekten FARKLI bir eylemdir: butun gorevi bastan baslatir, bu yuzden
+    // biriken sure/tamamlanan metin sayacini da sifirlar. reset() (metinler
+    // arasi gecis) bunlara bilerek dokunmaz.
+    cumulativeActiveSecondsRef.current = 0;
+    completedTextCountRef.current = 0;
+    textEndInFlightRef.current = false;
+    setNewTextNotice(null);
+    reset();
+  };
+
   const advanceGroup = useCallback(() => {
     if (index >= totalGroups - 1) {
-      finish(true);
+      handleTextEnd(true);
       return;
     }
 
     setIndex((current) => Math.min(current + 1, totalGroups - 1));
-  }, [finish, index, totalGroups]);
+  }, [handleTextEnd, index, totalGroups]);
 
   useExerciseTimer({
     running: phase === "running" && totalGroups > 0,
@@ -297,6 +461,19 @@ export function GroupingExerciseClient() {
 
     return () => window.clearInterval(id);
   }, [paused, phase]);
+
+  // Ogretmenin belirledigi gorev suresi bir metnin ORTASINDA dolabilir - bu
+  // efekt, mevcut tek aktif-saniye sayacini (elapsed) izleyerek bunu yakalar;
+  // ikinci/bagimsiz bir setInterval KURULMAZ.
+  useEffect(() => {
+    if (!isEducationProgramMode || phase !== "running" || paused) {
+      return;
+    }
+
+    if (hasGroupingReadingReachedAssignedDuration(assignedDurationSeconds, cumulativeActiveSecondsRef.current, elapsed)) {
+      handleTextEnd(false);
+    }
+  }, [assignedDurationSeconds, elapsed, handleTextEnd, isEducationProgramMode, paused, phase]);
 
   useEffect(() => {
     if (phase === "running" && !paused) {
@@ -323,6 +500,8 @@ export function GroupingExerciseClient() {
     setPaused(false);
     setResult(null);
     setPhase("running");
+    setNewTextNotice(null);
+    textEndInFlightRef.current = false;
   };
 
   const controls = (
@@ -371,7 +550,7 @@ export function GroupingExerciseClient() {
         <select
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={groupSize}
-          disabled={phase === "running" && !paused}
+          disabled={(phase === "running" && !paused) || isEducationProgramMode}
           onChange={(event) => {
             const nextGroupSize = Number(event.target.value);
             if (!Number.isFinite(nextGroupSize)) return;
@@ -392,6 +571,7 @@ export function GroupingExerciseClient() {
         <select
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
           value={speedMode}
+          disabled={isEducationProgramMode}
           onChange={(event) => {
             const nextMode = event.target.value as SpeedMode;
             setSpeedMode(nextMode);
@@ -415,6 +595,7 @@ export function GroupingExerciseClient() {
             min={50}
             max={10000}
             value={customMilliseconds}
+            disabled={isEducationProgramMode}
             onChange={(event) => {
               const nextSpeed = Number(event.target.value);
               if (!Number.isFinite(nextSpeed)) return;
@@ -431,6 +612,7 @@ export function GroupingExerciseClient() {
             step={1}
             inputMode="numeric"
             value={customWordsPerMinuteInput}
+            disabled={isEducationProgramMode}
             onChange={(event) => {
               const rawValue = event.target.value;
               setCustomWordsPerMinuteInput(rawValue);
@@ -516,7 +698,7 @@ export function GroupingExerciseClient() {
             style={FULLSCREEN_TOUCH_STYLE}
             onClick={startExercise}
           >
-            Baslat
+            {newTextNotice ? "Yeni Metinle Devam Et" : "Baslat"}
           </button>
         ) : (
           <>
@@ -528,10 +710,10 @@ export function GroupingExerciseClient() {
               {paused ? "Devam Et" : "Duraklat"}
             </button>
             <div className="flex gap-2">
-              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={reset}>
+              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={handleRestart}>
                 Yeniden
               </button>
-              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={() => finish(false)}>
+              <button className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} min-h-[40px] flex-1 ${styles.secondaryButtonOverride}`} onClick={() => handleTextEnd(false)}>
                 Bitir
               </button>
             </div>
@@ -551,6 +733,7 @@ export function GroupingExerciseClient() {
           onStart={() => {
             savedRef.current = false;
             setPhase("ready");
+            textEndInFlightRef.current = false;
           }}
         />
       </div>
@@ -563,8 +746,50 @@ export function GroupingExerciseClient() {
       <section className={`idil-card p-5 md:p-7 ${styles.resultCardOverride}`}>
         <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Gruplama Calismasi Sonucu</h2>
         <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
-          {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
+          {saveStatus === "success"
+            ? result.completed
+              ? "Metin tamamlandi."
+              : "Egzersiz erken bitirildi."
+            : saveMessage}
         </p>
+        {saveStatus === "error" ? (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">
+            <p>{saveMessage}</p>
+            <button
+              type="button"
+              className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+              onClick={() => {
+                const pending = pendingResultRef.current;
+                if (pending) {
+                  saveCompletedRef.current = false;
+                  void persistResult(pending);
+                }
+              }}
+            >
+              Yeniden Dene
+            </button>
+          </div>
+        ) : null}
+        {completionStatus.state !== "idle" ? (
+          <div
+            className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${
+              completionStatus.state === "error"
+                ? "border-red-200 bg-red-50 text-red-800"
+                : "border-slate-200 bg-white text-slate-800"
+            }`}
+          >
+            <p>{completionStatus.message}</p>
+            {completionStatus.state === "error" && completionStatus.canRetry ? (
+              <button
+                type="button"
+                className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white"
+                onClick={() => void retryTaskCompletion()}
+              >
+                Program ilerlemesini yeniden dene
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
@@ -581,11 +806,12 @@ export function GroupingExerciseClient() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} onClick={reset}>
+          <button className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} onClick={handleRestart} disabled={saveStatus !== "success"}>
             Yeniden Baslat
           </button>
           <button
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
+            disabled={saveStatus !== "success"}
             onClick={() =>
               router.push(
                 `/sonuc?exerciseType=grouping-reading&correct=0&wrong=0&successRate=${result.successRate}&score=${result.score}`,
@@ -647,6 +873,22 @@ export function GroupingExerciseClient() {
         </p>
       ) : phase === "ready" ? (
         <div className="text-center">
+          {isEducationProgramMode && newTextNotice ? (
+            <div className="mx-auto mb-4 flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm">
+              <p className="text-sm font-bold text-slate-900">Görev süreniz henüz dolmadı</p>
+              <p className="text-xs text-slate-700">
+                Bu metni tamamladınız. Görevi tamamlamak için yeni bir metin seçerek devam etmelisiniz.
+              </p>
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-800">
+                <span>Tamamlanan süre: {formatDuration(newTextNotice.cumulativeActiveSeconds)}</span>
+                <span>
+                  Kalan süre:{" "}
+                  {Number.isFinite(newTextNotice.remainingSeconds) ? formatDuration(newTextNotice.remainingSeconds) : "—"}
+                </span>
+                <span>Tamamlanan metin: {newTextNotice.completedTextCount}</span>
+              </div>
+            </div>
+          ) : null}
           <h2 className="text-xl font-black md:text-3xl">Ayarlarini sec, hazir oldugunda baslat.</h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
             Aktif grubun orta noktasina odaklan. Golge kalktikca kelimeleri tek bakista gormeye calis.

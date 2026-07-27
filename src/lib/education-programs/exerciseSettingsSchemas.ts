@@ -305,6 +305,49 @@ const SHADOW_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+// Gruplama Calismasi'nda displayMode ("keep"/"fade" - gecmis gruplarin
+// solarak/solmadan gorunmesi) ve scrollMode ("line"/"page" - otomatik
+// kaydirmanin hedef hizalamasi) BILEREK semaya EKLENMEDI: gercek client
+// kodu incelendiginde (GroupingExerciseClient.tsx) bu ikisinin yalniz
+// GORSEL/kisisel bir tercih oldugu goruldu - okuma zorlugunu, hizini veya
+// egzersiz mekanigini degistirmiyorlar (fontSize ile ayni kategoride).
+// Ogretmenin pedagojik olarak belirledigi gercek zorluk/hiz alanlari
+// yalnizca groupSize, speedMode, customMilliseconds, customWordsPerMinute'tir.
+const GROUPING_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "gruplama-calismasi",
+  fields: [
+    {
+      key: "groupSize",
+      label: "Grup Boyutu",
+      type: "integer",
+      options: [2, 3, 4, 5],
+      defaultValue: 2,
+    },
+    {
+      key: "speedMode",
+      label: "Hız Menüsü",
+      type: "enum",
+      options: ["milliseconds", "wordsPerMinute"],
+      defaultValue: "milliseconds",
+    },
+    {
+      key: "customMilliseconds",
+      label: "Milisaniye",
+      type: "integer",
+      options: [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000],
+      defaultValue: 1000,
+      unit: "ms",
+    },
+    {
+      key: "customWordsPerMinute",
+      label: "Okuma Hızı (kelime/dk)",
+      type: "integer",
+      options: [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000],
+      defaultValue: 300,
+    },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -318,6 +361,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     CARD_MATCHING_SETTINGS_SCHEMA,
     BLOCK_READING_SETTINGS_SCHEMA,
     SHADOW_READING_SETTINGS_SCHEMA,
+    GROUPING_READING_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

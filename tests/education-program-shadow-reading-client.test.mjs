@@ -402,10 +402,10 @@ test("37) Blok Okuma dosyalari bu turda degismedi (dokunulmadi)", async () => {
   assert.doesNotMatch(blockReadingEngineSource, /hasShadowReadingReachedAssignedDuration/);
 });
 
-test("38) Gruplama dosyalari bu turda degismedi (dokunulmadi)", async () => {
-  const groupingSource = await read("src/app/egzersizler/gruplama/GroupingReadingExerciseClient.tsx").catch(() => null);
-
-  if (groupingSource !== null) {
-    assert.doesNotMatch(groupingSource, /educationProgramLaunch/);
-  }
-});
+// NOT: Gruplama Calismasi, Golgeleme'den SONRAKI bir turda kasitli olarak
+// Egitim Programi'na entegre edildi (bkz.
+// education-program-grouping-reading-*.test.mjs) - bu yuzden Gruplama artik
+// educationProgramLaunch icerir, bu beklenen ve dogru bir durumdur. Eski
+// kontrol ayrica YANLIS bir dosya yolunu kontrol ediyordu (gercek dosya
+// gruplama-calismasi/GroupingExerciseClient.tsx'tir, gruplama/ degil) - bu
+// yuzden hicbir zaman anlamli bir dogrulama yapmiyordu.

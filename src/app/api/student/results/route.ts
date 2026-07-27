@@ -203,6 +203,30 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
     lastTextId: { type: "string", maxLength: 128 },
   },
+  "grouping-reading": {
+    category: { type: "string", maxLength: 80 },
+    textTitle: { type: "string", maxLength: 160 },
+    groupSize: { type: "integer", min: 2, max: 5 },
+    speedMode: { type: "string", values: ["milliseconds", "wordsPerMinute"] },
+    intervalMs: { type: "integer", min: 1, max: 600_000 },
+    customMilliseconds: { type: "integer", min: 50, max: 10_000 },
+    customWordsPerMinute: { type: "integer", min: 1, max: 10_000 },
+    fontSize: { type: "integer", min: 14, max: 28 },
+    displayMode: { type: "string", values: ["keep", "fade"] },
+    scrollMode: { type: "string", values: ["line", "page"] },
+    totalWords: { type: "integer", min: 0, max: 1_000_000 },
+    totalCharacters: { type: "integer", min: 0, max: 10_000_000 },
+    completedGroups: { type: "integer", min: 0, max: 1_000_000 },
+    totalGroups: { type: "integer", min: 0, max: 1_000_000 },
+    estimatedWordsPerMinute: { type: "integer", min: 0, max: 1_000_000 },
+    // Egitim Programi coklu-metin biriken sure modeli icin eklendi (bkz.
+    // GroupingExerciseClient.tsx) - completedTextCount yalniz sonuna kadar
+    // tamamlanan metinleri sayar, yarida birakilanlari saymaz.
+    completedTextCount: { type: "integer", min: 0, max: 1_000 },
+    assignedDurationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    cumulativeActiveSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
+    lastTextId: { type: "string", maxLength: 128 },
+  },
 };
 
 type ValidatedResultBody = {

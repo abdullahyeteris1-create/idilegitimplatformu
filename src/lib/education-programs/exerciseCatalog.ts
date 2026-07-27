@@ -129,6 +129,15 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
+  {
+    slug: "gruplama-calismasi",
+    title: "Gruplama Çalışması",
+    resultExerciseType: "grouping-reading",
+    supportsLevel: false,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
 ] as const;
 
 export const EDUCATION_PROGRAM_EXERCISE_BY_SLUG = new Map<
