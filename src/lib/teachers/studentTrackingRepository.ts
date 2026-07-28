@@ -43,13 +43,12 @@ type StudentRow = {
   name: string;
   username: string;
   class_name: string | null;
-  class_level: string | null;
+  phone: string | null;
   status: TeacherStudentAccountStatus;
   is_active: boolean;
   access_end_date: string | null;
   last_login_at: string | null;
   parent_name: string | null;
-  parent_phone: string | null;
   education_level: string | null;
   education_status: string | null;
   notes: string | null;
@@ -160,13 +159,12 @@ function mapStudentRow(row: DatabaseRow): StudentRow | null {
     name,
     username,
     class_name: readString(row, ["class_name", "className"]),
-    class_level: readString(row, ["class_level", "classLevel"]),
+    phone: readString(row, ["phone"]),
     status: normalizeAccountStatus(row),
     is_active: readBoolean(row, ["is_active", "isActive"]) ?? true,
     access_end_date: readDateString(row, ["access_end_date", "accessEndDate"]),
     last_login_at: readDateString(row, ["last_login_at", "lastLoginAt"]),
     parent_name: readString(row, ["parent_name", "parentName"]),
-    parent_phone: readString(row, ["parent_phone", "parentPhone"]),
     education_level: readString(row, ["education_level", "educationLevel"]),
     education_status: readString(row, ["education_status", "educationStatus"]),
     notes: readString(row, ["notes"]),
@@ -385,12 +383,12 @@ function mapProfile(student: StudentRow): TeacherStudentProfile {
     studentId: student.id,
     fullName: student.name,
     username: student.username,
-    classLabel: student.class_level ?? student.class_name,
+    classLabel: student.class_name,
     accountStatus: student.status,
     accessEndsAt: student.access_end_date,
     lastLoginAt: student.last_login_at,
     parentName: student.parent_name,
-    parentPhone: student.parent_phone,
+    parentPhone: student.phone,
     educationLevel: student.education_level,
     educationStatus: student.education_status,
     notes: student.notes,
@@ -444,7 +442,7 @@ export async function getTeacherStudentTrackingList(): Promise<TeacherStudentLis
   try {
     const { data: studentsData, error: studentsError } = await supabase
       .from(STUDENTS_TABLE)
-      .select("id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at")
+      .select("id,name,username,class_name,phone,status,is_active,access_end_date,last_login_at")
       .order("name", { ascending: true });
 
     if (studentsError) {
@@ -506,7 +504,7 @@ export async function getTeacherStudentTrackingList(): Promise<TeacherStudentLis
       return {
         studentId: student.id,
         fullName: student.name,
-        classLabel: student.class_level ?? student.class_name,
+        classLabel: student.class_name,
         accountStatus: student.status,
         accessEndsAt: student.access_end_date,
         totalXp: snapshot.totalXp,
@@ -543,7 +541,7 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     const studentResult = await supabase
       .from(STUDENTS_TABLE)
       .select(
-        "id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at,parent_name,parent_phone,education_level,education_status,notes,created_at",
+        "id,name,username,class_name,phone,status,is_active,access_end_date,last_login_at,parent_name,education_level,education_status,notes,created_at",
       )
       .eq("id", safeStudentId)
       .maybeSingle();

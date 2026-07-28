@@ -59,6 +59,13 @@ test("ogrenci takip sayfasi temel sorgu hatasini error state'e cevirir", async (
   assert.match(pageSource, /Öğrenci verileri şu anda yüklenemedi/);
   assert.match(repositorySource, /teacher-students-query-failed/);
   assert.doesNotMatch(repositorySource, /studentsResult\.error \|\| xpResult\.error/);
+  assert.doesNotMatch(repositorySource, /class_level/);
+  assert.doesNotMatch(repositorySource, /parent_phone/);
+  assert.match(repositorySource, /select\("id,name,username,class_name,phone,status,is_active,access_end_date,last_login_at"\)/);
+  assert.match(
+    repositorySource,
+    /select\(\s*"id,name,username,class_name,phone,status,is_active,access_end_date,last_login_at,parent_name,education_level,education_status,notes,created_at",\s*\)/,
+  );
   assert.match(clientSource, /Sayfayı Yenile/);
   assert.match(clientSource, /loadError/);
 });
