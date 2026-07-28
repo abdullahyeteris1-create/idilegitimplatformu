@@ -1,0 +1,554 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PanelCard } from "@/components/ui/PanelCard";
+import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
+import { downloadResultsXlsx } from "@/lib/results/resultExport";
+import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
+import type { TeacherStudentDetail } from "@/lib/teachers/studentTrackingTypes";
+
+function formatDateTime(value: string | null): string {
+  if (!value) {
+    return "Henüz veri yok";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Henüz veri yok";
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function slugify(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "Ö";
+  }
+
+  if (parts.length === 1) {
+    return parts[0]!.slice(0, 2).toLocaleUpperCase("tr-TR");
+  }
+
+  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toLocaleUpperCase("tr-TR");
+}
+
+function getAvatarTone(name: string): string {
+  const palette = [
+    "from-red-500 to-rose-400",
+    "from-orange-500 to-amber-400",
+    "from-emerald-500 to-teal-400",
+    "from-sky-500 to-cyan-400",
+    "from-violet-500 to-fuchsia-400",
+    "from-slate-600 to-slate-500",
+  ];
+
+  const index = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length;
+  return palette[index];
+}
+
+function Avatar({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[22px] bg-gradient-to-br ${getAvatarTone(
+        name,
+      )} text-base font-black text-white shadow-lg ring-4 ring-white/60 [data-idil-theme=dark]:ring-slate-950`}
+    >
+      {getInitials(name)}
+    </span>
+  );
+}
+
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="h-3 w-full overflow-hidden rounded-full bg-white/20">
+      <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.min(100, Math.max(0, Math.round(value)))}%` }} />
+    </div>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+}) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">{title}</p>
+      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">{value}</p>
+      {subtitle ? <p className="mt-1 text-sm text-slate-500 [data-idil-theme=dark]:text-slate-400">{subtitle}</p> : null}
+    </article>
+  );
+}
+
+function EmptyCard({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
+      {text}
+    </div>
+  );
+}
+
+export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentDetail }) {
+  const router = useRouter();
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
+
+  const sortedResults = useMemo(() => {
+    return [...detail.results].sort((left, right) => right.date.localeCompare(left.date));
+  }, [detail.results]);
+
+  const readingStats = useMemo(() => createReadingTestStatistics(sortedResults), [sortedResults]);
+
+  const handleDeleteStudent = async () => {
+    if (isDeletingStudent) {
+      return;
+    }
+
+    setDeleteErrorMessage("");
+    setIsDeletingStudent(true);
+
+    try {
+      const response = await fetch(`/api/admin/students/${encodeURIComponent(detail.profile.studentId)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        throw new Error("delete-failed");
+      }
+
+      router.push("/ogretmen/idil-panel/ogrenci-takip");
+    } catch {
+      setDeleteErrorMessage("Öğrenci silinemedi. Lütfen yeniden deneyin.");
+    } finally {
+      setIsDeletingStudent(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const parentLabel = detail.profile.parentName ?? "Henüz veri yok";
+  const parentPhoneLabel = detail.profile.parentPhone ?? "Henüz veri yok";
+  const educationLevelLabel =
+    detail.profile.educationLevel && detail.profile.educationLevel in EDUCATION_LEVEL_LABELS
+      ? EDUCATION_LEVEL_LABELS[detail.profile.educationLevel as keyof typeof EDUCATION_LEVEL_LABELS]
+      : "Henüz veri yok";
+  const educationStatusLabel = detail.profile.educationStatus ?? "Henüz veri yok";
+  const activeProgramName = detail.programSummary.activeProgramName ?? "Program yok";
+  const totalProgramDays = detail.programSummary.totalDays ?? 0;
+  const completedProgramDays = detail.programSummary.completedDays ?? 0;
+  const programProgress = detail.programSummary.progressPercent ?? 0;
+
+  return (
+    <div className="grid gap-4">
+      <section className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,rgba(127,29,29,0.98)_0%,rgba(220,38,38,0.96)_44%,rgba(249,115,22,0.9)_100%)] p-5 text-white shadow-[0_20px_60px_rgba(185,28,28,0.2)] md:p-6 [data-idil-theme=dark]:border-slate-700">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-orange-200/15 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
+            <Link
+              href="/ogretmen/idil-panel/ogrenci-takip"
+              className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            >
+              ← Geri dön
+            </Link>
+
+            <div className="mt-4 flex items-start gap-4">
+              <Avatar name={detail.profile.fullName} />
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-red-100">Öğrenci Detayı</p>
+                <h1 className="mt-1 text-3xl font-black tracking-tight text-white md:text-4xl">
+                  {detail.profile.fullName}
+                </h1>
+                <p className="mt-1 text-sm text-red-50/90">Kullanıcı adı: {detail.profile.username}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold">
+                    {detail.profile.classLabel ?? "Sınıf yok"}
+                  </span>
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold">
+                    {detail.profile.accountStatus === "active" ? "Aktif hesap" : "Pasif hesap"}
+                  </span>
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold">
+                    Seviye {detail.gamificationSummary.level} · {detail.gamificationSummary.levelTitle}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:w-[370px] xl:grid-cols-1">
+            <article className="rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-100">Toplam XP</p>
+                  <p className="mt-1 text-4xl font-black leading-none">{detail.gamificationSummary.totalXp}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-100">Rozet</p>
+                  <p className="mt-1 text-2xl font-black leading-none">{detail.gamificationSummary.badgeCount}</p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span>Sonraki seviyeye ilerleme</span>
+                  <span>%{detail.gamificationSummary.progressPercent}</span>
+                </div>
+                <ProgressBar value={detail.gamificationSummary.progressPercent} />
+                <p className="mt-2 text-xs text-red-50/90">
+                  {detail.gamificationSummary.remainingXp} XP sonra {detail.gamificationSummary.snapshot.nextLevelTitle}
+                </p>
+              </div>
+            </article>
+
+            <article className="rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-100">Hızlı Özet</p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-white/10 px-3 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-red-100">Program</p>
+                  <p className="mt-1 font-semibold">{activeProgramName}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 px-3 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-red-100">Gün</p>
+                  <p className="mt-1 font-semibold">
+                    {completedProgramDays}/{totalProgramDays}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white/10 px-3 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-red-100">Son giriş</p>
+                  <p className="mt-1 font-semibold">{formatDateTime(detail.profile.lastLoginAt)}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 px-3 py-3">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-red-100">Erişim</p>
+                  <p className="mt-1 font-semibold">{formatDateTime(detail.profile.accessEndsAt)}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <PanelCard title="Profil ve Program" subtitle="Temel bilgiler ve aktif program özeti">
+          <div className="grid gap-3 md:grid-cols-2">
+            {[
+              ["Sınıf", detail.profile.classLabel ?? "Henüz veri yok"],
+              ["Veli", parentLabel],
+              ["Veli Telefonu", parentPhoneLabel],
+              ["Eğitim Düzeyi", educationLevelLabel],
+              ["Eğitim Durumu", educationStatusLabel],
+              ["Kayıt Tarihi", formatDateTime(detail.profile.createdAt)],
+              ["Son Giriş", formatDateTime(detail.profile.lastLoginAt)],
+              ["Erişim Bitiş", formatDateTime(detail.profile.accessEndsAt)],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">{label}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-100">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {detail.profile.notes ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700 [data-idil-theme=dark]:text-amber-200">Notlar</p>
+              <p className="mt-1">{detail.profile.notes}</p>
+            </div>
+          ) : null}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <article className="rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+              <p className="text-xs uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Aktif Program</p>
+              <p className="mt-2 text-lg font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">{activeProgramName}</p>
+              <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                Tamamlanan {completedProgramDays} / {totalProgramDays} görev
+              </p>
+              <div className="mt-3">
+                <ProgressBar value={programProgress} />
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <p className="text-xs uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Program Bilgisi</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                Atama: {formatDateTime(detail.programSummary.assignedAt)}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                Başlama: {formatDateTime(detail.programSummary.startedAt)}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                Son görev: {formatDateTime(detail.programSummary.lastCompletedTaskAt)}
+              </p>
+            </article>
+          </div>
+        </PanelCard>
+
+        <PanelCard title="Hızlı İşlemler" subtitle="Bu öğrenciye ait yönetim işlemleri">
+          <div className="grid gap-2">
+            <Link
+              href={`/ogretmen/ogrenciler/${detail.profile.studentId}/duzenle`}
+              className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              Öğrenciyi Düzenle
+            </Link>
+            <button
+              type="button"
+              onClick={() => downloadResultsXlsx(sortedResults, `${slugify(detail.profile.fullName)}-sonuclari.xlsx`)}
+              className="min-h-[46px] rounded-xl border border-red-900/20 bg-[var(--brand)] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              Sonuçları Excel İndir
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              disabled={isDeletingStudent}
+              className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            >
+              {isDeletingStudent ? "Siliniyor..." : "Öğrenciyi Sil"}
+            </button>
+          </div>
+
+          {deleteErrorMessage ? (
+            <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800" role="alert">
+              {deleteErrorMessage}
+            </p>
+          ) : null}
+        </PanelCard>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Toplam Çalışma" value={detail.performanceSummary.totalExercises} />
+        <MetricCard title="Ortalama Başarı" value={detail.performanceSummary.averageComprehensionRate === null ? "Henüz veri yok" : `%${detail.performanceSummary.averageComprehensionRate}`} />
+        <MetricCard title="Son Çalışma" value={formatDateTime(detail.performanceSummary.lastStudyAt)} />
+        <MetricCard title="Rozet Sayısı" value={detail.gamificationSummary.badgeCount} subtitle="Kazanılan rozet sayısı" />
+      </section>
+
+      <section className="grid gap-3 xl:grid-cols-2">
+        <PanelCard title="Performans Özeti" subtitle="Okuma hızları ve anlama puanları">
+          <div className="grid gap-3 md:grid-cols-2">
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Son okuma hızı</p>
+              <p className="mt-2 text-2xl font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                {detail.performanceSummary.latestReadingSpeedWpm === null ? "Henüz veri yok" : `${detail.performanceSummary.latestReadingSpeedWpm} kelime/dk`}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">En yüksek okuma hızı</p>
+              <p className="mt-2 text-2xl font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                {detail.performanceSummary.highestReadingSpeedWpm === null ? "Henüz veri yok" : `${detail.performanceSummary.highestReadingSpeedWpm} kelime/dk`}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Son anlama puanı</p>
+              <p className="mt-2 text-2xl font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                {detail.performanceSummary.latestComprehensionRate === null ? "Henüz veri yok" : `%${detail.performanceSummary.latestComprehensionRate}`}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Ortalama anlama</p>
+              <p className="mt-2 text-2xl font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                {detail.performanceSummary.averageComprehensionRate === null ? "Henüz veri yok" : `%${detail.performanceSummary.averageComprehensionRate}`}
+              </p>
+            </article>
+          </div>
+        </PanelCard>
+
+        <PanelCard title="Okuma Testleri" subtitle="Okuma hızı ve anlama testleri geçmişi">
+          {readingStats.recordsNewestFirst.length === 0 ? (
+            <EmptyCard text="Bu öğrencinin henüz okuma testi sonucu yok." />
+          ) : (
+            <>
+              <div className="grid gap-3 md:hidden">
+                {readingStats.recordsNewestFirst.map((test) => (
+                  <article key={test.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                          {test.type === "reading-speed-test" ? "Okuma Hızı Testi" : "Anlama Testi"}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{test.title}</p>
+                      </div>
+                      <p className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{formatDateTime(test.completedAt)}</p>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
+                      <p>Hız: <span className="text-slate-900 [data-idil-theme=dark]:text-slate-100">{test.readingSpeedWpm ?? "Henüz veri yok"}</span></p>
+                      <p>Başarı: <span className="text-[var(--brand)]">{test.successRate === null ? "Henüz veri yok" : `%${test.successRate}`}</span></p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+                  <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-400">
+                    <tr>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Tarih</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Tür</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Metin</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Hız</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Anlama</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {readingStats.recordsNewestFirst.map((test) => (
+                      <tr key={test.id} className="border-b border-slate-100 last:border-0 [data-idil-theme=dark]:border-slate-800">
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">{formatDateTime(test.completedAt)}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                          {test.type === "reading-speed-test" ? "Okuma Hızı Testi" : "Anlama Testi"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">{test.title}</td>
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">
+                          {test.readingSpeedWpm === null ? "Henüz veri yok" : `${test.readingSpeedWpm} kelime/dk`}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-[var(--brand)]">
+                          {test.successRate === null ? "Henüz veri yok" : `%${test.successRate}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </PanelCard>
+      </section>
+
+      <section>
+        <PanelCard title="Sonuç Geçmişi" subtitle="Son kayıtlar en yeni tarihten eskiye sıralanır">
+          {sortedResults.length === 0 ? (
+            <EmptyCard text="Bu öğrenci henüz egzersiz tamamlamadı." />
+          ) : (
+            <>
+              <div className="grid gap-3 md:hidden">
+                {sortedResults.map((result) => (
+                  <article key={result.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">{result.exerciseTitle}</p>
+                        <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{formatDateTime(result.date)}</p>
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
+                        {result.exerciseType}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
+                      <p>Doğru/Yanlış: <span className="text-slate-900 [data-idil-theme=dark]:text-slate-100">{result.correctCount}/{result.wrongCount}</span></p>
+                      <p>Puan: <span className="text-[var(--brand)]">{result.score}</span></p>
+                      <p>Başarı: <span className="text-slate-900 [data-idil-theme=dark]:text-slate-100">%{result.successRate}</span></p>
+                      <p>Süre: <span className="text-slate-900 [data-idil-theme=dark]:text-slate-100">{result.durationSeconds} sn</span></p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                <table className="w-full min-w-[820px] border-collapse text-left text-sm">
+                  <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-400">
+                    <tr>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Tarih</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Egzersiz</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Doğru / Yanlış</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Puan</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Başarı</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">Süre</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedResults.map((result) => (
+                      <tr key={result.id} className="border-b border-slate-100 last:border-0 [data-idil-theme=dark]:border-slate-800">
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">{formatDateTime(result.date)}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-100">{result.exerciseTitle}</p>
+                          <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{result.exerciseType}</p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">
+                          {result.correctCount}/{result.wrongCount}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-[var(--brand)]">{result.score}</td>
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">%{result.successRate}</td>
+                        <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">{result.durationSeconds} sn</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </PanelCard>
+      </section>
+
+      {isDeleteModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Öğrenci silme onayı"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-5 shadow-xl [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+            <h3 className="text-lg font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">Öğrenciyi silmek istediğinize emin misiniz?</h3>
+            <p className="mt-2 text-sm text-slate-700 [data-idil-theme=dark]:text-slate-300">
+              Bu işlem geri alınamaz. Öğrenciye ait ders kayıtları ve egzersiz sonuçları da silinebilir.
+            </p>
+            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-100">
+              {detail.profile.fullName}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDeletingStudent) {
+                    setIsDeleteModalOpen(false);
+                  }
+                }}
+                disabled={isDeletingStudent}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-200"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDeleteStudent()}
+                disabled={isDeletingStudent}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-rose-300 bg-rose-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isDeletingStudent ? "Siliniyor..." : "Öğrenciyi Sil"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

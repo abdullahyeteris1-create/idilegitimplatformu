@@ -1,21 +1,40 @@
+import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
-import { PanelCard } from "@/components/ui/PanelCard";
+import { TeacherStudentDetailClient } from "@/components/teacher-panel/TeacherStudentDetailClient";
+import { requireTeacherSession } from "@/lib/auth/teacherSession";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
-import { StudentDetailClient } from "./StudentDetailClient";
-import { TeacherOnly } from "@/components/auth/TeacherOnly";
+import {
+  getTeacherStudentDetail,
+  isTeacherStudentId,
+} from "@/lib/teachers/studentTrackingRepository";
 
-export default function StudentDetailPage() {
+type StudentDetailPageProps = {
+  params: Promise<{
+    studentId: string;
+  }>;
+};
+
+export default async function StudentDetailPage({ params }: StudentDetailPageProps) {
+  await requireTeacherSession();
+
+  const { studentId } = await params;
+  if (!isTeacherStudentId(studentId)) {
+    notFound();
+  }
+
+  const detail = await getTeacherStudentDetail(studentId);
+  if (!detail) {
+    notFound();
+  }
+
   return (
     <AppShell
       title="Ogrenci Detayi"
-      subtitle="Ogrenci bilgileri, performans ozeti ve sonuc gecmisi"
+      subtitle="Gamification ozeti, program durumu ve egzersiz gecmisi"
       navItems={TEACHER_NAV_ITEMS}
+      wide
     >
-      <TeacherOnly>
-        <PanelCard title="Detayli Ogrenci Raporu" subtitle="Performans takip ve disa aktarma alani">
-          <StudentDetailClient />
-        </PanelCard>
-      </TeacherOnly>
+      <TeacherStudentDetailClient detail={detail} />
     </AppShell>
   );
 }
