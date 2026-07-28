@@ -10,7 +10,7 @@ import {
   isCurrentStudentStatus,
 } from "@/lib/students/studentStatus";
 
-type StatusFilter = "all" | TeacherStudentAccountStatus | "current";
+type StatusFilter = "current" | "active" | "passive" | "completed" | "all";
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: "current", label: "Güncel" },
