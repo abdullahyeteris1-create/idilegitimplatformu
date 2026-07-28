@@ -254,6 +254,21 @@ function mapProgramTaskProgressRow(row: DatabaseRow): TeacherStudentProgramTaskP
   };
 }
 
+function logSupplementaryTeacherQueryError(queryName: string, error: { code?: string | null; message?: string | null } | null): void {
+  if (!error) {
+    return;
+  }
+
+  console.error(`Teacher panel supplementary query failed: ${queryName}`, {
+    code: error.code ?? "unknown",
+    message: error.message ?? "unknown",
+  });
+}
+
+function toDatabaseRows(data: unknown): DatabaseRow[] {
+  return Array.isArray(data) ? (data as DatabaseRow[]) : [];
+}
+
 function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseResult | null {
   const id = readString(row, ["id"]);
   const studentId = readString(row, ["student_id", "studentId"]) ?? fallbackStudent.id;
@@ -427,11 +442,20 @@ export async function getTeacherStudentTrackingList(): Promise<TeacherStudentLis
   }
 
   try {
-    const [studentsResult, xpResult, programsResult, resultsResult, tasksResult] = await Promise.all([
-      supabase
-        .from(STUDENTS_TABLE)
-        .select("id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at")
-        .order("name", { ascending: true }),
+    const { data: studentsData, error: studentsError } = await supabase
+      .from(STUDENTS_TABLE)
+      .select("id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at")
+      .order("name", { ascending: true });
+
+    if (studentsError) {
+      console.error("Teacher panel base students query failed", {
+        code: studentsError.code ?? "unknown",
+        message: studentsError.message ?? "unknown",
+      });
+      throw new Error("teacher-students-query-failed");
+    }
+
+    const [xpResult, programsResult, resultsResult, tasksResult] = await Promise.all([
       supabase
         .from(STUDENT_XP_SUMMARY_TABLE)
         .select("student_id,total_xp")
@@ -451,27 +475,28 @@ export async function getTeacherStudentTrackingList(): Promise<TeacherStudentLis
         .order("completed_at", { ascending: false }),
     ]);
 
-    if (studentsResult.error || xpResult.error || programsResult.error || resultsResult.error || tasksResult.error) {
-      return [];
-    }
+    logSupplementaryTeacherQueryError("student_xp_summary", xpResult.error);
+    logSupplementaryTeacherQueryError("student_education_programs", programsResult.error);
+    logSupplementaryTeacherQueryError("exercise_results", resultsResult.error);
+    logSupplementaryTeacherQueryError("student_education_program_tasks", tasksResult.error);
 
-    const students = ((studentsResult.data ?? []) as DatabaseRow[])
+    const students = toDatabaseRows(studentsData)
       .map(mapStudentRow)
       .filter((row): row is StudentRow => row !== null);
     const xpByStudent = new Map(
-      ((xpResult.data ?? []) as DatabaseRow[])
+      toDatabaseRows(xpResult.data)
         .map(mapXpSummaryRow)
         .filter((row): row is XpSummaryRow => row !== null)
         .map((row) => [row.student_id, row.total_xp] as const),
     );
     const activeProgramByStudent = new Map(
-      ((programsResult.data ?? []) as DatabaseRow[])
+      toDatabaseRows(programsResult.data)
         .map(mapActiveProgramRow)
         .filter((row): row is ActiveProgramRow => row !== null)
         .map((row) => [row.student_id, row] as const),
     );
-    const latestResultByStudent = getLatestTimestampByStudent((resultsResult.data ?? []) as DatabaseRow[]);
-    const latestTaskByStudent = getLatestTimestampByStudent((tasksResult.data ?? []) as DatabaseRow[]);
+    const latestResultByStudent = getLatestTimestampByStudent(toDatabaseRows(resultsResult.data));
+    const latestTaskByStudent = getLatestTimestampByStudent(toDatabaseRows(tasksResult.data));
 
     return students.map((student) => {
       const totalXp = xpByStudent.get(student.id) ?? 0;
@@ -515,14 +540,25 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
   }
 
   try {
-    const [studentResult, xpResult, resultsResult, activeProgramResult, xpEventsResult, programTasksResult] = await Promise.all([
-      supabase
-        .from(STUDENTS_TABLE)
-        .select(
-          "id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at,parent_name,parent_phone,education_level,education_status,notes,created_at",
-        )
-        .eq("id", safeStudentId)
-        .maybeSingle(),
+    const studentResult = await supabase
+      .from(STUDENTS_TABLE)
+      .select(
+        "id,name,username,class_name,class_level,status,is_active,access_end_date,last_login_at,parent_name,parent_phone,education_level,education_status,notes,created_at",
+      )
+      .eq("id", safeStudentId)
+      .maybeSingle();
+
+    if (studentResult.error) {
+      return null;
+    }
+
+    const studentRow = studentResult.data ? (studentResult.data as DatabaseRow) : null;
+    const student = studentRow ? mapStudentRow(studentRow) : null;
+    if (!student) {
+      return null;
+    }
+
+    const [xpResult, resultsResult, activeProgramResult, xpEventsResult, programTasksResult] = await Promise.all([
       supabase
         .from(STUDENT_XP_SUMMARY_TABLE)
         .select("student_id,total_xp")
@@ -550,19 +586,14 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
         .limit(25),
     ]);
 
-    if (studentResult.error || xpResult.error || resultsResult.error) {
-      return null;
-    }
-
-    const studentRow = studentResult.data ? (studentResult.data as DatabaseRow) : null;
-    const student = studentRow ? mapStudentRow(studentRow) : null;
-    if (!student) {
-      return null;
-    }
+    logSupplementaryTeacherQueryError("student_xp_summary(detail)", xpResult.error);
+    logSupplementaryTeacherQueryError("exercise_results(detail)", resultsResult.error);
+    logSupplementaryTeacherQueryError("student_xp_events", xpEventsResult.error);
+    logSupplementaryTeacherQueryError("student_education_program_tasks(detail)", programTasksResult.error);
 
     const xpRow = xpResult.data ? (xpResult.data as DatabaseRow) : null;
     const totalXp = xpRow ? (mapXpSummaryRow(xpRow)?.total_xp ?? 0) : 0;
-    const results = ((resultsResult.data ?? []) as DatabaseRow[])
+    const results = toDatabaseRows(resultsResult.data)
       .map((row) => mapResultRow(row, student))
       .filter((row): row is ExerciseResult => row !== null);
     const activeProgram = activeProgramResult.ok ? mapTeacherStudentProgramContext(activeProgramResult.value) : null;
@@ -573,7 +604,7 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       activeProgramError,
       safeStudentId,
       results,
-      ((xpEventsResult.data ?? []) as DatabaseRow[]).map((row) => ({
+      toDatabaseRows(xpEventsResult.data).map((row) => ({
         idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
         xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
         event_type: readString(row, ["event_type", "eventType"]) ?? "",
@@ -587,10 +618,10 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       lastLoginAt: student.last_login_at,
       results,
       activeProgram,
-      programTasks: ((programTasksResult.data ?? []) as DatabaseRow[])
+      programTasks: toDatabaseRows(programTasksResult.data)
         .map(mapProgramTaskProgressRow)
         .filter((row): row is TeacherStudentProgramTaskProgress => row !== null && row.completedAt !== null),
-      xpEvents: ((xpEventsResult.data ?? []) as DatabaseRow[]).map((row) => ({
+      xpEvents: toDatabaseRows(xpEventsResult.data).map((row) => ({
         idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
         xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
         event_type: readString(row, ["event_type", "eventType"]) ?? "",

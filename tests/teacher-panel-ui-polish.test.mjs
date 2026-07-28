@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const MAIN_PAGE = new URL("../src/app/ogretmen/page.tsx", import.meta.url);
+const TRACKING_PAGE = new URL("../src/app/ogretmen/idil-panel/ogrenci-takip/page.tsx", import.meta.url);
 const TRACKING_CLIENT = new URL("../src/components/teacher-panel/TeacherStudentTrackingClient.tsx", import.meta.url);
 const DETAIL_CLIENT = new URL("../src/components/teacher-panel/TeacherStudentDetailClient.tsx", import.meta.url);
+const TRACKING_REPOSITORY = new URL("../src/lib/teachers/studentTrackingRepository.ts", import.meta.url);
 
 async function read(path) {
   return readFile(path, "utf8");
@@ -46,4 +48,17 @@ test("ogrenci detay ekraninda avatar, gamification ozeti ve performans kartlari 
   assert.match(source, /Henüz veri yok/);
   assert.match(source, /md:hidden/);
   assert.match(source, /hidden overflow-hidden rounded-\[24px\]/);
+});
+
+test("ogrenci takip sayfasi temel sorgu hatasini error state'e cevirir", async () => {
+  const pageSource = await read(TRACKING_PAGE);
+  const repositorySource = await read(TRACKING_REPOSITORY);
+  const clientSource = await read(TRACKING_CLIENT);
+
+  assert.match(pageSource, /loadError/);
+  assert.match(pageSource, /Öğrenci verileri şu anda yüklenemedi/);
+  assert.match(repositorySource, /teacher-students-query-failed/);
+  assert.doesNotMatch(repositorySource, /studentsResult\.error \|\| xpResult\.error/);
+  assert.match(clientSource, /Sayfayı Yenile/);
+  assert.match(clientSource, /loadError/);
 });

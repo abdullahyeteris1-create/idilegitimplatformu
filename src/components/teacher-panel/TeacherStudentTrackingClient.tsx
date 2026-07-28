@@ -196,7 +196,13 @@ function ActionLink({
   );
 }
 
-export function TeacherStudentTrackingClient({ initialStudents }: { initialStudents: TeacherStudentListItem[] }) {
+export function TeacherStudentTrackingClient({
+  initialStudents,
+  loadError = null,
+}: {
+  initialStudents: TeacherStudentListItem[];
+  loadError?: string | null;
+}) {
   const [students, setStudents] = useState(initialStudents);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -308,6 +314,34 @@ export function TeacherStudentTrackingClient({ initialStudents }: { initialStude
     levelFilter !== "all",
     Boolean(searchText.trim()),
   ].filter(Boolean).length;
+
+  if (loadError) {
+    return (
+      <PanelCard className="border border-rose-200 bg-rose-50/80 shadow-[0_18px_50px_rgba(15,23,42,0.06)] [data-idil-theme=dark]:border-rose-400/20 [data-idil-theme=dark]:bg-rose-400/10">
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-rose-700 [data-idil-theme=dark]:text-rose-200">
+              Öğrenci Takip
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
+              Öğrenci verileri yüklenemedi
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700 [data-idil-theme=dark]:text-slate-200">
+              {loadError}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+          >
+            Sayfayı Yenile
+          </button>
+        </div>
+      </PanelCard>
+    );
+  }
 
   return (
     <div className="grid gap-4">
