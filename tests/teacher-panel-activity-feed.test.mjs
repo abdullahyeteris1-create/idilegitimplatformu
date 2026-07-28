@@ -16,7 +16,7 @@ test("activity helper builds a single bounded feed with dedupe and sort logic", 
 
   assert.match(source, /export function buildTeacherStudentActivityFeed\(/);
   assert.match(source, /const dedupeKey = submissionKey \? `result:\$\{submissionKey\}` : `result:\$\{result\.id\}`/);
-  assert.match(source, /const dedupeKey = `program-task:\$\{task\.id\}`/);
+  assert.match(source, /const dedupeKey = `program-task:\$\{task\.taskId\}`/);
   assert.match(source, /const dedupeKey = `login:\$\{studentId\}:\$\{dateKey\}`/);
   assert.match(source, /function dedupeActivities\(/);
   assert.match(source, /new Map<string, TeacherStudentActivity>\(\)/);

@@ -11,13 +11,20 @@ import { countEarnedBadges } from "@/lib/xp/xpBadges";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildTeacherStudentActivityFeed } from "./studentTrackingActivity";
+import {
+  loadTeacherStudentProgramProgress,
+  mapTeacherStudentProgramContext,
+} from "./studentProgramProgress";
 import type {
   TeacherStudentAccountStatus,
   TeacherStudentDetail,
+  TeacherStudentProgramContext,
   TeacherStudentListItem,
   TeacherStudentPerformanceSummary,
   TeacherStudentProfile,
+  TeacherStudentProgramProgress,
   TeacherStudentProgramSummary,
+  TeacherStudentProgramTaskProgress,
 } from "./studentTrackingTypes";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -63,13 +70,6 @@ type ActiveProgramRow = {
   assigned_at: string | null;
   started_at: string | null;
 };
-
-type ActiveProgramValue = NonNullable<
-  Extract<
-    Awaited<ReturnType<typeof getActiveEducationProgramForStudent>>,
-    { ok: true }
-  >["value"]
->;
 
 function readString(row: DatabaseRow, keys: string[]): string | null {
   for (const key of keys) {
@@ -212,6 +212,48 @@ function mapActiveProgramRow(row: DatabaseRow): ActiveProgramRow | null {
   };
 }
 
+function mapProgramTaskProgressRow(row: DatabaseRow): TeacherStudentProgramTaskProgress | null {
+  const id = readString(row, ["id"]);
+  const programId = readString(row, ["program_id", "programId"]);
+  const programDayId = readString(row, ["program_day_id", "programDayId"]);
+  const studentId = readString(row, ["student_id", "studentId"]);
+  const dayNumber = readNumber(row, ["day_number", "dayNumber"]);
+  const orderNumber = readNumber(row, ["order_number", "orderNumber"]);
+  const exerciseSlug = readString(row, ["exercise_slug", "exerciseSlug"]);
+  const exerciseTitle = readString(row, ["exercise_title", "exerciseTitle"]);
+
+  if (
+    !id ||
+    !programId ||
+    !programDayId ||
+    !studentId ||
+    dayNumber === null ||
+    orderNumber === null ||
+    !exerciseSlug ||
+    !exerciseTitle
+  ) {
+    return null;
+  }
+
+  return {
+    taskId: id,
+    programId,
+    dayId: programDayId,
+    studentId,
+    dayNumber,
+    orderNumber,
+    exerciseSlug,
+    exerciseTitle,
+    taskType: readString(row, ["result_exercise_type", "resultExerciseType"]) ?? exerciseSlug,
+    status: (readString(row, ["status"]) ?? "locked") as TeacherStudentProgramTaskProgress["status"],
+    startedAt: readDateString(row, ["started_at", "startedAt"]),
+    completedAt: readDateString(row, ["completed_at", "completedAt"]),
+    resultId: readString(row, ["result_id", "resultId"]),
+    resultSummary: null,
+    awardedXp: null,
+  };
+}
+
 function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseResult | null {
   const id = readString(row, ["id"]);
   const studentId = readString(row, ["student_id", "studentId"]) ?? fallbackStudent.id;
@@ -266,7 +308,10 @@ function buildLastActivityAt(student: StudentRow, latestResultAt: string | null,
   return latest;
 }
 
-function buildProgramSummary(program: ActiveProgramValue | null): TeacherStudentProgramSummary {
+function buildProgramSummary(
+  program: TeacherStudentProgramContext | null,
+  programProgress: TeacherStudentProgramProgress | null,
+): TeacherStudentProgramSummary {
   if (!program) {
     return {
       activeProgramId: null,
@@ -281,18 +326,19 @@ function buildProgramSummary(program: ActiveProgramValue | null): TeacherStudent
     };
   }
 
-  const lastCompletedTaskAt = [...program.days]
-    .map((day) => day.completedAt)
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-    .sort((left, right) => right.localeCompare(left))[0] ?? null;
+  const lastCompletedTaskAt = programProgress?.lastCompletedTask?.completedAt ?? programProgress?.completedAt ?? null;
 
   return {
     activeProgramId: program.id,
     activeProgramName: program.visibleName,
-    currentDayNumber: program.currentDayNumber,
-    completedDays: program.completedDays,
-    totalDays: program.totalDays,
-    progressPercent: calculateStudentProgramProgress(program.completedDays, program.totalDays),
+    currentDayNumber: programProgress?.currentDayNumber ?? program.currentDayNumber,
+    completedDays: programProgress?.completedDays ?? program.completedDays,
+    totalDays: programProgress?.totalDays ?? program.totalDays,
+    progressPercent: programProgress
+      ? programProgress.totalTasks > 0
+        ? programProgress.overallProgressPercent
+        : calculateStudentProgramProgress(programProgress.completedDays, programProgress.totalDays)
+      : calculateStudentProgramProgress(program.completedDays, program.totalDays),
     assignedAt: program.assignedAt,
     startedAt: program.startedAt,
     lastCompletedTaskAt,
@@ -498,9 +544,8 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
         .limit(25),
       supabase
         .from(STUDENT_EDUCATION_PROGRAM_TASKS_TABLE)
-        .select("id,program_id,day_number,order_number,exercise_title,completed_at")
+        .select("id,program_id,program_day_id,student_id,day_number,order_number,exercise_slug,exercise_title,result_exercise_type,status,started_at,completed_at,result_id")
         .eq("student_id", safeStudentId)
-        .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
         .limit(25),
     ]);
@@ -520,22 +565,31 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     const results = ((resultsResult.data ?? []) as DatabaseRow[])
       .map((row) => mapResultRow(row, student))
       .filter((row): row is ExerciseResult => row !== null);
-    const activeProgram = activeProgramResult.ok ? activeProgramResult.value : null;
+    const activeProgram = activeProgramResult.ok ? mapTeacherStudentProgramContext(activeProgramResult.value) : null;
+    const activeProgramError = activeProgramResult.ok ? null : activeProgramResult.message;
+    const programProgressResult = await loadTeacherStudentProgramProgress(
+      supabase,
+      activeProgram,
+      activeProgramError,
+      safeStudentId,
+      results,
+      ((xpEventsResult.data ?? []) as DatabaseRow[]).map((row) => ({
+        idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
+        xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
+        event_type: readString(row, ["event_type", "eventType"]) ?? "",
+        source_type: readString(row, ["source_type", "sourceType"]),
+        source_id: readString(row, ["source_id", "sourceId"]),
+        earned_at: readDateString(row, ["earned_at", "earnedAt"]),
+      })),
+    );
     const activityFeedResult = buildTeacherStudentActivityFeed({
       studentId: student.id,
       lastLoginAt: student.last_login_at,
       results,
       activeProgram,
       programTasks: ((programTasksResult.data ?? []) as DatabaseRow[])
-        .map((row) => ({
-          id: readString(row, ["id"]) ?? "",
-          program_id: readString(row, ["program_id", "programId"]),
-          day_number: readNumber(row, ["day_number", "dayNumber"]),
-          order_number: readNumber(row, ["order_number", "orderNumber"]),
-          exercise_title: readString(row, ["exercise_title", "exerciseTitle"]),
-          completed_at: readDateString(row, ["completed_at", "completedAt"]),
-        }))
-        .filter((row) => row.id.length > 0 && row.completed_at !== null),
+        .map(mapProgramTaskProgressRow)
+        .filter((row): row is TeacherStudentProgramTaskProgress => row !== null && row.completedAt !== null),
       xpEvents: ((xpEventsResult.data ?? []) as DatabaseRow[]).map((row) => ({
         idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
         xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
@@ -550,7 +604,9 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     return {
       profile: mapProfile(student),
       gamificationSummary: mapGamificationSummary(totalXp),
-      programSummary: buildProgramSummary(activeProgram),
+      programSummary: buildProgramSummary(activeProgram, programProgressResult.programProgress),
+      programProgress: programProgressResult.programProgress,
+      programProgressError: programProgressResult.programProgressError,
       performanceSummary: buildPerformanceSummary(results),
       results,
       activityFeed: activityFeedResult.activities,

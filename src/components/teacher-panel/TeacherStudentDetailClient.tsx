@@ -7,7 +7,13 @@ import { PanelCard } from "@/components/ui/PanelCard";
 import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
-import type { TeacherStudentActivity, TeacherStudentDetail } from "@/lib/teachers/studentTrackingTypes";
+import type {
+  TeacherStudentActivity,
+  TeacherStudentDetail,
+  TeacherStudentProgramDayProgress,
+  TeacherStudentProgramProgress,
+  TeacherStudentProgramTaskProgress,
+} from "@/lib/teachers/studentTrackingTypes";
 
 function formatDateTime(value: string | null): string {
   if (!value) {
@@ -83,10 +89,31 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-function ProgressBar({ value }: { value: number }) {
+function ProgressBar({
+  value,
+  label,
+  trackClassName = "bg-white/20",
+  fillClassName = "bg-white",
+  className = "",
+}: {
+  value: number;
+  label?: string;
+  trackClassName?: string;
+  fillClassName?: string;
+  className?: string;
+}) {
+  const safeValue = Math.min(100, Math.max(0, Math.round(value)));
+
   return (
-    <div className="h-3 w-full overflow-hidden rounded-full bg-white/20">
-      <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.min(100, Math.max(0, Math.round(value)))}%` }} />
+    <div
+      aria-label={label ?? "İlerleme"}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={safeValue}
+      className={`h-3 w-full overflow-hidden rounded-full ${trackClassName} ${className}`}
+      role="progressbar"
+    >
+      <div className={`h-full rounded-full transition-all ${fillClassName}`} style={{ width: `${safeValue}%` }} />
     </div>
   );
 }
@@ -196,6 +223,162 @@ function ActivityCard({ activity, compact = false }: { activity: TeacherStudentA
   );
 }
 
+function getProgramStatusBadge(status: TeacherStudentProgramProgress["status"]): string {
+  switch (status) {
+    case "completed":
+      return "Tamamlandı";
+    case "cancelled":
+      return "İptal Edildi";
+    default:
+      return "Aktif";
+  }
+}
+
+function getDayStatusBadge(status: TeacherStudentProgramDayProgress["status"]): string {
+  switch (status) {
+    case "completed":
+      return "Tamamlandı";
+    case "in_progress":
+      return "Devam Ediyor";
+    case "available":
+      return "Hazır";
+    default:
+      return "Kilitli";
+  }
+}
+
+function getTaskStatusBadge(status: TeacherStudentProgramTaskProgress["status"]): string {
+  switch (status) {
+    case "completed":
+      return "Tamamlandı";
+    case "in_progress":
+      return "Devam Ediyor";
+    case "available":
+      return "Hazır";
+    default:
+      return "Kilitli";
+  }
+}
+
+function getTaskTypeLabel(taskType: string): string {
+  switch (taskType) {
+    case "reading-speed-test":
+      return "Okuma Hızı Testi";
+    case "reading-comprehension":
+      return "Anlama Testi";
+    case "square-vision":
+      return "Kare Görme Alanı";
+    case "catch-same":
+      return "Aynı Olanı Yakala";
+    case "shadow-reading":
+      return "Gölge Okuma";
+    case "tachistoscope":
+      return "Takistoskop";
+    case "similar-words":
+      return "Benzer Kelimeler";
+    case "word-finding":
+      return "Kelime Bulma";
+    case "eye-columns":
+      return "Göz Egzersizleri Kolonlar";
+    default:
+      return taskType;
+  }
+}
+
+function ProgramBadge({ children, tone = "slate" }: { children: ReactNode; tone?: "slate" | "red" | "green" | "amber" | "sky" }) {
+  const toneClassName = {
+    slate: "border-slate-200 bg-slate-50 text-slate-700 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-200",
+    red: "border-red-200 bg-red-50 text-red-700 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-100",
+    amber: "border-amber-200 bg-amber-50 text-amber-700 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100",
+    sky: "border-sky-200 bg-sky-50 text-sky-700 [data-idil-theme=dark]:border-sky-400/30 [data-idil-theme=dark]:bg-sky-400/10 [data-idil-theme=dark]:text-sky-100",
+  }[tone];
+
+  return (
+    <span className={`inline-flex min-h-[28px] items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${toneClassName}`}>
+      {children}
+    </span>
+  );
+}
+
+function ProgramTaskCard({ task }: { task: TeacherStudentProgramTaskProgress }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">
+            Görev {task.orderNumber}
+          </p>
+          <h4 className="mt-1 truncate text-sm font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">{task.exerciseTitle}</h4>
+        </div>
+        <ProgramBadge tone={task.status === "completed" ? "green" : task.status === "in_progress" ? "sky" : "slate"}>
+          {getTaskStatusBadge(task.status)}
+        </ProgramBadge>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <ActivityChip>{getTaskTypeLabel(task.taskType)}</ActivityChip>
+        {task.awardedXp && task.awardedXp > 0 ? <ActivityChip>+{task.awardedXp} XP</ActivityChip> : null}
+        {task.resultSummary ? <ActivityChip>{task.resultSummary}</ActivityChip> : null}
+      </div>
+
+      <div className="mt-3 grid gap-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300 sm:grid-cols-2">
+        <p>Sıra: <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">Gün {task.dayNumber} / {task.orderNumber}</span></p>
+        <p>Başlama: <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">{formatDateTime(task.startedAt)}</span></p>
+        <p>Tamamlanma: <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">{formatDateTime(task.completedAt)}</span></p>
+        <p>Egzersiz: <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">{task.exerciseSlug}</span></p>
+      </div>
+    </article>
+  );
+}
+
+function ProgramDayCard({ day }: { day: TeacherStudentProgramDayProgress }) {
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">
+            Gün {day.dayNumber}
+          </p>
+          <h4 className="mt-1 text-base font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">
+            {day.title ?? "Başlıksız gün"}
+          </h4>
+          {day.description ? <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">{day.description}</p> : null}
+        </div>
+        <ProgramBadge tone={day.status === "completed" ? "green" : day.status === "in_progress" ? "sky" : day.status === "available" ? "amber" : "slate"}>
+          {getDayStatusBadge(day.status)}
+        </ProgramBadge>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+        <div>
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">
+            <span>Gün ilerlemesi</span>
+            <span>%{day.progressPercent}</span>
+          </div>
+          <ProgressBar
+            value={day.progressPercent}
+            label={`Gün ${day.dayNumber} ilerlemesi`}
+            trackClassName="bg-slate-200 [data-idil-theme=dark]:bg-slate-700"
+            fillClassName="bg-[var(--brand)]"
+          />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
+          {day.completedTasks}/{day.totalTasks} görev
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {day.tasks.length === 0 ? (
+          <EmptyCard text="Bu gün için görev bulunmuyor." />
+        ) : (
+          day.tasks.map((task) => <ProgramTaskCard key={task.taskId} task={task} />)
+        )}
+      </div>
+    </article>
+  );
+}
+
 export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentDetail }) {
   const router = useRouter();
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
@@ -246,6 +429,8 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
   const totalProgramDays = detail.programSummary.totalDays ?? 0;
   const completedProgramDays = detail.programSummary.completedDays ?? 0;
   const programProgress = detail.programSummary.progressPercent ?? 0;
+  const programProgressDetail = detail.programProgress;
+  const programProgressError = detail.programProgressError;
 
   return (
     <div className="grid gap-4">
@@ -421,6 +606,125 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
               {deleteErrorMessage}
             </p>
           ) : null}
+        </PanelCard>
+      </section>
+
+      <section>
+        <PanelCard title="Program İlerlemesi" subtitle="Günler, görevler ve son tamamlanan adımlar">
+          {programProgressError ? (
+            <EmptyCard text={programProgressError} />
+          ) : programProgressDetail ? (
+            <div className="grid gap-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Program</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                      {programProgressDetail.visibleName}
+                    </p>
+                    <ProgramBadge
+                      tone={programProgressDetail.status === "completed" ? "green" : programProgressDetail.status === "cancelled" ? "amber" : "sky"}
+                    >
+                      {getProgramStatusBadge(programProgressDetail.status)}
+                    </ProgramBadge>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    Atama: {formatDateTime(programProgressDetail.assignedAt)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    Başlama: {formatDateTime(programProgressDetail.startedAt)}
+                  </p>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Genel İlerleme</p>
+                  <p className="mt-2 text-3xl font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                    %{programProgressDetail.overallProgressPercent}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    {programProgressDetail.completedDays}/{programProgressDetail.totalDays} gün tamamlandı
+                  </p>
+                  <div className="mt-3">
+                    <ProgressBar
+                      value={programProgressDetail.overallProgressPercent}
+                      label="Genel program ilerlemesi"
+                      trackClassName="bg-slate-200 [data-idil-theme=dark]:bg-slate-700"
+                      fillClassName="bg-[var(--brand)]"
+                    />
+                  </div>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Görev İlerlemesi</p>
+                  <p className="mt-2 text-3xl font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                    %{programProgressDetail.taskProgressPercent}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    {programProgressDetail.completedTasks}/{programProgressDetail.totalTasks} görev tamamlandı
+                  </p>
+                  <div className="mt-3">
+                    <ProgressBar
+                      value={programProgressDetail.taskProgressPercent}
+                      label="Görev ilerlemesi"
+                      trackClassName="bg-slate-200 [data-idil-theme=dark]:bg-slate-700"
+                      fillClassName="bg-emerald-500"
+                    />
+                  </div>
+                </article>
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Yön Bulma</p>
+                  <div className="mt-2 grid gap-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    <p>
+                      Son tamamlanan:{" "}
+                      <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                        {programProgressDetail.lastCompletedTask ? programProgressDetail.lastCompletedTask.exerciseTitle : "Henüz yok"}
+                      </span>
+                    </p>
+                    <p>
+                      Sonraki görev:{" "}
+                      <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                        {programProgressDetail.nextPendingTask ? programProgressDetail.nextPendingTask.exerciseTitle : "Hepsi tamamlandı"}
+                      </span>
+                    </p>
+                    <p>
+                      Son görev zamanı:{" "}
+                      <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                        {formatDateTime(programProgressDetail.lastCompletedTask?.completedAt ?? null)}
+                      </span>
+                    </p>
+                    <p>
+                      Gün sayısı:{" "}
+                      <span className="font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                        {programProgressDetail.currentDayNumber}/{programProgressDetail.totalDays}
+                      </span>
+                    </p>
+                  </div>
+                </article>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="grid gap-4 md:hidden">
+                  {programProgressDetail.days.map((day) => (
+                    <ProgramDayCard key={day.dayId} day={day} />
+                  ))}
+                </div>
+
+                <div className="hidden md:block">
+                  <div className="space-y-4 border-l border-slate-200 pl-5 [data-idil-theme=dark]:border-slate-700">
+                    {programProgressDetail.days.map((day) => (
+                      <div key={day.dayId} className="relative">
+                        <span className="absolute -left-[30px] top-6 h-4 w-4 rounded-full border-4 border-white bg-[var(--brand)] shadow-sm [data-idil-theme=dark]:border-slate-950" />
+                        <ProgramDayCard day={day} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyCard text="Aktif program bulunmuyor." />
+          )}
         </PanelCard>
       </section>
 

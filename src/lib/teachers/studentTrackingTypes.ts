@@ -2,6 +2,13 @@ import type { ExerciseResult } from "@/lib/results/types";
 import type { StudentXpSnapshot } from "@/lib/xp/xpLevels";
 
 export type TeacherStudentAccountStatus = "active" | "passive";
+export type TeacherStudentProgramStatus = "active" | "completed" | "cancelled";
+export type TeacherStudentProgramDayStatus =
+  | "locked"
+  | "available"
+  | "in_progress"
+  | "completed";
+export type TeacherStudentProgramTaskStatus = TeacherStudentProgramDayStatus;
 
 export type TeacherStudentListItem = {
   studentId: string;
@@ -55,6 +62,63 @@ export type TeacherStudentProgramSummary = {
   lastCompletedTaskAt: string | null;
 };
 
+export type TeacherStudentProgramContext = {
+  id: string;
+  visibleName: string;
+  status: TeacherStudentProgramStatus;
+  currentDayNumber: number;
+  completedDays: number;
+  totalDays: number;
+  assignedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+};
+
+export type TeacherStudentProgramTaskProgress = {
+  taskId: string;
+  programId: string;
+  dayId: string;
+  studentId: string;
+  dayNumber: number;
+  orderNumber: number;
+  exerciseSlug: string;
+  exerciseTitle: string;
+  taskType: string;
+  status: TeacherStudentProgramTaskStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+  resultId: string | null;
+  resultSummary: string | null;
+  awardedXp: number | null;
+};
+
+export type TeacherStudentProgramDayProgress = {
+  dayId: string;
+  programId: string;
+  dayNumber: number;
+  title: string | null;
+  description: string | null;
+  status: TeacherStudentProgramDayStatus;
+  availableAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  totalTasks: number;
+  completedTasks: number;
+  progressPercent: number;
+  tasks: TeacherStudentProgramTaskProgress[];
+};
+
+export type TeacherStudentProgramProgress = TeacherStudentProgramContext & {
+  totalTasks: number;
+  completedTasks: number;
+  dayProgressPercent: number;
+  taskProgressPercent: number;
+  overallProgressPercent: number;
+  lastCompletedTask: TeacherStudentProgramTaskProgress | null;
+  nextPendingTask: TeacherStudentProgramTaskProgress | null;
+  days: TeacherStudentProgramDayProgress[];
+};
+
 export type TeacherStudentPerformanceSummary = {
   totalExercises: number;
   lastStudyAt: string | null;
@@ -93,6 +157,8 @@ export type TeacherStudentDetail = {
   profile: TeacherStudentProfile;
   gamificationSummary: TeacherStudentGamificationSummary;
   programSummary: TeacherStudentProgramSummary;
+  programProgress: TeacherStudentProgramProgress | null;
+  programProgressError: string | null;
   performanceSummary: TeacherStudentPerformanceSummary;
   results: ExerciseResult[];
   activityFeed: TeacherStudentActivity[];

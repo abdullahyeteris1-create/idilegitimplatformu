@@ -1,6 +1,10 @@
 import type { ExerciseResult } from "@/lib/results/types";
-import type { StudentEducationProgramStudentView } from "@/lib/education-programs/studentProgramTypes";
-import type { TeacherStudentActivity, TeacherStudentActivityType } from "./studentTrackingTypes";
+import type {
+  TeacherStudentActivity,
+  TeacherStudentActivityType,
+  TeacherStudentProgramContext,
+  TeacherStudentProgramTaskProgress,
+} from "./studentTrackingTypes";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -13,21 +17,12 @@ type TeacherXpEventRow = {
   earned_at: string | null;
 };
 
-type TeacherProgramTaskRow = {
-  id: string;
-  program_id: string | null;
-  day_number: number | string | null;
-  order_number: number | string | null;
-  exercise_title: string | null;
-  completed_at: string | null;
-};
-
 export type TeacherStudentActivityFeedInput = {
   studentId: string;
   lastLoginAt: string | null;
   results: ExerciseResult[];
-  activeProgram: StudentEducationProgramStudentView | null;
-  programTasks: TeacherProgramTaskRow[];
+  activeProgram: TeacherStudentProgramContext | null;
+  programTasks: readonly TeacherStudentProgramTaskProgress[];
   xpEvents: TeacherXpEventRow[];
   limit?: number;
 };
@@ -219,40 +214,28 @@ function createProgramTaskActivity(
   studentId: string,
   activeProgramId: string | null,
   activeProgramName: string | null,
-  task: TeacherProgramTaskRow,
+  task: TeacherStudentProgramTaskProgress,
   xpEvents: readonly TeacherXpEventRow[],
 ): TeacherStudentActivity | null {
-  if (!task.completed_at) {
+  if (!task.completedAt) {
     return null;
   }
 
-  const dedupeKey = `program-task:${task.id}`;
+  const dedupeKey = `program-task:${task.taskId}`;
   const awardedXp = getXpAward("education_program_task_completed", xpEvents, dedupeKey);
-  const dayNumber =
-    typeof task.day_number === "number"
-      ? task.day_number
-      : typeof task.day_number === "string" && task.day_number.trim()
-        ? Number(task.day_number)
-        : null;
-  const orderNumber =
-    typeof task.order_number === "number"
-      ? task.order_number
-      : typeof task.order_number === "string" && task.order_number.trim()
-        ? Number(task.order_number)
-        : null;
 
   return {
     id: `activity:${dedupeKey}`,
     studentId,
     activityType: "education_program_task_completed",
-    title: task.exercise_title ?? "Program görevi",
-    description: getTaskDescription(Number.isFinite(dayNumber) ? dayNumber : null, Number.isFinite(orderNumber) ? orderNumber : null),
-    occurredAt: task.completed_at,
+    title: task.exerciseTitle ?? "Program görevi",
+    description: getTaskDescription(task.dayNumber, task.orderNumber),
+    occurredAt: task.completedAt,
     sourceType: "student_education_program_tasks",
-    sourceId: task.id,
+    sourceId: task.taskId,
     awardedXp,
-    programName: task.program_id && activeProgramId && task.program_id === activeProgramId ? activeProgramName : null,
-    programTaskName: task.exercise_title ?? null,
+    programName: task.programId && activeProgramId && task.programId === activeProgramId ? activeProgramName : null,
+    programTaskName: task.exerciseTitle ?? null,
     readingSpeedWpm: null,
     comprehensionRate: null,
     dedupeKey,
