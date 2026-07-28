@@ -66,13 +66,18 @@ test("10) standalone fallback: educationProgramLaunch prop'u opsiyonel ve varsay
   );
 });
 
-test("11) teacher settings guvenli okunuyor: blockSize/speedMode/intervalMs/wordsPerMinute pickEducationProgramSettingOption ile okunur", async () => {
+test("11) teacher settings guvenli okunuyor: blockSize/speedMode/intervalMs sabit secenekle, wordsPerMinute serbest aralikla (1-2000) okunur", async () => {
   const source = await read(CLIENT_PATH);
 
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "blockSize", BLOCK_SIZE_OPTIONS, 2\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "intervalMs", JUMP_SPEED_OPTIONS, 500\)/);
-  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "wordsPerMinute", WORDS_PER_MINUTE_OPTIONS, 150\)/);
+  assert.match(
+    source,
+    /pickEducationProgramRangeSettingOption\(\s*\n\s*educationProgramLaunch\?\.settings,\s*\n\s*"wordsPerMinute",\s*\n\s*WORDS_PER_MINUTE_MIN,\s*\n\s*WORDS_PER_MINUTE_MAX,\s*\n\s*150,\s*\n\s*\)/,
+  );
+  assert.match(source, /const WORDS_PER_MINUTE_MIN = 1;/);
+  assert.match(source, /const WORDS_PER_MINUTE_MAX = 2000;/);
 });
 
 test("12) EP modunda hiz kontrolleri (blockSize/speedMode/aktif hiz secimi) kilitli", async () => {

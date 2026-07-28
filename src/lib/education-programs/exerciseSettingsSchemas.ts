@@ -11,16 +11,32 @@ import type { EducationProgramTaskSettings } from "@/lib/education-programs/type
 // uzerinden calistigi icin bu semanin disindadir. Bu dosya "use client"
 // icermez, hem sunucu (server action/validation) hem istemci (egzersiz
 // client'lari, sablon editoru) tarafindan guvenle import edilebilir.
-export type ExerciseSettingsFieldType = "integer" | "enum";
+export type ExerciseSettingsFieldType = "integer" | "enum" | "integer-range";
 
-export type ExerciseSettingsFieldDef = {
+export type ExerciseSettingsOptionFieldDef = {
   key: string;
   label: string;
-  type: ExerciseSettingsFieldType;
+  type: "integer" | "enum";
   options: readonly (number | string)[];
   defaultValue: number | string;
   unit?: string;
 };
+
+// "Kelime/Dakika" gibi sabit secenek listesine sigmayan, ogretmenin serbestce
+// bir tam sayi girebilmesi gereken alanlar icin - options yerine min/max/step
+// araligiyla tanimlanir (bkz. BLOCK_READING_SETTINGS_SCHEMA.wordsPerMinute).
+export type ExerciseSettingsRangeFieldDef = {
+  key: string;
+  label: string;
+  type: "integer-range";
+  min: number;
+  max: number;
+  step?: number;
+  defaultValue: number;
+  unit?: string;
+};
+
+export type ExerciseSettingsFieldDef = ExerciseSettingsOptionFieldDef | ExerciseSettingsRangeFieldDef;
 
 export type ExerciseSettingsSchema = {
   exerciseSlug: string;
@@ -221,13 +237,12 @@ const CARD_MATCHING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
-// intervalMs ve wordsPerMinute ikisi de her zaman semada bulunur: mevcut
-// ExerciseSettingsFieldDef yapisi kosullu/bagimli alan (bir alanin baska bir
-// alanin degerine gore gorunur/gecerli olmasi) desteklemez - yalniz duz
-// "type: integer|enum" + sabit options listesi vardir. Bu yuzden speedMode'a
+// intervalMs ve wordsPerMinute ikisi de her zaman semada bulunur: speedMode'a
 // gore yalniz biri anlamli olsa da iki alan da bagimsiz sekilde tanimlanir;
 // BlockReadingExerciseClient yalniz aktif speedMode ile eslesen degeri
-// gercekten kullanir, digeri sessizce goz ardi edilir.
+// gercekten kullanir, digeri sessizce goz ardi edilir. wordsPerMinute,
+// bagimsiz ekrandaki serbest sayisal girisle birebir ayni davranmasi icin
+// "integer-range" tipindedir (sabit options listesi degil, min/max/step).
 const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   exerciseSlug: "blok-okuma",
   fields: [
@@ -256,8 +271,10 @@ const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
     {
       key: "wordsPerMinute",
       label: "Dakikadaki Kelime Sayısı",
-      type: "integer",
-      options: [50, 100, 150, 200, 250, 300, 400, 500],
+      type: "integer-range",
+      min: 1,
+      max: 2000,
+      step: 1,
       defaultValue: 150,
     },
   ],
@@ -298,8 +315,10 @@ const SHADOW_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
     {
       key: "wordsPerMinute",
       label: "Dakikadaki Kelime Sayısı",
-      type: "integer",
-      options: [50, 100, 150, 200, 250, 300, 400, 500],
+      type: "integer-range",
+      min: 1,
+      max: 2000,
+      step: 1,
       defaultValue: 150,
     },
   ],
@@ -341,8 +360,10 @@ const GROUPING_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
     {
       key: "customWordsPerMinute",
       label: "Okuma Hızı (kelime/dk)",
-      type: "integer",
-      options: [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000],
+      type: "integer-range",
+      min: 1,
+      max: 2000,
+      step: 1,
       defaultValue: 300,
     },
   ],
@@ -375,10 +396,26 @@ function optionsInclude(options: readonly (number | string)[], value: number | s
   return options.some((option) => option === value);
 }
 
+// integer-range alanlari icin: sonlu + tam sayi + [min,max] araliginda +
+// step kuralina uygun mu kontrol eder. step tanimsizsa (veya 1 ise) her tam
+// sayi gecerlidir. Bagimsiz ekranlardaki normalizeReadingSpeed (timing.ts)
+// ile ayni "yuvarla, sinirlarin icinde tut" felsefesini paylasir, ama burada
+// gecersiz deger SESSIZCE duzeltilmez - ya oldugu gibi kabul edilir ya da
+// reddedilir (cagiran taraf reddedilen degeri nasil ele alacagina karar verir).
+function isValidIntegerRangeValue(field: ExerciseSettingsRangeFieldDef, parsed: number): boolean {
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) return false;
+  if (parsed < field.min || parsed > field.max) return false;
+  const step = field.step ?? 1;
+  if (step > 1 && (parsed - field.min) % step !== 0) return false;
+  return true;
+}
+
 // Yalnizca semada tanimli alanlari, semadaki izin verilen degerlerle
 // eslesiyorsa kabul eder; tanimsiz alan veya gecersiz deger sessizce
 // atlanir (hata firlatilmaz - cagiran taraf boylece kismi/eski {} settings
-// kayitlariyla da guvenle calisir).
+// kayitlariyla da guvenle calisir). integer-range alanlari icin de ayni
+// "sessizce atla" sozlesmesi gecerlidir - acik hata uretimi isteyen cagiran
+// taraf bunun yerine validateExerciseSettingsValueDetailed kullanmalidir.
 export function validateExerciseSettingsValue(
   schema: ExerciseSettingsSchema,
   raw: Record<string, unknown>,
@@ -389,6 +426,14 @@ export function validateExerciseSettingsValue(
     const value = raw[field.key];
     if (value === undefined || value === null || value === "") continue;
 
+    if (field.type === "integer-range") {
+      const parsed = Number(value);
+      if (isValidIntegerRangeValue(field, parsed)) {
+        cleaned[field.key] = parsed;
+      }
+      continue;
+    }
+
     const normalized = field.type === "integer" ? Number(value) : String(value);
     if (field.type === "integer" && !Number.isFinite(normalized)) continue;
     if (!optionsInclude(field.options, normalized)) continue;
@@ -397,6 +442,60 @@ export function validateExerciseSettingsValue(
   }
 
   return cleaned;
+}
+
+export type ExerciseSettingsValidationIssue = {
+  field: string;
+  message: string;
+};
+
+// validateExerciseSettingsValue ile ayni temizleme mantigini kullanir, AMA
+// integer-range alanlari icin ek olarak acik bir hata listesi de doner -
+// bos birakilmis veya araligin/step'in disindaki bir deger gun/gorev
+// validasyon mimarisine (validation.ts, EducationProgramValidationIssue)
+// aktarilabilecek bir mesaja donusur. enum/integer alanlarinin mevcut
+// "sessizce atla" davranisi DEGISMEZ - yalniz integer-range icin hata uretilir.
+export function validateExerciseSettingsValueDetailed(
+  schema: ExerciseSettingsSchema,
+  raw: Record<string, unknown>,
+): { settings: EducationProgramTaskSettings; issues: ExerciseSettingsValidationIssue[] } {
+  const settings: EducationProgramTaskSettings = {};
+  const issues: ExerciseSettingsValidationIssue[] = [];
+
+  for (const field of schema.fields) {
+    const value = raw[field.key];
+
+    if (field.type === "integer-range") {
+      const isEmpty = value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+      if (isEmpty) {
+        issues.push({
+          field: field.key,
+          message: `${field.label} alanı boş bırakılamaz (${field.min}-${field.max} arasında bir tam sayı girin).`,
+        });
+        continue;
+      }
+
+      const parsed = Number(value);
+      if (!isValidIntegerRangeValue(field, parsed)) {
+        issues.push({
+          field: field.key,
+          message: `${field.label} ${field.min}-${field.max} arasında bir tam sayı olmalıdır.`,
+        });
+        continue;
+      }
+
+      settings[field.key] = parsed;
+      continue;
+    }
+
+    if (value === undefined || value === null || value === "") continue;
+    const normalized = field.type === "integer" ? Number(value) : String(value);
+    if (field.type === "integer" && !Number.isFinite(normalized)) continue;
+    if (!optionsInclude(field.options, normalized)) continue;
+    settings[field.key] = normalized;
+  }
+
+  return { settings, issues };
 }
 
 export function readExerciseSettingsFromFormData(
@@ -416,6 +515,32 @@ export function readExerciseSettingsFromFormData(
   return validateExerciseSettingsValue(schema, raw);
 }
 
+// readExerciseSettingsFromFormData'dan farkli olarak alanlari DOGRULAMADAN,
+// ham FormData string degerleriyle (bos string dahil) doner - integer-range
+// alanlari icin "kullanici alani bosalttı" bilgisinin kaybolmamasi gerekir ki
+// validateExerciseSettingsValueDetailed bunu acik bir hataya donusturebilsin.
+// actions.ts::readTaskInputs bu fonksiyonu kullanir; asil dogrulama/hata
+// uretimi tek noktada, validation.ts::validateEducationProgramDayTasks
+// icinde validateExerciseSettingsValueDetailed araciligiyla yapilir.
+export function readRawExerciseSettingsFromFormData(
+  schema: ExerciseSettingsSchema,
+  formData: FormData,
+  keyPrefix: string,
+): Record<string, string> {
+  const raw: Record<string, string> = {};
+
+  for (const field of schema.fields) {
+    const value = formData.get(`${keyPrefix}${field.key}`);
+    if (typeof value !== "string") continue;
+
+    if (field.type === "integer-range" || value.trim()) {
+      raw[field.key] = value;
+    }
+  }
+
+  return raw;
+}
+
 // Ogrenci egzersiz client'larinda Egitim Programi launch settings'inden
 // (veya eksikse/gecersizse mevcut client varsayilanindan) baslangic state
 // degeri secmek icin kullanilir - egzersiz hicbir zaman crash olmaz.
@@ -428,4 +553,24 @@ export function pickEducationProgramSettingOption<T extends number | string>(
   const value = settings?.[key];
   if (value === undefined) return fallback;
   return optionsInclude(options, value as number | string) ? (value as T) : fallback;
+}
+
+// pickEducationProgramSettingOption'in integer-range karsiligi: kayitli
+// deger [min,max] araliginda gecerli bir tam sayiysa aynen doner, eksik/
+// gecersiz/aralik-disi ise (ornegin eski/bozuk bir kayit) client'in kendi
+// guvenli varsayilanina duser - egzersiz hicbir zaman crash olmaz.
+export function pickEducationProgramRangeSettingOption(
+  settings: EducationProgramTaskSettings | undefined,
+  key: string,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  const value = settings?.[key];
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < min || parsed > max) {
+    return fallback;
+  }
+  return parsed;
 }

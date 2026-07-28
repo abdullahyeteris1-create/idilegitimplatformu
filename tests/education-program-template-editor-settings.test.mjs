@@ -27,7 +27,7 @@ test("sema tanimli egzersiz secilince dinamik select'ler render edilir", async (
   assert.match(source, /name=\{`task-\$\{orderNumber\}-settings-\$\{field\.key\}`\}/);
 });
 
-test("secenekler disinda deger secilemez - her alan select ile secenek listesinden render edilir (serbest metin girisi yok)", async () => {
+test("enum/sabit-secenekli integer alanlar icin secenekler disinda deger secilemez - select ile secenek listesinden render edilir", async () => {
   const source = await read(EDITOR_PATH);
   const fieldsBlock = source.slice(
     source.indexOf("settingsSchema.fields.map"),
@@ -35,8 +35,31 @@ test("secenekler disinda deger secilemez - her alan select ile secenek listesind
   );
 
   assert.match(fieldsBlock, /<select/);
-  assert.doesNotMatch(fieldsBlock, /<input/);
   assert.match(fieldsBlock, /field\.options\.map\(\(option\) =>/);
+});
+
+test("integer-range alanlar (ornegin serbest kelime/dakika girisi) icin sabit secenek listesi yerine sayisal input render edilir", async () => {
+  const source = await read(EDITOR_PATH);
+  const fieldsBlock = source.slice(
+    source.indexOf("settingsSchema.fields.map"),
+    source.indexOf("Egzersize özel ayarlar"),
+  );
+
+  assert.match(fieldsBlock, /field\.type === "integer-range"/);
+  assert.match(
+    fieldsBlock,
+    /<input\s*\n\s*type="number"\s*\n\s*name=\{`task-\$\{orderNumber\}-settings-\$\{field\.key\}`\}\s*\n\s*min=\{field\.min\}\s*\n\s*max=\{field\.max\}\s*\n\s*step=\{field\.step \?\? 1\}/,
+  );
+});
+
+test("integer-range alan icin gecersiz/bos deger girildiginde acik bir uyari mesaji gosterilir", async () => {
+  const source = await read(EDITOR_PATH);
+
+  assert.match(source, /function isValidIntegerRangeInput\(/);
+  assert.match(
+    source,
+    /\{invalid \? \(\s*\n\s*<p className="text-xs font-medium text-red-700">\s*\n\s*\{field\.label\} \{field\.min\}-\{field\.max\} arasında bir tam sayı olmalıdır\./,
+  );
 });
 
 test("ayni-olani-yakala mod secenekleri Turkce etiketle gosterilir", async () => {

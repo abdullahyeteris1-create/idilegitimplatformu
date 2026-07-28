@@ -20,7 +20,7 @@ import {
   validateEducationProgramTemplateMetadata,
 } from "@/lib/education-programs/validation";
 import { buildPublishValidationMessage } from "@/lib/education-programs/publishMessages";
-import { getExerciseSettingsSchema, readExerciseSettingsFromFormData } from "@/lib/education-programs/exerciseSettingsSchemas";
+import { getExerciseSettingsSchema, readRawExerciseSettingsFromFormData } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { assignStudentEducationProgram } from "@/lib/education-programs/studentProgramRepository";
 import type { StudentEducationProgramActionState } from "@/lib/education-programs/studentProgramTypes";
 import { validateStudentEducationProgramAssignment } from "@/lib/education-programs/studentProgramValidation";
@@ -69,8 +69,11 @@ function readTaskInputs(formData: FormData): EducationProgramTemplateTaskInput[]
     const durationRaw = String(formData.get(`${prefix}-durationSeconds`) ?? "").trim();
     const levelRaw = String(formData.get(`${prefix}-startingLevel`) ?? "").trim();
     const settingsSchema = getExerciseSettingsSchema(exerciseSlug);
+    // Ham (dogrulanmamis) deger okunur - asil dogrulama/acik hata uretimi tek
+    // noktada, validateEducationProgramDayTasks (validation.ts) icinde
+    // validateExerciseSettingsValueDetailed araciligiyla yapilir.
     const settings = settingsSchema
-      ? readExerciseSettingsFromFormData(settingsSchema, formData, `${prefix}-settings-`)
+      ? readRawExerciseSettingsFromFormData(settingsSchema, formData, `${prefix}-settings-`)
       : {};
 
     return {

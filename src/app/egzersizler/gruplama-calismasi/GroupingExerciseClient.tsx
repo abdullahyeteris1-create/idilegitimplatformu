@@ -15,7 +15,10 @@ import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
-import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import {
+  pickEducationProgramRangeSettingOption,
+  pickEducationProgramSettingOption,
+} from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
@@ -62,7 +65,8 @@ const MAX_RESULT_DURATION_SECONDS = 21_600;
 const GROUP_SIZE_OPTIONS: GroupSize[] = [2, 3, 4, 5];
 const SPEED_MODE_OPTIONS: SpeedMode[] = ["milliseconds", "wordsPerMinute"];
 const CUSTOM_MILLISECONDS_OPTIONS = [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000];
-const CUSTOM_WORDS_PER_MINUTE_OPTIONS = [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000];
+const CUSTOM_WORDS_PER_MINUTE_MIN = 1;
+const CUSTOM_WORDS_PER_MINUTE_MAX = 2000;
 
 const ALL = "all";
 const GROUPS: GroupSize[] = [2, 3, 4, 5];
@@ -127,10 +131,24 @@ export function GroupingExerciseClient({
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 1000),
   );
   const [customWordsPerMinute, setCustomWordsPerMinute] = useState(() =>
-    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customWordsPerMinute", CUSTOM_WORDS_PER_MINUTE_OPTIONS, 300),
+    pickEducationProgramRangeSettingOption(
+      educationProgramLaunch?.settings,
+      "customWordsPerMinute",
+      CUSTOM_WORDS_PER_MINUTE_MIN,
+      CUSTOM_WORDS_PER_MINUTE_MAX,
+      300,
+    ),
   );
   const [customWordsPerMinuteInput, setCustomWordsPerMinuteInput] = useState(() =>
-    String(pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customWordsPerMinute", CUSTOM_WORDS_PER_MINUTE_OPTIONS, 300)),
+    String(
+      pickEducationProgramRangeSettingOption(
+        educationProgramLaunch?.settings,
+        "customWordsPerMinute",
+        CUSTOM_WORDS_PER_MINUTE_MIN,
+        CUSTOM_WORDS_PER_MINUTE_MAX,
+        300,
+      ),
+    ),
   );
   const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
 

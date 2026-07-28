@@ -54,8 +54,14 @@ test("3) blok-okuma semasi gercek client alanlariyla eslesir: blockSize, speedMo
   assert.deepEqual(fieldsByKey.intervalMs.options, [250, 500, 750, 1000, 1500, 2000, 3000, 5000]);
   assert.equal(fieldsByKey.intervalMs.defaultValue, 750);
 
-  assert.deepEqual(fieldsByKey.wordsPerMinute.options, [50, 100, 150, 200, 250, 300, 400, 500]);
+  // wordsPerMinute artik sabit secenek listesi degil, serbest bir tam sayi
+  // araligidir (bagimsiz ekrandaki serbest Kelime/Dakika girisiyle uyumlu).
+  assert.equal(fieldsByKey.wordsPerMinute.type, "integer-range");
+  assert.equal(fieldsByKey.wordsPerMinute.min, 1);
+  assert.equal(fieldsByKey.wordsPerMinute.max, 2000);
+  assert.equal(fieldsByKey.wordsPerMinute.step, 1);
   assert.equal(fieldsByKey.wordsPerMinute.defaultValue, 150);
+  assert.equal("options" in fieldsByKey.wordsPerMinute, false);
 });
 
 // 4) Semaya kasitli olarak eklenmeyen alanlar
@@ -123,7 +129,7 @@ test("7) sema, intervalMs ve wordsPerMinute'u speedMode'a bagli kosullu alan OLA
 
   assert.match(
     source,
-    /kosullu\/bagimli alan \(bir alanin baska bir[\s\S]{0,40}alanin degerine gore/,
+    /intervalMs ve wordsPerMinute ikisi de her zaman semada bulunur/,
   );
 
   const schema = getExerciseSettingsSchema("blok-okuma");

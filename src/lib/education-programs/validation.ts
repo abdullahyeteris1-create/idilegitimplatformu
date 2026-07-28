@@ -2,7 +2,7 @@ import { isEducationProgramCategory } from "@/lib/education-programs/categories"
 import { getEducationProgramExercise } from "@/lib/education-programs/exerciseCatalog";
 import {
   getExerciseSettingsSchema,
-  validateExerciseSettingsValue,
+  validateExerciseSettingsValueDetailed,
 } from "@/lib/education-programs/exerciseSettingsSchemas";
 import type {
   EducationProgramTaskSettings,
@@ -251,13 +251,27 @@ export function validateEducationProgramDayTasks(
     }
 
     // Yalniz ilk surumde ayar semasi tanimli egzersizler (eye-columns,
-    // word-finding, square-vision) gorev bazinda ayar kaydedebilir; diger
-    // egzersizler icin settings her zaman bos kalir (mevcut/eski {}
-    // kayitlarla ayni davranis, geriye donuk uyumlu).
+    // word-finding, square-vision, blok-okuma, golgeleme, gruplama-calismasi
+    // vb.) gorev bazinda ayar kaydedebilir; diger egzersizler icin settings
+    // her zaman bos kalir (mevcut/eski {} kayitlarla ayni davranis, geriye
+    // donuk uyumlu). integer-range alanlari (ornegin serbest kelime/dakika
+    // girisi) icin validateExerciseSettingsValueDetailed ayrica acik bir
+    // hata listesi doner - bu, enum/integer alanlarinin mevcut "sessizce
+    // atla" davranisini DEGISTIRMEZ, yalniz integer-range icin devreye girer.
     const settingsSchema = getExerciseSettingsSchema(exerciseSlug);
-    const settings = settingsSchema
-      ? validateExerciseSettingsValue(settingsSchema, genericSettings ?? {})
-      : {};
+    let settings: EducationProgramTaskSettings = {};
+    if (settingsSchema) {
+      const settingsResult = validateExerciseSettingsValueDetailed(settingsSchema, genericSettings ?? {});
+      settings = settingsResult.settings;
+      for (const settingsIssue of settingsResult.issues) {
+        issues.push({
+          field: settingsIssue.field,
+          message: `Gün ${dayNumber ?? "-"}, çalışma ${orderNumber}: ${settingsIssue.message}`,
+          dayNumber,
+          orderNumber,
+        });
+      }
+    }
 
     normalized.push({
       orderNumber,

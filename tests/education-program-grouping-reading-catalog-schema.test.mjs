@@ -70,11 +70,14 @@ test("5) gruplama-calismasi semasi gercek client alanlariyla eslesir: groupSize,
   );
   assert.equal(fieldsByKey.customMilliseconds.defaultValue, 1000);
 
-  assert.deepEqual(
-    fieldsByKey.customWordsPerMinute.options,
-    [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000],
-  );
+  // customWordsPerMinute artik sabit secenek listesi degil, serbest bir tam
+  // sayi araligidir (bagimsiz ekrandaki serbest Kelime/Dakika girisiyle uyumlu).
+  assert.equal(fieldsByKey.customWordsPerMinute.type, "integer-range");
+  assert.equal(fieldsByKey.customWordsPerMinute.min, 1);
+  assert.equal(fieldsByKey.customWordsPerMinute.max, 2000);
+  assert.equal(fieldsByKey.customWordsPerMinute.step, 1);
   assert.equal(fieldsByKey.customWordsPerMinute.defaultValue, 300);
+  assert.equal("options" in fieldsByKey.customWordsPerMinute, false);
 });
 
 // 6) hangi alanlarin teacher setting oldugu

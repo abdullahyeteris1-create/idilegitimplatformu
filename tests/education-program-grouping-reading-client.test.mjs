@@ -66,13 +66,18 @@ test("12) standalone fallback: educationProgramLaunch prop'u opsiyonel ve varsay
   );
 });
 
-test("13) teacher settings guvenli okunuyor: groupSize/speedMode/customMilliseconds/customWordsPerMinute pickEducationProgramSettingOption ile okunur", async () => {
+test("13) teacher settings guvenli okunuyor: groupSize/speedMode/customMilliseconds sabit secenekle, customWordsPerMinute serbest aralikla (1-2000) okunur", async () => {
   const source = await read(CLIENT_PATH);
 
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "groupSize", GROUP_SIZE_OPTIONS, 2\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "speedMode", SPEED_MODE_OPTIONS, "milliseconds"\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 1000\)/);
-  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "customWordsPerMinute", CUSTOM_WORDS_PER_MINUTE_OPTIONS, 300\)/);
+  assert.match(
+    source,
+    /pickEducationProgramRangeSettingOption\(\s*\n\s*educationProgramLaunch\?\.settings,\s*\n\s*"customWordsPerMinute",\s*\n\s*CUSTOM_WORDS_PER_MINUTE_MIN,\s*\n\s*CUSTOM_WORDS_PER_MINUTE_MAX,\s*\n\s*300,\s*\n\s*\)/,
+  );
+  assert.match(source, /const CUSTOM_WORDS_PER_MINUTE_MIN = 1;/);
+  assert.match(source, /const CUSTOM_WORDS_PER_MINUTE_MAX = 2000;/);
 });
 
 test("14) EP modunda yalniz dogru kontroller kilitlenir: groupSize/speedMode/customMilliseconds/customWordsPerMinute", async () => {

@@ -55,17 +55,17 @@ test("daha once taslak olan sablon tekrar taslak kaydedilince uyari degil basari
   assert.ok(successFallbackIndex > warningBlockIndex);
 });
 
-test("readTaskInputs secili egzersizin semasi varsa form'dan settings okur", async () => {
+test("readTaskInputs secili egzersizin semasi varsa form'dan HAM settings okur (asil dogrulama validation.ts'te yapilir)", async () => {
   const source = await read(ACTIONS_PATH);
 
   assert.match(
     source,
-    /import \{ getExerciseSettingsSchema, readExerciseSettingsFromFormData \} from "@\/lib\/education-programs\/exerciseSettingsSchemas"/,
+    /import \{ getExerciseSettingsSchema, readRawExerciseSettingsFromFormData \} from "@\/lib\/education-programs\/exerciseSettingsSchemas"/,
   );
   assert.match(source, /const settingsSchema = getExerciseSettingsSchema\(exerciseSlug\);/);
   assert.match(
     source,
-    /readExerciseSettingsFromFormData\(settingsSchema, formData, `\$\{prefix\}-settings-`\)/,
+    /readRawExerciseSettingsFromFormData\(settingsSchema, formData, `\$\{prefix\}-settings-`\)/,
   );
 });
 

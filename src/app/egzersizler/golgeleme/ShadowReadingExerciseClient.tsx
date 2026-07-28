@@ -23,7 +23,10 @@ import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
-import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
+import {
+  pickEducationProgramRangeSettingOption,
+  pickEducationProgramSettingOption,
+} from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
@@ -74,7 +77,8 @@ const EXPECTED_RESULT_EXERCISE_TYPE = "shadow-reading";
 // - gercek biriken aktif sure gonderilir, yalniz bu guvenlik siniriyla kirpilir.
 const MAX_RESULT_DURATION_SECONDS = 21_600;
 const SPEED_MODE_OPTIONS: ShadowReadingSpeedMode[] = ["interval", "wpm"];
-const WORDS_PER_MINUTE_OPTIONS = [50, 100, 150, 200, 250, 300, 400, 500];
+const WORDS_PER_MINUTE_MIN = 1;
+const WORDS_PER_MINUTE_MAX = 2000;
 
 const BLOCK_SIZE_OPTIONS: BlockSize[] = [1, 2, 3, 4, 5];
 const JUMP_SPEED_OPTIONS: JumpSpeedMs[] = [
@@ -144,10 +148,24 @@ export function ShadowReadingExerciseClient({
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "intervalMs", JUMP_SPEED_OPTIONS, 500),
   );
   const [wordsPerMinute, setWordsPerMinute] = useState<WordsPerMinute>(() =>
-    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "wordsPerMinute", WORDS_PER_MINUTE_OPTIONS, 150),
+    pickEducationProgramRangeSettingOption(
+      educationProgramLaunch?.settings,
+      "wordsPerMinute",
+      WORDS_PER_MINUTE_MIN,
+      WORDS_PER_MINUTE_MAX,
+      150,
+    ),
   );
   const [wordsPerMinuteInput, setWordsPerMinuteInput] = useState(() =>
-    String(pickEducationProgramSettingOption(educationProgramLaunch?.settings, "wordsPerMinute", WORDS_PER_MINUTE_OPTIONS, 150)),
+    String(
+      pickEducationProgramRangeSettingOption(
+        educationProgramLaunch?.settings,
+        "wordsPerMinute",
+        WORDS_PER_MINUTE_MIN,
+        WORDS_PER_MINUTE_MAX,
+        150,
+      ),
+    ),
   );
   const [readingSpeedError, setReadingSpeedError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSizePx>(20);

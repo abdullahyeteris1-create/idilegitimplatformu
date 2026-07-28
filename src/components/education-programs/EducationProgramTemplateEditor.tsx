@@ -8,6 +8,7 @@ import {
   getEducationProgramExercise,
 } from "@/lib/education-programs/exerciseCatalog";
 import { getExerciseSettingsSchema } from "@/lib/education-programs/exerciseSettingsSchemas";
+import type { ExerciseSettingsRangeFieldDef } from "@/lib/education-programs/exerciseSettingsSchemas";
 import type {
   EducationProgramActionState,
   EducationProgramTemplate,
@@ -65,6 +66,19 @@ const ENUM_OPTION_LABELS: Record<string, Record<string, string>> = {
 // karsilamak icin gizli input'a yazilir - ilgili egzersiz client'lari bu
 // degeri hicbir zaman okumaz/kullanmaz.
 const DURATIONLESS_TASK_PLACEHOLDER_SECONDS = 60;
+
+// integer-range alanlari (ornegin serbest kelime/dakika girisi) icin anlik
+// istemci tarafi geri bildirim - sunucu tarafi asil dogrulama/kaydetme
+// kararini validation.ts::validateExerciseSettingsValueDetailed ile verir,
+// bu yalniz ogretmenin gecersiz bir deger yazdigini hemen gormesini saglar.
+function isValidIntegerRangeInput(field: ExerciseSettingsRangeFieldDef, rawValue: string): boolean {
+  if (!rawValue.trim()) return false;
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) return false;
+  if (parsed < field.min || parsed > field.max) return false;
+  const step = field.step ?? 1;
+  return step <= 1 || (parsed - field.min) % step === 0;
+}
 
 const FIELD_CLASS =
   "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
@@ -553,34 +567,66 @@ export function EducationProgramTemplateEditor({
                   </label>
 
                   {settingsSchema ? (
-                    settingsSchema.fields.map((field) => (
-                      <label key={field.key} className="grid gap-1.5">
-                        <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
-                          {field.label}
-                          {field.unit ? ` (${field.unit})` : ""}
-                        </span>
-                        <select
-                          name={`task-${orderNumber}-settings-${field.key}`}
-                          value={slot.settings[field.key] ?? String(field.defaultValue)}
-                          onChange={(event) =>
-                            updateSlotSetting(index, field.key, event.target.value)
-                          }
-                          className={FIELD_CLASS}
-                        >
-                          {field.options.map((option) => {
-                            const enumLabel =
-                              ENUM_OPTION_LABELS[`${settingsSchema.exerciseSlug}:${field.key}`]?.[
-                                option as string
-                              ];
-                            return (
-                              <option key={option} value={option}>
-                                {enumLabel ?? `${option}${field.unit ? ` ${field.unit}` : ""}`}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </label>
-                    ))
+                    settingsSchema.fields.map((field) => {
+                      if (field.type === "integer-range") {
+                        const rawValue = slot.settings[field.key] ?? String(field.defaultValue);
+                        const invalid = !isValidIntegerRangeInput(field, rawValue);
+                        return (
+                          <label key={field.key} className="grid gap-1.5">
+                            <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                              {field.label}
+                              {field.unit ? ` (${field.unit})` : ""}
+                            </span>
+                            <input
+                              type="number"
+                              name={`task-${orderNumber}-settings-${field.key}`}
+                              min={field.min}
+                              max={field.max}
+                              step={field.step ?? 1}
+                              value={rawValue}
+                              onChange={(event) =>
+                                updateSlotSetting(index, field.key, event.target.value)
+                              }
+                              className={FIELD_CLASS}
+                            />
+                            {invalid ? (
+                              <p className="text-xs font-medium text-red-700">
+                                {field.label} {field.min}-{field.max} arasında bir tam sayı olmalıdır.
+                              </p>
+                            ) : null}
+                          </label>
+                        );
+                      }
+
+                      return (
+                        <label key={field.key} className="grid gap-1.5">
+                          <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+                            {field.label}
+                            {field.unit ? ` (${field.unit})` : ""}
+                          </span>
+                          <select
+                            name={`task-${orderNumber}-settings-${field.key}`}
+                            value={slot.settings[field.key] ?? String(field.defaultValue)}
+                            onChange={(event) =>
+                              updateSlotSetting(index, field.key, event.target.value)
+                            }
+                            className={FIELD_CLASS}
+                          >
+                            {field.options.map((option) => {
+                              const enumLabel =
+                                ENUM_OPTION_LABELS[`${settingsSchema.exerciseSlug}:${field.key}`]?.[
+                                  option as string
+                                ];
+                              return (
+                                <option key={option} value={option}>
+                                  {enumLabel ?? `${option}${field.unit ? ` ${field.unit}` : ""}`}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </label>
+                      );
+                    })
                   ) : (
                     <label className="grid gap-1.5">
                       <span className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-200">

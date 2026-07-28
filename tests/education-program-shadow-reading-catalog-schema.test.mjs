@@ -70,8 +70,14 @@ test("5) golgeleme semasi gercek client alanlariyla eslesir: blockSize, speedMod
   assert.deepEqual(fieldsByKey.intervalMs.options, expectedIntervalOptions);
   assert.equal(fieldsByKey.intervalMs.defaultValue, 500);
 
-  assert.deepEqual(fieldsByKey.wordsPerMinute.options, [50, 100, 150, 200, 250, 300, 400, 500]);
+  // wordsPerMinute artik sabit secenek listesi degil, serbest bir tam sayi
+  // araligidir (bagimsiz ekrandaki serbest Kelime/Dakika girisiyle uyumlu).
+  assert.equal(fieldsByKey.wordsPerMinute.type, "integer-range");
+  assert.equal(fieldsByKey.wordsPerMinute.min, 1);
+  assert.equal(fieldsByKey.wordsPerMinute.max, 2000);
+  assert.equal(fieldsByKey.wordsPerMinute.step, 1);
   assert.equal(fieldsByKey.wordsPerMinute.defaultValue, 150);
+  assert.equal("options" in fieldsByKey.wordsPerMinute, false);
 });
 
 // 6) fontSize/textId/category/durationSeconds/initialLevel disinda tutulmasi
