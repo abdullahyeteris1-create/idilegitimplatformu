@@ -3,8 +3,27 @@ import { redirect } from "next/navigation";
 import { StudentPanelPreview } from "@/components/student-panel-preview/StudentPanelPreview";
 import { STUDENT_SESSION_COOKIE_NAME } from "@/lib/auth/studentSession";
 import { verifyStudentAccessToken } from "@/lib/auth/verifyStudentAccess";
-import { getStudentProfile } from "@/lib/students/studentProfile";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { getStudentXpSnapshotByStudentId } from "@/lib/xp/xpRepository";
+
+const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
+
+async function getStudentProfile(studentId: string) {
+  const supabase = getSupabaseServiceRoleClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from(STUDENTS_TABLE)
+      .select("id,name,username,class_name")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    return error ? null : data;
+  } catch {
+    return null;
+  }
+}
 
 export default async function StudentDashboardPage() {
   const cookieStore = await cookies();
@@ -30,7 +49,7 @@ export default async function StudentDashboardPage() {
           id: access.studentId,
           name: studentName,
           username: student.username ?? access.username,
-          classLevel: student.className,
+          classLevel: typeof student.class_name === "string" && student.class_name.trim() ? student.class_name.trim() : null,
         }}
       />
     </div>
