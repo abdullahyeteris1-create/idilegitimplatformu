@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
-import type { TeacherStudentAccountStatus, TeacherStudentListItem } from "@/lib/teachers/studentTrackingTypes";
+import type { TeacherStudentListItem } from "@/lib/teachers/studentTrackingTypes";
+import type { StudentStatus } from "@/lib/students/studentStatus";
 import {
   getStudentStatusBadgeClass,
   getStudentStatusLabel,
@@ -80,16 +81,17 @@ function formatDateTime(value: string | null): string {
   }).format(date);
 }
 
-function getStatusDotClass(status: TeacherStudentAccountStatus): string {
-  if (status === "active") {
-    return "bg-emerald-500";
+function getStatusDotClass(status: StudentStatus): string {
+  switch (status) {
+    case "active":
+      return "bg-emerald-500";
+    case "passive":
+      return "bg-slate-400";
+    case "completed":
+      return "bg-sky-500";
+    default:
+      return "bg-slate-400";
   }
-
-  if (status === "completed") {
-    return "bg-sky-500";
-  }
-
-  return "bg-slate-400";
 }
 
 function getAvatarTone(name: string): string {
