@@ -1,4 +1,6 @@
-export type StudentStatus = "active" | "passive";
+import type { StudentStatus } from "./studentStatus";
+
+export type { StudentStatus } from "./studentStatus";
 
 export type EducationStatus = "general" | "speed-reading";
 

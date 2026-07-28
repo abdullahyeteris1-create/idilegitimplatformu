@@ -7,6 +7,7 @@ import {
 } from "@/lib/education-programs/studentProgramRepository";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
 import type { ExerciseResult } from "@/lib/results/types";
+import { normalizeStudentStatus } from "@/lib/students/studentStatus";
 import { countEarnedBadges } from "@/lib/xp/xpBadges";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
@@ -143,6 +144,9 @@ function isValidStudentId(value: string): boolean {
 
 function normalizeAccountStatus(row: DatabaseRow): TeacherStudentAccountStatus {
   const status = readString(row, ["status", "state"]);
+  if (status === "completed") {
+    return "completed";
+  }
   if (status === "passive" || status === "inactive" || status === "pasif") {
     return "passive";
   }
@@ -152,7 +156,7 @@ function normalizeAccountStatus(row: DatabaseRow): TeacherStudentAccountStatus {
     return "passive";
   }
 
-  return "active";
+  return normalizeStudentStatus(status, "active");
 }
 
 function mapStudentRow(row: DatabaseRow): StudentRow | null {
@@ -163,14 +167,16 @@ function mapStudentRow(row: DatabaseRow): StudentRow | null {
     return null;
   }
 
+  const status = normalizeAccountStatus(row);
+
   return {
     id,
     name,
     username,
     class_name: readString(row, ["class_name", "className"]),
     phone: readString(row, ["phone"]),
-    status: normalizeAccountStatus(row),
-    is_active: readBoolean(row, ["is_active", "isActive"]) ?? true,
+    status,
+    is_active: status === "active" ? readBoolean(row, ["is_active", "isActive"]) ?? true : false,
     access_end_date: readDateString(row, ["access_end_date", "accessEndDate"]),
     last_login_at: readDateString(row, ["last_login_at", "lastLoginAt"]),
     parent_name: readString(row, ["parent_name", "parentName"]),

@@ -374,6 +374,7 @@ export function NewStudentFormClient() {
           >
             <option value="active">Aktif</option>
             <option value="passive">Pasif</option>
+            <option value="completed">Eğitimi Tamamlandı</option>
           </select>
         </label>
 

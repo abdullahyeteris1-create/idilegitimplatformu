@@ -1,4 +1,5 @@
 import type { ExerciseResult } from "@/lib/results/types";
+import { normalizeStudentStatus } from "@/lib/students/studentStatus";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import type {
   TeacherDashboardAttentionReasonCode,
@@ -90,6 +91,7 @@ type DashboardActivityEntry = TeacherDashboardRecentActivity & {
 
 type NormalizedStudent = StudentRow & {
   active: boolean;
+  completed: boolean;
   accessExpired: boolean;
 };
 
@@ -280,6 +282,9 @@ function parseAccessExpiry(accessEndDate: string | null, now = new Date()): bool
 
 function normalizeAccountStatus(row: DatabaseRow, now = new Date()): TeacherStudentAccountStatus {
   const status = readString(row, ["status", "state"]);
+  if (status === "completed") {
+    return "completed";
+  }
   if (status === "passive" || status === "inactive" || status === "pasif") {
     return "passive";
   }
@@ -304,7 +309,7 @@ function normalizeAccountStatus(row: DatabaseRow, now = new Date()): TeacherStud
     return "passive";
   }
 
-  return "active";
+  return normalizeStudentStatus(status, "active");
 }
 
 function normalizeStudentRow(row: DatabaseRow, now = new Date()): NormalizedStudent | null {
@@ -315,17 +320,19 @@ function normalizeStudentRow(row: DatabaseRow, now = new Date()): NormalizedStud
   }
 
   const status = normalizeAccountStatus(row, now);
+  const isActive = status === "active" ? readBoolean(row, ["is_active", "isActive"]) ?? true : false;
 
   return {
     id,
     name,
     class_name: readString(row, ["class_name", "className"]),
     status,
-    is_active: readBoolean(row, ["is_active", "isActive"]) ?? status === "active",
+    is_active: isActive,
     access_end_date: readDateString(row, ["access_end_date", "accessEndDate"]),
     last_login_at: readDateString(row, ["last_login_at", "lastLoginAt"]),
     created_at: readDateString(row, ["created_at", "createdAt"]),
     active: status === "active",
+    completed: status === "completed",
     accessExpired: parseAccessExpiry(readDateString(row, ["access_end_date", "accessEndDate"]), now),
   };
 }
@@ -620,7 +627,7 @@ function buildResultActivity(
         : null,
     detailHref: `/ogretmen/ogrenciler/${student.id}`,
     kind: "exercise",
-    countAsActiveStudent: true,
+    countAsActiveStudent: student.active,
     countAsCompletedWork: true,
   };
 }
@@ -650,7 +657,7 @@ function buildTaskActivity(
     comprehensionRate: null,
     detailHref: `/ogretmen/ogrenciler/${student.id}`,
     kind: "program_task",
-    countAsActiveStudent: true,
+    countAsActiveStudent: student.active,
     countAsCompletedWork: true,
   };
 }
@@ -688,7 +695,7 @@ function buildLoginActivity(student: NormalizedStudent, now: Date): DashboardAct
     comprehensionRate: null,
     detailHref: `/ogretmen/ogrenciler/${student.id}`,
     kind: "login",
-    countAsActiveStudent: true,
+    countAsActiveStudent: student.active,
     countAsCompletedWork: false,
   };
 }
@@ -746,7 +753,8 @@ function buildSummaryStats(args: {
 }): TeacherDashboardStats {
   const totalStudents = args.students.length;
   const activeStudents = args.students.filter((student) => student.active).length;
-  const inactiveStudents = totalStudents - activeStudents;
+  const inactiveStudents = args.students.filter((student) => student.status === "passive").length;
+  const completedStudents = args.students.filter((student) => student.completed).length;
   const activePrograms = args.programs.filter((program) => program.active).length;
   const totalXp = args.xpSummaries.reduce((sum, row) => sum + row.total_xp, 0);
 
@@ -785,6 +793,7 @@ function buildSummaryStats(args: {
     totalStudents,
     activeStudents,
     inactiveStudents,
+    completedStudents,
     activePrograms,
     totalXp,
     activeStudentsLast7Days: activeStudentIds.size,
@@ -812,6 +821,10 @@ function buildRecentStudents(
 
   return students
     .map((student) => {
+      if (student.completed) {
+        return null;
+      }
+
       const latestActivity = latestActivityByStudent.get(student.id);
       if (!latestActivity) {
         return null;
@@ -880,7 +893,7 @@ function buildAttentionStudents(
   const windowStart = normalizeTimestamp(window.startInclusiveIso);
 
   for (const student of students) {
-    if (!student.active) {
+    if (!student.active || student.completed) {
       continue;
     }
 

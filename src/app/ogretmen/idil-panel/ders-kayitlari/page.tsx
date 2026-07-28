@@ -29,6 +29,7 @@ import {
 import { getResultsByStudentWithRemote } from "@/lib/results/resultStorage";
 import type { ExerciseResult } from "@/lib/results/types";
 import { getStudentsWithRemote } from "@/lib/students/studentStorage";
+import { getStudentStatusLabel } from "@/lib/students/studentStatus";
 import type { Student } from "@/lib/students/types";
 import {
   compareTurkishTextTitles,
@@ -264,7 +265,7 @@ function getStudentStatus(student: Student | undefined): string {
     return "Durum bilinmiyor";
   }
 
-  return student.status === "passive" || student.isActive === false ? "Pasif" : "Aktif";
+  return getStudentStatusLabel(student.status);
 }
 
 function getStudentInitials(name: string): string {

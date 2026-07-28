@@ -1,6 +1,7 @@
 import { clearCurrentStudent, getCurrentStudent, getCurrentUser, setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
 import { normalizeEducationLevel } from "@/lib/assignments/educationLevels";
 import { DEMO_STUDENT, MOCK_STUDENTS } from "@/lib/students/mockStudents";
+import { normalizeStudentStatus } from "@/lib/students/studentStatus";
 import { supabase } from "@/lib/supabase/client";
 import type { Student, WelcomeEmailStatus } from "@/lib/students/types";
 
@@ -21,7 +22,7 @@ type StudentInput = {
   welcomeEmailStatus?: WelcomeEmailStatus;
   birthDate?: string;
   profileImageUrl?: string;
-  status?: "active" | "passive";
+  status?: Student["status"];
   educationStatus?: "general" | "speed-reading";
   educationLevel?: Student["educationLevel"];
   assignmentMode?: Student["assignmentMode"];
@@ -78,7 +79,10 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     normalizeEducationLevel(classLevel);
   const parentPhone = normalizeOptional(student.parentPhone) ?? normalizeOptional(student.phone);
   const parentEmail = normalizeOptional(student.parentEmail) ?? normalizeOptional(student.email);
-  const status = student.isActive === true ? "active" : student.isActive === false ? "passive" : student.status ?? "active";
+  const status = normalizeStudentStatus(
+    student.status,
+    student.isActive === false ? "passive" : "active",
+  );
 
   return {
     ...student,
@@ -99,7 +103,7 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
     birthDate: normalizeOptional(student.birthDate),
     profileImageUrl: normalizeOptional(student.profileImageUrl),
     isActive: status === "active",
-    status: status === "passive" ? "passive" : "active",
+    status,
     educationStatus: student.educationStatus,
     assignmentMode:
       student.assignmentMode === "manual" ||
@@ -170,12 +174,12 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
           ? row.profileImageUrl
           : undefined,
     isActive: typeof row.is_active === "boolean" ? row.is_active : typeof row.isActive === "boolean" ? row.isActive : undefined,
-    status:
-      row.status === "passive" || row.status === "active"
-        ? row.status
-        : (typeof row.is_active === "boolean" && !row.is_active) || (typeof row.isActive === "boolean" && !row.isActive)
-          ? "passive"
-          : "active",
+    status: normalizeStudentStatus(
+      row.status,
+      (typeof row.is_active === "boolean" && !row.is_active) || (typeof row.isActive === "boolean" && !row.isActive)
+        ? "passive"
+        : "active",
+    ),
     educationStatus:
       row.education_status === "general" || row.education_status === "speed-reading"
         ? row.education_status
@@ -526,8 +530,8 @@ function buildNewStudent(studentInput: StudentInput): Student {
     welcomeEmailStatus: normalizeWelcomeEmailStatus(studentInput.welcomeEmailStatus),
     birthDate: normalizeOptional(studentInput.birthDate),
     profileImageUrl: normalizeOptional(studentInput.profileImageUrl),
-    status: studentInput.status ?? "active",
-    isActive: (studentInput.status ?? "active") === "active",
+    status: normalizeStudentStatus(studentInput.status, "active"),
+    isActive: normalizeStudentStatus(studentInput.status, "active") === "active",
     educationStatus: studentInput.educationStatus,
     educationLevel: normalizeEducationLevel(studentInput.educationLevel) ?? normalizeEducationLevel(studentInput.classLevel),
     assignmentMode: studentInput.assignmentMode ?? "automatic",

@@ -19,6 +19,7 @@ export type TeacherDashboardStats = {
   totalStudents: number | null;
   activeStudents: number | null;
   inactiveStudents: number | null;
+  completedStudents: number | null;
   activePrograms: number | null;
   totalXp: number | null;
   activeStudentsLast7Days: number | null;

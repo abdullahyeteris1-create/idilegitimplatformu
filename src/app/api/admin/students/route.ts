@@ -7,6 +7,7 @@ import {
   isEducationDateRangeValid,
   isValidDateOnlyString,
 } from "@/lib/students/studentAccessDates";
+import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
 
 export const runtime = "nodejs";
 
@@ -56,7 +57,7 @@ function dateOnlyString(value: unknown): string | null {
 }
 
 function mapStudentResponse(row: Record<string, unknown>) {
-  const status = row.status === "passive" || row.is_active === false ? "passive" : "active";
+  const status = normalizeStudentStatus(row.status, row.is_active === false ? "passive" : "active");
 
   return {
     id: String(row.id ?? ""),
@@ -68,7 +69,7 @@ function mapStudentResponse(row: Record<string, unknown>) {
     parentEmail: optionalString(row.parent_email),
     birthDate: optionalString(row.birth_date),
     status,
-    isActive: status === "active",
+    isActive: getStudentIsActiveValue(status),
     educationStatus: row.education_status === "speed-reading" ? "speed-reading" : "general",
     educationLevel: isEducationLevel(row.education_level) ? row.education_level : undefined,
     assignmentMode:
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("Eğitim düzeyi seçimi zorunludur.", 400);
   }
 
-  if (body.status !== undefined && body.status !== "active" && body.status !== "passive") {
+  if (body.status !== undefined && !isStudentStatus(body.status)) {
     return errorResponse("Geçersiz öğrenci durumu.", 400);
   }
 
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
     return errorResponse("Bu kullanıcı adı zaten kullanılıyor.", 409);
   }
 
-  const status = body.status === "passive" ? "passive" : "active";
+  const status = normalizeStudentStatus(body.status);
   const payload = {
     name,
     username,
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
     phone: optionalString(body.parentPhone),
     parent_email: parentEmail,
     birth_date: birthDate,
-    is_active: status === "active",
+    is_active: getStudentIsActiveValue(status),
     status,
     education_status: body.educationStatus === "speed-reading" ? "speed-reading" : "general",
     education_level: body.educationLevel,

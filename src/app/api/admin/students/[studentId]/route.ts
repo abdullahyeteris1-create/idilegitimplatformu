@@ -8,6 +8,7 @@ import {
   isEducationDateRangeValid,
   isValidDateOnlyString,
 } from "@/lib/students/studentAccessDates";
+import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
 
 export const runtime = "nodejs";
 
@@ -50,7 +51,7 @@ function dateOnlyString(value: unknown): string | null {
 }
 
 function mapStudentResponse(row: Record<string, unknown>) {
-  const status = row.status === "passive" || row.is_active === false ? "passive" : "active";
+  const status = normalizeStudentStatus(row.status, row.is_active === false ? "passive" : "active");
 
   return {
     id: String(row.id ?? ""),
@@ -62,7 +63,7 @@ function mapStudentResponse(row: Record<string, unknown>) {
     parentEmail: optionalString(row.parent_email),
     birthDate: optionalString(row.birth_date),
     status,
-    isActive: status === "active",
+    isActive: getStudentIsActiveValue(status),
     educationStatus: row.education_status === "speed-reading" ? "speed-reading" : "general",
     educationLevel: isEducationLevel(row.education_level) ? row.education_level : undefined,
     assignmentMode:
@@ -215,7 +216,7 @@ export async function PATCH(
     return errorResponse("Geçerli bir eğitim düzeyi seçin.", 400);
   }
 
-  if (Object.hasOwn(body, "status") && body.status !== "active" && body.status !== "passive") {
+  if (Object.hasOwn(body, "status") && !isStudentStatus(body.status)) {
     return errorResponse("Geçersiz öğrenci durumu.", 400);
   }
 
@@ -290,7 +291,7 @@ export async function PATCH(
   if (Object.hasOwn(body, "educationStatus")) payload.education_status = body.educationStatus;
   if (Object.hasOwn(body, "status")) {
     payload.status = body.status;
-    payload.is_active = body.status === "active";
+    payload.is_active = getStudentIsActiveValue(normalizeStudentStatus(body.status));
   }
   if (hasStartDate) payload.education_start_date = educationStartDate;
   if (hasEndDate) payload.access_end_date = accessEndDate;

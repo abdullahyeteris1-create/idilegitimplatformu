@@ -37,7 +37,7 @@ function sessionFailure(): StudentAccessFailure {
 }
 
 export function isStudentActiveStatus(isActive: unknown, status: unknown): boolean {
-  if (isActive === false || status === "passive") {
+  if (isActive === false || status === "passive" || status === "completed") {
     return false;
   }
 

@@ -291,6 +291,7 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
           >
             <option value="active">Aktif</option>
             <option value="passive">Pasif</option>
+            <option value="completed">Eğitimi Tamamlandı</option>
           </select>
         </label>
 

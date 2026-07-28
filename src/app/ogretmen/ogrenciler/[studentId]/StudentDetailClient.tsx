@@ -14,6 +14,7 @@ import {
   removeStudentFromLocalCache,
   updateStudentWelcomeEmailStatus,
 } from "@/lib/students/studentStorage";
+import { getStudentStatusBadgeClass, getStudentStatusLabel } from "@/lib/students/studentStatus";
 import type { WelcomeEmailStatus } from "@/lib/students/types";
 
 type ExerciseSummary = {
@@ -376,8 +377,8 @@ export function StudentDetailClient() {
             <h3 className="text-xl font-bold text-red-700">{student.name}</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">Kullanici adi: {student.username}</p>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-bold ${student.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>
-            {student.status === "active" ? "Aktif" : "Pasif"}
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${getStudentStatusBadgeClass(student.status)}`}>
+            {getStudentStatusLabel(student.status)}
           </span>
         </div>
 

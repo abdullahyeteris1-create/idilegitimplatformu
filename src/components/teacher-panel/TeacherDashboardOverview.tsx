@@ -391,6 +391,7 @@ export function TeacherDashboardOverview({ summary, error }: TeacherDashboardOve
         <StatCard label="Toplam Öğrenci" value={summary.stats.totalStudents} description="Kayıtlı tüm öğrenciler" icon="👤" />
         <StatCard label="Aktif Öğrenci" value={summary.stats.activeStudents} description="Güncel durumunda aktif öğrenciler" icon="🟢" />
         <StatCard label="Pasif Öğrenci" value={summary.stats.inactiveStudents} description="Durumu pasif olan öğrenciler" icon="⚪" />
+        <StatCard label="Tamamlanan Öğrenci" value={summary.stats.completedStudents} description="Eğitimi tamamlanan öğrenciler" icon="🏁" />
         <StatCard label="Aktif Program" value={summary.stats.activePrograms} description="Aktif eğitim programı kayıtları" icon="📘" />
         <StatCard label="Toplam XP" value={summary.stats.totalXp} description="XP özet tablosundaki canonical toplam" icon="⭐" />
         <StatCard label="Son 7 Gün Aktif Öğrenci" value={summary.stats.activeStudentsLast7Days} description="Son 7 gündeki farklı aktif öğrenciler" icon="📈" />

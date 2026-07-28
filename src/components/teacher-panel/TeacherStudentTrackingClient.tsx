@@ -4,13 +4,20 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type { TeacherStudentAccountStatus, TeacherStudentListItem } from "@/lib/teachers/studentTrackingTypes";
+import {
+  getStudentStatusBadgeClass,
+  getStudentStatusLabel,
+  isCurrentStudentStatus,
+} from "@/lib/students/studentStatus";
 
-type StatusFilter = "all" | TeacherStudentAccountStatus;
+type StatusFilter = "all" | TeacherStudentAccountStatus | "current";
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
-  { value: "all", label: "Tümü" },
+  { value: "current", label: "Güncel" },
   { value: "active", label: "Aktif" },
   { value: "passive", label: "Pasif" },
+  { value: "completed", label: "Tamamlanmış" },
+  { value: "all", label: "Tümü" },
 ];
 
 function normalizeSearchValue(value: string): string {
@@ -73,14 +80,16 @@ function formatDateTime(value: string | null): string {
   }).format(date);
 }
 
-function getStatusBadgeClass(status: TeacherStudentAccountStatus): string {
-  return status === "active"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-700 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-100"
-    : "border-slate-200 bg-slate-100 text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300";
-}
-
 function getStatusDotClass(status: TeacherStudentAccountStatus): string {
-  return status === "active" ? "bg-emerald-500" : "bg-slate-400";
+  if (status === "active") {
+    return "bg-emerald-500";
+  }
+
+  if (status === "completed") {
+    return "bg-sky-500";
+  }
+
+  return "bg-slate-400";
 }
 
 function getAvatarTone(name: string): string {
@@ -205,7 +214,7 @@ export function TeacherStudentTrackingClient({
 }) {
   const [students, setStudents] = useState(initialStudents);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("current");
   const [classFilter, setClassFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [studentToDelete, setStudentToDelete] = useState<TeacherStudentListItem | null>(null);
@@ -225,13 +234,17 @@ export function TeacherStudentTrackingClient({
 
   const summary = useMemo(() => {
     const activeCount = students.filter((student) => student.accountStatus === "active").length;
+    const passiveCount = students.filter((student) => student.accountStatus === "passive").length;
+    const completedCount = students.filter((student) => student.accountStatus === "completed").length;
     const totalXp = students.reduce((sum, student) => sum + student.totalXp, 0);
     const activePrograms = students.filter((student) => Boolean(student.activeProgramName)).length;
 
     return {
       total: students.length,
       active: activeCount,
-      passive: students.length - activeCount,
+      passive: passiveCount,
+      completed: completedCount,
+      current: activeCount + passiveCount,
       totalXp,
       activePrograms,
     };
@@ -241,7 +254,12 @@ export function TeacherStudentTrackingClient({
     const normalizedSearch = normalizeSearchValue(searchText).trim();
 
     return students.filter((student) => {
-      const matchesStatus = statusFilter === "all" || student.accountStatus === statusFilter;
+      const matchesStatus =
+        statusFilter === "all"
+          ? true
+          : statusFilter === "current"
+            ? isCurrentStudentStatus(student.accountStatus)
+            : student.accountStatus === statusFilter;
       const matchesClass = classFilter === "all" || (student.classLabel ?? "") === classFilter;
       const matchesLevel = levelFilter === "all" || String(student.level) === levelFilter;
       const searchableText = normalizeSearchValue(
@@ -260,7 +278,7 @@ export function TeacherStudentTrackingClient({
 
   const clearFilters = () => {
     setSearchText("");
-    setStatusFilter("all");
+    setStatusFilter("current");
     setClassFilter("all");
     setLevelFilter("all");
   };
@@ -309,7 +327,7 @@ export function TeacherStudentTrackingClient({
   };
 
   const filterCount = [
-    statusFilter !== "all",
+    statusFilter !== "current",
     classFilter !== "all",
     levelFilter !== "all",
     Boolean(searchText.trim()),
@@ -375,7 +393,7 @@ export function TeacherStudentTrackingClient({
         </div>
       </PanelCard>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {[
           ["Toplam Öğrenci", summary.total],
           ["Aktif Öğrenci", summary.active],
@@ -459,7 +477,7 @@ export function TeacherStudentTrackingClient({
 
             <div className="flex min-h-[48px] items-end justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
               <span>{filteredStudents.length} sonuç</span>
-              <span>{filterCount > 0 ? `${filterCount} filtre aktif` : "Filtre yok"}</span>
+              <span>{filterCount > 0 ? `${filterCount} filtre aktif` : "Güncel liste"}</span>
             </div>
           </div>
         </div>
@@ -495,9 +513,9 @@ export function TeacherStudentTrackingClient({
                             {student.classLabel ?? "-"}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(student.accountStatus)}`}>
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.accountStatus)}`}>
                           <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.accountStatus)}`} aria-hidden="true" />
-                          {student.accountStatus === "active" ? "Aktif" : "Pasif"}
+                          {getStudentStatusLabel(student.accountStatus)}
                         </span>
                       </div>
 
@@ -607,9 +625,9 @@ export function TeacherStudentTrackingClient({
                       </td>
                       <td className="px-4 py-4 text-slate-700 [data-idil-theme=dark]:text-slate-300">{student.accessEndsAt ? formatDateTime(student.accessEndsAt) : "-"}</td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStatusBadgeClass(student.accountStatus)}`}>
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.accountStatus)}`}>
                           <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.accountStatus)}`} aria-hidden="true" />
-                          {student.accountStatus === "active" ? "Aktif" : "Pasif"}
+                          {getStudentStatusLabel(student.accountStatus)}
                         </span>
                       </td>
                       <td className="px-4 py-4">
