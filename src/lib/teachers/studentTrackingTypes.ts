@@ -65,10 +65,36 @@ export type TeacherStudentPerformanceSummary = {
   readingTestCount: number;
 };
 
+export type TeacherStudentActivityType =
+  | "exercise_completed"
+  | "education_program_task_completed"
+  | "login_first_of_day"
+  | "reading_comprehension_completed"
+  | "reading_speed_test_completed";
+
+export type TeacherStudentActivity = {
+  id: string;
+  studentId: string;
+  activityType: TeacherStudentActivityType;
+  title: string;
+  description: string;
+  occurredAt: string | null;
+  sourceType: string;
+  sourceId: string | null;
+  awardedXp: number | null;
+  programName: string | null;
+  programTaskName: string | null;
+  readingSpeedWpm: number | null;
+  comprehensionRate: number | null;
+  dedupeKey: string;
+};
+
 export type TeacherStudentDetail = {
   profile: TeacherStudentProfile;
   gamificationSummary: TeacherStudentGamificationSummary;
   programSummary: TeacherStudentProgramSummary;
   performanceSummary: TeacherStudentPerformanceSummary;
   results: ExerciseResult[];
+  activityFeed: TeacherStudentActivity[];
+  activityFeedError: string | null;
 };

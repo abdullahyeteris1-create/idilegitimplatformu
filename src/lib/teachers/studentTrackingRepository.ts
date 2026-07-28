@@ -10,6 +10,7 @@ import type { ExerciseResult } from "@/lib/results/types";
 import { countEarnedBadges } from "@/lib/xp/xpBadges";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { buildTeacherStudentActivityFeed } from "./studentTrackingActivity";
 import type {
   TeacherStudentAccountStatus,
   TeacherStudentDetail,
@@ -22,6 +23,7 @@ import type {
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 const STUDENT_XP_SUMMARY_TABLE = process.env.NEXT_PUBLIC_SUPABASE_XP_SUMMARY_TABLE ?? "student_xp_summary";
 const EXERCISE_RESULTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_RESULTS_TABLE ?? "exercise_results";
+const STUDENT_XP_EVENTS_TABLE = "student_xp_events";
 const STUDENT_EDUCATION_PROGRAM_TASKS_TABLE = "student_education_program_tasks";
 
 const VALID_STUDENT_ID =
@@ -239,6 +241,7 @@ function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseRe
     wrongCount: readNumber(row, ["wrong_count", "wrongCount"]) ?? 0,
     score: readNumber(row, ["score"]) ?? 0,
     successRate: readNumber(row, ["success_rate", "successRate"]) ?? 0,
+    submissionKey: readString(row, ["submission_key", "submissionKey"]) ?? undefined,
     details,
   };
 }
@@ -466,7 +469,7 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
   }
 
   try {
-    const [studentResult, xpResult, resultsResult, activeProgramResult] = await Promise.all([
+    const [studentResult, xpResult, resultsResult, activeProgramResult, xpEventsResult, programTasksResult] = await Promise.all([
       supabase
         .from(STUDENTS_TABLE)
         .select(
@@ -482,11 +485,24 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       supabase
         .from(EXERCISE_RESULTS_TABLE)
         .select(
-          "id,student_id,student_name,username,exercise_type,exercise_title,completed_at,duration_seconds,correct_count,wrong_count,score,success_rate,details",
+          "id,student_id,student_name,username,exercise_type,exercise_title,completed_at,duration_seconds,correct_count,wrong_count,score,success_rate,submission_key,details",
         )
         .eq("student_id", safeStudentId)
         .order("completed_at", { ascending: false }),
       getActiveEducationProgramForStudent(supabase, safeStudentId),
+      supabase
+        .from(STUDENT_XP_EVENTS_TABLE)
+        .select("idempotency_key,xp_amount,event_type,source_type,source_id,earned_at")
+        .eq("student_id", safeStudentId)
+        .order("earned_at", { ascending: false })
+        .limit(25),
+      supabase
+        .from(STUDENT_EDUCATION_PROGRAM_TASKS_TABLE)
+        .select("id,program_id,day_number,order_number,exercise_title,completed_at")
+        .eq("student_id", safeStudentId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(25),
     ]);
 
     if (studentResult.error || xpResult.error || resultsResult.error) {
@@ -505,6 +521,31 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       .map((row) => mapResultRow(row, student))
       .filter((row): row is ExerciseResult => row !== null);
     const activeProgram = activeProgramResult.ok ? activeProgramResult.value : null;
+    const activityFeedResult = buildTeacherStudentActivityFeed({
+      studentId: student.id,
+      lastLoginAt: student.last_login_at,
+      results,
+      activeProgram,
+      programTasks: ((programTasksResult.data ?? []) as DatabaseRow[])
+        .map((row) => ({
+          id: readString(row, ["id"]) ?? "",
+          program_id: readString(row, ["program_id", "programId"]),
+          day_number: readNumber(row, ["day_number", "dayNumber"]),
+          order_number: readNumber(row, ["order_number", "orderNumber"]),
+          exercise_title: readString(row, ["exercise_title", "exerciseTitle"]),
+          completed_at: readDateString(row, ["completed_at", "completedAt"]),
+        }))
+        .filter((row) => row.id.length > 0 && row.completed_at !== null),
+      xpEvents: ((xpEventsResult.data ?? []) as DatabaseRow[]).map((row) => ({
+        idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
+        xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
+        event_type: readString(row, ["event_type", "eventType"]) ?? "",
+        source_type: readString(row, ["source_type", "sourceType"]),
+        source_id: readString(row, ["source_id", "sourceId"]),
+        earned_at: readDateString(row, ["earned_at", "earnedAt"]),
+      })),
+      limit: 10,
+    });
 
     return {
       profile: mapProfile(student),
@@ -512,6 +553,8 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       programSummary: buildProgramSummary(activeProgram),
       performanceSummary: buildPerformanceSummary(results),
       results,
+      activityFeed: activityFeedResult.activities,
+      activityFeedError: activityFeedResult.error,
     };
   } catch {
     return null;

@@ -36,6 +36,7 @@ export type ExerciseResult = {
   wrongCount: number;
   score: number;
   successRate: number;
+  submissionKey?: string;
   details?: Record<string, unknown>;
 };
 

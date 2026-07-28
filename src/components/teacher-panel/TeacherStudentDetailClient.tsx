@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
-import type { TeacherStudentDetail } from "@/lib/teachers/studentTrackingTypes";
+import type { TeacherStudentActivity, TeacherStudentDetail } from "@/lib/teachers/studentTrackingTypes";
 
 function formatDateTime(value: string | null): string {
   if (!value) {
@@ -114,6 +114,85 @@ function EmptyCard({ text }: { text: string }) {
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
       {text}
     </div>
+  );
+}
+
+function getActivityMeta(activityType: TeacherStudentActivity["activityType"]): {
+  label: string;
+  icon: string;
+  tone: string;
+} {
+  switch (activityType) {
+    case "education_program_task_completed":
+      return { label: "Program görevi", icon: "📘", tone: "from-sky-500 to-cyan-400" };
+    case "login_first_of_day":
+      return { label: "Giriş", icon: "🔐", tone: "from-slate-500 to-slate-400" };
+    case "reading_comprehension_completed":
+      return { label: "Anlama testi", icon: "🧠", tone: "from-violet-500 to-fuchsia-400" };
+    case "reading_speed_test_completed":
+      return { label: "Okuma testi", icon: "📖", tone: "from-emerald-500 to-teal-400" };
+    default:
+      return { label: "Egzersiz", icon: "⚡", tone: "from-red-500 to-rose-400" };
+  }
+}
+
+function ActivityIcon({ activityType }: { activityType: TeacherStudentActivity["activityType"] }) {
+  const meta = getActivityMeta(activityType);
+  return (
+    <span
+      aria-hidden="true"
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${meta.tone} text-base font-black text-white shadow-sm`}
+    >
+      {meta.icon}
+    </span>
+  );
+}
+
+function ActivityChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex min-h-[28px] items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-300">
+      {children}
+    </span>
+  );
+}
+
+function ActivityCard({ activity, compact = false }: { activity: TeacherStudentActivity; compact?: boolean }) {
+  const meta = getActivityMeta(activity.activityType);
+  const hasReadingMeta = activity.readingSpeedWpm !== null || activity.comprehensionRate !== null;
+
+  return (
+    <article
+      className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-200 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 ${
+        compact ? "min-h-[132px]" : ""
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <ActivityIcon activityType={activity.activityType} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h4 className="truncate text-sm font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">{activity.title}</h4>
+              <p className="mt-1 text-xs leading-5 text-slate-500 [data-idil-theme=dark]:text-slate-400">
+                {activity.description}
+              </p>
+            </div>
+            <time className="shrink-0 text-xs font-medium text-slate-500 [data-idil-theme=dark]:text-slate-400">
+              {formatDateTime(activity.occurredAt)}
+            </time>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <ActivityChip>{meta.label}</ActivityChip>
+            {activity.awardedXp && activity.awardedXp > 0 ? <ActivityChip>+{activity.awardedXp} XP</ActivityChip> : null}
+            {activity.programTaskName ? <ActivityChip>{activity.programTaskName}</ActivityChip> : null}
+            {activity.programName ? <ActivityChip>{activity.programName}</ActivityChip> : null}
+            {activity.readingSpeedWpm !== null ? <ActivityChip>{activity.readingSpeedWpm} WPM</ActivityChip> : null}
+            {activity.comprehensionRate !== null ? <ActivityChip>%{activity.comprehensionRate}</ActivityChip> : null}
+            {!hasReadingMeta && activity.activityType === "login_first_of_day" ? <ActivityChip>Son giriş</ActivityChip> : null}
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -380,6 +459,35 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
               </p>
             </article>
           </div>
+        </PanelCard>
+      </section>
+
+      <section className="grid gap-3 xl:grid-cols-[1fr_1.05fr]">
+        <PanelCard title="Son Aktiviteler" subtitle="En yeni çalışmalar ve giriş hareketleri">
+          {detail.activityFeedError ? (
+            <EmptyCard text={detail.activityFeedError} />
+          ) : detail.activityFeed.length === 0 ? (
+            <EmptyCard text="Henüz çalışma bulunmuyor." />
+          ) : (
+            <>
+              <div className="grid gap-3 md:hidden">
+                {detail.activityFeed.map((activity) => (
+                  <ActivityCard key={activity.id} activity={activity} compact />
+                ))}
+              </div>
+
+              <div className="hidden md:block">
+                <div className="space-y-3 border-l border-slate-200 pl-4 [data-idil-theme=dark]:border-slate-700">
+                  {detail.activityFeed.map((activity) => (
+                    <div key={activity.id} className="relative">
+                      <span className="absolute -left-[25px] top-5 h-4 w-4 rounded-full border-4 border-white bg-[var(--brand)] shadow-sm [data-idil-theme=dark]:border-slate-950" />
+                      <ActivityCard activity={activity} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </PanelCard>
 
         <PanelCard title="Okuma Testleri" subtitle="Okuma hızı ve anlama testleri geçmişi">
