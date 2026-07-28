@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const MAIN_PAGE = new URL("../src/app/ogretmen/page.tsx", import.meta.url);
+const DASHBOARD_OVERVIEW = new URL("../src/components/teacher-panel/TeacherDashboardOverview.tsx", import.meta.url);
 const TRACKING_PAGE = new URL("../src/app/ogretmen/idil-panel/ogrenci-takip/page.tsx", import.meta.url);
 const TRACKING_CLIENT = new URL("../src/components/teacher-panel/TeacherStudentTrackingClient.tsx", import.meta.url);
 const DETAIL_CLIENT = new URL("../src/components/teacher-panel/TeacherStudentDetailClient.tsx", import.meta.url);
@@ -12,15 +13,31 @@ async function read(path) {
   return readFile(path, "utf8");
 }
 
-test("ogretmen ana sayfasi modern hero ve hizli erisim kartlari icerir", async () => {
+test("ogretmen ana sayfasi server-side gercek dashboard ozetine baglanir", async () => {
   const source = await read(MAIN_PAGE);
 
+  assert.match(source, /requireTeacherSession/);
+  assert.match(source, /getTeacherDashboardSummary/);
+  assert.match(source, /TeacherDashboardOverview/);
+  assert.match(source, /export const dynamic = "force-dynamic";/);
+  assert.match(source, /export const revalidate = 0;/);
+  assert.match(source, /<AppShell/);
+  assert.doesNotMatch(source, /getIdilPanelSummary/);
+  assert.doesNotMatch(source, /summaryStorage/);
+  assert.doesNotMatch(source, /classLevel/);
+  assert.doesNotMatch(source, /TeacherOnly/);
+});
+
+test("dashboard overview gercek ozet kartlari ve uyarilari icerir", async () => {
+  const source = await read(DASHBOARD_OVERVIEW);
+
   assert.match(source, /Öğretmen paneline hoş geldiniz/);
-  assert.match(source, /Öğrenci Takip/);
-  assert.match(source, /Eğitim Programları/);
-  assert.match(source, /Hızlı Erişim/);
-  assert.match(source, /Bugünkü Durum/);
-  assert.match(source, /group flex min-h-\[72px\]/);
+  assert.match(source, /Canlı özet/);
+  assert.match(source, /Gerçek veri/);
+  assert.match(source, /Toplam XP/);
+  assert.match(source, /Son 7 Gün XP/);
+  assert.match(source, /Veri Uyarıları/);
+  assert.match(source, /Takip Edilmesi Önerilen Öğrenciler/);
 });
 
 test("ogrenci takip ekraninda class ve level filtreleri ile mobil kart ve desktop tablo vardir", async () => {
