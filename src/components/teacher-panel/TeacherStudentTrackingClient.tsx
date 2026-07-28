@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type { TeacherStudentListItem } from "@/lib/teachers/studentTrackingTypes";
-import type { StudentStatus } from "@/lib/students/studentStatus";
+import type { StudentStatus, StudentStatusFilter } from "@/lib/students/studentStatus";
 import {
   getStudentStatusBadgeClass,
   getStudentStatusLabel,
   isCurrentStudentStatus,
 } from "@/lib/students/studentStatus";
 
-type StatusFilter = "current" | "active" | "passive" | "completed" | "all";
+type StatusFilter = StudentStatusFilter;
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: "current", label: "Güncel" },
@@ -235,9 +235,9 @@ export function TeacherStudentTrackingClient({
   }, [students]);
 
   const summary = useMemo(() => {
-    const activeCount = students.filter((student) => student.accountStatus === "active").length;
-    const passiveCount = students.filter((student) => student.accountStatus === "passive").length;
-    const completedCount = students.filter((student) => student.accountStatus === "completed").length;
+    const activeCount = students.filter((student) => student.status === "active").length;
+    const passiveCount = students.filter((student) => student.status === "passive").length;
+    const completedCount = students.filter((student) => student.status === "completed").length;
     const totalXp = students.reduce((sum, student) => sum + student.totalXp, 0);
     const activePrograms = students.filter((student) => Boolean(student.activeProgramName)).length;
 
@@ -260,8 +260,8 @@ export function TeacherStudentTrackingClient({
         statusFilter === "all"
           ? true
           : statusFilter === "current"
-            ? isCurrentStudentStatus(student.accountStatus)
-            : student.accountStatus === statusFilter;
+            ? isCurrentStudentStatus(student.status)
+            : student.status === statusFilter;
       const matchesClass = classFilter === "all" || (student.classLabel ?? "") === classFilter;
       const matchesLevel = levelFilter === "all" || String(student.level) === levelFilter;
       const searchableText = normalizeSearchValue(
@@ -515,9 +515,9 @@ export function TeacherStudentTrackingClient({
                             {student.classLabel ?? "-"}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.accountStatus)}`}>
-                          <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.accountStatus)}`} aria-hidden="true" />
-                          {getStudentStatusLabel(student.accountStatus)}
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.status)}`}>
+                          <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.status)}`} aria-hidden="true" />
+                          {getStudentStatusLabel(student.status)}
                         </span>
                       </div>
 
@@ -627,9 +627,9 @@ export function TeacherStudentTrackingClient({
                       </td>
                       <td className="px-4 py-4 text-slate-700 [data-idil-theme=dark]:text-slate-300">{student.accessEndsAt ? formatDateTime(student.accessEndsAt) : "-"}</td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.accountStatus)}`}>
-                          <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.accountStatus)}`} aria-hidden="true" />
-                          {getStudentStatusLabel(student.accountStatus)}
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${getStudentStatusBadgeClass(student.status)}`}>
+                          <span className={`h-2 w-2 rounded-full ${getStatusDotClass(student.status)}`} aria-hidden="true" />
+                          {getStudentStatusLabel(student.status)}
                         </span>
                       </td>
                       <td className="px-4 py-4">

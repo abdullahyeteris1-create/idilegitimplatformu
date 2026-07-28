@@ -1,5 +1,5 @@
 import type { ExerciseResult } from "@/lib/results/types";
-import { normalizeStudentStatus } from "@/lib/students/studentStatus";
+import { normalizeStudentStatus, type StudentStatus } from "@/lib/students/studentStatus";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import type {
   TeacherDashboardAttentionReasonCode,
@@ -11,7 +11,7 @@ import type {
   TeacherDashboardSummary,
   TeacherDashboardSummaryResult,
 } from "./teacherDashboardTypes";
-import type { TeacherStudentAccountStatus, TeacherStudentActivityType, TeacherStudentProgramStatus } from "./studentTrackingTypes";
+import type { TeacherStudentActivityType, TeacherStudentProgramStatus } from "./studentTrackingTypes";
 
 type DatabaseRow = Record<string, unknown>;
 
@@ -19,7 +19,7 @@ type StudentRow = {
   id: string;
   name: string;
   class_name: string | null;
-  status: TeacherStudentAccountStatus;
+  status: StudentStatus;
   is_active: boolean;
   access_end_date: string | null;
   last_login_at: string | null;
@@ -108,8 +108,6 @@ const ATTENTION_LIMIT = 5;
 const PERFORMANCE_DECLINE_PERCENT = 15;
 const PERFORMANCE_DECLINE_POINTS = 15;
 
-const ACTIVE_STATUS_SET = new Set(["active", "aktif", "ongoing", "published", "open"]);
-const INACTIVE_STATUS_SET = new Set(["inactive", "passive", "pasif", "archived", "deleted", "closed"]);
 
 function readString(row: DatabaseRow, keys: string[]): string | null {
   for (const key of keys) {
@@ -280,36 +278,12 @@ function parseAccessExpiry(accessEndDate: string | null, now = new Date()): bool
   return Number.isFinite(timestamp) ? timestamp < now.getTime() : false;
 }
 
-function normalizeAccountStatus(row: DatabaseRow, now = new Date()): TeacherStudentAccountStatus {
-  const status = readString(row, ["status", "state"]);
-  if (status === "completed") {
-    return "completed";
-  }
-  if (status === "passive" || status === "inactive" || status === "pasif") {
-    return "passive";
-  }
-
-  const activeFlag = readBoolean(row, ["is_active", "isActive", "active", "enabled"]);
-  if (activeFlag === false) {
-    return "passive";
-  }
-
-  const explicitActive = status && ACTIVE_STATUS_SET.has(status.toLowerCase());
-  if (explicitActive) {
-    return "active";
-  }
-
-  const explicitInactive = status && INACTIVE_STATUS_SET.has(status.toLowerCase());
-  if (explicitInactive) {
-    return "passive";
-  }
-
-  const accessEndDate = readDateString(row, ["access_end_date", "accessEndDate"]);
-  if (accessEndDate && parseAccessExpiry(accessEndDate, now)) {
-    return "passive";
-  }
-
-  return normalizeStudentStatus(status, "active");
+function normalizeDashboardStudentStatus(row: DatabaseRow): StudentStatus {
+  const isActive = readBoolean(row, ["is_active", "isActive", "active", "enabled"]);
+  return normalizeStudentStatus(
+    readString(row, ["status", "state"]),
+    isActive === false ? "passive" : "active",
+  );
 }
 
 function normalizeStudentRow(row: DatabaseRow, now = new Date()): NormalizedStudent | null {
@@ -319,8 +293,8 @@ function normalizeStudentRow(row: DatabaseRow, now = new Date()): NormalizedStud
     return null;
   }
 
-  const status = normalizeAccountStatus(row, now);
-  const isActive = status === "active" ? readBoolean(row, ["is_active", "isActive"]) ?? true : false;
+  const status = normalizeDashboardStudentStatus(row);
+  const isActive = readBoolean(row, ["is_active", "isActive"]) ?? status === "active";
 
   return {
     id,

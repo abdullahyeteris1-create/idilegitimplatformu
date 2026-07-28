@@ -1,5 +1,6 @@
 import type { ExerciseResult } from "@/lib/results/types";
 import type { StudentXpSnapshot } from "@/lib/xp/xpLevels";
+import type { StudentStatus } from "@/lib/students/studentStatus";
 
 export type TeacherStudentAccountStatus = "active" | "passive";
 export type TeacherStudentProgramStatus = "active" | "completed" | "cancelled";
@@ -14,6 +15,7 @@ export type TeacherStudentListItem = {
   studentId: string;
   fullName: string;
   classLabel: string | null;
+  status: StudentStatus;
   accountStatus: TeacherStudentAccountStatus;
   accessEndsAt: string | null;
   totalXp: number;

@@ -7,7 +7,7 @@ import {
 } from "@/lib/education-programs/studentProgramRepository";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
 import type { ExerciseResult } from "@/lib/results/types";
-import { normalizeStudentStatus } from "@/lib/students/studentStatus";
+import { normalizeStudentStatus, type StudentStatus } from "@/lib/students/studentStatus";
 import { countEarnedBadges } from "@/lib/xp/xpBadges";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
@@ -49,7 +49,7 @@ type StudentRow = {
   username: string;
   class_name: string | null;
   phone: string | null;
-  status: TeacherStudentAccountStatus;
+  status: StudentStatus;
   is_active: boolean;
   access_end_date: string | null;
   last_login_at: string | null;
@@ -143,20 +143,8 @@ function isValidStudentId(value: string): boolean {
 }
 
 function normalizeAccountStatus(row: DatabaseRow): TeacherStudentAccountStatus {
-  const status = readString(row, ["status", "state"]);
-  if (status === "completed") {
-    return "completed";
-  }
-  if (status === "passive" || status === "inactive" || status === "pasif") {
-    return "passive";
-  }
-
   const activeFlag = readBoolean(row, ["is_active", "isActive", "active", "enabled"]);
-  if (activeFlag === false) {
-    return "passive";
-  }
-
-  return normalizeStudentStatus(status, "active");
+  return activeFlag === false ? "passive" : "active";
 }
 
 function mapStudentRow(row: DatabaseRow): StudentRow | null {
@@ -167,7 +155,11 @@ function mapStudentRow(row: DatabaseRow): StudentRow | null {
     return null;
   }
 
-  const status = normalizeAccountStatus(row);
+  const accountStatus = normalizeAccountStatus(row);
+  const status = normalizeStudentStatus(
+    readString(row, ["status", "state"]),
+    accountStatus === "active" ? "active" : "passive",
+  );
 
   return {
     id,
@@ -176,7 +168,7 @@ function mapStudentRow(row: DatabaseRow): StudentRow | null {
     class_name: readString(row, ["class_name", "className"]),
     phone: readString(row, ["phone"]),
     status,
-    is_active: status === "active" ? readBoolean(row, ["is_active", "isActive"]) ?? true : false,
+    is_active: accountStatus === "active",
     access_end_date: readDateString(row, ["access_end_date", "accessEndDate"]),
     last_login_at: readDateString(row, ["last_login_at", "lastLoginAt"]),
     parent_name: readString(row, ["parent_name", "parentName"]),
@@ -404,7 +396,7 @@ function mapProfile(student: StudentRow): TeacherStudentProfile {
     fullName: student.name,
     username: student.username,
     classLabel: student.class_name,
-    accountStatus: student.status,
+    accountStatus: student.is_active ? "active" : "passive",
     accessEndsAt: student.access_end_date,
     lastLoginAt: student.last_login_at,
     parentName: student.parent_name,
@@ -525,7 +517,8 @@ export async function getTeacherStudentTrackingList(): Promise<TeacherStudentLis
         studentId: student.id,
         fullName: student.name,
         classLabel: student.class_name,
-        accountStatus: student.status,
+        status: student.status,
+        accountStatus: student.is_active ? "active" : "passive",
         accessEndsAt: student.access_end_date,
         totalXp: snapshot.totalXp,
         level: snapshot.level,

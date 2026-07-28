@@ -57,8 +57,8 @@ test("teacher tracking listesi completed'i varsayilan gosterimden cikarir", asyn
 
   assert.match(source, /useState<StatusFilter>\("current"\)/);
   assert.match(source, /value: "completed"/);
-  assert.match(source, /isCurrentStudentStatus\(student\.accountStatus\)/);
-  assert.match(source, /getStudentStatusLabel\(student\.accountStatus\)/);
+  assert.match(source, /isCurrentStudentStatus\(student\.status\)/);
+  assert.match(source, /getStudentStatusLabel\(student\.status\)/);
 });
 
 test("dashboard completed ogrenci sayisini ayrik gösterir", async () => {
