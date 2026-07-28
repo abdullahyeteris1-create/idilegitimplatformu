@@ -3,6 +3,7 @@ import { emitProgramTaskCompleted } from "@/lib/results/programTaskEvents";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 
 const STORAGE_KEY = "idil-exercise-results";
+const SUBMISSION_KEY_PREFIX = "submission-";
 
 export type SecureExerciseResultInput = {
   exerciseType: ExerciseType | string;
@@ -14,6 +15,7 @@ export type SecureExerciseResultInput = {
   durationSeconds: number;
   date?: string;
   completedAt?: string;
+  submissionKey?: string;
   assignmentItemId?: string | null;
   programTaskId?: string | null;
   details?: Record<string, unknown>;
@@ -56,6 +58,25 @@ function getAssignmentItemIdFromUrl(): string | null {
 function getProgramTaskIdFromUrl(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("programTaskId")?.trim() || null;
+}
+
+function generateSubmissionKey(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${SUBMISSION_KEY_PREFIX}${crypto.randomUUID()}`;
+  }
+
+  return `${SUBMISSION_KEY_PREFIX}${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
+function getOrCreateSubmissionKey(input: SecureExerciseResultInput): string {
+  const existing = typeof input.submissionKey === "string" ? input.submissionKey.trim() : "";
+  if (existing) {
+    return existing;
+  }
+
+  const nextKey = generateSubmissionKey();
+  input.submissionKey = nextKey;
+  return nextKey;
 }
 
 function cacheResult(result: ExerciseResult): void {
@@ -108,6 +129,7 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
   const assignmentItemId = input.assignmentItemId ?? getAssignmentItemIdFromUrl();
   const programTaskId = input.programTaskId ?? getProgramTaskIdFromUrl();
   const completedAt = input.completedAt ?? input.date ?? new Date().toISOString();
+  const submissionKey = getOrCreateSubmissionKey(input);
   const response = await fetch("/api/student/results", {
     method: "POST",
     credentials: "same-origin",
@@ -122,6 +144,7 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
       wrongCount: input.wrongCount,
       durationSeconds: input.durationSeconds,
       completedAt,
+      submissionKey,
       assignmentItemId,
       ...(input.details ? { details: input.details } : {}),
     }),

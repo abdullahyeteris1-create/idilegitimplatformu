@@ -5,6 +5,7 @@ import { verifyStudentAccess, type StudentAccessFailure } from "@/lib/auth/verif
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import { getAssignmentItemById, getDailyAssignmentById } from "@/lib/assignments/assignmentRepository";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { awardStudentXpEvent, type StudentXpAwardEventType } from "@/lib/xp/xpRepository";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,7 @@ const ALLOWED_BODY_KEYS = new Set([
   "durationSeconds",
   "date",
   "completedAt",
+  "submissionKey",
   "assignmentItemId",
   "details",
 ]);
@@ -262,6 +264,7 @@ type ValidatedResultBody = {
   wrongCount: number;
   durationSeconds: number;
   completedAt: string;
+  submissionKey: string;
   assignmentItemId: string | null;
   details: Record<string, string | number | boolean>;
 };
@@ -386,6 +389,15 @@ function parseCompletedAt(body: Record<string, unknown>): string | null {
   return new Date(timestamps[0]).toISOString();
 }
 
+function parseSubmissionKey(body: Record<string, unknown>): string | null {
+  const value = toOptionalString(body.submissionKey);
+  if (!value || value.length > 160) {
+    return null;
+  }
+
+  return value;
+}
+
 function validateResultBody(value: unknown): ValidatedResultBody | null {
   if (!isPlainObject(value)) return null;
 
@@ -405,8 +417,9 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
   const wrongCount = parseAnswerCount(value, "wrongCount", "wrong");
   const rawDuration = parseBoundedNumber(value.durationSeconds, MAX_DURATION_SECONDS, false);
   const completedAt = parseCompletedAt(value);
+  const submissionKey = parseSubmissionKey(value);
   const details = validateDetails(exerciseType, value.details);
-  if (score === null || successRate === null || correctCount === null || wrongCount === null || rawDuration === null || completedAt === null || details === null) {
+  if (score === null || successRate === null || correctCount === null || wrongCount === null || rawDuration === null || completedAt === null || submissionKey === null || details === null) {
     return null;
   }
 
@@ -427,6 +440,7 @@ function validateResultBody(value: unknown): ValidatedResultBody | null {
     wrongCount,
     durationSeconds: Math.round(rawDuration),
     completedAt,
+    submissionKey,
     assignmentItemId,
     details,
   };
@@ -466,6 +480,59 @@ function mapResult(row: Record<string, unknown>, studentId: string) {
     assignmentItemId,
     details,
   };
+}
+
+function isUniqueViolation(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "23505";
+}
+
+function getXpAwardForResult(exerciseType: string): {
+  eventType: StudentXpAwardEventType;
+  sourceType: string;
+  sourceId: string;
+} {
+  if (exerciseType === "reading-comprehension") {
+    return {
+      eventType: "reading_comprehension_completed",
+      sourceType: "exercise",
+      sourceId: exerciseType,
+    };
+  }
+
+  if (exerciseType === "reading-speed-test") {
+    return {
+      eventType: "reading_speed_test_completed",
+      sourceType: "exercise",
+      sourceId: exerciseType,
+    };
+  }
+
+  return {
+    eventType: "exercise_completed",
+    sourceType: "exercise",
+    sourceId: exerciseType,
+  };
+}
+
+async function getExistingResultBySubmissionKey(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  studentId: string,
+  submissionKey: string,
+) {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from(RESULTS_TABLE)
+    .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
+    .eq("student_id", studentId)
+    .eq("submission_key", submissionKey)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as Record<string, unknown>;
 }
 
 export async function GET(request: NextRequest) {
@@ -589,20 +656,54 @@ export async function POST(request: NextRequest) {
       wrong_count: body.wrongCount,
       score: body.score,
       success_rate: body.successRate,
+      submission_key: body.submissionKey,
       details,
       completed_at: body.completedAt,
     };
-    const { data: inserted, error: insertError } = await supabase
-      .from(RESULTS_TABLE)
-      .insert(insertPayload)
-      .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
-      .single();
 
-    if (insertError || !inserted || String(inserted.student_id ?? "") !== access.studentId) {
+    let inserted = await getExistingResultBySubmissionKey(supabase, access.studentId, body.submissionKey);
+    let created = false;
+
+    if (!inserted) {
+      const { data, error: insertError } = await supabase
+        .from(RESULTS_TABLE)
+        .insert(insertPayload)
+        .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
+        .single();
+
+      if (insertError && !isUniqueViolation(insertError)) {
+        return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
+      }
+
+      inserted = data
+        ? (data as Record<string, unknown>)
+        : await getExistingResultBySubmissionKey(supabase, access.studentId, body.submissionKey);
+      created = Boolean(data && String(data.student_id ?? "") === access.studentId);
+    }
+
+    if (!inserted || String(inserted.student_id ?? "") !== access.studentId) {
       return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
     }
 
-    return jsonResponse({ result: mapResult(inserted as Record<string, unknown>, access.studentId) }, 201);
+    const awardConfig = getXpAwardForResult(body.exerciseType);
+    const xpResult = await awardStudentXpEvent({
+      studentId: access.studentId,
+      eventType: awardConfig.eventType,
+      idempotencyKey: `result:${body.submissionKey}`,
+      sourceType: awardConfig.sourceType,
+      sourceId: awardConfig.sourceId,
+      metadata: {
+        submissionKey: body.submissionKey,
+        exerciseType: body.exerciseType,
+        assignmentItemId: body.assignmentItemId,
+      },
+    });
+
+    if (!xpResult) {
+      return jsonResponse({ message: "XP ödülü verilemedi." }, 500);
+    }
+
+    return jsonResponse({ result: mapResult(inserted as Record<string, unknown>, access.studentId) }, created ? 201 : 200);
   } catch {
     return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
   }

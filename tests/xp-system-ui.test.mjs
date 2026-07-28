@@ -14,7 +14,7 @@ async function read(path) {
 test("1-6) ogrenci sayfasi XP snapshot'i tek kez yukuye alir ve karta aktarir", async () => {
   const source = await read(PANEL_URL);
 
-  assert.match(source, /Promise\.all\(\[\s*getStudentProfile\(access\.studentId\),\s*getStudentXpSnapshotByStudentId\(access\.studentId\),\s*\]\)/s);
+  assert.match(source, /Promise\.all\(\[\s*getStudentProfileById\(access\.studentId\),\s*getStudentXpSnapshotByStudentId\(access\.studentId\),\s*\]\)/s);
   assert.match(source, /<StudentPanelPreview[\s\S]*xpSnapshot=\{xpSnapshot\}/);
   assert.doesNotMatch(source, /getSupabaseServiceRoleClient/);
 });

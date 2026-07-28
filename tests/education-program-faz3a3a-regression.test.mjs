@@ -29,11 +29,13 @@ test("FAZ 3A-3A'da yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle a
   // Sablonlari "Kopyala" ozelligi icin, bkz.
   // education-program-template-duplicate.test.mjs - ve assign_education_
   // program_template_v1 egzersiz whitelist senkron duzeltmesi, bkz.
-  // education-program-assign-exercise-whitelist-sync.test.mjs).
+  // education-program-assign-exercise-whitelist-sync.test.mjs.
+  // Phase 1B idempotency migration'iyle toplam sayi tekrar arttigi icin
+  // mevcut migration toplamini kontrol ediyoruz.
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 18);
+  assert.equal(sqlFiles.length, 20);
 });
 
 test("Kare Gorme Alani route'u sonraki bir turda paylasilan helper'a gecirildi (kopyalanmis ozel dogrulama kaldirildi)", async () => {

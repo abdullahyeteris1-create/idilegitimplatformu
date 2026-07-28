@@ -65,11 +65,13 @@ test("FAZ 3A-2'de yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ay
   // duplicate_education_program_template_rpc migration'i - bkz.
   // education-program-template-duplicate.test.mjs - ve assign_education_
   // program_template_v1 egzersiz whitelist senkron duzeltmesi, bkz.
-  // education-program-assign-exercise-whitelist-sync.test.mjs).
+  // education-program-assign-exercise-whitelist-sync.test.mjs.
+  // Phase 1B idempotency migration'iyle sayi bir kez daha arttigi icin
+  // burada beklenen toplam mevcut migration sayisini kontrol ediyoruz.
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 18);
+  assert.equal(sqlFiles.length, 20);
   assert.ok(sqlFiles.includes("20260725190000_start_education_program_task_rpc.sql"));
 
   const migrationSource = await read(
