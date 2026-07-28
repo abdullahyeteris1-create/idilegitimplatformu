@@ -31,12 +31,14 @@ export type ExerciseResult = {
   exerciseType: ExerciseType;
   exerciseTitle: string;
   date: string;
+  createdAt?: string;
   durationSeconds: number;
   correctCount: number;
   wrongCount: number;
   score: number;
   successRate: number;
   submissionKey?: string;
+  programTaskId?: string | null;
   details?: Record<string, unknown>;
 };
 

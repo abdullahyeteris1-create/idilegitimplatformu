@@ -129,6 +129,43 @@ export type TeacherStudentPerformanceSummary = {
   readingTestCount: number;
 };
 
+export type TeacherStudentPerformanceTrendDirection = "up" | "down" | "stable" | "unavailable";
+
+export type TeacherStudentPerformanceHistoryItem = {
+  id: string;
+  occurredAt: string | null;
+  title: string;
+  sourceLabel: string;
+  sourceType: string;
+  sourceId: string | null;
+  submissionKey: string | null;
+  value: number;
+  correctCount: number | null;
+  wrongCount: number | null;
+  netCount: number | null;
+  durationSeconds: number | null;
+  programName: string | null;
+  programTaskName: string | null;
+  awardedXp: number | null;
+};
+
+export type TeacherStudentPerformanceMetricSummary = {
+  latestValue: number | null;
+  highestValue: number | null;
+  averageValue: number | null;
+  previousValue: number | null;
+  changeValue: number | null;
+  changePercent: number | null;
+  trendDirection: TeacherStudentPerformanceTrendDirection;
+  totalResultCount: number;
+  recentResults: TeacherStudentPerformanceHistoryItem[];
+};
+
+export type TeacherStudentPerformanceHistory = {
+  reading: TeacherStudentPerformanceMetricSummary;
+  comprehension: TeacherStudentPerformanceMetricSummary;
+};
+
 export type TeacherStudentActivityType =
   | "exercise_completed"
   | "education_program_task_completed"
@@ -160,6 +197,8 @@ export type TeacherStudentDetail = {
   programProgress: TeacherStudentProgramProgress | null;
   programProgressError: string | null;
   performanceSummary: TeacherStudentPerformanceSummary;
+  performanceHistory: TeacherStudentPerformanceHistory;
+  performanceHistoryError: string | null;
   results: ExerciseResult[];
   activityFeed: TeacherStudentActivity[];
   activityFeedError: string | null;

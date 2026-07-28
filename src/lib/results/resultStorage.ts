@@ -149,12 +149,17 @@ function mapResultToSupabaseRow(result: ExerciseResult): Record<string, unknown>
     wrong_count: result.wrongCount,
     score: result.score,
     success_rate: result.successRate,
+    program_task_id: result.programTaskId ?? null,
     details: result.details ?? null,
     completed_at: completedAt,
   };
 }
 
 function mapSupabaseRowToResult(row: Record<string, unknown>): ExerciseResult {
+  const completedAt = String(row.completed_at ?? row.date ?? new Date().toISOString());
+  const createdAt = typeof row.created_at === "string" ? row.created_at : undefined;
+  const programTaskId = typeof row.program_task_id === "string" ? row.program_task_id : null;
+
   return {
     id: String(row.id ?? generateId()),
     studentId: String(row.student_id ?? row.studentId ?? "no-student"),
@@ -162,12 +167,14 @@ function mapSupabaseRowToResult(row: Record<string, unknown>): ExerciseResult {
     username: typeof row.username === "string" ? row.username : undefined,
     exerciseType: String(row.exercise_type ?? row.exerciseType ?? "tachistoscope") as ExerciseType,
     exerciseTitle: String(row.exercise_title ?? row.exerciseTitle ?? "Egzersiz"),
-    date: String(row.completed_at ?? row.date ?? new Date().toISOString()),
+    date: completedAt,
+    createdAt,
     durationSeconds: Number(row.duration_seconds ?? row.durationSeconds ?? 0),
     correctCount: Number(row.correct_count ?? row.correctCount ?? 0),
     wrongCount: Number(row.wrong_count ?? row.wrongCount ?? 0),
     score: Number(row.score ?? 0),
     successRate: Number(row.success_rate ?? row.successRate ?? 0),
+    programTaskId,
     details: typeof row.details === "object" && row.details !== null ? (row.details as Record<string, unknown>) : undefined,
   };
 }

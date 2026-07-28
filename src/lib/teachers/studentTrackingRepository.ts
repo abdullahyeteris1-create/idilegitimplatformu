@@ -10,6 +10,10 @@ import type { ExerciseResult } from "@/lib/results/types";
 import { countEarnedBadges } from "@/lib/xp/xpBadges";
 import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import {
+  buildTeacherStudentPerformanceHistory,
+  type TeacherStudentXpEventRow,
+} from "./studentPerformanceHistory";
 import { buildTeacherStudentActivityFeed } from "./studentTrackingActivity";
 import {
   loadTeacherStudentProgramProgress,
@@ -126,6 +130,11 @@ function readBoolean(row: DatabaseRow, keys: string[]): boolean | null {
 
 function readDateString(row: DatabaseRow, keys: string[]): string | null {
   return readString(row, keys);
+}
+
+function readPositiveNumber(row: DatabaseRow, keys: string[]): number | null {
+  const value = readNumber(row, keys);
+  return value !== null && value > 0 ? value : null;
 }
 
 function isValidStudentId(value: string): boolean {
@@ -272,7 +281,7 @@ function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseRe
   const studentId = readString(row, ["student_id", "studentId"]) ?? fallbackStudent.id;
   const exerciseType = readString(row, ["exercise_type", "exerciseType"]);
   const exerciseTitle = readString(row, ["exercise_title", "exerciseTitle"]);
-  const completedAt = readDateString(row, ["completed_at", "completedAt", "date"]);
+  const completedAt = readDateString(row, ["completed_at", "completedAt", "date"]) ?? readDateString(row, ["created_at", "createdAt"]);
 
   if (!id || !studentId || !exerciseType || !exerciseTitle || !completedAt) {
     return null;
@@ -282,6 +291,9 @@ function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseRe
     typeof row.details === "object" && row.details !== null && !Array.isArray(row.details)
       ? (row.details as Record<string, unknown>)
       : undefined;
+  const durationSeconds =
+    readPositiveNumber(details ?? {}, ["durationSeconds", "readingDurationSeconds", "activeReadingSeconds"]) ??
+    0;
 
   return {
     id,
@@ -291,11 +303,13 @@ function mapResultRow(row: DatabaseRow, fallbackStudent: StudentRow): ExerciseRe
     exerciseType: exerciseType as ExerciseResult["exerciseType"],
     exerciseTitle,
     date: completedAt,
-    durationSeconds: readNumber(row, ["duration_seconds", "durationSeconds"]) ?? 0,
+    createdAt: readDateString(row, ["created_at", "createdAt"]) ?? completedAt,
+    durationSeconds,
     correctCount: readNumber(row, ["correct_count", "correctCount"]) ?? 0,
     wrongCount: readNumber(row, ["wrong_count", "wrongCount"]) ?? 0,
     score: readNumber(row, ["score"]) ?? 0,
     successRate: readNumber(row, ["success_rate", "successRate"]) ?? 0,
+    programTaskId: readString(row, ["program_task_id", "programTaskId"]),
     submissionKey: readString(row, ["submission_key", "submissionKey"]) ?? undefined,
     details,
   };
@@ -565,7 +579,7 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       supabase
         .from(EXERCISE_RESULTS_TABLE)
         .select(
-          "id,student_id,student_name,username,exercise_type,exercise_title,completed_at,duration_seconds,correct_count,wrong_count,score,success_rate,submission_key,details",
+          "id,student_id,student_name,username,exercise_type,exercise_title,completed_at,created_at,correct_count,wrong_count,score,success_rate,submission_key,program_task_id,details",
         )
         .eq("student_id", safeStudentId)
         .order("completed_at", { ascending: false }),
@@ -596,37 +610,39 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       .filter((row): row is ExerciseResult => row !== null);
     const activeProgram = activeProgramResult.ok ? mapTeacherStudentProgramContext(activeProgramResult.value) : null;
     const activeProgramError = activeProgramResult.ok ? null : activeProgramResult.message;
+    const programTasks = toDatabaseRows(programTasksResult.data)
+      .map(mapProgramTaskProgressRow)
+      .filter((row): row is TeacherStudentProgramTaskProgress => row !== null && row.completedAt !== null);
+    const xpEvents = toDatabaseRows(xpEventsResult.data).map((row) => ({
+      idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
+      xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
+      event_type: readString(row, ["event_type", "eventType"]) ?? "",
+      source_type: readString(row, ["source_type", "sourceType"]),
+      source_id: readString(row, ["source_id", "sourceId"]),
+      earned_at: readDateString(row, ["earned_at", "earnedAt"]),
+    })) satisfies TeacherStudentXpEventRow[];
+    const performanceHistoryResult = buildTeacherStudentPerformanceHistory({
+      results,
+      activeProgram,
+      programTasks,
+      xpEvents,
+      analysisLimit: 100,
+    });
     const programProgressResult = await loadTeacherStudentProgramProgress(
       supabase,
       activeProgram,
       activeProgramError,
       safeStudentId,
       results,
-      toDatabaseRows(xpEventsResult.data).map((row) => ({
-        idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
-        xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
-        event_type: readString(row, ["event_type", "eventType"]) ?? "",
-        source_type: readString(row, ["source_type", "sourceType"]),
-        source_id: readString(row, ["source_id", "sourceId"]),
-        earned_at: readDateString(row, ["earned_at", "earnedAt"]),
-      })),
+      xpEvents,
     );
     const activityFeedResult = buildTeacherStudentActivityFeed({
       studentId: student.id,
       lastLoginAt: student.last_login_at,
       results,
       activeProgram,
-      programTasks: toDatabaseRows(programTasksResult.data)
-        .map(mapProgramTaskProgressRow)
-        .filter((row): row is TeacherStudentProgramTaskProgress => row !== null && row.completedAt !== null),
-      xpEvents: toDatabaseRows(xpEventsResult.data).map((row) => ({
-        idempotency_key: readString(row, ["idempotency_key", "idempotencyKey"]) ?? "",
-        xp_amount: readNumber(row, ["xp_amount", "xpAmount"]) ?? 0,
-        event_type: readString(row, ["event_type", "eventType"]) ?? "",
-        source_type: readString(row, ["source_type", "sourceType"]),
-        source_id: readString(row, ["source_id", "sourceId"]),
-        earned_at: readDateString(row, ["earned_at", "earnedAt"]),
-      })),
+      programTasks,
+      xpEvents,
       limit: 10,
     });
 
@@ -637,6 +653,11 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
       programProgress: programProgressResult.programProgress,
       programProgressError: programProgressResult.programProgressError,
       performanceSummary: buildPerformanceSummary(results),
+      performanceHistory: performanceHistoryResult.performanceHistory,
+      performanceHistoryError:
+        resultsResult.error !== null
+          ? "Performans geçmişi şu anda yüklenemiyor."
+          : performanceHistoryResult.performanceHistoryError,
       results,
       activityFeed: activityFeedResult.activities,
       activityFeedError: activityFeedResult.error,

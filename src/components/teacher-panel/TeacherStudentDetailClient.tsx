@@ -10,6 +10,7 @@ import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics
 import type {
   TeacherStudentActivity,
   TeacherStudentDetail,
+  TeacherStudentPerformanceMetricSummary,
   TeacherStudentProgramDayProgress,
   TeacherStudentProgramProgress,
   TeacherStudentProgramTaskProgress,
@@ -379,6 +380,222 @@ function ProgramDayCard({ day }: { day: TeacherStudentProgramDayProgress }) {
   );
 }
 
+type PerformanceSectionMetric = "reading" | "comprehension";
+
+function getPerformanceMetricLabel(metric: PerformanceSectionMetric): string {
+  return metric === "reading" ? "Okuma Hızı" : "Anlama";
+}
+
+function getPerformanceMetricUnit(metric: PerformanceSectionMetric): string {
+  return metric === "reading" ? "kelime/dk" : "%";
+}
+
+function formatPerformanceMetricValue(metric: PerformanceSectionMetric, value: number | null): string {
+  if (value === null || !Number.isFinite(value)) {
+    return "Henüz veri yok";
+  }
+
+  return metric === "reading" ? `${Math.round(value)} kelime/dk` : `%${Math.round(value)}`;
+}
+
+function formatPerformanceDelta(metric: PerformanceSectionMetric, summary: TeacherStudentPerformanceMetricSummary): string {
+  if (summary.trendDirection === "unavailable" || summary.latestValue === null || summary.previousValue === null) {
+    return "Karşılaştırma için en az iki sonuç gerekir.";
+  }
+
+  const delta = summary.changeValue ?? 0;
+  const roundedDelta = Math.round(Math.abs(delta));
+  const unit = getPerformanceMetricUnit(metric);
+
+  if (summary.trendDirection === "stable") {
+    return metric === "reading"
+      ? "Önceki sonuca göre aynı hız"
+      : "Önceki sonuca göre aynı anlama puanı";
+  }
+
+  return metric === "reading"
+    ? `Önceki sonuca göre ${roundedDelta} ${unit} ${delta > 0 ? "artış" : "düşüş"}`
+    : `Önceki sonuca göre ${roundedDelta} puan ${delta > 0 ? "artış" : "düşüş"}`;
+}
+
+function formatPerformanceTrendLabel(summary: TeacherStudentPerformanceMetricSummary): string {
+  switch (summary.trendDirection) {
+    case "up":
+      return "Yükseliyor";
+    case "down":
+      return "Düşüyor";
+    case "stable":
+      return "Sabit";
+    default:
+      return "Karşılaştırma yok";
+  }
+}
+
+function getSparklineHeight(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return 24;
+  }
+
+  const range = max - min;
+  if (range <= 0) {
+    return 72;
+  }
+
+  const normalized = (value - min) / range;
+  return Math.max(24, Math.min(100, Math.round(28 + normalized * 72)));
+}
+
+function PerformanceBars({
+  metric,
+  summary,
+}: {
+  metric: PerformanceSectionMetric;
+  summary: TeacherStudentPerformanceMetricSummary;
+}) {
+  const recent = [...summary.recentResults].reverse();
+  const values = recent.map((item) => item.value).filter((value): value is number => Number.isFinite(value));
+  const min = values.length > 0 ? Math.min(...values) : 0;
+  const max = values.length > 0 ? Math.max(...values) : 100;
+
+  if (recent.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
+        Trend verisi henüz yok.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      <div className="flex items-end gap-2" aria-label={`${getPerformanceMetricLabel(metric)} son 5 sonuç trendi`}>
+        {recent.map((item, index) => {
+          const height = getSparklineHeight(item.value, min, max);
+          const dateLabel = item.occurredAt ? formatDateTime(item.occurredAt) : "Tarih bilgisi yok";
+          return (
+            <div key={item.id} className="flex min-h-[112px] flex-1 flex-col items-center justify-end gap-2">
+              <div className="flex w-full flex-1 items-end justify-center">
+                <div
+                  className={`w-full max-w-[42px] rounded-t-2xl bg-gradient-to-t ${
+                    metric === "reading" ? "from-emerald-600 to-emerald-400" : "from-sky-600 to-cyan-400"
+                  }`}
+                  style={{ height: `${height}%`, minHeight: "28px" }}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="w-full text-center text-[10px] font-semibold text-slate-500 [data-idil-theme=dark]:text-slate-400">
+                <div>{Math.round(item.value)}</div>
+                <div className="truncate">{index + 1}. {dateLabel}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <ol className="grid gap-2">
+        {summary.recentResults.map((item) => (
+          <li
+            key={item.id}
+            className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-300"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                  {item.sourceLabel || `${getPerformanceMetricLabel(metric)} sonucu`}
+                </p>
+                <p className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
+                  {item.occurredAt ? formatDateTime(item.occurredAt) : "Tarih bilgisi yok"}
+                </p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
+                {formatPerformanceMetricValue(metric, item.value)}
+              </span>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {item.programTaskName ? <ActivityChip>{item.programTaskName}</ActivityChip> : null}
+              {item.programName ? <ActivityChip>{item.programName}</ActivityChip> : null}
+              {item.awardedXp && item.awardedXp > 0 ? <ActivityChip>+{item.awardedXp} XP</ActivityChip> : null}
+              {item.durationSeconds !== null ? <ActivityChip>{item.durationSeconds} sn</ActivityChip> : null}
+            </div>
+
+            {metric === "comprehension" ? (
+              <div className="mt-2 grid gap-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400 sm:grid-cols-3">
+                <span>Doğru: {item.correctCount === null ? "Henüz veri yok" : item.correctCount}</span>
+                <span>Yanlış: {item.wrongCount === null ? "Henüz veri yok" : item.wrongCount}</span>
+                <span>Net: {item.netCount === null ? "Henüz veri yok" : item.netCount}</span>
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function PerformanceMetricCard({
+  metric,
+  summary,
+}: {
+  metric: PerformanceSectionMetric;
+  summary: TeacherStudentPerformanceMetricSummary;
+}) {
+  const label = getPerformanceMetricLabel(metric);
+
+  return (
+    <article className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">
+            {label}
+          </p>
+          <h4 className="mt-1 text-lg font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
+            {summary.totalResultCount === 0 ? `Henüz ${label.toLowerCase()} sonucu yok` : formatPerformanceMetricValue(metric, summary.latestValue)}
+          </h4>
+        </div>
+        <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+          summary.trendDirection === "up"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-100"
+            : summary.trendDirection === "down"
+              ? "border-rose-200 bg-rose-50 text-rose-700 [data-idil-theme=dark]:border-rose-400/30 [data-idil-theme=dark]:bg-rose-400/10 [data-idil-theme=dark]:text-rose-100"
+              : "border-slate-200 bg-slate-50 text-slate-700 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-200"
+        }`}>
+          {formatPerformanceTrendLabel(summary)}
+        </span>
+      </div>
+
+      <p className="mt-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+        {formatPerformanceDelta(metric, summary)}
+      </p>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Kayıt</p>
+          <p className="mt-1 text-lg font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">{summary.totalResultCount}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Son değer</p>
+          <p className="mt-1 text-lg font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">{formatPerformanceMetricValue(metric, summary.latestValue)}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">En yüksek</p>
+          <p className="mt-1 text-lg font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">{formatPerformanceMetricValue(metric, summary.highestValue)}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Ortalama</p>
+          <p className="mt-1 text-lg font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">{formatPerformanceMetricValue(metric, summary.averageValue)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Trend</p>
+        <div className="mt-3">
+          <PerformanceBars metric={metric} summary={summary} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentDetail }) {
   const router = useRouter();
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
@@ -431,6 +648,8 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
   const programProgress = detail.programSummary.progressPercent ?? 0;
   const programProgressDetail = detail.programProgress;
   const programProgressError = detail.programProgressError;
+  const performanceHistoryError = detail.performanceHistoryError;
+  const performanceHistory = detail.performanceHistory;
 
   return (
     <div className="grid gap-4">
@@ -724,6 +943,19 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
             </div>
           ) : (
             <EmptyCard text="Aktif program bulunmuyor." />
+          )}
+        </PanelCard>
+      </section>
+
+      <section>
+        <PanelCard title="Okuma ve Anlama Performansı" subtitle="Gerçek okuma hızı ve anlama sonuçlarının geçmişi">
+          {performanceHistoryError ? (
+            <EmptyCard text={performanceHistoryError} />
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-2">
+              <PerformanceMetricCard metric="reading" summary={performanceHistory.reading} />
+              <PerformanceMetricCard metric="comprehension" summary={performanceHistory.comprehension} />
+            </div>
           )}
         </PanelCard>
       </section>
