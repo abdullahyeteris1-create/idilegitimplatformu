@@ -5,7 +5,6 @@ import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { completeEducationProgramTask } from "@/lib/education-programs/studentProgramRepository";
 import { isEducationProgramUuid } from "@/lib/education-programs/studentProgramValidation";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { awardStudentXpEvent } from "@/lib/xp/xpRepository";
 
 export const runtime = "nodejs";
 
@@ -108,25 +107,6 @@ export async function POST(
     return errorResponse(result.code, result.message, status);
   }
 
-  const xpResult = await awardStudentXpEvent({
-    studentId: access.studentId,
-    eventType: "education_program_task_completed",
-    idempotencyKey: `program-task:${taskId}`,
-    sourceType: "education_program_task",
-    sourceId: taskId,
-    metadata: {
-      taskId,
-      programId: result.value.programId,
-      dayId: result.value.dayId,
-      outcome: result.value.outcome,
-      alreadyCompleted: result.value.alreadyCompleted,
-      programCompleted: result.value.programCompleted,
-    },
-  });
-
-  if (!xpResult) {
-    return errorResponse("completion_failed", "Gorev tamamlandi ancak XP ödülü verilemedi.", 500);
-  }
 
   return jsonNoStore({ success: true, ...result.value }, 200);
 }

@@ -36,20 +36,18 @@ test("5-7) results route submissionKey zorunlu kilar ve XP'yi sonucla ayni idemp
 
   assert.match(source, /"submissionKey"/);
   assert.match(source, /submissionKey: string;/);
-  assert.match(source, /getXpAwardForResult\(body\.exerciseType\)/);
-  assert.match(source, /idempotencyKey: `result:\$\{body\.submissionKey\}`/);
-  assert.match(source, /eventType: "exercise_completed"/);
-  assert.match(source, /eventType: "reading_comprehension_completed"/);
-  assert.match(source, /eventType: "reading_speed_test_completed"/);
+  assert.match(source, /recordStudentResultAndAwardXp\(/);
+  assert.match(source, /replayed: recorded\.replayed/);
+  assert.match(source, /mapResult\(recorded\.resultRow, access\.studentId\)/);
+  assert.doesNotMatch(source, /awardStudentXpEvent\(/);
 });
 
 test("8-9) education program task tamamlaninca XP program-task idempotency anahtariyla verilir", async () => {
   const source = await read(PROGRAM_ROUTE_URL);
 
-  assert.match(source, /awardStudentXpEvent\(/);
-  assert.match(source, /eventType: "education_program_task_completed"/);
-  assert.match(source, /idempotencyKey: `program-task:\$\{taskId\}`/);
-  assert.match(source, /sourceType: "education_program_task"/);
+  assert.match(source, /completeEducationProgramTask\(/);
+  assert.doesNotMatch(source, /awardStudentXpEvent\(/);
+  assert.doesNotMatch(source, /program-task:/);
 });
 
 test("10-12) XP repository yeni event tiplerini ve award helper'ini expose eder", async () => {
@@ -61,4 +59,6 @@ test("10-12) XP repository yeni event tiplerini ve award helper'ini expose eder"
   assert.match(source, /"reading_comprehension_completed"/);
   assert.match(source, /"reading_speed_test_completed"/);
   assert.match(source, /export async function awardStudentXpEvent\(/);
+  assert.match(source, /export async function recordStudentResultAndAwardXp\(/);
+  assert.match(source, /export async function repairStudentXpSummaryByStudentId\(/);
 });
