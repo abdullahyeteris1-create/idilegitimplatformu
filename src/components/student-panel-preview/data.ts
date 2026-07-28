@@ -144,7 +144,7 @@ export const navItems: NavItem[] = [
   { label: "Sonuçlarım", icon: "medal", href: "/sonuc" },
   { label: "Okuma Testlerim", icon: "bookOpen", href: "/egzersizler/anlama-testi" },
   { label: "Raporlarım", icon: "chart", href: "/sonuc" },
-  { label: "Rozetlerim", icon: "badge" },
+  { label: "Rozetlerim", icon: "badge", href: "/ogrenci/rozetlerim" },
   { label: "Ayarlar", icon: "settings" },
 ];
 

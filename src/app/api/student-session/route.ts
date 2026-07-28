@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/studentSession";
 import { isStudentActiveStatus } from "@/lib/auth/verifyStudentAccess";
 import { checkStudentDateAccess } from "@/lib/students/studentAccessDates";
+import { getIstanbulDateString } from "@/lib/students/studentAccessDates";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -18,6 +19,9 @@ type StudentLoginBody = {
 };
 
 const LOGIN_COMPLETION_FAILED_MESSAGE = "Giriş işlemi tamamlanamadı. Lütfen tekrar deneyin.";
+const XP_AWARD_EVENT_TYPE = "login_first_of_day";
+const XP_AWARD_SOURCE_TYPE = "student-session";
+const XP_AWARD_SOURCE_ID = "login";
 
 type SessionIncrementResult = {
   sessionVersion: number;
@@ -51,6 +55,34 @@ function logSupabaseError(error: { code?: unknown; message?: unknown; details?: 
     details: error.details,
     hint: error.hint,
   });
+}
+
+async function awardFirstLoginXp(studentId: string): Promise<void> {
+  const supabase = getSupabaseServiceRoleClient();
+  if (!supabase) {
+    return;
+  }
+
+  const istanbulDate = getIstanbulDateString();
+
+  try {
+    const { error } = await supabase.rpc("award_student_xp_v1", {
+      p_student_id: studentId,
+      p_event_type: XP_AWARD_EVENT_TYPE,
+      p_idempotency_key: `login:${studentId}:${istanbulDate}`,
+      p_source_type: XP_AWARD_SOURCE_TYPE,
+      p_source_id: XP_AWARD_SOURCE_ID,
+      p_metadata: {
+        loginDate: istanbulDate,
+      },
+    });
+
+    if (error) {
+      logSupabaseError(error);
+    }
+  } catch (error) {
+    console.error("XP award on student login failed", error);
+  }
 }
 
 function normalizeLookup(value: string): string {
@@ -191,6 +223,8 @@ export async function POST(request: NextRequest) {
     value: token,
     ...getStudentSessionCookieOptions(),
   });
+
+  await awardFirstLoginXp(String(student.id));
 
   return response;
 }
