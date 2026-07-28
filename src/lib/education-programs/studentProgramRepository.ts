@@ -1039,6 +1039,10 @@ function mapCompleteEducationProgramTaskRow(
     return null;
   }
   if (typeof row.program_completed !== "boolean") return null;
+  if (typeof row.xp_awarded !== "number" || !Number.isFinite(row.xp_awarded)) return null;
+  if (typeof row.total_xp !== "number" || !Number.isFinite(row.total_xp)) return null;
+  if (row.event_id !== undefined && row.event_id !== null && typeof row.event_id !== "string") return null;
+  if (row.earned_at !== undefined && row.earned_at !== null && typeof row.earned_at !== "string") return null;
 
   return {
     outcome: row.outcome as StudentEducationProgramTaskCompleteResult["outcome"],
@@ -1055,6 +1059,10 @@ function mapCompleteEducationProgramTaskRow(
     completedDays,
     totalDays,
     programCompleted: row.program_completed,
+    xpAwarded: row.xp_awarded,
+    totalXp: row.total_xp,
+    eventId: typeof row.event_id === "string" ? row.event_id : undefined,
+    earnedAt: typeof row.earned_at === "string" ? row.earned_at : undefined,
   };
 }
 

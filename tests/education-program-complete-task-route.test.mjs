@@ -92,7 +92,8 @@ test("27) expectedResultExerciseType dogru bicimde repository'ye aktarilir", asy
 test("28/29) basari 200, idempotent basari da 200 doner (ayni basari yolu)", async () => {
   const source = await read(ROUTE_PATH);
 
-  assert.match(source, /return jsonNoStore\(\{ success: true, \.\.\.result\.value \}, 200\);/);
+  assert.match(source, /reward:\s*\{\s*eventType: "education_program_task_completed"/s);
+  assert.match(source, /rewardKey:\s*`program-task:\$\{taskId\}`/);
   // alreadyCompleted alani result.value icinde zaten tasiniyor - basari
   // yolu tek, idempotent/gercek tamamlama ayrimi outcome/alreadyCompleted
   // alanlariyla anlatiliyor, ayri bir HTTP status yok.

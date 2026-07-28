@@ -47,7 +47,7 @@ test("8-9) education program task tamamlaninca XP program-task idempotency anaht
 
   assert.match(source, /completeEducationProgramTask\(/);
   assert.doesNotMatch(source, /awardStudentXpEvent\(/);
-  assert.doesNotMatch(source, /program-task:/);
+  assert.match(source, /rewardKey:\s*`program-task:\$\{taskId\}`/);
 });
 
 test("10-12) XP repository yeni event tiplerini ve award helper'ini expose eder", async () => {

@@ -107,6 +107,18 @@ export async function POST(
     return errorResponse(result.code, result.message, status);
   }
 
-
-  return jsonNoStore({ success: true, ...result.value }, 200);
+  return jsonNoStore(
+    {
+      success: true,
+      ...result.value,
+      reward: {
+        eventType: "education_program_task_completed",
+        awardedXp: result.value.xpAwarded,
+        currentTotalXp: result.value.totalXp,
+        replayed: result.value.alreadyCompleted,
+        rewardKey: `program-task:${taskId}`,
+      },
+    },
+    200,
+  );
 }

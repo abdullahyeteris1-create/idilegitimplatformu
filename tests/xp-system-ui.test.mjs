@@ -32,10 +32,14 @@ test("7-10) rozetlerim sayfasi var ve gercek route menude kullaniliyor", async (
 test("11-16) panel kartlari gercek XP snapshot'i kullanir ve placeholder metinler kaldirilir", async () => {
   const source = await read(COMPONENT_URL);
 
-  assert.match(source, /function LevelCard\(\{ compact = false, xpSnapshot \}: \{ compact\?: boolean; xpSnapshot: StudentXpSnapshot \}\)/);
+  assert.match(
+    source,
+    /function LevelCard\(\{\s*compact = false,\s*xpSnapshot,\s*lastReward,\s*\}:\s*\{\s*compact\?: boolean;\s*xpSnapshot: StudentXpSnapshot;\s*lastReward\?: ReturnType<typeof useXpRewardNotifications>\["lastReward"\];\s*\}\)/s,
+  );
   assert.ok(source.includes("Seviye {xpSnapshot.level}"));
   assert.ok(source.includes('xpSnapshot.totalXp.toLocaleString("tr-TR")'));
   assert.ok(source.includes("Sonraki: {xpSnapshot.nextLevelTitle}"));
+  assert.ok(source.includes("rewardStrip"));
   assert.match(source, /function Badges\(\{ xpSnapshot \}: \{ xpSnapshot: StudentXpSnapshot \}\)/);
   assert.ok(source.includes('Link href="/ogrenci/rozetlerim"'));
   assert.doesNotMatch(source, /Seviye sistemi hazırlanıyor/);

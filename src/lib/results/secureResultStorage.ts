@@ -1,6 +1,7 @@
 import { getCurrentStudent } from "@/lib/auth/auth";
 import { emitProgramTaskCompleted } from "@/lib/results/programTaskEvents";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
+import { emitXpRewardNotification } from "@/components/xp-notifications/xpRewardNotifications";
 
 const STORAGE_KEY = "idil-exercise-results";
 const SUBMISSION_KEY_PREFIX = "submission-";
@@ -40,6 +41,13 @@ type SecureResultResponse = {
     date: string;
     assignmentItemId?: string | null;
     details?: Record<string, unknown>;
+  };
+  reward?: {
+    eventType: string;
+    awardedXp: number;
+    currentTotalXp: number;
+    replayed: boolean;
+    rewardKey?: string;
   };
 };
 
@@ -172,6 +180,16 @@ export async function saveExerciseResultSecure(input: SecureExerciseResultInput)
   };
 
   cacheResult(result);
+  if (payload.reward && !payload.reward.replayed && payload.reward.awardedXp > 0) {
+    emitXpRewardNotification({
+      eventType: payload.reward.eventType as "exercise_completed" | "education_program_task_completed" | "reading_comprehension_completed" | "reading_speed_test_completed",
+      awardedXp: payload.reward.awardedXp,
+      currentTotalXp: payload.reward.currentTotalXp,
+      replayed: payload.reward.replayed,
+      rewardKey: payload.reward.rewardKey,
+      sourceLabel: result.exerciseTitle,
+    });
+  }
   let assignmentCompletionStatus: SecureExerciseResultSave["assignmentCompletionStatus"] = "not-requested";
   if (assignmentItemId) {
     assignmentCompletionStatus = await completeAssignmentItem(assignmentItemId, result.id) ? "completed" : "failed";

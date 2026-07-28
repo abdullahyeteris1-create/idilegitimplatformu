@@ -14,6 +14,7 @@ import styles from "./student-panel-preview.module.css";
 import { TodaysProgramTasksCard } from "./TodaysProgramTasksCard";
 import { getStudentXpBadges } from "@/lib/xp/xpBadges";
 import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp/xpLevels";
+import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
@@ -295,14 +296,66 @@ function Sidebar({
   return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
 }
 
-function LevelCard({ compact = false, xpSnapshot }: { compact?: boolean; xpSnapshot: StudentXpSnapshot }) {
+function LevelCard({
+  compact = false,
+  xpSnapshot,
+  lastReward,
+}: {
+  compact?: boolean;
+  xpSnapshot: StudentXpSnapshot;
+  lastReward?: ReturnType<typeof useXpRewardNotifications>["lastReward"];
+}) {
   const progressText = formatXpProgress(xpSnapshot);
+  const rewardStrip = lastReward ? (
+    <div className={styles.rewardStrip}>
+      <span>Son kazan?m</span>
+      <strong>+{lastReward.awardedXp} XP</strong>
+      <p>
+        {lastReward.sourceLabel} ? Toplam {lastReward.currentTotalXp.toLocaleString("tr-TR")} XP
+      </p>
+    </div>
+  ) : null;
 
-  return <section className={`${styles.levelCard} ${compact ? styles.levelCompact : ""}`} aria-label={`Seviye ${xpSnapshot.level} ${xpSnapshot.title}`}><div className={styles.levelTop}><div><strong>Seviye {xpSnapshot.level}</strong><span>{xpSnapshot.title}</span></div><div className={styles.hexBadge}>★</div></div><div className={styles.xp}><b>{progressText}</b><strong>{xpSnapshot.totalXp.toLocaleString("tr-TR")} XP</strong></div><Progress value={xpSnapshot.progressPercent} label={`Seviye ${xpSnapshot.level} ilerlemesi`} />{!compact ? <div className={styles.levelFoot}><span>Sonraki: {xpSnapshot.nextLevelTitle}</span><strong>Sonraki seviyeye {xpSnapshot.remainingXp.toLocaleString("tr-TR")} XP</strong></div> : <div className={styles.levelFoot}><span>{xpSnapshot.nextLevelTitle}</span><strong>%{xpSnapshot.progressPercent}</strong></div>}</section>;
+  return (
+    <section
+      className={`${styles.levelCard} ${compact ? styles.levelCompact : ""}`}
+      aria-label={`Seviye ${xpSnapshot.level} ${xpSnapshot.title}`}
+    >
+      <div className={styles.levelTop}>
+        <div>
+          <strong>Seviye {xpSnapshot.level}</strong>
+          <span>{xpSnapshot.title}</span>
+        </div>
+        <div className={styles.hexBadge}>?</div>
+      </div>
+
+      <div className={styles.xp}>
+        <b>{progressText}</b>
+        <strong>{xpSnapshot.totalXp.toLocaleString("tr-TR")} XP</strong>
+      </div>
+
+      <Progress value={xpSnapshot.progressPercent} label={`Seviye ${xpSnapshot.level} ilerlemesi`} />
+
+      {!compact ? (
+        <>
+          <div className={styles.levelFoot}>
+            <span>Sonraki: {xpSnapshot.nextLevelTitle}</span>
+            <strong>Sonraki seviyeye {xpSnapshot.remainingXp.toLocaleString("tr-TR")} XP</strong>
+          </div>
+          {rewardStrip}
+        </>
+      ) : (
+        <div className={styles.levelFoot}>
+          <span>{xpSnapshot.nextLevelTitle}</span>
+          <strong>%{xpSnapshot.progressPercent}</strong>
+        </div>
+      )}
+    </section>
+  );
 }
 
 function Header({ onToggleTheme, light, panel, onTogglePanel, studentName, classLabel }: { onToggleTheme: () => void; light: boolean; panel: DemoPanel; onTogglePanel: (panel: Exclude<DemoPanel, null>) => void; studentName: string; classLabel: string }) {
-  return <header className={styles.header}><div><h1>Öğrenci Paneli <span>🚀</span></h1><p>Okuma yolculuğunda bugün yeni bir seviyeye çık!</p></div><div className={styles.headerActions}><button type="button" className={styles.themeButton} onClick={onToggleTheme} aria-label={`${light ? "Koyu" : "Açık"} temaya geç`}><small>Tema</small><Icon name={light ? "moon" : "sparkles"}/></button><button type="button" className={styles.iconButton} aria-label="Bildirimleri aç" aria-expanded={panel === "notifications"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("notifications")}><Icon name="bell"/><span>3</span></button><button type="button" className={styles.profile} aria-label="Profil menüsünü aç" aria-expanded={panel === "profile"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("profile")}><span>👨‍🚀</span><div><strong>{studentName}</strong><small>{classLabel}</small></div><Icon name="arrow"/></button></div></header>;
+  return <header className={styles.header}><div><h1>??renci Paneli <span>??</span></h1><p>Okuma yolculu?unda bug?n yeni bir seviyeye ??k!</p></div><div className={styles.headerActions}><button type="button" className={styles.themeButton} onClick={onToggleTheme} aria-label={`${light ? "Koyu" : "A??k"} temaya ge?`}><small>Tema</small><Icon name={light ? "moon" : "sparkles"}/></button><button type="button" className={styles.iconButton} aria-label="Bildirimleri a?" aria-expanded={panel === "notifications"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("notifications")}><Icon name="bell"/><span>3</span></button><button type="button" className={styles.profile} aria-label="Profil men?s?n? a?" aria-expanded={panel === "profile"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("profile")}><span>?????</span><div><strong>{studentName}</strong><small>{classLabel}</small></div><Icon name="arrow"/></button></div></header>;
 }
 
 function SpaceScene() {
@@ -544,6 +597,7 @@ function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentNa
 
 export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard = false, showStatisticsCard = false, xpSnapshot }: StudentPanelPreviewProps) {
   const { theme, setTheme } = useIdilTheme();
+  const { lastReward } = useXpRewardNotifications();
   const light = theme === "light";
   const [toast, setToast] = useState("");
   const [panel, setPanel] = useState<DemoPanel>(null);
@@ -747,5 +801,5 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
-  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard xpSnapshot={safeXpSnapshot}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><TodaysProgramTasksCard/><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<Badges xpSnapshot={safeXpSnapshot}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
+  return <main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget}/><LevelCard xpSnapshot={safeXpSnapshot} lastReward={lastReward}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><TodaysProgramTasksCard/><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<Badges xpSnapshot={safeXpSnapshot}/><section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main>;
 }

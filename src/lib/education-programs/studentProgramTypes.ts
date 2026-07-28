@@ -167,6 +167,10 @@ export type StudentEducationProgramTaskCompleteResult = {
   completedDays: number;
   totalDays: number;
   programCompleted: boolean;
+  xpAwarded: number;
+  totalXp: number;
+  eventId?: string;
+  earnedAt?: string;
 };
 
 export type StudentEducationProgramTaskCompleteRepositoryResult =

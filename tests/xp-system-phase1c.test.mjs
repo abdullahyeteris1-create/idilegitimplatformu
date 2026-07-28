@@ -48,7 +48,7 @@ test("education program route no longer performs a separate XP call", async () =
 
   assert.match(source, /completeEducationProgramTask\(/);
   assert.doesNotMatch(source, /awardStudentXpEvent\(/);
-  assert.doesNotMatch(source, /program-task:/);
+  assert.match(source, /rewardKey:\s*`program-task:\$\{taskId\}`/);
 });
 
 test("education program completion RPC awards XP in the same transaction", async () => {

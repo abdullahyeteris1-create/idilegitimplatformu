@@ -10,6 +10,8 @@
 //   - Assignment System V2'nin hicbir yardimcisini import etmez
 // Bu FAZ'da (3B-1B) hicbir egzersiz client'ina bagli DEGILDIR - yalniz
 // cagirma bicimini saglar, ne zaman cagrilacagina karar vermez (FAZ 3B-2).
+import { emitXpRewardNotification } from "@/components/xp-notifications/xpRewardNotifications";
+
 export type CompleteEducationProgramTaskClientOutcome =
   | "already_completed"
   | "task_completed"
@@ -34,6 +36,13 @@ export type CompleteEducationProgramTaskClientSuccess = {
   completedDays: number;
   totalDays: number;
   programCompleted: boolean;
+  reward?: {
+    eventType: "education_program_task_completed";
+    awardedXp: number;
+    currentTotalXp: number;
+    replayed: boolean;
+    rewardKey?: string;
+  };
 };
 
 export type CompleteEducationProgramTaskClientFailure = {
@@ -87,6 +96,15 @@ function parseSuccessPayload(
   if (typeof data.completedDays !== "number" || !Number.isFinite(data.completedDays)) return null;
   if (typeof data.totalDays !== "number" || !Number.isFinite(data.totalDays)) return null;
   if (typeof data.programCompleted !== "boolean") return null;
+  if (data.reward !== undefined) {
+    const reward = data.reward as Record<string, unknown>;
+    if (typeof reward !== "object" || reward === null || Array.isArray(reward)) return null;
+    if (reward.eventType !== "education_program_task_completed") return null;
+    if (typeof reward.awardedXp !== "number" || !Number.isFinite(reward.awardedXp)) return null;
+    if (typeof reward.currentTotalXp !== "number" || !Number.isFinite(reward.currentTotalXp)) return null;
+    if (typeof reward.replayed !== "boolean") return null;
+    if (reward.rewardKey !== undefined && reward.rewardKey !== null && typeof reward.rewardKey !== "string") return null;
+  }
 
   return {
     ok: true,
@@ -104,6 +122,17 @@ function parseSuccessPayload(
     completedDays: data.completedDays,
     totalDays: data.totalDays,
     programCompleted: data.programCompleted,
+    reward: data.reward
+      ? {
+          eventType: "education_program_task_completed",
+          awardedXp: (data.reward as Record<string, unknown>).awardedXp as number,
+          currentTotalXp: (data.reward as Record<string, unknown>).currentTotalXp as number,
+          replayed: (data.reward as Record<string, unknown>).replayed as boolean,
+          rewardKey: typeof (data.reward as Record<string, unknown>).rewardKey === "string"
+            ? (data.reward as Record<string, unknown>).rewardKey as string
+            : undefined,
+        }
+      : undefined,
   };
 }
 
@@ -135,7 +164,18 @@ export async function completeEducationProgramTask(
     const data = payload as Record<string, unknown>;
 
     if (data.success === true) {
-      return parseSuccessPayload(data) ?? DEFAULT_FAILURE;
+      const parsed = parseSuccessPayload(data);
+      if (parsed?.reward && !parsed.reward.replayed && parsed.reward.awardedXp > 0) {
+        emitXpRewardNotification({
+          eventType: parsed.reward.eventType,
+          awardedXp: parsed.reward.awardedXp,
+          currentTotalXp: parsed.reward.currentTotalXp,
+          replayed: parsed.reward.replayed,
+          rewardKey: parsed.reward.rewardKey,
+          sourceLabel: "Görev tamamlandı",
+        });
+      }
+      return parsed ?? DEFAULT_FAILURE;
     }
 
     const errorPayload =

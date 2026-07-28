@@ -482,6 +482,18 @@ function mapResult(row: Record<string, unknown>, studentId: string) {
   };
 }
 
+function getRewardEventType(exerciseType: string) {
+  if (exerciseType === "reading-comprehension") {
+    return "reading_comprehension_completed";
+  }
+
+  if (exerciseType === "reading-speed-test") {
+    return "reading_speed_test_completed";
+  }
+
+  return "exercise_completed";
+}
+
 export async function GET(request: NextRequest) {
   const access = await verifyStudentAccess(request);
   if (!access.ok) {
@@ -617,6 +629,13 @@ export async function POST(request: NextRequest) {
       {
         result: mapResult(recorded.resultRow, access.studentId),
         replayed: recorded.replayed,
+        reward: {
+          eventType: getRewardEventType(body.exerciseType),
+          awardedXp: recorded.xpAwarded,
+          currentTotalXp: recorded.totalXp,
+          replayed: recorded.replayed,
+          rewardKey: `result:${body.submissionKey}`,
+        },
       },
       recorded.replayed ? 200 : 201,
     );

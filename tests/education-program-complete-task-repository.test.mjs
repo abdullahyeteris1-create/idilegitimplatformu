@@ -28,6 +28,10 @@ function successRow(overrides = {}) {
     completed_days: 0,
     total_days: 20,
     program_completed: false,
+    xp_awarded: 15,
+    total_xp: 315,
+    event_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    earned_at: "2026-07-28T10:00:00.000Z",
     ...overrides,
   };
 }
@@ -170,6 +174,10 @@ test("8) basarili RPC yaniti tam olarak camelCase'e map edilir", async () => {
       completedDays: 0,
       totalDays: 20,
       programCompleted: false,
+      xpAwarded: 15,
+      totalXp: 315,
+      eventId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      earnedAt: "2026-07-28T10:00:00.000Z",
     },
   });
 });

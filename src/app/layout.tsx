@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { RewardNotificationProvider } from "@/components/xp-notifications/RewardNotificationProvider";
 import { IdilThemeProvider } from "@/components/theme/IdilThemeProvider";
 import "./globals.css";
 
@@ -34,7 +35,9 @@ export default function RootLayout({
         </Script>
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-950 antialiased">
-        <IdilThemeProvider>{children}</IdilThemeProvider>
+        <IdilThemeProvider>
+          <RewardNotificationProvider>{children}</RewardNotificationProvider>
+        </IdilThemeProvider>
       </body>
     </html>
   );
