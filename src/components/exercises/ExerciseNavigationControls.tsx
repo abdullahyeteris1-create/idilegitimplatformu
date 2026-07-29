@@ -15,6 +15,7 @@ export type ExerciseNavigationControlsProps = {
   exitLabel?: string;
   onBeforeExit?: () => void;
   compact?: boolean;
+  className?: string;
 };
 
 const DEFAULT_BACK_HREF = "/egzersizler";
@@ -45,6 +46,7 @@ export function ExerciseNavigationControls({
   exitLabel = "Uygulamadan Çık",
   onBeforeExit,
   compact = false,
+  className = "",
 }: ExerciseNavigationControlsProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
@@ -77,7 +79,10 @@ export function ExerciseNavigationControls({
   };
 
   return (
-    <nav aria-label="Egzersiz navigasyonu" className="relative z-[70] flex shrink-0 items-center gap-1.5 sm:gap-2">
+    <nav
+      aria-label="Egzersiz navigasyonu"
+      className={`relative z-[70] flex max-w-full shrink-0 flex-wrap items-center gap-1.5 sm:gap-2 ${className}`}
+    >
       <button
         type="button"
         disabled={isNavigating}
@@ -120,7 +125,13 @@ function ArrowLeftIcon() {
 function ExitIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none">
-      <path d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10m4-4 3-3-3-3m3 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10m4-4 3-3-3-3m3 3H9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

@@ -611,24 +611,27 @@ export function ReadingSpeedTestClient({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
-              Tekrar Ölç
-            </button>
-            <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
-              Başka Metin Seç
-            </button>
-            <button
-              type="button"
-              className={ACTION_BUTTON_CLASS}
-              style={TOUCH_STYLE}
-              disabled={saveStatus !== "success"}
-              onClick={() => router.push("/sonuc?exerciseType=reading-speed-test")}
-            >
-              Ortak Sonuç Ekranı
-            </button>
-            <div className="flex justify-end">
-              <ExerciseNavigationControls />
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
+                Tekrar Ölç
+              </button>
+              <button type="button" className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={resetToReady} disabled={saveStatus !== "success"}>
+                Başka Metin Seç
+              </button>
+              <button
+                type="button"
+                className={ACTION_BUTTON_CLASS}
+                style={TOUCH_STYLE}
+                disabled={saveStatus !== "success"}
+                onClick={() => router.push("/sonuc?exerciseType=reading-speed-test")}
+              >
+                Ortak Sonuçlarım
+              </button>
+            </div>
+
+            <div className="flex w-full flex-wrap justify-end gap-3">
+              <ExerciseNavigationControls className="w-full sm:w-auto" />
             </div>
           </div>
         </section>
