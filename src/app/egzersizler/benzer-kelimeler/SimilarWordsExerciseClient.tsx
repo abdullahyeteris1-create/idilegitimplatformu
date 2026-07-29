@@ -10,12 +10,14 @@ import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import type { SimilarWordPools, SimilarWordTemplate } from "@/lib/data/similarWordPools";
 import swStyles from "@/components/exercises/similar-words-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
 type DurationSeconds = 60 | 120 | 180 | 240 | 300;
 type BoxCount = 12 | 16 | 20 | 24;
 type TargetDifferentCount = 3 | 4 | 5 | 6 | 7 | 8;
+type SimilarWordsDifficulty = keyof SimilarWordPools;
 type BoxState = "idle" | "correct" | "wrong";
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -66,57 +68,6 @@ function CategoryTag() {
   return <span className={swStyles.categoryTag}>◎ Algı ve Dikkat</span>;
 }
 
-const DIFFERENT_PAIRS: Array<[string, string]> = [
-  ["yanik", "yanki"],
-  ["dari", "dara"],
-  ["kalem", "kelam"],
-  ["kitap", "kitip"],
-  ["masa", "kasa"],
-  ["yazar", "yasar"],
-  ["cicek", "cilek"],
-  ["kadin", "kabin"],
-  ["hedef", "heder"],
-  ["sabir", "sabun"],
-  ["kanal", "kanat"],
-  ["beden", "neden"],
-  ["sakin", "sakim"],
-  ["hasar", "hazar"],
-  ["sicak", "sacak"],
-  ["davet", "devet"],
-  ["serin", "seyrin"],
-  ["dolap", "dolab"],
-  ["sefer", "seder"],
-  ["tasar", "tazar"],
-];
-
-const SAME_WORDS = [
-  "sabah",
-  "kitap",
-  "masa",
-  "kalem",
-  "okul",
-  "sehir",
-  "bahar",
-  "nehir",
-  "orman",
-  "kapi",
-  "duvar",
-  "cati",
-  "deniz",
-  "gunes",
-  "bulut",
-  "zihin",
-  "yolcu",
-  "bahce",
-  "pencere",
-  "sokak",
-  "kopru",
-  "defter",
-  "ceket",
-  "dagit",
-  "doktor",
-];
-
 function randomItem<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)] as T;
 }
@@ -132,30 +83,65 @@ function shuffleArray<T>(items: T[]): T[] {
   return next;
 }
 
-function createRoundBoxes(boxCount: number, targetDifferentCount: number): SimilarWordBox[] {
+function isSimilarWordsDifficulty(value: unknown): value is SimilarWordsDifficulty {
+  return value === "easy" || value === "medium" || value === "hard";
+}
+
+function pickDifferentWord(base: string, variants: string[]): string {
+  const different = variants.filter((item) => item !== base);
+  if (different.length === 0) {
+    return `${base.slice(0, -1)}x`;
+  }
+
+  return randomItem(different);
+}
+
+function getTemplatesForDifficulty(
+  pools: SimilarWordPools,
+  difficulty: SimilarWordsDifficulty,
+): SimilarWordTemplate[] {
+  const selected = pools[difficulty];
+  if (selected.length > 0) {
+    return selected;
+  }
+
+  return pools.easy.length > 0
+    ? pools.easy
+    : pools.medium.length > 0
+      ? pools.medium
+      : pools.hard;
+}
+
+function createRoundBoxes(
+  boxCount: number,
+  targetDifferentCount: number,
+  pools: SimilarWordPools,
+  difficulty: SimilarWordsDifficulty,
+): SimilarWordBox[] {
   const safeDifferentCount = Math.max(1, Math.min(targetDifferentCount, boxCount));
+  const templates = getTemplatesForDifficulty(pools, difficulty);
   const boxes: SimilarWordBox[] = [];
 
   for (let index = 0; index < safeDifferentCount; index += 1) {
-    const pair = randomItem(DIFFERENT_PAIRS);
+    const template = randomItem(templates);
     boxes.push({
       id: `diff-${Date.now()}-${index}-${Math.floor(Math.random() * 100000)}`,
       pair: {
-        leftWord: pair[0],
-        rightWord: pair[1],
-        isDifferent: pair[0] !== pair[1],
+        leftWord: template.base,
+        rightWord: pickDifferentWord(template.base, template.variants),
+        isDifferent: true,
       },
       state: "idle",
     });
   }
 
   for (let index = safeDifferentCount; index < boxCount; index += 1) {
-    const sameWord = randomItem(SAME_WORDS);
+    const template = randomItem(templates);
     boxes.push({
       id: `same-${Date.now()}-${index}-${Math.floor(Math.random() * 100000)}`,
       pair: {
-        leftWord: sameWord,
-        rightWord: sameWord,
+        leftWord: template.base,
+        rightWord: template.base,
         isDifferent: false,
       },
       state: "idle",
@@ -194,9 +180,11 @@ function formatDuration(seconds: number): string {
 
 export function SimilarWordsExerciseClient({
   educationProgramLaunch,
+  similarWordPools,
 }: {
   educationProgramLaunch?: EducationProgramExerciseLaunchProps;
-} = {}) {
+  similarWordPools: SimilarWordPools;
+}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -225,6 +213,10 @@ export function SimilarWordsExerciseClient({
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const assignmentDifficulty = assignmentTask?.settings.difficulty;
+  const activeDifficulty: SimilarWordsDifficulty = isSimilarWordsDifficulty(assignmentDifficulty)
+    ? assignmentDifficulty
+    : "easy";
   const educationProgramTaskId =
     isEducationProgramMode && !isAssignmentMode
       ? educationProgramLaunch?.taskId
@@ -277,10 +269,10 @@ export function SimilarWordsExerciseClient({
   }, [completedRounds, phase, remainingTarget]);
 
   const startNewRound = useCallback(() => {
-    setBoxes(createRoundBoxes(boxCount, targetDifferentCount));
+    setBoxes(createRoundBoxes(boxCount, targetDifferentCount, similarWordPools, activeDifficulty));
     setFoundInCurrentRound(0);
     setTotalShownTargetCount((prev) => prev + targetDifferentCount);
-  }, [boxCount, targetDifferentCount]);
+  }, [activeDifficulty, boxCount, similarWordPools, targetDifferentCount]);
 
   const resetExercise = useCallback(
     (nextPhase: ExercisePhase) => {
@@ -466,7 +458,7 @@ export function SimilarWordsExerciseClient({
     boxCount,
     completedRounds,
     correctCount,
-    durationSeconds,
+    effectiveDurationSeconds,
     net,
     phase,
     remainingSeconds,

@@ -98,6 +98,17 @@ for (const exercise of EXERCISES) {
   test(`${exercise.name}: client bilesenine educationProgramLaunch prop'u undefined fallback'iyle iletilir`, async () => {
     const source = await read(exercise.pagePath);
 
+    if (exercise.slug === "benzer-kelimeler") {
+      assert.match(source, /export const dynamic = "force-dynamic";/);
+      assert.match(source, /import \{ loadSimilarWordPools \} from "@\/lib\/similar-word-pools\/similarWordPoolsRepository";/);
+      assert.match(source, /const similarWordPools = \(await loadSimilarWordPools\(\)\)\.pools;/);
+      assert.match(
+        source,
+        /<SimilarWordsExerciseClient[\s\S]*?educationProgramLaunch=\{educationProgramLaunch \?\? undefined\}[\s\S]*?similarWordPools=\{similarWordPools\}[\s\S]*?\/>/,
+      );
+      return;
+    }
+
     assert.match(
       source,
       new RegExp(

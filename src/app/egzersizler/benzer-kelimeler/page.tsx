@@ -1,8 +1,11 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { loadSimilarWordPools } from "@/lib/similar-word-pools/similarWordPoolsRepository";
 import { SimilarWordsExerciseClient } from "./SimilarWordsExerciseClient";
 
 const EXERCISE_SLUG = "benzer-kelimeler";
 const LAUNCH_QUERY_PARAM = "educationLaunch";
+
+export const dynamic = "force-dynamic";
 
 type SimilarWordsPageProps = {
   searchParams: Promise<{
@@ -16,8 +19,12 @@ export default async function SimilarWordsPage({ searchParams }: SimilarWordsPag
     params[LAUNCH_QUERY_PARAM],
     EXERCISE_SLUG,
   );
+  const similarWordPools = (await loadSimilarWordPools()).pools;
 
   return (
-    <SimilarWordsExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <SimilarWordsExerciseClient
+      educationProgramLaunch={educationProgramLaunch ?? undefined}
+      similarWordPools={similarWordPools}
+    />
   );
 }

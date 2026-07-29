@@ -41,6 +41,18 @@ for (const exercise of EXERCISES) {
       source,
       /import type \{ EducationProgramExerciseLaunchProps \} from "@\/lib\/education-programs\/exerciseLaunchProps"/,
     );
+    if (exercise.functionName === "SimilarWordsExerciseClient") {
+      assert.match(
+        source,
+        /import type \{ SimilarWordPools, SimilarWordTemplate \} from "@\/lib\/data\/similarWordPools"/,
+      );
+      assert.match(
+        source,
+        /export function SimilarWordsExerciseClient\(\{[\s\S]*?educationProgramLaunch,\s*[\s\S]*?similarWordPools,\s*[\s\S]*?\}: \{[\s\S]*?educationProgramLaunch\?: EducationProgramExerciseLaunchProps;[\s\S]*?similarWordPools: SimilarWordPools;[\s\S]*?\}\)/,
+      );
+      return;
+    }
+
     assert.match(
       source,
       new RegExp(
