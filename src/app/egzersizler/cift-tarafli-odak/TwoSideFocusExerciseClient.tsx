@@ -1,18 +1,15 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { TWO_SIDE_FOCUS_WORD_SETS as SIMILAR_WORD_SETS } from "@/lib/two-side-focus/twoSideFocusStaticData";
+import type { TwoSideFocusWordSet as SimilarWordSet } from "@/lib/two-side-focus/twoSideFocusShared";
 import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
 type AnswerType = "same" | "different";
 type WordOffset = "normal" | "up" | "down";
-
-type SimilarWordSet = {
-  base: string;
-  variants: string[];
-};
 
 type WordItem = {
   id: string;
@@ -34,36 +31,7 @@ const SPEED_MAX = 5000;
 const DEFAULT_SPEED = 1500;
 const NET_TARGET = 10;
 
-const SIMILAR_WORD_SETS: SimilarWordSet[] = [
-  { base: "kalem", variants: ["kelam", "kalen", "kalım"] },
-  { base: "kitap", variants: ["katip", "kıtap", "kitapç"] },
-  { base: "masa", variants: ["masal", "musa", "maşa"] },
-  { base: "deniz", variants: ["denir", "beniz", "deniş"] },
-  { base: "çiçek", variants: ["çilek", "çiçem", "çicek"] },
-  { base: "sahil", variants: ["sahip", "sakin", "sahir"] },
-  { base: "orman", variants: ["organ", "ortam", "orhan"] },
-  { base: "güneş", variants: ["güreş", "gümüş", "günel"] },
-  { base: "yıldız", variants: ["yalnız", "yıldır", "yıldızlı"] },
-  { base: "ırmak", variants: ["ırgat", "irmik", "ırmaklı"] },
-  { base: "bahçe", variants: ["bahane", "bahri", "bahçem"] },
-  { base: "defter", variants: ["defne", "defterim", "defterci"] },
-  { base: "renkli", variants: ["renkler", "renki", "renkçe"] },
-  { base: "oyuncu", variants: ["oyunçu", "oyuncak", "oyunlu"] },
-  { base: "sevgi", variants: ["sezgi", "sergi", "sevim"] },
-  { base: "umutlu", variants: ["unuttu", "umuttu", "umutla"] },
-  { base: "zaman", variants: ["saman", "zamanı", "zamans"] },
-  { base: "şehir", variants: ["nehir", "sehir", "şehirli"] },
-  { base: "köprü", variants: ["köpük", "kömür", "köprüm"] },
-  { base: "rüzgar", variants: ["rüzgâr", "rüzgarı", "rüzgarlı"] },
-  { base: "yağmur", variants: ["yamuk", "yağma", "yağmurlu"] },
-  { base: "toprak", variants: ["yaprak", "toplam", "topraklı"] },
-  { base: "dikkat", variants: ["dikat", "dikkât", "dikkatli"] },
-  { base: "odaklı", variants: ["odakla", "ocaklı", "odakçı"] },
-  { base: "hedef", variants: ["heves", "heder", "hedefli"] },
-  { base: "başarı", variants: ["başka", "başari", "başarılı"] },
-  { base: "anlama", variants: ["anlatma", "anlams", "anlayan"] },
-  { base: "okuma", variants: ["okumu", "dokuma", "okuyan"] },
-];
+
 
 function getWordCount(level: ExerciseLevel) {
   if (level === 1) return 2;
@@ -73,7 +41,7 @@ function getWordCount(level: ExerciseLevel) {
   return 5;
 }
 
-function getRandomItem<T>(items: T[]) {
+function getRandomItem<T>(items: readonly T[]) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
