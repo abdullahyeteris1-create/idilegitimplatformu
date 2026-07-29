@@ -614,7 +614,8 @@ function StatisticsCard() {
 function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
   const badgeStates = getStudentXpBadges(xpSnapshot);
   const earnedCount = badgeStates.filter((badge) => badge.isEarned).length;
-  const badgePreview = badgeStates.slice(0, 5);
+  const totalCount = badgeStates.length;
+  const completionPercent = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
 
   return (
     <section className={styles.sideCard}>
@@ -622,11 +623,10 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
         <h2>Rozetlerim</h2>
         <Link href="/ogrenci/rozetlerim">Tümünü Gör</Link>
       </div>
-      <p className={styles.readingEmpty}>
-        {earnedCount} rozet açık · {badgeStates.length - earnedCount} rozet kilitli
-      </p>
+      <p className={styles.readingEmpty}>{earnedCount} rozet açık • {totalCount - earnedCount} rozet kilitli</p>
+
       <div className={styles.badges} role="list" aria-label="Rozetler">
-        {badgePreview.map((badge) => {
+        {badgeStates.map((badge) => {
           const badgeState = badge.isEarned ? "earned" : badge.comingSoon ? "comingSoon" : "locked";
 
           return (
@@ -644,9 +644,25 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
               <small className={styles.badgeTitle} title={badge.title}>
                 {badge.title}
               </small>
+              <span className={styles.badgeStatus} data-badge-state={badgeState}>
+                {badge.isEarned ? "Açık" : "Kilitli"}
+              </span>
             </span>
           );
         })}
+      </div>
+
+      <div className={styles.badgeProgress} aria-label="Toplam ilerleme">
+        <div className={styles.badgeProgressHead}>
+          <span>Toplam İlerleme</span>
+          <strong>
+            {earnedCount} / {totalCount}
+          </strong>
+        </div>
+        <div className={styles.badgeProgressBar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent} aria-label={`Rozet ilerlemesi yüzde ${completionPercent}`}>
+          <span style={{ width: `${completionPercent}%` }} />
+        </div>
+        <p className={styles.badgeProgressText}>%{completionPercent} tamamlandı</p>
       </div>
     </section>
   );

@@ -139,16 +139,36 @@
 .profileText strong,.profileText small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .profileText strong{font-size:13px;line-height:1.2}
 .profileText small{font-size:11px;color:var(--muted);margin-top:3px}
-.badges{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;align-items:stretch}
-.badgeItem{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;width:100%;min-height:104px;padding:12px;border-radius:16px;border:1px solid #27395e;background:#101e3a;color:var(--text)}
-.badgeItem[data-badge-state="earned"]{border-color:#2b7650;background:linear-gradient(145deg,#10291f,#101e3a)}
-.badgeItem[data-badge-state="comingSoon"]{border-color:#84611a;background:linear-gradient(145deg,#2b2210,#101e3a)}
-.badgeItem[data-badge-state="locked"]{border-color:#2a3954;background:linear-gradient(145deg,#101826,#101e3a)}
-.badgeIcon{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:1px solid currentColor;background:rgba(255,255,255,.04);flex:0 0 auto}
-.badgeIcon svg{width:18px;height:18px}
-.badgeTitle{min-width:0;font-size:10px;font-weight:800;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere}
+.badges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch}
+.badgeItem{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;width:100%;min-height:132px;padding:14px;border-radius:16px;border:1px solid #d7deea;background:#f8fafc;color:var(--text);text-align:center;box-shadow:0 8px 18px rgba(15,23,42,.05);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease,opacity .18s ease}
+.badgeItem:hover{transform:translateY(-2px);border-color:#c7d1e3;box-shadow:0 12px 22px rgba(15,23,42,.08)}
+.badgeItem[data-badge-state="earned"]{border-color:#bcdccb;background:#f2fbf7;box-shadow:0 8px 18px rgba(34,197,94,.08)}
+.badgeItem[data-badge-state="earned"]:hover{box-shadow:0 12px 22px rgba(34,197,94,.12)}
+.badgeItem[data-badge-state="comingSoon"]{border-color:#dae1ea;background:#f7f9fb}
+.badgeItem[data-badge-state="locked"]{border-color:#d9e0ea;background:#f6f8fb;opacity:.88}
+.badgeIcon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.72);flex:0 0 auto}
+.badgeItem[data-badge-state="earned"] .badgeIcon{border-color:#8fd7ac;background:#fff;color:#16a34a;box-shadow:0 0 0 4px rgba(34,197,94,.08)}
+.badgeItem[data-badge-state="locked"] .badgeIcon{background:#eef2f7;color:#64748b}
+.badgeItem[data-badge-state="comingSoon"] .badgeIcon{background:#eef2f7;color:#6b7280}
+.badgeIcon svg{width:20px;height:20px}
+.badgeTitle{min-width:0;font-size:11px;font-weight:800;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere;color:#172033}
+.badgeStatus{display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 9px;border-radius:999px;border:1px solid #d7deea;background:#ffffff;font-size:10px;font-weight:800;letter-spacing:.02em;color:#64748b}
+.badgeStatus[data-badge-state="earned"]{border-color:#9ed9b6;background:#eafaf0;color:#15803d}
+.badgeStatus[data-badge-state="locked"]{background:#eef2f7;color:#6b7280}
+.badgeStatus[data-badge-state="comingSoon"]{background:#f1f5f9;color:#64748b}
+.badgeProgress{margin-top:14px;border-top:1px solid #e5eaf2;padding-top:14px;display:grid;gap:8px}
+.badgeProgressHead{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;color:#475569}
+.badgeProgressHead strong{font-size:13px;color:#172033}
+.badgeProgressBar{height:6px;overflow:hidden;border-radius:999px;background:#e7edf5}
+.badgeProgressBar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#22c55e,#16a34a)}
+.badgeProgressText{margin:0;font-size:11px;font-weight:600;color:#64748b}
+
+@media(max-width:1024px){
+  .badges{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 
 @media(max-width:560px){
   .badges{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .badgeItem{min-height:96px;padding:10px}
+  .badgeItem{min-height:124px;padding:12px}
+  .badgeProgressHead{font-size:11px}
 }
