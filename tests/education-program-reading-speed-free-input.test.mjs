@@ -339,7 +339,7 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // (jsonb) semasiz oldugundan hicbir DB degisikligi gerekmedi.
   // Phase 1B ile XP idempotency migration'i eklendigi icin mevcut toplam
   // sayiyi dogru sekilde 20 olarak kontrol ediyoruz.
-  assert.equal(sqlFiles.length, 23);
+  assert.equal(sqlFiles.length, 24);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {

@@ -71,7 +71,7 @@ test("FAZ 3A-2'de yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ay
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 23);
+  assert.equal(sqlFiles.length, 24);
   assert.ok(sqlFiles.includes("20260725190000_start_education_program_task_rpc.sql"));
 
   const migrationSource = await read(
