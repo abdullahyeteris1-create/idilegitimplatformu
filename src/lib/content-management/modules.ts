@@ -39,13 +39,14 @@ export const CONTENT_GROUPS: ContentGroup[] = [
     modules: [
       {
         id: "tachistoscope-settings",
-        title: "Takistoskop Ayarlari",
-        description: "Takistoskop çalışmasında kullanılacak içerik türleri, seviye mantığı ve hız seçeneklerini yönetin.",
-        href: "#",
-        status: "preparing",
+        title: "Takistoskop İçerikleri",
+        description: "Takistoskop çalışmasında kullanılacak tek kelimelik havuzu yönetin.",
+        href: "/ogretmen/icerik-yonetimi/takistoskop",
+        status: "linked",
         icon: "TK",
         tone: "from-rose-500 to-red-600",
         tags: ["Hiz", "Seviye", "Icerik"],
+        actionLabel: "İçerikleri Yönet",
       },
       {
         id: "similar-word-content",

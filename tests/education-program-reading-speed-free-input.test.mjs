@@ -337,9 +337,9 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // duzeltmesinden bu yana migration sayisi degismedi - bu ozellik tamamen
   // TypeScript/React tarafinda, education_program_template_tasks.settings
   // (jsonb) semasiz oldugundan hicbir DB degisikligi gerekmedi.
-  // Phase 1B ile XP idempotency migration'i eklendigi icin mevcut toplam
-  // sayiyi dogru sekilde 20 olarak kontrol ediyoruz.
-  assert.equal(sqlFiles.length, 24);
+  // Phase 1B ve sonraki eklemelerle mevcut toplam sayiyi dogru sekilde 25
+  // olarak kontrol ediyoruz.
+  assert.equal(sqlFiles.length, 25);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {
