@@ -1,8 +1,11 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { loadTachistoscopeWords } from "@/lib/tachistoscope/tachistoscopeRepository";
 import { TachistoscopeExerciseClient } from "@/components/exercises/TachistoscopeExerciseClient";
 
 const EXERCISE_SLUG = "takistoskop";
 const LAUNCH_QUERY_PARAM = "educationLaunch";
+
+export const dynamic = "force-dynamic";
 
 type TakistoskopPageProps = {
   searchParams: Promise<{
@@ -16,8 +19,12 @@ export default async function TakistoskopPage({ searchParams }: TakistoskopPageP
     params[LAUNCH_QUERY_PARAM],
     EXERCISE_SLUG,
   );
+  const tachistoscopeWords = (await loadTachistoscopeWords()).wordsByLevel;
 
   return (
-    <TachistoscopeExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <TachistoscopeExerciseClient
+      educationProgramLaunch={educationProgramLaunch ?? undefined}
+      tachistoscopeWords={tachistoscopeWords}
+    />
   );
 }

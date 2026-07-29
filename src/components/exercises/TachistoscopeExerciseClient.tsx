@@ -4,12 +4,13 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState, type Keyboard
 import { useRouter } from "next/navigation";
 import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExerciseShell";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
-import { getRandomTachistoscopeWord, normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
+import { normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import type { TachistoscopeWords } from "@/lib/tachistoscope/tachistoscopeShared";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
@@ -57,9 +58,50 @@ function normalizeInput(value: string): string {
   return value.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
 }
 
-function generateContent(level: Level, previousWord?: string): string {
+function getWordLength(word: string): number {
+  return Array.from(word.trim()).length;
+}
+
+function getRandomTachistoscopeWordFromPools(
+  level: unknown,
+  previousWord: string | undefined,
+  wordsByLevel: TachistoscopeWords,
+): string {
   const normalizedLevel = normalizeTachistoscopeLevel(level);
-  return getRandomTachistoscopeWord(normalizedLevel, previousWord).toLocaleUpperCase("tr-TR");
+  const words = (wordsByLevel[normalizedLevel] ?? []).filter((word) => {
+    const wordLength = getWordLength(word);
+
+    if (normalizedLevel === 15) {
+      return wordLength >= 15;
+    }
+
+    return wordLength === normalizedLevel;
+  });
+
+  const fallbackWords = wordsByLevel[normalizedLevel] ?? [];
+  const source = words.length > 0 ? words : fallbackWords;
+
+  if (source.length === 0) {
+    return "";
+  }
+
+  if (source.length === 1) {
+    return source[0];
+  }
+
+  let selectedWord = source[Math.floor(Math.random() * source.length)];
+  let tryCount = 0;
+
+  while (selectedWord === previousWord && tryCount < 10) {
+    selectedWord = source[Math.floor(Math.random() * source.length)];
+    tryCount += 1;
+  }
+
+  return selectedWord;
+}
+
+function generateContent(level: Level, previousWord: string | undefined, wordsByLevel: TachistoscopeWords): string {
+  return getRandomTachistoscopeWordFromPools(level, previousWord, wordsByLevel).toLocaleUpperCase("tr-TR");
 }
 
 const STAT_TONE_CLASS = {
@@ -91,9 +133,11 @@ const FEEDBACK_TONE_CLASS = {
 
 export function TachistoscopeExerciseClient({
   educationProgramLaunch,
+  tachistoscopeWords,
 }: {
   educationProgramLaunch?: EducationProgramExerciseLaunchProps;
-} = {}) {
+  tachistoscopeWords: TachistoscopeWords;
+}) {
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -241,7 +285,7 @@ export function TachistoscopeExerciseClient({
     const normalizedLevel = normalizeTachistoscopeLevel(settings.level);
 
     const nextRound: TachistoscopeRound = {
-      expected: generateContent(normalizedLevel, currentRound?.expected),
+      expected: generateContent(normalizedLevel, currentRound?.expected, tachistoscopeWords),
       content: "",
       level: normalizedLevel,
       speedMs: settings.speedMs,

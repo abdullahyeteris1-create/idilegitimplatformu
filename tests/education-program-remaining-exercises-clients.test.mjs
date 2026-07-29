@@ -53,6 +53,18 @@ for (const exercise of EXERCISES) {
       return;
     }
 
+    if (exercise.functionName === "TachistoscopeExerciseClient") {
+      assert.match(
+        source,
+        /import type \{ TachistoscopeWords \} from "@\/lib\/tachistoscope\/tachistoscopeShared"/,
+      );
+      assert.match(
+        source,
+        /export function TachistoscopeExerciseClient\(\{\s*educationProgramLaunch,\s*tachistoscopeWords,\s*\}: \{\s*educationProgramLaunch\?: EducationProgramExerciseLaunchProps;\s*tachistoscopeWords: TachistoscopeWords;\s*\}\)/,
+      );
+      return;
+    }
+
     assert.match(
       source,
       new RegExp(

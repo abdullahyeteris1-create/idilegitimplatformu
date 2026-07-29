@@ -109,6 +109,17 @@ for (const exercise of EXERCISES) {
       return;
     }
 
+    if (exercise.slug === "takistoskop") {
+      assert.match(source, /export const dynamic = "force-dynamic";/);
+      assert.match(source, /import \{ loadTachistoscopeWords \} from "@\/lib\/tachistoscope\/tachistoscopeRepository";/);
+      assert.match(source, /const tachistoscopeWords = \(await loadTachistoscopeWords\(\)\)\.wordsByLevel;/);
+      assert.match(
+        source,
+        /<TachistoscopeExerciseClient[\s\S]*?educationProgramLaunch=\{educationProgramLaunch \?\? undefined\}[\s\S]*?tachistoscopeWords=\{tachistoscopeWords\}[\s\S]*?\/>/,
+      );
+      return;
+    }
+
     assert.match(
       source,
       new RegExp(

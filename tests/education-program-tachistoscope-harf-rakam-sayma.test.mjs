@@ -14,6 +14,7 @@ async function read(relativePath) {
 }
 
 const TACHISTOSCOPE_CLIENT_PATH = "src/components/exercises/TachistoscopeExerciseClient.tsx";
+const TACHISTOSCOPE_PAGE_PATH = "src/app/egzersizler/takistoskop/page.tsx";
 const LETTER_NUMBER_CLIENT_PATH =
   "src/app/egzersizler/harf-rakam-sayma/LetterNumberCountingFocusClient.tsx";
 const RESULTS_ROUTE_PATH = "src/app/api/student/results/route.ts";
@@ -128,6 +129,30 @@ test("TachistoscopeExerciseClient: speedMs/workMode/contentType settings'ten bas
     /isValidLevel\(educationProgramLaunch\?\.initialLevel \?\? null\) \? \(educationProgramLaunch!\.initialLevel as Level\) : 1/,
   );
   assert.match(source, /LEVEL_OPTIONS as number\[\]\)\.includes\(value\)/);
+});
+
+test("Takistoskop page repository'den server-side yukler ve client'a guvenli DTO gonderir", async () => {
+  const source = await read(TACHISTOSCOPE_PAGE_PATH);
+
+  assert.match(source, /export const dynamic = "force-dynamic";/);
+  assert.match(source, /import \{ loadTachistoscopeWords \} from "@\/lib\/tachistoscope\/tachistoscopeRepository";/);
+  assert.match(source, /const tachistoscopeWords = \(await loadTachistoscopeWords\(\)\)\.wordsByLevel;/);
+  assert.match(
+    source,
+    /<TachistoscopeExerciseClient[\s\S]*?educationProgramLaunch=\{educationProgramLaunch \?\? undefined\}[\s\S]*?tachistoscopeWords=\{tachistoscopeWords\}[\s\S]*?\/>/,
+  );
+});
+
+test("TachistoscopeExerciseClient yalniz güvenli word DTO'su kabul eder", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+
+  assert.match(source, /import type \{ TachistoscopeWords \} from "@\/lib\/tachistoscope\/tachistoscopeShared"/);
+  assert.match(
+    source,
+    /tachistoscopeWords: TachistoscopeWords;/,
+  );
+  assert.doesNotMatch(source, /@\/lib\/tachistoscope\/tachistoscopeRepository/);
+  assert.doesNotMatch(source, /TACHISTOSCOPE_WORDS_BY_LEVEL/);
 });
 
 test("TachistoscopeExerciseClient: Egitim Programi modunda speedMs/level/workMode/contentType kilitlenir", async () => {
