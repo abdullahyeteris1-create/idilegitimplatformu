@@ -312,15 +312,13 @@ test("client davranisi korunuyor ve repository client bundle'a girme potansiyeli
     "utf8",
   );
 
-  assert.match(
-    source,
-    /import \{ TWO_SIDE_FOCUS_WORD_SETS as SIMILAR_WORD_SETS \} from "@\/lib\/two-side-focus\/twoSideFocusStaticData";/,
-  );
-  assert.doesNotMatch(source, /const SIMILAR_WORD_SETS: SimilarWordSet\[] = \[/);
+  assert.doesNotMatch(source, /twoSideFocusStaticData/);
   assert.doesNotMatch(source, /loadTwoSideFocusWordSets/);
   assert.doesNotMatch(source, /getSupabaseServiceRoleClient/);
   assert.match(source, /const NET_TARGET = 10;/);
-  assert.match(source, /function createRound\(level: ExerciseLevel\): RoundData \{/);
+  assert.match(source, /type TwoSideFocusStudentWordSet = \{/);
+  assert.match(source, /function createRound\(\s*level: ExerciseLevel,\s*wordSets: readonly TwoSideFocusStudentWordSet\[\],\s*\): RoundData \{/);
+  assert.match(source, /export function TwoSideFocusExerciseClient\(\{\s*initialWordSets = \[\],\s*\}:/);
   assert.match(source, /function getWordCount\(level: ExerciseLevel\)/);
 });
 

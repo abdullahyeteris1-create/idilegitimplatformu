@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
-import { TWO_SIDE_FOCUS_WORD_SETS as SIMILAR_WORD_SETS } from "@/lib/two-side-focus/twoSideFocusStaticData";
-import type { TwoSideFocusWordSet as SimilarWordSet } from "@/lib/two-side-focus/twoSideFocusShared";
 import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
 type AnswerType = "same" | "different";
 type WordOffset = "normal" | "up" | "down";
+type TwoSideFocusStudentWordSet = {
+  base: string;
+  variants: string[];
+};
 
 type WordItem = {
   id: string;
@@ -42,10 +44,14 @@ function getWordCount(level: ExerciseLevel) {
 }
 
 function getRandomItem<T>(items: readonly T[]) {
+  if (items.length === 0) {
+    return null;
+  }
+
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function getDifferentVariant(wordSet: SimilarWordSet) {
+function getDifferentVariant(wordSet: TwoSideFocusStudentWordSet): string | null {
   const variants = wordSet.variants.filter(
     (variant) => variant !== wordSet.base,
   );
@@ -73,9 +79,24 @@ function getOffsetForIndex(level: ExerciseLevel, index: number): WordOffset {
   return "normal";
 }
 
-function createRound(level: ExerciseLevel): RoundData {
+function createEmptyRound(): RoundData {
+  return {
+    words: [],
+    correctAnswer: "same",
+    baseWord: "",
+  };
+}
+
+function createRound(
+  level: ExerciseLevel,
+  wordSets: readonly TwoSideFocusStudentWordSet[],
+): RoundData {
   const wordCount = getWordCount(level);
-  const wordSet = getRandomItem(SIMILAR_WORD_SETS);
+  const wordSet = getRandomItem(wordSets);
+  if (!wordSet) {
+    return createEmptyRound();
+  }
+
   const isSameRound = shouldCreateSameRound();
 
   const words = Array.from({ length: wordCount }, (_, index) => ({
@@ -94,6 +115,9 @@ function createRound(level: ExerciseLevel): RoundData {
 
   const differentIndex = Math.floor(Math.random() * wordCount);
   const differentWord = getDifferentVariant(wordSet);
+  if (!differentWord) {
+    return createEmptyRound();
+  }
 
   words[differentIndex] = {
     ...words[differentIndex],
@@ -126,14 +150,19 @@ function clampSpeed(value: number) {
   return Math.min(SPEED_MAX, Math.max(SPEED_MIN, value));
 }
 
-export function TwoSideFocusExerciseClient() {
+export function TwoSideFocusExerciseClient({
+  initialWordSets = [],
+}: {
+  initialWordSets?: TwoSideFocusStudentWordSet[];
+}) {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
+  const wordSets = initialWordSets;
   const [level, setLevel] = useState<ExerciseLevel>(1);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [isRunning, setIsRunning] = useState(false);
-  const [roundData, setRoundData] = useState<RoundData>(() => createRound(1));
+  const [roundData, setRoundData] = useState<RoundData>(() => createRound(1, wordSets));
 
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
@@ -162,10 +191,9 @@ export function TwoSideFocusExerciseClient() {
     (nextLevel = level) => {
       clearRoundTimeout();
       answerLockedRef.current = false;
-      setRoundData(createRound(nextLevel));
-     
+      setRoundData(createRound(nextLevel, wordSets));
     },
-    [clearRoundTimeout, level],
+    [clearRoundTimeout, level, wordSets],
   );
 
   const resetLevelStats = useCallback(() => {
@@ -187,7 +215,7 @@ export function TwoSideFocusExerciseClient() {
       setIsRunning(false);
       setCorrectCount(0);
       setWrongCount(0);
-      setRoundData(createRound(nextLevel));
+      setRoundData(createRound(nextLevel, wordSets));
       answerLockedRef.current = false;
       setFeedback({
         type,
@@ -196,7 +224,7 @@ export function TwoSideFocusExerciseClient() {
           `${nextLevel}. seviye hazır. Başlat'a bas. Aynıysa Sol, farklıysa Sağ.`,
       });
     },
-    [clearRoundTimeout],
+    [clearRoundTimeout, wordSets],
   );
 
   const advanceLevel = useCallback(() => {
@@ -207,7 +235,7 @@ export function TwoSideFocusExerciseClient() {
     // aynı seviyede devam etsin.
     setCorrectCount(0);
     setWrongCount(0);
-    setRoundData(createRound(level));
+    setRoundData(createRound(level, wordSets));
     answerLockedRef.current = false;
     setIsRunning(true);
     setFeedback({
@@ -222,7 +250,7 @@ export function TwoSideFocusExerciseClient() {
   setLevel(nextLevel);
   setCorrectCount(0);
   setWrongCount(0);
-  setRoundData(createRound(nextLevel));
+  setRoundData(createRound(nextLevel, wordSets));
   answerLockedRef.current = false;
 
   // ÖNEMLİ:
@@ -233,7 +261,7 @@ export function TwoSideFocusExerciseClient() {
     type: "success",
     message: `${nextLevel}. seviyeye otomatik geçildi. Devam et!`,
   });
-}, [clearRoundTimeout, level]);
+}, [clearRoundTimeout, level, wordSets]);
 
   const handleAnswer = useCallback(
     (answer: AnswerType) => {
@@ -388,7 +416,7 @@ export function TwoSideFocusExerciseClient() {
   const handleReset = () => {
     setIsRunning(false);
     resetLevelStats();
-    setRoundData(createRound(level));
+    setRoundData(createRound(level, wordSets));
     setFeedback({
       type: "info",
       message: "Çalışma sıfırlandı. Başlat'a basarak yeniden başla.",
