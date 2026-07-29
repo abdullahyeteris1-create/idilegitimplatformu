@@ -49,13 +49,14 @@ export const CONTENT_GROUPS: ContentGroup[] = [
       },
       {
         id: "similar-word-content",
-        title: "Benzer Kelimeler Icerikleri",
+        title: "Benzer Kelimeler İçerikleri",
         description: "Benzer Kelimeler çalışmasında kullanılacak aynı/farklı kelime çiftlerini yönetin.",
-        href: "#",
-        status: "coming-soon",
+        href: "/ogretmen/icerik-yonetimi/benzer-kelimeler",
+        status: "linked",
         icon: "BK",
         tone: "from-pink-500 to-red-600",
-        tags: ["Kelime", "Cift", "Dikkat"],
+        tags: ["Kelime", "Çift", "Dikkat"],
+        actionLabel: "İçerikleri Yönet",
       },
       {
         id: "two-side-focus-content",

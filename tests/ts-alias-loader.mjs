@@ -17,5 +17,18 @@ export async function resolve(specifier, context, nextResolve) {
     const rewritten = HAS_EXTENSION.test(withoutAlias) ? withoutAlias : `${withoutAlias}.ts`;
     return nextResolve(new URL(rewritten, SRC_ROOT).href, context);
   }
+
+  if ((specifier.startsWith("./") || specifier.startsWith("../")) && !HAS_EXTENSION.test(specifier)) {
+    try {
+      return await nextResolve(`${specifier}.ts`, context);
+    } catch {
+      try {
+        return await nextResolve(`${specifier}.tsx`, context);
+      } catch {
+        // Fall through to Node's default resolver so non-TS relatives still work.
+      }
+    }
+  }
+
   return nextResolve(specifier, context);
 }
