@@ -32,6 +32,7 @@ const TASK_VISUAL_BY_SLUG: Record<string, StudentProgramTaskVisual> = {
   "benzer-kelimeler": { icon: "type", tone: "orange" },
   "ayni-olani-yakala": { icon: "target", tone: "cyan" },
   "harf-rakam-sayma": { icon: "target", tone: "cyan" },
+  "cift-tarafli-odak": { icon: "activity", tone: "purple" },
 };
 
 export function getStudentProgramTaskVisual(

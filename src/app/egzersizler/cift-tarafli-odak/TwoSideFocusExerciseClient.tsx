@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
@@ -151,18 +153,28 @@ function clampSpeed(value: number) {
 }
 
 export function TwoSideFocusExerciseClient({
+  educationProgramLaunch,
   initialWordSets = [],
 }: {
+  educationProgramLaunch?: EducationProgramExerciseLaunchProps;
   initialWordSets?: TwoSideFocusStudentWordSet[];
 }) {
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const wordSets = initialWordSets;
-  const [level, setLevel] = useState<ExerciseLevel>(1);
+
+  const educationProgramTaskId = educationProgramLaunch?.taskId;
+  useEducationProgramTaskCompletion(
+    educationProgramTaskId,
+    "two-side-focus",
+  );
+
+  const initialLevel = (educationProgramLaunch?.initialLevel ?? 1) as ExerciseLevel;
+  const [level, setLevel] = useState<ExerciseLevel>(initialLevel);
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [isRunning, setIsRunning] = useState(false);
-  const [roundData, setRoundData] = useState<RoundData>(() => createRound(1, wordSets));
+  const [roundData, setRoundData] = useState<RoundData>(() => createRound(initialLevel, wordSets));
 
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);

@@ -8,6 +8,8 @@ async function read(relativePath) {
 
 const FIX_MIGRATION_PATH =
   "supabase/migrations/20260728020000_sync_assign_education_program_template_exercise_whitelist.sql";
+const NEWEST_MIGRATION_PATH =
+  "supabase/migrations/20260729220000_add_cift_tarafli_odak_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";
@@ -45,14 +47,19 @@ test("duzeltme migration'i mevcut ve assign_education_program_template_v1'i crea
 test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whitelist'inde bulunur", async () => {
   const catalogSource = await read(EXERCISE_CATALOG_PATH);
   const fixSource = await read(FIX_MIGRATION_PATH);
+  const newestSource = await read(NEWEST_MIGRATION_PATH);
 
   const catalogSlugs = extractCatalogSlugs(catalogSource);
   assert.ok(catalogSlugs.length >= 14, "katalogda en az 14 egzersiz beklenir");
 
-  const whitelistSlugs = extractWhitelistSlugs(fixSource);
+  // Eski ve yeni migration'lari birlikte kontrol et
+  const fixWhitelistSlugs = extractWhitelistSlugs(fixSource);
+  const newestWhitelistSlugs = extractWhitelistSlugs(newestSource);
+  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs]);
+
   for (const slug of catalogSlugs) {
     assert.ok(
-      whitelistSlugs.includes(slug),
+      allWhitelistSlugs.has(slug),
       `'${slug}' exerciseCatalog.ts'te var ama assign RPC whitelist'inde eksik - regresyon!`,
     );
   }

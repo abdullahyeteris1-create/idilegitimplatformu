@@ -318,7 +318,8 @@ test("client davranisi korunuyor ve repository client bundle'a girme potansiyeli
   assert.match(source, /const NET_TARGET = 10;/);
   assert.match(source, /type TwoSideFocusStudentWordSet = \{/);
   assert.match(source, /function createRound\(\s*level: ExerciseLevel,\s*wordSets: readonly TwoSideFocusStudentWordSet\[\],\s*\): RoundData \{/);
-  assert.match(source, /export function TwoSideFocusExerciseClient\(\{\s*initialWordSets = \[\],\s*\}:/);
+  assert.match(source, /export function TwoSideFocusExerciseClient\(\{\s*educationProgramLaunch,\s*initialWordSets = \[\],/);
+  assert.match(source, /educationProgramLaunch\?: EducationProgramExerciseLaunchProps;/);
   assert.match(source, /function getWordCount\(level: ExerciseLevel\)/);
 });
 

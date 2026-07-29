@@ -15,18 +15,32 @@ test("Çift Taraflı Odak öğrenci route'u repository-backed ve force-dynamic �
     pageSource,
     /import \{ loadTwoSideFocusWordSets \} from "@\/lib\/two-side-focus\/twoSideFocusRepository";/,
   );
+  assert.match(
+    pageSource,
+    /import \{ resolveEducationProgramExerciseLaunch \} from "@\/lib\/education-programs\/exerciseLaunchValidation";/,
+  );
   assert.match(pageSource, /const \{ wordSets \} = await loadTwoSideFocusWordSets\(\);/);
-  assert.match(pageSource, /<TwoSideFocusExerciseClient initialWordSets=\{wordSets\} \/>/);
+  assert.match(pageSource, /const educationProgramLaunch = await resolveEducationProgramExerciseLaunch\(/);
+  assert.match(pageSource, /educationProgramLaunch=\{educationProgramLaunch \?\? undefined\}/);
+  assert.match(pageSource, /initialWordSets=\{wordSets\}/);
   assert.doesNotMatch(pageSource, /twoSideFocusStaticData/);
 
   assert.doesNotMatch(clientSource, /twoSideFocusRepository/);
   assert.doesNotMatch(clientSource, /twoSideFocusStaticData/);
   assert.doesNotMatch(clientSource, /getSupabaseServiceRoleClient/);
   assert.match(clientSource, /type TwoSideFocusStudentWordSet = \{/);
+  assert.match(
+    clientSource,
+    /export function TwoSideFocusExerciseClient\(\{\s*educationProgramLaunch,\s*initialWordSets = \[\],/,
+  );
+  assert.match(
+    clientSource,
+    /educationProgramLaunch\?: EducationProgramExerciseLaunchProps;/,
+  );
   assert.match(clientSource, /initialWordSets\?: TwoSideFocusStudentWordSet\[\];/);
   assert.match(
     clientSource,
     /function createRound\(\s*level: ExerciseLevel,\s*wordSets: readonly TwoSideFocusStudentWordSet\[\],\s*\): RoundData \{/,
   );
-  assert.match(clientSource, /createRound\(1, wordSets\)/);
+  assert.match(clientSource, /createRound\(initialLevel, wordSets\)/);
 });
