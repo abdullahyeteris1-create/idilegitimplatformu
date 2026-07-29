@@ -354,8 +354,71 @@ function LevelCard({
   );
 }
 
-function Header({ onToggleTheme, light, panel, onTogglePanel, studentName, classLabel }: { onToggleTheme: () => void; light: boolean; panel: DemoPanel; onTogglePanel: (panel: Exclude<DemoPanel, null>) => void; studentName: string; classLabel: string }) {
-  return <header className={styles.header}><div><h1>??renci Paneli <span>??</span></h1><p>Okuma yolculu?unda bug?n yeni bir seviyeye ??k!</p></div><div className={styles.headerActions}><button type="button" className={styles.themeButton} onClick={onToggleTheme} aria-label={`${light ? "Koyu" : "A??k"} temaya ge?`}><small>Tema</small><Icon name={light ? "moon" : "sparkles"}/></button><button type="button" className={styles.iconButton} aria-label="Bildirimleri a?" aria-expanded={panel === "notifications"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("notifications")}><Icon name="bell"/><span>3</span></button><button type="button" className={styles.profile} aria-label="Profil men?s?n? a?" aria-expanded={panel === "profile"} aria-controls="preview-demo-panel" onClick={() => onTogglePanel("profile")}><span>?????</span><div><strong>{studentName}</strong><small>{classLabel}</small></div><Icon name="arrow"/></button></div></header>;
+function Header({
+  onToggleTheme,
+  light,
+  panel,
+  onTogglePanel,
+  studentName,
+  classLabel,
+}: {
+  onToggleTheme: () => void;
+  light: boolean;
+  panel: DemoPanel;
+  onTogglePanel: (panel: Exclude<DemoPanel, null>) => void;
+  studentName: string;
+  classLabel: string;
+}) {
+  return (
+    <header className={styles.header}>
+      <div className={styles.headerCopy}>
+        <h1>
+          Öğrenci Paneli <span aria-hidden="true">👋</span>
+        </h1>
+        <p>Okuma yolculuğunda bugün yeni bir seviyeye çık!</p>
+      </div>
+      <div className={styles.headerActions}>
+        <button
+          type="button"
+          className={styles.themeButton}
+          onClick={onToggleTheme}
+          aria-label={`${light ? "Koyu" : "Açık"} temaya geç`}
+        >
+          <small>Tema</small>
+          <Icon name={light ? "moon" : "sparkles"} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="Bildirimleri aç"
+          aria-expanded={panel === "notifications"}
+          aria-controls="preview-demo-panel"
+          onClick={() => onTogglePanel("notifications")}
+        >
+          <Icon name="bell" />
+          <span>3</span>
+        </button>
+        <button
+          type="button"
+          className={styles.profile}
+          aria-label="Profil menüsünü aç"
+          aria-expanded={panel === "profile"}
+          aria-controls="preview-demo-panel"
+          onClick={() => onTogglePanel("profile")}
+          title={studentName}
+        >
+          <span className={styles.profileAvatar} aria-hidden="true">
+            👤
+          </span>
+          <div className={styles.profileText}>
+            <strong title={studentName}>{studentName}</strong>
+            <small>{classLabel}</small>
+          </div>
+          <Icon name="arrow" />
+        </button>
+      </div>
+    </header>
+  );
 }
 
 function SpaceScene() {
@@ -553,7 +616,40 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
   const earnedCount = badgeStates.filter((badge) => badge.isEarned).length;
   const badgePreview = badgeStates.slice(0, 5);
 
-  return <section className={styles.sideCard}><div className={styles.cardTitle}><h2>Rozetlerim</h2><Link href="/ogrenci/rozetlerim">Tümünü Gör</Link></div><p className={styles.readingEmpty}>{earnedCount} rozet açık · {badgeStates.length - earnedCount} rozet kilitli</p><div className={styles.badges}>{badgePreview.map((badge) => <span key={badge.id} title={badge.description} aria-label={`${badge.title} ${badge.isEarned ? "açık" : badge.comingSoon ? "yakında" : "kilitli"}`}><Icon name={badge.icon} /><small>{badge.title}</small></span>)}</div></section>;
+  return (
+    <section className={styles.sideCard}>
+      <div className={styles.cardTitle}>
+        <h2>Rozetlerim</h2>
+        <Link href="/ogrenci/rozetlerim">Tümünü Gör</Link>
+      </div>
+      <p className={styles.readingEmpty}>
+        {earnedCount} rozet açık · {badgeStates.length - earnedCount} rozet kilitli
+      </p>
+      <div className={styles.badges} role="list" aria-label="Rozetler">
+        {badgePreview.map((badge) => {
+          const badgeState = badge.isEarned ? "earned" : badge.comingSoon ? "comingSoon" : "locked";
+
+          return (
+            <span
+              key={badge.id}
+              role="listitem"
+              className={styles.badgeItem}
+              data-badge-state={badgeState}
+              title={`${badge.title} - ${badge.description}`}
+              aria-label={`${badge.title} ${badge.isEarned ? "açık" : badge.comingSoon ? "yakında" : "kilitli"}`}
+            >
+              <span className={styles.badgeIcon} aria-hidden="true">
+                <Icon name={badge.icon} />
+              </span>
+              <small className={styles.badgeTitle} title={badge.title}>
+                {badge.title}
+              </small>
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 const mobileItems: NavItem[] = [

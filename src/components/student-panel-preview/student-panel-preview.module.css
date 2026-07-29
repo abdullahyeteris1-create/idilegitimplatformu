@@ -129,3 +129,26 @@
 .light .todaysProgramStatus[data-status="in_progress"]{border-color:#f59e0b;background:#fef3c7;color:#92400e}
 .light .todaysProgramMessage[data-tone="success"]{border-color:#22c55e;background:#dcfce7;color:#15803d}
 @media(max-width:560px){.todaysProgramSection{padding:14px}.todaysProgramHead{align-items:flex-start}.todaysProgramItem{padding:11px 12px}.todaysProgramItemFoot{flex-direction:column;align-items:stretch}.todaysProgramItemAction{width:100%}}
+
+.header{flex-wrap:wrap;align-items:flex-start}
+.headerCopy{min-width:0;flex:1 1 320px}
+.headerActions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+.profile{max-width:min(100%,320px);min-width:0}
+.profileAvatar{flex:0 0 auto;font-size:28px;line-height:1}
+.profileText{min-width:0;display:flex;flex-direction:column;text-align:left}
+.profileText strong,.profileText small{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profileText strong{font-size:13px;line-height:1.2}
+.profileText small{font-size:11px;color:var(--muted);margin-top:3px}
+.badges{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;align-items:stretch}
+.badgeItem{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;width:100%;min-height:104px;padding:12px;border-radius:16px;border:1px solid #27395e;background:#101e3a;color:var(--text)}
+.badgeItem[data-badge-state="earned"]{border-color:#2b7650;background:linear-gradient(145deg,#10291f,#101e3a)}
+.badgeItem[data-badge-state="comingSoon"]{border-color:#84611a;background:linear-gradient(145deg,#2b2210,#101e3a)}
+.badgeItem[data-badge-state="locked"]{border-color:#2a3954;background:linear-gradient(145deg,#101826,#101e3a)}
+.badgeIcon{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:1px solid currentColor;background:rgba(255,255,255,.04);flex:0 0 auto}
+.badgeIcon svg{width:18px;height:18px}
+.badgeTitle{min-width:0;font-size:10px;font-weight:800;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow-wrap:anywhere}
+
+@media(max-width:560px){
+  .badges{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .badgeItem{min-height:96px;padding:10px}
+}
