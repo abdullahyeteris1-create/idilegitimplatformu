@@ -7,13 +7,14 @@ import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/hangman-theme.module.css";
+import { HANGMAN_WORDS } from "@/lib/exercises/word-games/hangmanWords";
+import { normalizeTurkishText, TURKISH_ALPHABET } from "@/lib/exercises/word-games/turkishAlphabet";
 
-const WORDS = ["KODLAMA", "BILGISAYAR", "OKUL", "KALEM", "KITAP", "OYUN", "DERS", "SINIF"];
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const LETTERS = [...TURKISH_ALPHABET];
 const MAX_WRONG_GUESSES = 6;
 
 function pickWord(): string {
-  return WORDS[Math.floor(Math.random() * WORDS.length)];
+  return HANGMAN_WORDS[Math.floor(Math.random() * HANGMAN_WORDS.length)];
 }
 
 export function HangmanExerciseClient() {
@@ -81,12 +82,14 @@ export function HangmanExerciseClient() {
   }
 
   const guessLetter = (letter: string) => {
-    if (isFinished || guesses.includes(letter)) {
+    const normalizedLetter = normalizeTurkishText(letter);
+
+    if (isFinished || guesses.includes(normalizedLetter)) {
       return;
     }
 
     setGuesses((current) => {
-      const next = [...current, letter];
+      const next = [...current, normalizedLetter];
       const nextWrong = next.filter((item) => !word.includes(item));
       const nextWon = word.split("").every((char) => next.includes(char));
       const nextLost = nextWrong.length >= MAX_WRONG_GUESSES;

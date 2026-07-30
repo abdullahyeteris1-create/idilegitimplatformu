@@ -7,43 +7,12 @@ import { getCurrentStudent } from "@/lib/auth/auth";
 import { saveExerciseResult } from "@/lib/results/resultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/word-guess-theme.module.css";
+import { normalizeTurkishText, TURKISH_ALPHABET } from "@/lib/exercises/word-games/turkishAlphabet";
+import { WORD_GUESS_WORDS_BY_LENGTH } from "@/lib/exercises/word-games/wordGuessWords";
 
 const MAX_ATTEMPTS = 6;
 
-const WORDS_BY_LENGTH: Record<number, string[]> = {
-  4: ["OKUL", "KAPI", "MASA", "KEDI", "DERS", "YAZI", "KIRA", "SARI", "MAVI", "KART", "OYUN", "KASA"],
-  5: [
-    "KITAP",
-    "KALEM",
-    "OKULU",
-    "DENIZ",
-    "BULUT",
-    "CICEK",
-    "ARABA",
-    "MASAL",
-    "SINIF",
-    "HAYAL",
-    "YAZAR",
-    "KURAL",
-    "CEVAP",
-    "DERSI",
-    "OYUNC",
-    "RENKI",
-    "KUSAK",
-    "KAPAK",
-    "KURAK",
-    "BAHAR",
-    "SEHIR",
-    "YOLCU",
-    "KAVAK",
-    "SABAH",
-    "KIRAZ",
-  ],
-  6: ["KALICI", "KITABI", "OKUMAK", "YAZMAK", "BILMEK", "KOSMAK", "DOSTUM", "BAHARI", "GUNLER", "SINIFI", "BILGIN", "CEVABI"],
-  7: ["OKUYUCU", "KITAPCI", "BASARIM", "CALISMA", "DERSLER", "KELIMEM", "YAZILAR", "ANLAMAK", "OGRENME", "BILGILI"],
-  8: ["OKUMALAR", "KELIMELER", "BASARILI", "CALISMAM", "DERSIMIZ", "YAZILARI", "ANLAMALI", "OGRENMEK", "SORULARI", "CEVAPLAR"],
-  9: ["OKUYANLAR", "CALISMALI", "BASARILAR", "KELIMECIK", "DERSLERIM", "ANLAMALAR", "SORULARIM", "CEVAPLAMA", "KITAPLARI", "OKUMAKTAN"],
-};
+const WORDS_BY_LENGTH = WORD_GUESS_WORDS_BY_LENGTH;
 
 const WORD_LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9];
 
@@ -56,9 +25,8 @@ function pickWord(length: number) {
 }
 
 function normalizeInput(value: string, wordLength: number) {
-  return value
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "")
+  return normalizeTurkishText(value)
+    .replace(/[^ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ]/gu, "")
     .slice(0, wordLength);
 }
 
@@ -141,7 +109,7 @@ export function WordGuessExerciseClient() {
     isLight ? styles.lightTheme : styles.darkTheme,
   ].join(" ");
   const [wordLength, setWordLength] = useState(5);
-  const [answer, setAnswer] = useState(() => pickWord(5));
+  const [answer, setAnswer] = useState(() => normalizeTurkishText(pickWord(5)));
   const [currentGuess, setCurrentGuess] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [message, setMessage] = useState("5 harfli kelimeyi tahmin et.");
@@ -202,7 +170,7 @@ export function WordGuessExerciseClient() {
   function resetGame(nextLength = wordLength) {
     hasSavedResultRef.current = false;
     setWordLength(nextLength);
-    setAnswer(pickWord(nextLength));
+    setAnswer(normalizeTurkishText(pickWord(nextLength)));
     setCurrentGuess("");
     setGuesses([]);
     setMessage(`${nextLength} harfli kelimeyi tahmin et.`);
@@ -291,7 +259,11 @@ export function WordGuessExerciseClient() {
     saveResult("lost", finalGuesses, "manual");
   }
 
-  const keyboardRows = ["QWERTYUIOP".split(""), "ASDFGHJKL".split(""), "ZXCVBNM".split("")];
+  const keyboardRows = [
+    TURKISH_ALPHABET.slice(0, 10),
+    TURKISH_ALPHABET.slice(10, 20),
+    TURKISH_ALPHABET.slice(20),
+  ];
 
   return (
     <div className={themeRootClassName}>
@@ -332,12 +304,12 @@ export function WordGuessExerciseClient() {
           {/* Klavye */}
           <div className="mt-1 flex flex-col items-center gap-1 md:mt-2 md:gap-1.5">
             {keyboardRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex justify-center gap-[2px] md:gap-1">
+              <div key={rowIndex} className="grid w-full grid-cols-7 gap-1.5 sm:grid-cols-10">
                 {rowIndex === 2 ? (
                   <button
                     type="button"
                     onClick={deleteLetter}
-                    className={`flex items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keyActionButton}`}
+                    className={`flex min-h-11 items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keyActionButton}`}
                   >
                     Sil
                   </button>
@@ -348,7 +320,7 @@ export function WordGuessExerciseClient() {
                     key={letter}
                     type="button"
                     onClick={() => handleKeyboardClick(letter)}
-                    className={`flex aspect-square w-[6.5vw] max-w-[32px] items-center justify-center rounded-lg border text-[9px] font-bold transition md:w-[7.5vw] md:max-w-[38px] md:text-xs lg:w-[8vw] lg:max-w-[42px] lg:text-sm ${keyClass(
+                    className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border text-[9px] font-bold transition md:text-xs lg:text-sm ${keyClass(
                       keyboardStates[letter]
                     )}`}
                   >
@@ -361,7 +333,7 @@ export function WordGuessExerciseClient() {
                     type="button"
                     onClick={submitGuess}
                     disabled={status !== "playing"}
-                    className={`flex items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keySubmitButton}`}
+                    className={`flex min-h-11 items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keySubmitButton}`}
                   >
                     Gir
                   </button>
