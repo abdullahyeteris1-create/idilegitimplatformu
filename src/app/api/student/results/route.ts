@@ -149,6 +149,8 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     showFocusPoint: { type: "boolean" },
     showCorners: { type: "boolean" },
     shapesDisplayed: { type: "integer", min: 0, max: 100_000 },
+    completedCycles: { type: "integer", min: 0, max: 100_000 },
+    averageJumpDurationMs: { type: "integer", min: 50, max: 5_000 },
     reason: { type: "string", values: ["natural", "manual"] },
   },
   "color-match": {},
