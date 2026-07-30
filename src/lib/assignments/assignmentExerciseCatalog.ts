@@ -189,6 +189,23 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     },
   },
   {
+    exerciseSlug: "buyuyen-sekiller-altigen",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: false,
+    supportsSpeed: true,
+    settingsSchema: {
+      speedMode: { kind: "enum", values: ["fixed", "variable"] },
+      jumpDurationMs: { kind: "enum", values: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] },
+      jumpEndDurationMs: { kind: "enum", values: [50, 100, 150, 200, 250, 300] },
+      clearMode: { kind: "enum", values: ["without-clearing", "with-clearing"] },
+      showMetronome: { kind: "boolean" },
+      showFocusPoint: { kind: "boolean" },
+      showCorners: { kind: "boolean" },
+    },
+    defaultSettings: { speedMode: "fixed", jumpDurationMs: 500, jumpEndDurationMs: 100, clearMode: "without-clearing", showMetronome: false, showFocusPoint: true, showCorners: false },
+  },
+  {
     exerciseSlug: "takistoskop",
     assignmentEligible: true,
     integrationStatus: "ready",

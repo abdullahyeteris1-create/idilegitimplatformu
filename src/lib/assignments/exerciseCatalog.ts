@@ -134,6 +134,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["durationMinutes", "speed", "emoji", "emojiMode", "movementPattern", "soundEnabled"],
   },
   {
+    slug: "buyuyen-sekiller-altigen",
+    title: "Büyüyen Şekiller",
+    route: "/egzersizler/buyuyen-sekiller-altigen",
+    resultExerciseType: "growing-shapes-hexagon",
+    category: "eye",
+    assignmentEnabled: true,
+    supportedSettings: ["durationMinutes", "speedMode", "jumpDurationMs", "jumpEndDurationMs", "clearMode", "showMetronome", "showFocusPoint", "showCorners"],
+  },
+  {
     slug: "goz-calismasi",
     title: "Göz Çalışması",
     route: "/egzersizler/goz-calismasi",

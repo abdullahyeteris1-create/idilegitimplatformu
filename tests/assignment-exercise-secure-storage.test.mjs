@@ -21,6 +21,7 @@ const READY_EXERCISE_COMPONENTS = {
   "goz-egzersizleri-kolonlar": "../src/app/egzersizler/goz-egzersizleri-kolonlar/ColumnEyeExerciseClient.tsx",
   "goz-kaslari": "../src/app/egzersizler/goz-kaslari/EyeMuscleExerciseClient.tsx",
   "13-nokta-emoji-takip": "../src/app/egzersizler/13-nokta-emoji-takip/ThirteenPointEmojiTrackingClient.tsx",
+  "buyuyen-sekiller-altigen": "../src/app/egzersizler/buyuyen-sekiller-altigen/GrowingShapesHexagonExerciseClient.tsx",
   "harf-rakam-sayma": "../src/app/egzersizler/harf-rakam-sayma/LetterNumberCountingFocusClient.tsx",
   "hafiza-gelistirme": "../src/app/egzersizler/hafiza-gelistirme/MemoryGameExerciseClient.tsx",
   "kart-eslestirme": "../src/app/egzersizler/kart-eslestirme/CardMatchingExerciseClient.tsx",

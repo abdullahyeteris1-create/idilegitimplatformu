@@ -139,6 +139,18 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     movementPattern: { type: "string", values: ["sequential", "reverse", "random", "center-out", "outer-center"] },
     soundEnabled: { type: "boolean" },
   },
+  "growing-shapes-hexagon": {
+    durationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    speedMode: { type: "string", values: ["fixed", "variable"] },
+    jumpDurationMs: { type: "integer", min: 100, max: 1000 },
+    jumpEndDurationMs: { type: "integer", min: 50, max: 300 },
+    clearMode: { type: "string", values: ["without-clearing", "with-clearing"] },
+    showMetronome: { type: "boolean" },
+    showFocusPoint: { type: "boolean" },
+    showCorners: { type: "boolean" },
+    shapesDisplayed: { type: "integer", min: 0, max: 100_000 },
+    reason: { type: "string", values: ["natural", "manual"] },
+  },
   "color-match": {},
   "memory-game": {
     gridRows: { type: "integer", min: 5, max: 10 },

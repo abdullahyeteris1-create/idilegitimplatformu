@@ -42,7 +42,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 };
 
 const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
-  eye: ["goz-beyin", "goz-kaslari", "13-nokta-emoji-takip"],
+  eye: ["goz-beyin", "goz-kaslari", "13-nokta-emoji-takip", "buyuyen-sekiller-altigen"],
   attention: ["takistoskop", "benzer-kelimeler", "kelime-bulma", "goz-egzersizleri-kolonlar", "kare-gorme-alani"],
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
@@ -57,6 +57,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "13-nokta-emoji-takip": { description: "13 sabit konum arasinda hareket eden emoji veya simgeyi gozlerinle takip et.", tags: ["Goz", "Takip"] },
   "goz-beyin": { description: "Simgeleri gözlerinle takip ederek göz-beyin koordinasyonunu geliştir.", tags: ["Takip", "Koordinasyon"] },
   "goz-kaslari": { description: "Noktasal takip çalışmalarıyla göz kaslarını ve odak sürekliliğini destekle.", tags: ["Göz", "Odak"] },
+  "buyuyen-sekiller-altigen": { description: "Büyüyen altıgeni göz hareketleriyle takip ederek görsel odağı destekle.", tags: ["Göz", "Takip"] },
   "goz-calismasi": { description: "Kısa tekrarlarla göz kaslarını ısındıran temel takip çalışması.", tags: ["Göz", "Isınma"] },
   takistoskop: { description: "Kısa süreli kelime gösterimiyle algı hızını geliştir.", tags: ["Algı", "Hız"] },
   "benzer-kelimeler": { description: "Benzer kelimeleri karşılaştır ve aralarındaki farkı hızlı yakala.", tags: ["Ayırt Etme", "Dikkat"] },

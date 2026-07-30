@@ -43,6 +43,7 @@ const EXERCISE_LABELS: Record<string, string> = {
   hangman: "Adam Asmaca",
   "grouping-reading": "Gruplama Çalışması",
   "eye-columns": "Göz Egzersizleri Kolonlar",
+  "growing-shapes-hexagon": "Büyüyen Şekiller",
   "square-vision": "Kare Görme Çalışması",
   "reading-speed-test": "Okuma Hızı Testi",
 };
@@ -72,6 +73,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "color-match": "/egzersizler/renk-uyumu",
   "reading-speed-test": "/egzersizler/okuma-hizi-testi",
   "thirteen-point-emoji-tracking": "/egzersizler/13-nokta-emoji-takip",
+  "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */

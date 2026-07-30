@@ -45,6 +45,7 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "card-matching" ||
     value === "visual-puzzle" ||
     value === "eye-brain" ||
+    value === "growing-shapes-hexagon" ||
     value === "word-guess" ||
     value === "catch-same" ||
     value === "hangman" ||

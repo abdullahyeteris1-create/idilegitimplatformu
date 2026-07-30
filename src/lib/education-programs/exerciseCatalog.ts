@@ -159,6 +159,15 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "buyuyen-sekiller-altigen",
+    title: "Büyüyen Şekiller",
+    resultExerciseType: "growing-shapes-hexagon",
+    supportsLevel: false,
+    defaultDurationSeconds: 60,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "golgeleme",
     title: "Gölgeleme",
     resultExerciseType: "shadow-reading",

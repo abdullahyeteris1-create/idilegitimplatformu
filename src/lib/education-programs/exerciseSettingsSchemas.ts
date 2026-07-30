@@ -394,6 +394,19 @@ const THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const GROWING_SHAPES_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "buyuyen-sekiller-altigen",
+  fields: [
+    { key: "speedMode", label: "Hız Modu", type: "enum", options: ["fixed", "variable"], defaultValue: "fixed" },
+    { key: "jumpDurationMs", label: "Sıçrama Süresi", type: "integer", options: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], defaultValue: 500, unit: "ms" },
+    { key: "jumpEndDurationMs", label: "Bitiş Süresi", type: "integer", options: [50, 100, 150, 200, 250, 300], defaultValue: 100, unit: "ms" },
+    { key: "clearMode", label: "Silme Modu", type: "enum", options: ["without-clearing", "with-clearing"], defaultValue: "without-clearing" },
+    { key: "showMetronome", label: "Metronom", type: "enum", options: ["true", "false"], defaultValue: "false" },
+    { key: "showFocusPoint", label: "Odak Noktası", type: "enum", options: ["true", "false"], defaultValue: "true" },
+    { key: "showCorners", label: "Köşeleri Göster", type: "enum", options: ["true", "false"], defaultValue: "false" },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -410,6 +423,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     GROUPING_READING_SETTINGS_SCHEMA,
     TWO_SIDE_FOCUS_SETTINGS_SCHEMA,
     THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA,
+    GROWING_SHAPES_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

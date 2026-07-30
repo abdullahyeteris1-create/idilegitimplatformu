@@ -108,6 +108,16 @@ export type ThirteenPointEmojiTrackingTaskSettings = {
   soundEnabled?: boolean;
 };
 
+export type GrowingShapesHexagonTaskSettings = {
+  speedMode?: "fixed" | "variable";
+  jumpDurationMs?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
+  jumpEndDurationMs?: 50 | 100 | 150 | 200 | 250 | 300;
+  clearMode?: "without-clearing" | "with-clearing";
+  showMetronome?: boolean;
+  showFocusPoint?: boolean;
+  showCorners?: boolean;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

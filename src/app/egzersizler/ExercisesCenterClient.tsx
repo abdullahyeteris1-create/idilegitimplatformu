@@ -62,6 +62,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Goz", "Takip", "Odak"],
       },
       {
+        title: "Büyüyen Şekiller",
+        description: "Büyüyen altıgeni göz hareketleriyle takip ederek görsel odağı destekle.",
+        href: "/egzersizler/buyuyen-sekiller-altigen",
+        icon: "BS",
+        image: "/exercise-visuals/exercises/eye-muscle.svg",
+        tags: ["Göz", "Takip", "Odak"],
+      },
+      {
         title: "Göz Beyin Çalışması",
         description: "Simgeleri gözlerinle takip ederek göz-beyin koordinasyonunu geliştir.",
         href: "/egzersizler/goz-beyin",

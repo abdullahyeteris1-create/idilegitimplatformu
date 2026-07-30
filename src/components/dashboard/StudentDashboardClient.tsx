@@ -119,6 +119,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "color-match": "/egzersizler/renk-uyumu",
   "reading-speed-test": "/egzersizler/okuma-hizi-testi",
   "thirteen-point-emoji-tracking": "/egzersizler/13-nokta-emoji-takip",
+  "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",
 };
 
 const quickLinks = [

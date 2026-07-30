@@ -39,6 +39,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "color-match": "Renk Uyumu",
   "reading-speed-test": "Okuma Hızı Testi",
   "thirteen-point-emoji-tracking": "13 Nokta Emoji Takip Egzersizi",
+  "growing-shapes-hexagon": "Büyüyen Şekiller",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);

@@ -22,7 +22,8 @@
   | "square-vision"
   | "color-match"
   | "reading-speed-test"
-  | "thirteen-point-emoji-tracking";
+  | "thirteen-point-emoji-tracking"
+  | "growing-shapes-hexagon";
 
 export type ExerciseResult = {
   id: string;

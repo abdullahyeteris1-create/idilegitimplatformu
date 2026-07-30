@@ -229,6 +229,7 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "color-match": { categoryId: "brain-exercises", route: "/egzersizler/renk-uyumu" },
   "reading-speed-test": { categoryId: "assessment", route: "/egzersizler/okuma-hizi-testi" },
   "thirteen-point-emoji-tracking": { categoryId: "eye", route: "/egzersizler/13-nokta-emoji-takip" },
+  "growing-shapes-hexagon": { categoryId: "eye", route: "/egzersizler/buyuyen-sekiller-altigen" },
 };
 
 const OTHER_CATEGORY_ID = "other";
