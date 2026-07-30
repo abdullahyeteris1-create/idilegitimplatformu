@@ -12,7 +12,6 @@ export type Student = {
   id: string;
   name: string;
   username: string;
-  password: string;
   className?: string;
   classLevel?: string;
   educationLevel?: import("@/lib/assignments/educationLevels").EducationLevel;

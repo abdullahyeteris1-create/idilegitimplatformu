@@ -13,6 +13,7 @@ import {
 } from "@/lib/students/studentStorage";
 import { isEducationDateRangeValid } from "@/lib/students/studentAccessDates";
 import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
+import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -68,7 +69,7 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
 
   const [name, setName] = useState(student.name);
   const [username, setUsername] = useState(student.username);
-  const [password, setPassword] = useState(student.password);
+  const [password, setPassword] = useState("");
   const [classLevel, setClassLevel] = useState(student.classLevel ?? "");
   const [parentName, setParentName] = useState(student.parentName ?? "");
   const [parentPhone, setParentPhone] = useState(student.parentPhone ?? "");
@@ -90,8 +91,8 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
 
     setError("");
 
-    if (!name.trim() || !username.trim() || !password.trim()) {
-      setError("Ad soyad, kullanici adi ve sifre zorunludur.");
+    if (!name.trim() || !username.trim()) {
+      setError("Ad soyad ve kullanici adi zorunludur.");
       return;
     }
 
@@ -108,6 +109,14 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
     if (!educationLevel) {
       setError("Egitim duzeyi secimi zorunludur.");
       return;
+    }
+
+    if (password.trim()) {
+      const passwordValidation = validateStudentPassword(password, { username, name });
+      if (!passwordValidation.ok) {
+        setError(passwordValidation.message);
+        return;
+      }
     }
 
     const dateRange = isEducationDateRangeValid(
@@ -131,7 +140,7 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
         body: JSON.stringify({
           name,
           username,
-          password,
+          ...(password.trim() ? { password } : {}),
           classLevel,
           parentName,
           parentPhone,
@@ -203,11 +212,14 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
         </button>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          Sifre (Zorunlu)
+          Yeni Sifre (Opsiyonel)
           <input
+            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+            autoComplete="new-password"
+            placeholder="Bos birakirsaniz parola degismez"
           />
         </label>
 

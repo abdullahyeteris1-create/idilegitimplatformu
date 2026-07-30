@@ -15,6 +15,7 @@ import {
   isEducationDateRangeValid,
 } from "@/lib/students/studentAccessDates";
 import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
+import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -69,6 +70,12 @@ export function NewStudentFormClient() {
 
     if (!name.trim() || !username.trim() || !password.trim()) {
       setError("Ad soyad, kullanici adi ve sifre zorunludur.");
+      return;
+    }
+
+    const passwordValidation = validateStudentPassword(password, { username, name });
+    if (!passwordValidation.ok) {
+      setError(passwordValidation.message);
       return;
     }
 
@@ -267,10 +274,12 @@ export function NewStudentFormClient() {
         <label className="flex flex-col gap-2 text-sm font-semibold">
           Sifre (Zorunlu)
           <input
+            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
             placeholder="Sifre"
+            autoComplete="new-password"
           />
         </label>
 

@@ -3,12 +3,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { isEducationLevel } from "@/lib/assignments/educationLevels";
 import { isAdminSessionValid } from "@/lib/auth/adminSession";
+import { hashStudentPassword } from "@/lib/auth/studentPassword";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   isEducationDateRangeValid,
   isValidDateOnlyString,
 } from "@/lib/students/studentAccessDates";
 import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
+import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
 
 export const runtime = "nodejs";
 
@@ -206,7 +208,7 @@ export async function PATCH(
     return errorResponse(dateRange.message, 400);
   }
 
-  for (const requiredField of ["name", "username", "password"] as const) {
+  for (const requiredField of ["name", "username"] as const) {
     if (Object.hasOwn(body, requiredField) && !optionalString(body[requiredField])) {
       return errorResponse("Ad soyad, kullanıcı adı ve şifre boş bırakılamaz.", 400);
     }
@@ -277,10 +279,26 @@ export async function PATCH(
     }
   }
 
+  const hasPassword = Object.hasOwn(body, "password");
+  const rawPassword = hasPassword && typeof body.password === "string" ? body.password : "";
+  const passwordValidation = rawPassword.trim()
+    ? validateStudentPassword(rawPassword, {
+        username: nextUsername ?? existing.username,
+        name: optionalString(body.name) ?? existing.name,
+      })
+    : null;
+  if (passwordValidation && !passwordValidation.ok) {
+    return errorResponse(passwordValidation.message, 400);
+  }
+
   const payload: Record<string, unknown> = {};
   if (Object.hasOwn(body, "name")) payload.name = optionalString(body.name);
   if (Object.hasOwn(body, "username")) payload.username = nextUsername;
-  if (Object.hasOwn(body, "password")) payload.password = optionalString(body.password);
+  if (passwordValidation?.ok) {
+    payload.password_hash = await hashStudentPassword(passwordValidation.value);
+    payload.password_hash_version = 1;
+    payload.password_changed_at = new Date().toISOString();
+  }
   if (Object.hasOwn(body, "classLevel")) payload.class_name = optionalString(body.classLevel);
   if (Object.hasOwn(body, "parentName")) payload.parent_name = optionalString(body.parentName);
   if (Object.hasOwn(body, "parentPhone")) payload.phone = optionalString(body.parentPhone);

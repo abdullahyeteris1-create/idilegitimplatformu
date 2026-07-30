@@ -257,8 +257,16 @@ export function StudentDetailClient() {
     if (!student || !parentEmail || isSendingWelcomeEmail) {
       return;
     }
+    const currentStudent = student;
 
-    setIsSendingWelcomeEmail(true);
+    setEmailFeedback({
+      tone: "error",
+      text: "Güvenlik nedeniyle mevcut parola görüntülenemez. Yeni parola belirleyip yeniden gönderin.",
+    });
+    return;
+
+    if (isSendingWelcomeEmail) {
+      setIsSendingWelcomeEmail(true);
     setEmailFeedback(null);
 
     let emailSent = false;
@@ -271,10 +279,10 @@ export function StudentDetailClient() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          studentName: student.name,
+          studentName: currentStudent.name,
           parentEmail,
-          username: student.username,
-          temporaryPassword: student.password,
+          username: currentStudent.username,
+          temporaryPassword: "",
         }),
       });
 
@@ -288,7 +296,7 @@ export function StudentDetailClient() {
 
     try {
       statusUpdatedStudent = await updateStudentWelcomeEmailStatus(
-        student.id,
+        currentStudent.id,
         emailSent ? "sent" : "failed",
         sentAt,
       );
@@ -298,7 +306,7 @@ export function StudentDetailClient() {
 
     setStudent(
       statusUpdatedStudent ?? {
-        ...student,
+        ...currentStudent,
         welcomeEmailSentAt: sentAt,
         welcomeEmailStatus: emailSent ? "sent" : "failed",
       },
@@ -315,6 +323,7 @@ export function StudentDetailClient() {
           },
     );
     setIsSendingWelcomeEmail(false);
+    }
   };
 
   const handleDeleteStudent = async () => {

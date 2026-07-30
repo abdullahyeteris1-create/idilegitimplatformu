@@ -6,6 +6,7 @@ import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
+import { generateStudentPassword } from "@/lib/students/studentStorage";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type CsvColumn =
@@ -84,7 +85,7 @@ function generateUsername(value: string): string {
     return normalized;
   }
 
-  return `ogrenci${Math.floor(Math.random() * 9000 + 1000)}`;
+  return `ogrenci${generateStudentPassword().slice(0, 4)}`;
 }
 
 function parseBoolean(value: string): boolean {
@@ -261,7 +262,7 @@ function buildPreviewRows(csvText: string, existingUsernames: Set<string>): Prev
       parent_name: values.get("parent_name") || null,
       phone: values.get("phone") || null,
       username,
-      password: values.get("password") || "1234",
+      password: values.get("password") || generateStudentPassword(),
       is_active: parseBoolean(values.get("is_active") ?? ""),
       notes: values.get("notes") || null,
       status: isNameMissing ? "missing-name" : hasConflict ? "username-conflict" : "ready",
@@ -347,27 +348,28 @@ export default function BulkStudentImportPage() {
       return;
     }
 
-    const supabase = getSupabaseBrowserClient();
-
-    if (!supabase) {
-      setErrorMessage("Supabase bağlantısı bulunamadı. Ortam değişkenlerini kontrol edin.");
-      return;
-    }
-
     setIsImporting(true);
 
-    const payload = readyRows.map(toStudentPayload);
-    const { data, error } = await supabase.from(STUDENTS_TABLE).insert(payload).select("username");
+    const payload = readyRows.map((row) => ({ ...toStudentPayload(row), rowNumber: row.rowNumber }));
+    const response = await fetch("/api/admin/students/bulk", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows: payload }),
+    });
+    const result = (await response.json().catch(() => null)) as
+      | { ok?: boolean; importedUsernames?: string[]; errors?: Array<{ rowNumber: number; message: string }> }
+      | null;
 
-    if (error) {
-      setErrorMessage(`Öğrenciler aktarılamadı: ${error.message}`);
+    if (!response.ok || !result?.ok) {
+      setErrorMessage("Öğrenciler aktarılamadı. Lütfen tekrar deneyin.");
       setIsImporting(false);
       return;
     }
 
     const importedUsernames = new Set(
-      (data ?? [])
-        .map((row) => (typeof row.username === "string" ? normalizeUsernameLookup(row.username) : ""))
+      (result.importedUsernames ?? [])
+        .map((username) => normalizeUsernameLookup(username))
         .filter(Boolean),
     );
     const importedCount = importedUsernames.size || readyRows.length;
@@ -391,7 +393,11 @@ export default function BulkStudentImportPage() {
     );
 
     setReport(buildReport(previewRows, importedCount));
-    setSuccessMessage("Öğrenciler başarıyla aktarıldı.");
+    setSuccessMessage(
+      result.errors?.length
+        ? `${importedCount} öğrenci aktarıldı; ${result.errors.length} satır atlandı.`
+        : "Öğrenciler başarıyla aktarıldı.",
+    );
     setIsImporting(false);
   }
 
@@ -509,7 +515,7 @@ export default function BulkStudentImportPage() {
                       <td className="px-3 py-3 align-top text-slate-700">{row.parent_name || "-"}</td>
                       <td className="px-3 py-3 align-top text-slate-700">{row.phone || "-"}</td>
                       <td className="px-3 py-3 align-top font-mono text-xs text-slate-800">{row.username}</td>
-                      <td className="px-3 py-3 align-top font-mono text-xs text-slate-800">{row.password}</td>
+                      <td className="px-3 py-3 align-top text-slate-700">Hazır</td>
                       <td className="px-3 py-3 align-top text-slate-700">{row.is_active ? "Evet" : "Hayır"}</td>
                       <td className="max-w-[280px] px-3 py-3 align-top text-slate-700">{row.notes || "-"}</td>
                     </tr>

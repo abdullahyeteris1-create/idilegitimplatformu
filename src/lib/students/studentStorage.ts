@@ -70,9 +70,10 @@ function normalizeLookup(value: string | undefined): string {
 }
 
 function normalizeStudentRecord(student: Student, fallbackIndex: number): Student {
+  const safeStudent = { ...student } as Student & { password?: unknown };
+  delete safeStudent.password;
   const name = normalizeOptional(student.name) ?? `Ogrenci ${fallbackIndex + 1}`;
   const username = normalizeOptional(student.username) ?? generateUsernameFromName(name);
-  const password = normalizeOptional(student.password) ?? generateStudentPassword();
   const classLevel = normalizeOptional(student.classLevel) ?? normalizeOptional(student.className);
   const educationLevel =
     normalizeEducationLevel(student.educationLevel) ??
@@ -85,11 +86,10 @@ function normalizeStudentRecord(student: Student, fallbackIndex: number): Studen
   );
 
   return {
-    ...student,
+    ...safeStudent,
     id: normalizeOptional(student.id) ?? `legacy-student-${fallbackIndex}`,
     name,
     username,
-    password,
     className: normalizeOptional(student.className) ?? classLevel,
     classLevel,
     educationLevel,
@@ -148,7 +148,6 @@ function mapSupabaseRowToStudent(row: Record<string, unknown>): Student {
     id: String(row.id ?? ""),
     name: String(row.name ?? ""),
     username: String(row.username ?? ""),
-    password: String(row.password ?? ""),
     className: typeof row.class_name === "string" ? row.class_name : typeof row.className === "string" ? row.className : undefined,
     classLevel: typeof row.class_level === "string" ? row.class_level : typeof row.classLevel === "string" ? row.classLevel : undefined,
     educationLevel: normalizeEducationLevel(row.education_level ?? row.educationLevel),
@@ -232,7 +231,6 @@ function mapStudentToSupabaseRow(student: Student): Record<string, unknown> {
   const payload: Record<string, unknown> = {
     name: student.name,
     username: student.username,
-    password: student.password,
     class_name: student.className ?? student.classLevel ?? null,
     parent_name: student.parentName ?? null,
     phone: student.phone ?? student.parentPhone ?? null,
@@ -449,7 +447,9 @@ function writeStudents(students: Student[]): void {
 function ensureInitialStudents(): Student[] {
   const existing = readStudentsRaw();
   if (existing.length > 0) {
-    return normalizeStudents(existing);
+    const normalized = normalizeStudents(existing);
+    writeStudents(normalized);
+    return normalized;
   }
 
   const seededStudents = [DEMO_STUDENT, ...MOCK_STUDENTS.filter((student) => student.id !== DEMO_STUDENT.id)];
@@ -520,7 +520,6 @@ function buildNewStudent(studentInput: StudentInput): Student {
     id: createStudentId(),
     name: studentInput.name.trim(),
     username,
-    password: studentInput.password.trim(),
     classLevel: normalizeOptional(studentInput.classLevel),
     parentName: normalizeOptional(studentInput.parentName),
     parentPhone: normalizeOptional(studentInput.parentPhone),
@@ -600,7 +599,6 @@ export function updateStudent(id: string, updates: Partial<Omit<Student, "id" | 
     ...updates,
     name: normalizeOptional(updates.name) ?? existingStudent.name,
     username: normalizeOptional(updates.username) ?? existingStudent.username,
-    password: normalizeOptional(updates.password) ?? existingStudent.password,
     classLevel: updates.classLevel !== undefined ? normalizeOptional(updates.classLevel) : existingStudent.classLevel,
     parentName: updates.parentName !== undefined ? normalizeOptional(updates.parentName) : existingStudent.parentName,
     parentPhone: updates.parentPhone !== undefined ? normalizeOptional(updates.parentPhone) : existingStudent.parentPhone,
@@ -741,7 +739,9 @@ export function removeStudentFromLocalCache(studentId: string): void {
 
 export function generateStudentPassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  return Array.from({ length: 10 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  const values = new Uint32Array(10);
+  globalThis.crypto.getRandomValues(values);
+  return Array.from(values, (value) => alphabet[value % alphabet.length]).join("");
 }
 
 export function generateUsernameFromName(name: string): string {
@@ -758,7 +758,9 @@ export function generateUsernameFromName(name: string): string {
     .replace(/\s+/g, ".");
 
   if (!normalized) {
-    return `ogrenci.${Math.floor(Math.random() * 9000 + 1000)}`;
+    const values = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(values);
+    return `ogrenci.${(values[0] % 9000) + 1000}`;
   }
 
   return normalized;

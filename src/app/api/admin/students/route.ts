@@ -2,12 +2,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { isEducationLevel } from "@/lib/assignments/educationLevels";
 import { isAdminSessionValid } from "@/lib/auth/adminSession";
+import { hashStudentPassword } from "@/lib/auth/studentPassword";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   isEducationDateRangeValid,
   isValidDateOnlyString,
 } from "@/lib/students/studentAccessDates";
 import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
+import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
 
 export const runtime = "nodejs";
 
@@ -120,12 +122,17 @@ export async function POST(request: NextRequest) {
 
   const name = optionalString(body.name);
   const username = optionalString(body.username);
-  const password = optionalString(body.password);
+  const password = typeof body.password === "string" ? body.password : null;
   const educationStartDate = dateOnlyString(body.educationStartDate);
   const accessEndDate = dateOnlyString(body.accessEndDate);
 
   if (!name || !username || !password) {
     return errorResponse("Ad soyad, kullanıcı adı ve şifre zorunludur.", 400);
+  }
+
+  const passwordValidation = validateStudentPassword(password, { username, name });
+  if (!passwordValidation.ok) {
+    return errorResponse(passwordValidation.message, 400);
   }
 
   if (!educationStartDate || !accessEndDate) {
@@ -191,10 +198,15 @@ export async function POST(request: NextRequest) {
   }
 
   const status = normalizeStudentStatus(body.status);
+  const passwordHash = await hashStudentPassword(passwordValidation.value);
   const payload = {
     name,
     username,
+    // Retained temporarily for schemas where the legacy column is NOT NULL.
     password,
+    password_hash: passwordHash,
+    password_hash_version: 1,
+    password_changed_at: null,
     class_name: optionalString(body.classLevel),
     parent_name: optionalString(body.parentName),
     phone: optionalString(body.parentPhone),
