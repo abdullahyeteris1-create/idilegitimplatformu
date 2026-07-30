@@ -30,20 +30,21 @@ test("Education Program katalogu cift-tarafli-odak icin speed ayarini sunar", as
   const source = await read("src/lib/education-programs/exerciseSettingsSchemas.ts");
   assert.match(source, /exerciseSlug: "cift-tarafli-odak"/);
   assert.match(source, /key: "speed"/);
-  assert.match(source, /options: \[1500, 1200, 900, 650, 450\]/);
+  assert.match(source, /options: \[5000, 3000, 1500, 900, 450\]/);
 });
 
 test("TwoSideFocusExerciseClient Education Program speed ayarini launch settings'ten okur ve kilitler", async () => {
   const source = await read("src/app/egzersizler/cift-tarafli-odak/TwoSideFocusExerciseClient.tsx");
 
-  assert.match(source, /pickEducationProgramSettingOption\(\s*educationProgramLaunch\?\.settings,\s*"speed",\s*SPEED_OPTIONS,\s*DEFAULT_SPEED,/);
+  assert.match(source, /pickEducationProgramSettingOption\(\s*educationProgramLaunch\?\.settings,\s*"speed",\s*EDUCATION_PROGRAM_SPEED_OPTIONS,\s*DEFAULT_EDUCATION_PROGRAM_SPEED,/);
   assert.match(source, /const isSpeedLocked = controlledSpeed !== null;/);
   assert.match(source, /<select value=\{speed\} disabled/);
 });
 
-test("Eski Education Program gorevlerinde speed yoksa 1500 ms varsayilani korunur", async () => {
+test("Eski Education Program gorevlerinde speed yoksa 5000 ms, serbest kullanimda 1500 ms varsayilani korunur", async () => {
   const source = await read("src/app/egzersizler/cift-tarafli-odak/TwoSideFocusExerciseClient.tsx");
 
+  assert.match(source, /const DEFAULT_EDUCATION_PROGRAM_SPEED: EducationProgramSpeedOption = 5000;/);
   assert.match(source, /const DEFAULT_SPEED: SpeedOption = 1500;/);
   assert.match(source, /const \[freeSpeed, setFreeSpeed\] = useState<SpeedOption>\(DEFAULT_SPEED\);/);
   assert.match(source, /const speed = controlledSpeed \?\? freeSpeed;/);

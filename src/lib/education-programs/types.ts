@@ -97,7 +97,7 @@ export type GroupingReadingTaskSettings = {
 };
 
 export type TwoSideFocusTaskSettings = {
-  speed?: 1500 | 1200 | 900 | 650 | 450;
+  speed?: 5000 | 3000 | 1500 | 900 | 450;
 };
 
 export type EducationProgramTemplateTask = {
