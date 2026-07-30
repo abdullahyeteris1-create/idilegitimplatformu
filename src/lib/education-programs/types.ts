@@ -100,6 +100,14 @@ export type TwoSideFocusTaskSettings = {
   speed?: 5000 | 3000 | 1500 | 900 | 450;
 };
 
+export type ThirteenPointEmojiTrackingTaskSettings = {
+  speed?: 5000 | 3000 | 2000 | 1500 | 1000 | 700 | 450 | 300;
+  emoji?: string;
+  emojiMode?: "fixed" | "random";
+  movementPattern?: "sequential" | "reverse" | "random" | "center-out" | "outer-center";
+  soundEnabled?: boolean;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

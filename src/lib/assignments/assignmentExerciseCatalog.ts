@@ -168,6 +168,27 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     defaultSettings: {},
   },
   {
+    exerciseSlug: "13-nokta-emoji-takip",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: false,
+    supportsSpeed: true,
+    settingsSchema: {
+      speed: { kind: "enum", values: [5000, 3000, 2000, 1500, 1000, 700, 450, 300] },
+      emoji: { kind: "enum", values: ["⭐", "❤️", "🔵", "🟢", "🔴", "🐱", "🦋", "🚀", "⚽", "🍎", "👁️", "💎"] },
+      emojiMode: { kind: "enum", values: ["fixed", "random"] },
+      movementPattern: { kind: "enum", values: ["sequential", "reverse", "random", "center-out", "outer-center"] },
+      soundEnabled: { kind: "boolean" },
+    },
+    defaultSettings: {
+      speed: 1500,
+      emoji: "⭐",
+      emojiMode: "fixed",
+      movementPattern: "sequential",
+      soundEnabled: false,
+    },
+  },
+  {
     exerciseSlug: "takistoskop",
     assignmentEligible: true,
     integrationStatus: "ready",

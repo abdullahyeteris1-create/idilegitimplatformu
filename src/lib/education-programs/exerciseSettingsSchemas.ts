@@ -383,6 +383,17 @@ const TWO_SIDE_FOCUS_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "13-nokta-emoji-takip",
+  fields: [
+    { key: "speed", label: "Hız", type: "integer", options: [5000, 3000, 2000, 1500, 1000, 700, 450, 300], defaultValue: 1500, unit: "ms" },
+    { key: "emoji", label: "Emoji", type: "enum", options: ["⭐", "❤️", "🔵", "🟢", "🔴", "🐱", "🦋", "🚀", "⚽", "🍎", "👁️", "💎"], defaultValue: "⭐" },
+    { key: "emojiMode", label: "Emoji Modu", type: "enum", options: ["fixed", "random"], defaultValue: "fixed" },
+    { key: "movementPattern", label: "Hareket Düzeni", type: "enum", options: ["sequential", "reverse", "random", "center-out", "outer-center"], defaultValue: "sequential" },
+    { key: "soundEnabled", label: "Ses", type: "enum", options: ["true", "false"], defaultValue: "false" },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -398,6 +409,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     SHADOW_READING_SETTINGS_SCHEMA,
     GROUPING_READING_SETTINGS_SCHEMA,
     TWO_SIDE_FOCUS_SETTINGS_SCHEMA,
+    THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

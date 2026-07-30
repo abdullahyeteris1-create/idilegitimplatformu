@@ -21,7 +21,8 @@
     | "eye-columns"
   | "square-vision"
   | "color-match"
-  | "reading-speed-test";
+  | "reading-speed-test"
+  | "thirteen-point-emoji-tracking";
 
 export type ExerciseResult = {
   id: string;

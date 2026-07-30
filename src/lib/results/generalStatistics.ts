@@ -228,6 +228,7 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "square-vision": { categoryId: "attention", route: "/egzersizler/kare-gorme-alani" },
   "color-match": { categoryId: "brain-exercises", route: "/egzersizler/renk-uyumu" },
   "reading-speed-test": { categoryId: "assessment", route: "/egzersizler/okuma-hizi-testi" },
+  "thirteen-point-emoji-tracking": { categoryId: "eye", route: "/egzersizler/13-nokta-emoji-takip" },
 };
 
 const OTHER_CATEGORY_ID = "other";

@@ -341,7 +341,8 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // olarak kontrol ediyoruz.
   // 2026-07-29: cift-tarafli-odak exercise'i icin yeni migration eklendi (27).
   // 2026-07-29: goz-kaslari exercise'i icin yeni migration eklendi (28).
-  assert.equal(sqlFiles.length, 28);
+  // 2026-07-30: 13-nokta-emoji-takip whitelist forward migration'i eklendi (29).
+  assert.equal(sqlFiles.length, 29);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {

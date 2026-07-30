@@ -125,6 +125,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["level", "durationMinutes"],
   },
   {
+    slug: "13-nokta-emoji-takip",
+    title: "13 Nokta Emoji Takip Egzersizi",
+    route: "/egzersizler/13-nokta-emoji-takip",
+    resultExerciseType: "thirteen-point-emoji-tracking",
+    category: "eye",
+    assignmentEnabled: true,
+    supportedSettings: ["durationMinutes", "speed", "emoji", "emojiMode", "movementPattern", "soundEnabled"],
+  },
+  {
     slug: "goz-calismasi",
     title: "Göz Çalışması",
     route: "/egzersizler/goz-calismasi",

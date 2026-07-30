@@ -54,6 +54,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
     image: "/exercise-visuals/categories/eye.svg",
     exercises: [
       {
+        title: "13 Nokta Emoji Takip",
+        description: "13 sabit konum arasinda hareket eden emoji veya simgeyi gozlerinle takip et.",
+        href: "/egzersizler/13-nokta-emoji-takip",
+        icon: "13",
+        image: "/exercise-visuals/exercises/eye-muscle.svg",
+        tags: ["Goz", "Takip", "Odak"],
+      },
+      {
         title: "Göz Beyin Çalışması",
         description: "Simgeleri gözlerinle takip ederek göz-beyin koordinasyonunu geliştir.",
         href: "/egzersizler/goz-beyin",

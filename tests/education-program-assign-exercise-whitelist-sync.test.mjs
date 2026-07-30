@@ -10,6 +10,8 @@ const FIX_MIGRATION_PATH =
   "supabase/migrations/20260728020000_sync_assign_education_program_template_exercise_whitelist.sql";
 const NEWEST_MIGRATION_PATH =
   "supabase/migrations/20260729230000_add_goz_kaslari_to_exercise_whitelist.sql";
+const FORWARD_MIGRATION_PATH =
+  "supabase/migrations/20260730130000_add_13_nokta_emoji_takip_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";
@@ -48,6 +50,7 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const catalogSource = await read(EXERCISE_CATALOG_PATH);
   const fixSource = await read(FIX_MIGRATION_PATH);
   const newestSource = await read(NEWEST_MIGRATION_PATH);
+  const forwardSource = await read(FORWARD_MIGRATION_PATH);
 
   const catalogSlugs = extractCatalogSlugs(catalogSource);
   assert.ok(catalogSlugs.length >= 14, "katalogda en az 14 egzersiz beklenir");
@@ -55,7 +58,8 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   // Eski ve yeni migration'lari birlikte kontrol et
   const fixWhitelistSlugs = extractWhitelistSlugs(fixSource);
   const newestWhitelistSlugs = extractWhitelistSlugs(newestSource);
-  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs]);
+  const forwardWhitelistSlugs = extractWhitelistSlugs(forwardSource);
+  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs]);
 
   for (const slug of catalogSlugs) {
     assert.ok(

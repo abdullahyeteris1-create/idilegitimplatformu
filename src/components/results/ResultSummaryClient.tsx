@@ -71,6 +71,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
   "color-match": "/egzersizler/renk-uyumu",
   "reading-speed-test": "/egzersizler/okuma-hizi-testi",
+  "thirteen-point-emoji-tracking": "/egzersizler/13-nokta-emoji-takip",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */
@@ -90,6 +91,7 @@ function buildFilterOptions(results: ExerciseResult[]): { value: string; label: 
 
 /** Bilinmeyen slug'ları okunabilir forma çevirir */
 function formatExerciseType(type: string): string {
+  if (type === "thirteen-point-emoji-tracking") return "13 Nokta Emoji Takip Egzersizi";
   return EXERCISE_LABELS[type] ?? type
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());

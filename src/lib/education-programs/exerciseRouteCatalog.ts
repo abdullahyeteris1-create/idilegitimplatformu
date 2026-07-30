@@ -16,6 +16,7 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "blok-okuma": "/egzersizler/blok-okuma",
   "cift-tarafli-odak": "/egzersizler/cift-tarafli-odak",
   "goz-kaslari": "/egzersizler/goz-kaslari",
+  "13-nokta-emoji-takip": "/egzersizler/13-nokta-emoji-takip",
   "golgeleme": "/egzersizler/golgeleme",
   "gruplama-calismasi": "/egzersizler/gruplama-calismasi",
   "anlama-testi": "/egzersizler/anlama-testi",

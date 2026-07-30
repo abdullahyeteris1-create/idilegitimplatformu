@@ -130,6 +130,15 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     totalPausedSeconds: { type: "integer", min: 0, max: MAX_DURATION_SECONDS },
     completedAt: { type: "string", maxLength: 40 },
   },
+  "thirteen-point-emoji-tracking": {
+    durationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    speed: { type: "integer", min: 300, max: 5_000 },
+    jumpCount: { type: "integer", min: 0, max: 100_000 },
+    emoji: { type: "string", maxLength: 8 },
+    emojiMode: { type: "string", values: ["fixed", "random"] },
+    movementPattern: { type: "string", values: ["sequential", "reverse", "random", "center-out", "outer-center"] },
+    soundEnabled: { type: "boolean" },
+  },
   "color-match": {},
   "memory-game": {
     gridRows: { type: "integer", min: 5, max: 10 },

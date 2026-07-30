@@ -49,6 +49,7 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "catch-same" ||
     value === "hangman" ||
     value === "reading-speed-test"
+    || value === "thirteen-point-emoji-tracking"
   ) {
     return value;
   }

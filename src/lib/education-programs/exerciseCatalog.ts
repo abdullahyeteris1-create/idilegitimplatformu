@@ -150,6 +150,15 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "13-nokta-emoji-takip",
+    title: "13 Nokta Emoji Takip Egzersizi",
+    resultExerciseType: "thirteen-point-emoji-tracking",
+    supportsLevel: false,
+    defaultDurationSeconds: 60,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "golgeleme",
     title: "Gölgeleme",
     resultExerciseType: "shadow-reading",
