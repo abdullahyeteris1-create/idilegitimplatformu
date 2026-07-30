@@ -15,6 +15,19 @@ export type EducationProgramExerciseDefinition = {
   defaultDurationSeconds?: number;
   settingsSchemaVersion: number;
   settingsPlaceholder: string;
+  /**
+   * GECICI ASKIYA ALMA anahtari - yalniz YENI gorev eklerken kullanilan
+   * egzersiz SECICISINI kontrol eder.
+   *
+   * Tanimsiz (undefined) = secilebilir. `false` yapildiginda egzersiz
+   * Template Editor'un egzersiz listesinden cikar AMA katalog kaydinin
+   * kendisi SILINMEZ: getEducationProgramExercise() onu bulmaya devam eder,
+   * boylece daha once kaydedilmis programlardaki gorevler adiyla cozumlenir,
+   * ogretmen bunlari gorup duzenleyebilir, ogrenci acip tamamlayabilir ve
+   * validation gecerli sayar. Yeniden etkinlestirmek icin bu alani silmek
+   * veya true yapmak yeterlidir.
+   */
+  isEducationProgramSelectable?: boolean;
 };
 
 const READONLY_SETTINGS_PLACEHOLDER = "Egzersize özel ayarlar sonraki fazda düzenlenecek.";
@@ -148,6 +161,11 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     defaultDurationSeconds: 300,
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+    // GECICI ASKIYA ALMA (2026-07-30): yeni Egitim Programi gorevlerinde
+    // secilemez. Katalog kaydi KASITLI olarak duruyor - mevcut programlardaki
+    // gorevler cozumlenmeye, calismaya ve tamamlanmaya devam eder.
+    // Geri almak icin: bu satiri sil veya true yap.
+    isEducationProgramSelectable: false,
   },
   {
     slug: "13-nokta-emoji-takip",
@@ -212,8 +230,28 @@ export const EDUCATION_PROGRAM_EXERCISE_BY_SLUG = new Map<
   EDUCATION_PROGRAM_EXERCISE_CATALOG.map((exercise) => [exercise.slug, exercise]),
 );
 
+/**
+ * YENI gorev eklerken kullanilacak egzersiz listesi (Template Editor
+ * secicisi). Askiya alinmis calismalar buradan cikarilir.
+ *
+ * DIKKAT: mevcut gorevleri COZUMLEMEK icin bu liste KULLANILMAMALIDIR -
+ * o is icin tam katalog lookup'i olan getEducationProgramExercise()
+ * kullanilir; aksi halde eski programlardaki gorevler "Bilinmeyen egzersiz"
+ * gibi gorunurdu.
+ */
+export const SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerciseDefinition[] =
+  EDUCATION_PROGRAM_EXERCISE_CATALOG.filter(
+    (exercise) => exercise.isEducationProgramSelectable !== false,
+  );
+
+/** Tam katalog lookup'i - askiya alinmis kayitlari da DONER (bilerek). */
 export function getEducationProgramExercise(
   slug: string,
 ): EducationProgramExerciseDefinition | undefined {
   return EDUCATION_PROGRAM_EXERCISE_BY_SLUG.get(slug);
+}
+
+/** Bir egzersiz YENI programlara eklenebilir mi? */
+export function isEducationProgramExerciseSelectable(slug: string): boolean {
+  return EDUCATION_PROGRAM_EXERCISE_BY_SLUG.get(slug)?.isEducationProgramSelectable !== false;
 }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { isExerciseRouteVisibleInStudentCatalog } from "@/lib/assignments/exerciseCatalog";
 
 type ExerciseCard = {
   title: string;
@@ -497,6 +498,12 @@ function buildDeterministicGroups(groups: ExerciseGroup[]): ExerciseGroup[] {
 
   return groups.map((group) => {
     const uniqueExercises = group.exercises.filter((exercise) => {
+      // Gecici olarak askiya alinmis calismalar listelenmez; kategori sayaci
+      // da bu filtrelenmis listeden turedigi icin otomatik olarak duser.
+      if (!isExerciseRouteVisibleInStudentCatalog(exercise.href)) {
+        return false;
+      }
+
       if (usedHrefs.has(exercise.href)) {
         return false;
       }

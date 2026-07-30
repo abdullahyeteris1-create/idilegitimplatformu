@@ -1,4 +1,7 @@
-import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
+import {
+  ASSIGNMENT_EXERCISE_BY_SLUG,
+  isExerciseVisibleInStudentCatalog,
+} from "@/lib/assignments/exerciseCatalog";
 import { categories as panelCategories, type Category } from "@/components/student-panel-preview/data";
 
 export type PreviewExerciseCard = {
@@ -91,6 +94,14 @@ const FALLBACK_ROUTE_BY_SLUG: Record<string, { title: string; route: string }> =
 };
 
 function buildExerciseCard(slug: string): PreviewExerciseCard | null {
+  // Gecici olarak askiya alinmis calismalar ogrenci kataloguna hic girmez.
+  // Kart uretilmedigi icin kategori listesinden de, "N calisma" sayacindan
+  // da (sayac group.exercises.length'ten turer) otomatik olarak dusar.
+  // Route ve atanmis gorev baglantilari bundan ETKILENMEZ.
+  if (!isExerciseVisibleInStudentCatalog(slug)) {
+    return null;
+  }
+
   const catalogEntry = ASSIGNMENT_EXERCISE_BY_SLUG.get(slug);
   const fallback = FALLBACK_ROUTE_BY_SLUG[slug];
   const title = catalogEntry?.title ?? fallback?.title;

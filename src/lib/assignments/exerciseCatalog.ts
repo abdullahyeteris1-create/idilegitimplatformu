@@ -13,6 +13,19 @@ export type AssignmentExerciseDefinition = {
   category: AssignmentExerciseCategory;
   assignmentEnabled: boolean;
   supportedSettings: string[];
+  /**
+   * GECICI ASKIYA ALMA anahtari - yalniz OGRENCI EGZERSIZ KATALOGU
+   * gorunurlugunu kontrol eder (kategori listeleri ve "N calisma" sayaclari).
+   *
+   * Tanimsiz (undefined) = gorunur; mevcut tum egzersizlerin davranisi
+   * degismez. `false` yapildiginda egzersiz ogrenci kataloglarindan cikar
+   * AMA:
+   *   - route'u calismaya devam eder (dogrudan link / atanmis gorev)
+   *   - Assignment V2 secilebilirligi (assignmentEnabled) ETKILENMEZ
+   *   - gecmis sonuclar, istatistikler ve completion akisi ETKILENMEZ
+   * Yeniden etkinlestirmek icin bu alani silmek veya true yapmak yeterlidir.
+   */
+  isStudentCatalogVisible?: boolean;
 };
 
 export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
@@ -123,6 +136,11 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     category: "eye",
     assignmentEnabled: true,
     supportedSettings: ["level", "durationMinutes"],
+    // GECICI ASKIYA ALMA (2026-07-30): ogrenci "Göz Egzersizleri"
+    // kategorisinden gizlendi. Kayit, route ve Assignment V2 destegi bilincli
+    // olarak korunuyor - daha once atanmis gorevler calismaya devam eder.
+    // Geri almak icin: bu satiri sil veya true yap.
+    isStudentCatalogVisible: false,
   },
   {
     slug: "13-nokta-emoji-takip",
@@ -273,3 +291,25 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
 export const ASSIGNMENT_EXERCISE_BY_SLUG = new Map(
   ASSIGNMENT_EXERCISE_CATALOG.map((item) => [item.slug, item]),
 );
+
+const ASSIGNMENT_EXERCISE_BY_ROUTE = new Map(
+  ASSIGNMENT_EXERCISE_CATALOG.map((item) => [item.route, item]),
+);
+
+/**
+ * Ogrenci egzersiz kataloglarinda gosterilmeli mi?
+ *
+ * Katalogda OLMAYAN bir slug icin `true` doner: ogrenci kataloglari
+ * (bkz. exercisePreviewGroups.ts) Assignment kataloguna kayitli olmayan
+ * calismalari da listeleyebildigi icin, bilinmeyen bir slug'i sessizce
+ * gizlemek mevcut kartlari kaybettirirdi. Askiya alma YALNIZ acikca
+ * isStudentCatalogVisible:false yazilmis kayitlar icin uygulanir.
+ */
+export function isExerciseVisibleInStudentCatalog(slug: string): boolean {
+  return ASSIGNMENT_EXERCISE_BY_SLUG.get(slug)?.isStudentCatalogVisible !== false;
+}
+
+/** Slug yerine route tasiyan eski katalog kartlari icin ayni kontrol. */
+export function isExerciseRouteVisibleInStudentCatalog(route: string): boolean {
+  return ASSIGNMENT_EXERCISE_BY_ROUTE.get(route)?.isStudentCatalogVisible !== false;
+}

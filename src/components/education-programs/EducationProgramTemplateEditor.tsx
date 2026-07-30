@@ -4,8 +4,8 @@ import Link from "next/link";
 import { type MouseEvent, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { saveEducationProgramDayAction } from "@/app/ogretmen/idil-panel/egitim-programlari/actions";
 import {
-  EDUCATION_PROGRAM_EXERCISE_CATALOG,
   getEducationProgramExercise,
+  SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG,
 } from "@/lib/education-programs/exerciseCatalog";
 import { getExerciseSettingsSchema } from "@/lib/education-programs/exerciseSettingsSchemas";
 import type { ExerciseSettingsRangeFieldDef } from "@/lib/education-programs/exerciseSettingsSchemas";
@@ -462,6 +462,19 @@ export function EducationProgramTemplateEditor({
             const settingsSchema = slot.exerciseSlug
               ? getExerciseSettingsSchema(slot.exerciseSlug)
               : undefined;
+            // Secici YALNIZ secilebilir calismalari listeler. Ancak bu slot'ta
+            // daha once kaydedilmis, sonradan askiya alinmis bir calisma varsa
+            // o kayit listeye geri eklenir - aksi halde <select> degeri
+            // eslesmez ve mevcut gorev silinmis/bos gibi gorunurdu.
+            const isSuspendedLegacySelection = Boolean(
+              definition &&
+                !SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG.some(
+                  (exercise) => exercise.slug === slot.exerciseSlug,
+                ),
+            );
+            const exerciseOptions = isSuspendedLegacySelection && definition
+              ? [definition, ...SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG]
+              : SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG;
 
             return (
               <article
@@ -494,7 +507,7 @@ export function EducationProgramTemplateEditor({
                       className={FIELD_CLASS}
                     >
                       <option value="">Egzersiz seçin</option>
-                      {EDUCATION_PROGRAM_EXERCISE_CATALOG.map((exercise) => (
+                      {exerciseOptions.map((exercise) => (
                         <option
                           key={exercise.slug}
                           value={exercise.slug}
