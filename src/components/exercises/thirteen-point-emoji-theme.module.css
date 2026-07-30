@@ -30,19 +30,25 @@
   outline-offset: 2px;
 }
 
+/*
+ * Boyut (width/height/font-size) bilincli olarak BURADA tanimlanmaz - JS
+ * tarafindan inline verilir (bkz. thirteenPointEmojiLayout.resolveEmojiSizePx).
+ * Guvenli kenar boslugu hesabi ile gercek render boyutunun ayni kaynaktan
+ * gelmesi, emojinin koselerde tasmamasi icin sarttir.
+ */
 .target {
-  display: grid;
-  place-items: center;
-  width: clamp(2.5rem, 7vw, 4rem);
-  height: clamp(2.5rem, 7vw, 4rem);
-  font-size: clamp(2.25rem, 7vw, 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   user-select: none;
-  transform: scale(1);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 160ms ease;
 }
 
 .targetVisible {
-  transform: scale(1.08);
+  opacity: 1;
 }
 
 .pointMarker {
