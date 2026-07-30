@@ -277,19 +277,19 @@ export function WordGuessExerciseClient() {
       >
         <div className="flex h-full w-full flex-col items-center justify-center gap-1 overflow-hidden px-1 py-1 md:gap-2">
           {/* Oyun tahtasi - viewport'a sığacak şekilde */}
-          <section className={`flex flex-col items-center rounded-2xl px-2 py-2 md:rounded-3xl md:px-4 md:py-3 ${styles.card}`}>
+          <section className={`flex max-h-full w-full max-w-3xl flex-col items-center gap-1 overflow-hidden rounded-2xl px-2 py-2 md:gap-1.5 md:rounded-3xl md:px-4 md:py-2 ${styles.card}`}>
           {/* Tahmin kutulari */}
-          <div className="flex flex-col items-center gap-1 md:gap-1.5">
+          <div className={styles.guessGrid}>
             {rows.map((row, rowIndex) => {
               const isSubmitted = rowIndex < guesses.length;
               const states = isSubmitted ? evaluateGuess(row, answer, wordLength) : Array(wordLength).fill("empty");
 
               return (
-                <div key={rowIndex} className="flex justify-center gap-1 md:gap-1.5">
+                <div key={rowIndex} className={styles.guessRow}>
                   {Array.from({ length: wordLength }).map((_, letterIndex) => (
                     <div
                       key={letterIndex}
-                      className={`flex aspect-square w-[8.5vw] max-w-[48px] items-center justify-center rounded-lg border-2 text-sm font-black transition sm:w-[9vw] sm:max-w-[54px] sm:text-base md:w-[10vw] md:max-w-[60px] md:text-lg lg:w-[11vw] lg:max-w-[66px] lg:text-xl ${cellClass(
+                      className={`${styles.guessCell} flex aspect-square items-center justify-center rounded-lg border-2 text-sm font-black transition sm:text-base md:text-lg lg:text-xl ${cellClass(
                         states[letterIndex]
                       )}`}
                     >
@@ -302,14 +302,14 @@ export function WordGuessExerciseClient() {
           </div>
 
           {/* Klavye */}
-          <div className="mt-1 flex flex-col items-center gap-1 md:mt-2 md:gap-1.5">
+          <div className={styles.keyboard}>
             {keyboardRows.map((row, rowIndex) => (
-              <div key={rowIndex} className="grid w-full grid-cols-7 gap-1.5 sm:grid-cols-10">
+              <div key={rowIndex} className={styles.keyboardRow}>
                 {rowIndex === 2 ? (
                   <button
                     type="button"
                     onClick={deleteLetter}
-                    className={`flex min-h-11 items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keyActionButton}`}
+                    className={`flex min-h-9 items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:min-h-10 md:px-2.5 md:text-xs ${styles.keyActionButton}`}
                   >
                     Sil
                   </button>
@@ -320,7 +320,7 @@ export function WordGuessExerciseClient() {
                     key={letter}
                     type="button"
                     onClick={() => handleKeyboardClick(letter)}
-                    className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border text-[9px] font-bold transition md:text-xs lg:text-sm ${keyClass(
+                    className={`flex min-h-9 min-w-0 items-center justify-center rounded-lg border text-[9px] font-bold transition md:min-h-10 md:text-xs lg:text-sm ${keyClass(
                       keyboardStates[letter]
                     )}`}
                   >
@@ -328,29 +328,27 @@ export function WordGuessExerciseClient() {
                   </button>
                 ))}
 
-                {rowIndex === 2 ? (
-                  <button
-                    type="button"
-                    onClick={submitGuess}
-                    disabled={status !== "playing"}
-                    className={`flex min-h-11 items-center justify-center rounded-lg px-1.5 text-[9px] font-bold transition md:px-2.5 md:text-xs ${styles.keySubmitButton}`}
-                  >
-                    Gir
-                  </button>
-                ) : null}
               </div>
             ))}
+            <button
+              type="button"
+              onClick={submitGuess}
+              disabled={status !== "playing"}
+              className={`min-h-9 w-full max-w-28 rounded-lg px-3 text-[10px] font-bold transition md:min-h-10 md:text-xs ${styles.keySubmitButton}`}
+            >
+              Gir
+            </button>
           </div>
 
           {/* Bilgi satiri */}
-          <div className={`mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-2 py-1 text-[9px] md:mt-2 md:gap-3 md:px-3 md:py-1.5 md:text-xs ${styles.infoBar}`}>
+          <div className={`flex w-full items-center justify-center gap-2 rounded-xl px-2 py-1 text-[9px] md:gap-3 md:px-3 md:py-1.5 md:text-xs ${styles.infoBar}`}>
             <span><strong>Deneme:</strong> {guesses.length}/{MAX_ATTEMPTS}</span>
             <span><strong>Skor:</strong> {score}</span>
             <span className="hidden sm:inline"><strong>Kategori:</strong> Kelime Oyunlari</span>
           </div>
 
           {/* Aciklama - sadece genis ekranda */}
-          <div className={`mt-1 hidden rounded-xl px-3 py-1 text-[10px] lg:block ${styles.legendBar}`}>
+          <div className={`hidden rounded-xl px-3 py-1 text-[10px] lg:block ${styles.legendBar}`}>
             <strong>Yeşil:</strong> Doğru yer &nbsp;·&nbsp; <strong>Sarı:</strong> Var, yanlış yer &nbsp;·&nbsp; <strong>Gri:</strong> Yok
           </div>
           </section>

@@ -11,7 +11,9 @@ import { HANGMAN_WORDS } from "@/lib/exercises/word-games/hangmanWords";
 import { normalizeTurkishText, TURKISH_ALPHABET } from "@/lib/exercises/word-games/turkishAlphabet";
 
 const LETTERS = [...TURKISH_ALPHABET];
-const MAX_WRONG_GUESSES = 6;
+const DEFAULT_MAX_WRONG_GUESSES = 6;
+const WRONG_GUESS_OPTIONS = [6, 10] as const;
+type MaxWrongGuesses = (typeof WRONG_GUESS_OPTIONS)[number];
 
 function pickWord(): string {
   return HANGMAN_WORDS[Math.floor(Math.random() * HANGMAN_WORDS.length)];
@@ -27,10 +29,12 @@ export function HangmanExerciseClient() {
   ].join(" ");
   const [word, setWord] = useState(() => pickWord());
   const [guesses, setGuesses] = useState<string[]>([]);
+  const [maxWrongGuesses, setMaxWrongGuesses] = useState<MaxWrongGuesses>(DEFAULT_MAX_WRONG_GUESSES);
+  const [hasStarted, setHasStarted] = useState(false);
   const hasSavedResultRef = useRef(false);
 
   const wrongGuesses = useMemo(() => guesses.filter((letter) => !word.includes(letter)), [guesses, word]);
-  const remaining = MAX_WRONG_GUESSES - wrongGuesses.length;
+  const remaining = maxWrongGuesses - wrongGuesses.length;
   const revealedWord = word
     .split("")
     .map((letter) => (guesses.includes(letter) ? letter : "_"))
@@ -74,8 +78,8 @@ export function HangmanExerciseClient() {
         category: "Kelime Oyunlari",
         reason,
         status: won ? "won" : "lost",
-        maxWrongGuesses: MAX_WRONG_GUESSES,
-        remaining: MAX_WRONG_GUESSES - wrongCount,
+        maxWrongGuesses,
+        remaining: maxWrongGuesses - wrongCount,
         guessedLetters: snapshotGuesses,
       },
     });
@@ -88,11 +92,13 @@ export function HangmanExerciseClient() {
       return;
     }
 
+    setHasStarted(true);
+
     setGuesses((current) => {
       const next = [...current, normalizedLetter];
       const nextWrong = next.filter((item) => !word.includes(item));
       const nextWon = word.split("").every((char) => next.includes(char));
-      const nextLost = nextWrong.length >= MAX_WRONG_GUESSES;
+      const nextLost = nextWrong.length >= maxWrongGuesses;
 
       if (nextWon || nextLost) {
         window.setTimeout(() => {
@@ -108,6 +114,7 @@ export function HangmanExerciseClient() {
     hasSavedResultRef.current = false;
     setWord(pickWord());
     setGuesses([]);
+    setHasStarted(false);
   };
 
   const finishExercise = () => {
@@ -124,37 +131,75 @@ export function HangmanExerciseClient() {
         }
       });
 
-      const completed = next.slice(0, MAX_WRONG_GUESSES + word.length + 6);
+      const completed = next.slice(0, maxWrongGuesses + word.length + 6);
       saveResult("manual", completed);
       return completed;
     });
   };
 
+  const drawingStage = Math.min(wrongGuesses.length, maxWrongGuesses);
+  const showStructure = drawingStage >= 1;
+  const showBeam = maxWrongGuesses === 6 ? showStructure : drawingStage >= 2;
+  const showRope = maxWrongGuesses === 6 ? drawingStage >= 2 : drawingStage >= 3;
+  const showHead = maxWrongGuesses === 6 ? drawingStage >= 3 : drawingStage >= 4;
+  const showBody = maxWrongGuesses === 6 ? drawingStage >= 4 : drawingStage >= 5;
+  const showLeftArm = maxWrongGuesses === 6 ? drawingStage >= 5 : drawingStage >= 6;
+  const showRightArm = maxWrongGuesses === 6 ? drawingStage >= 5 : drawingStage >= 7;
+  const showLeftLeg = maxWrongGuesses === 6 ? drawingStage >= 6 : drawingStage >= 8;
+  const showRightLeg = maxWrongGuesses === 6 ? drawingStage >= 6 : drawingStage >= 9;
+  const showFace = maxWrongGuesses === 6 ? showHead : drawingStage >= 10;
+
   return (
     <div className={themeRootClassName}>
       <FixedExerciseStage
         title="Adam Asmaca"
-        subtitle="Kelimeyi altı yanlış hakkı bitmeden bul"
+        subtitle={`Kelimeyi ${maxWrongGuesses} yanlış hakkı bitmeden bul`}
         topStats={<><FixedExerciseStat label="Kalan Hak" value={remaining} /><FixedExerciseStat label="Yanlış" value={wrongGuesses.length} tone="bad" /></>}
+        bottomSettings={<fieldset className={`grid gap-2 text-sm ${styles.settings}`}>
+          <legend className={`font-bold ${styles.settingsLegend}`}>Tahmin Hakkı</legend>
+          <div className="flex flex-wrap gap-2">
+            {WRONG_GUESS_OPTIONS.map((option) => (
+              <label key={option} className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 font-semibold ${styles.option}`}>
+                <input
+                  type="radio"
+                  name="hangman-max-wrong-guesses"
+                  value={option}
+                  checked={maxWrongGuesses === option}
+                  disabled={hasStarted}
+                  onChange={() => setMaxWrongGuesses(option)}
+                />
+                {option} Yanlış Hakkı
+              </label>
+            ))}
+          </div>
+          {hasStarted ? <p className={`text-xs ${styles.settingsHint}`}>Oyun başladıktan sonra tahmin hakkı değiştirilemez.</p> : null}
+        </fieldset>}
         controls={<div className="flex flex-wrap justify-center gap-2"><button type="button" onClick={finishExercise} disabled={isFinished} className={`min-h-11 rounded-xl px-4 font-semibold disabled:opacity-60 ${styles.secondaryButton}`}>Egzersizi Bitir</button><button type="button" onClick={startNewGame} className={`min-h-11 rounded-xl px-4 font-semibold ${styles.primaryButton}`}>Yeni Oyun</button></div>}
         onExit={() => router.push("/egzersizler")}
       >
         <section className={`max-h-full w-full max-w-3xl overflow-auto rounded-3xl p-3 shadow-sm md:p-5 ${styles.card}`}>
-          <div className="mt-6 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-            <div className={`rounded-2xl p-4 ${styles.panel}`}>
-              <div className={`mx-auto flex h-48 w-40 items-end justify-center rounded-2xl p-4 ${styles.panelInner}`}>
-                <div className="relative h-40 w-28">
-                  <div className={`absolute bottom-0 left-2 h-1 w-24 rounded ${styles.gallowsLine}`} />
-                  <div className={`absolute bottom-0 left-6 h-36 w-1 rounded ${styles.gallowsLine}`} />
-                  <div className={`absolute left-6 top-0 h-1 w-20 rounded ${styles.gallowsLine}`} />
-                  <div className={`absolute right-5 top-0 h-8 w-1 rounded ${styles.gallowsLine}`} />
-                  {wrongGuesses.length > 0 ? <div className={`absolute right-1 top-8 h-10 w-10 rounded-full border-4 ${styles.gallowsHead}`} /> : null}
-                  {wrongGuesses.length > 1 ? <div className={`absolute right-5 top-[70px] h-12 w-1 rounded ${styles.gallowsLine}`} /> : null}
-                  {wrongGuesses.length > 2 ? <div className={`absolute right-5 top-[78px] h-1 w-9 rotate-[-35deg] rounded ${styles.gallowsLine}`} /> : null}
-                  {wrongGuesses.length > 3 ? <div className={`absolute right-1 top-[78px] h-1 w-9 rotate-[35deg] rounded ${styles.gallowsLine}`} /> : null}
-                  {wrongGuesses.length > 4 ? <div className={`absolute right-5 top-[116px] h-1 w-9 rotate-[-45deg] rounded ${styles.gallowsLine}`} /> : null}
-                  {wrongGuesses.length > 5 ? <div className={`absolute right-1 top-[116px] h-1 w-9 rotate-[45deg] rounded ${styles.gallowsLine}`} /> : null}
-                </div>
+          <div className="mt-2 grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] md:gap-4">
+            <div className={`rounded-2xl p-3 ${styles.panel}`}>
+              <div className={`mx-auto flex aspect-[4/5] w-full max-w-44 items-center justify-center rounded-2xl p-2 ${styles.panelInner}`}>
+                <svg viewBox="0 0 240 260" role="img" aria-label="Adam Asmaca çizimi" className={styles.hangmanSvg}>
+                  {showStructure ? <g className={styles.gallowsStructure}>
+                    <path d="M40 230 H200" />
+                    <path d="M72 230 V42" />
+                  </g> : null}
+                  {showBeam ? <path d="M72 42 H164" className={styles.gallowsStructure} /> : null}
+                  {showRope ? <path d="M164 42 V68" className={styles.gallowsStructure} /> : null}
+                  {showHead ? <circle cx="164" cy="96" r="28" className={styles.gallowsPerson} /> : null}
+                  {showBody ? <path d="M164 124 V184" className={styles.gallowsPerson} /> : null}
+                  {showLeftArm ? <path d="M164 142 L124 164" className={styles.gallowsPerson} /> : null}
+                  {showRightArm ? <path d="M164 142 L204 164" className={styles.gallowsPerson} /> : null}
+                  {showLeftLeg ? <path d="M164 184 L132 224" className={styles.gallowsPerson} /> : null}
+                  {showRightLeg ? <path d="M164 184 L196 224" className={styles.gallowsPerson} /> : null}
+                  {showFace ? <g className={isLost && maxWrongGuesses === 10 ? styles.sadFace : styles.happyFace}>
+                    <circle cx="154" cy="92" r="3" />
+                    <circle cx="174" cy="92" r="3" />
+                    <path d={isLost && maxWrongGuesses === 10 ? "M153 110 Q164 101 175 110" : "M153 104 Q164 114 175 104"} />
+                  </g> : null}
+                </svg>
               </div>
 
             </div>

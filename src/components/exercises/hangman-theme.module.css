@@ -24,6 +24,7 @@
   --hm-green: #059669;
   --hm-green-strong: #047857;
   --hm-red: #dc2626;
+  --hm-wood: #9a6a3a;
 }
 
 .darkTheme {
@@ -37,6 +38,7 @@
   --hm-green: #4ade80;
   --hm-green-strong: #34d399;
   --hm-red: #fb7185;
+  --hm-wood: #c08a52;
 }
 
 .darkTheme > div {
@@ -96,6 +98,67 @@
 .panelInner {
   border: 1px solid var(--hm-border);
   background: var(--hm-panel);
+}
+
+.hangmanSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.gallowsStructure,
+.gallowsPerson,
+.happyFace,
+.sadFace {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gallowsStructure {
+  stroke: var(--hm-wood);
+  stroke-width: 9;
+}
+
+.gallowsPerson {
+  stroke: var(--hm-text);
+  stroke-width: 9;
+}
+
+.happyFace,
+.sadFace {
+  stroke: var(--hm-text);
+  stroke-width: 4;
+}
+
+.happyFace circle,
+.sadFace circle {
+  fill: var(--hm-text);
+  stroke: none;
+}
+
+.settings {
+  color: var(--hm-text);
+}
+
+.settingsLegend {
+  color: var(--hm-text);
+}
+
+.option {
+  border-color: var(--hm-border);
+  background: var(--hm-panel);
+  color: var(--hm-text);
+}
+
+.option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.settingsHint {
+  color: var(--hm-muted);
 }
 
 .gallowsLine {

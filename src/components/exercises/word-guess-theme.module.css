@@ -153,6 +153,48 @@
   box-shadow: 0 10px 26px rgba(23, 32, 51, 0.06);
 }
 
+.guessGrid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.125rem, 0.4dvh, 0.375rem);
+}
+
+.guessRow {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.25rem, 0.4vw, 0.375rem);
+}
+
+.guessCell {
+  width: clamp(40px, min(10vw, calc((100dvh - 430px) / 6)), 60px);
+}
+
+.keyboard {
+  display: flex;
+  width: min(100%, 640px);
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.125rem, 0.35dvh, 0.375rem);
+}
+
+.keyboardRow {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(0.25rem, 0.35vw, 0.375rem);
+}
+
+.keyboardRow > button {
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .keyboardRow {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+  }
+}
+
 .cellCorrect {
   border-color: var(--wg-green);
   background: var(--wg-green);
