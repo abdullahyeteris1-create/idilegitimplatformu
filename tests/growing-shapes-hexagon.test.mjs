@@ -143,3 +143,19 @@ test("control buttons keep readable alignment and reset sizing", () => {
   assert.match(client, /min-w-\[150px\]/);
   assert.match(client, /sm:grid-cols-\[minmax\(0,1fr\)_minmax\(150px,220px\)\]/);
 });
+
+test("settings keep dark and light theme controls readable", () => {
+  assert.match(client, /theme === "dark"/);
+  assert.match(client, /scheme-dark/);
+  assert.match(client, /text-slate-100/);
+  assert.match(client, /disabled:text-slate-300/);
+  assert.match(client, /disabled:opacity-100/);
+  assert.match(client, /bg-slate-900\/90/);
+  assert.match(client, /border-slate-500/);
+  assert.match(client, /bg-slate-900 text-slate-100/);
+  assert.match(client, /bg-white text-slate-900/);
+  assert.match(client, /accent-red-500/);
+  assert.match(client, /border-slate-400/);
+  assert.match(client, /scheme-light/);
+  assert.match(client, /idil-surface-strong/);
+});
