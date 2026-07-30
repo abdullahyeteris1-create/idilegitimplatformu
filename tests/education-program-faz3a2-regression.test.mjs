@@ -71,10 +71,11 @@ test("FAZ 3A-2'de yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ay
   // 2026-07-29: cift-tarafli-odak exercise'i icin yeni migration eklendi.
   // 2026-07-29: goz-kaslari exercise'i icin yeni migration eklendi (20260729230000).
   // 2026-07-30: 13-nokta-emoji-takip whitelist forward migration'i eklendi.
+  // 2026-07-30: Profilim icin school_name kolonu migration'i eklendi (20260730150000).
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 30);
+  assert.equal(sqlFiles.length, 31);
   assert.ok(sqlFiles.includes("20260725190000_start_education_program_task_rpc.sql"));
 
   const migrationSource = await read(
