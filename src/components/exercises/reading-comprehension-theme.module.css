@@ -482,3 +482,13 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Tek dikey scroll kaynagi hikaye metnidir (bkz. ilgili client).
+ * scrollbar-gutter:stable, scrollbar gorunup kaybolurken metnin yatay
+ * olarak ziplamasini onler. Sag ic bosluk mevcut Tailwind px-4/md:px-7
+ * siniflarindan gelir - tema renkleri ve scrollbar gorunumu degismedi.
+ */
+.readingArticle {
+  scrollbar-gutter: stable;
+}

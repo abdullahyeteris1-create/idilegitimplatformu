@@ -518,9 +518,14 @@ export function ReadingSpeedTestClient({
           stageClassName="fx-slide-up flex min-h-[430px] w-full flex-col rounded-3xl border border-white/80 bg-white/92 p-3 text-left shadow-[0_14px_42px_rgba(185,28,28,0.09)] backdrop-blur md:min-h-[500px] md:p-4 lg:min-h-[540px]"
           footer={readingFooter}
         >
-          <div className="relative w-full">
+          {/* Tek dikey scroll kaynagi asagidaki <article>'dir. Bu sarmalayici
+              sabit yukseklik ALMAZ; sahne kartinin (flex kolon) kalan alanini
+              flex-1 + min-h-0 ile doldurur. Boylece icerik karti hicbir zaman
+              asmaz ve .exercise-stage-fit'in overflow:auto'su ikinci bir
+              scrollbar cizmez. */}
+          <div className="relative flex w-full min-h-0 flex-1 flex-col">
             <article
-              className={`h-[62vh] w-full overflow-y-auto rounded-2xl border border-red-100 bg-white px-4 py-5 text-slate-900 shadow-inner transition duration-200 md:h-[66vh] md:px-7 md:py-6 ${styles.readingArticle} ${
+              className={`w-full min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-red-100 bg-white px-4 py-5 text-slate-900 shadow-inner transition duration-200 md:px-7 md:py-6 ${styles.readingArticle} ${
                 phase === "paused" ? "select-none blur-sm" : ""
               }`}
               style={{ fontSize: `${fontSize}px`, lineHeight: 1.75 }}
