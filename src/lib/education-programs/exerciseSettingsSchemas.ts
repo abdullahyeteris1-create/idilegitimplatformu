@@ -369,6 +369,20 @@ const GROUPING_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const TWO_SIDE_FOCUS_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "cift-tarafli-odak",
+  fields: [
+    {
+      key: "speed",
+      label: "Hız",
+      type: "integer",
+      options: [1500, 1200, 900, 650, 450],
+      defaultValue: 1500,
+      unit: "ms",
+    },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -383,6 +397,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     BLOCK_READING_SETTINGS_SCHEMA,
     SHADOW_READING_SETTINGS_SCHEMA,
     GROUPING_READING_SETTINGS_SCHEMA,
+    TWO_SIDE_FOCUS_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

@@ -5,6 +5,7 @@ import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenSh
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
+import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
@@ -40,7 +41,9 @@ const LEVELS: ExerciseLevel[] = [1, 2, 3, 4, 5];
 
 const SPEED_MIN = 500;
 const SPEED_MAX = 5000;
-const DEFAULT_SPEED = 1500;
+const SPEED_OPTIONS = [1500, 1200, 900, 650, 450] as const;
+type SpeedOption = (typeof SPEED_OPTIONS)[number];
+const DEFAULT_SPEED: SpeedOption = 1500;
 const NET_TARGET = 10;
 const EXPECTED_RESULT_EXERCISE_TYPE = "two-side-focus";
 
@@ -210,8 +213,22 @@ export function TwoSideFocusExerciseClient({
   );
 
   const initialLevel = (educationProgramLaunch?.initialLevel ?? 1) as ExerciseLevel;
+  const educationProgramSpeed = pickEducationProgramSettingOption(
+    educationProgramLaunch?.settings,
+    "speed",
+    SPEED_OPTIONS,
+    DEFAULT_SPEED,
+  );
+  const assignmentSpeedValue = assignmentTask?.settings.speed;
+  const assignmentSpeed =
+    typeof assignmentSpeedValue === "number" && SPEED_OPTIONS.includes(assignmentSpeedValue as SpeedOption)
+      ? (assignmentSpeedValue as SpeedOption)
+      : null;
+  const controlledSpeed = isEducationProgramMode ? educationProgramSpeed : assignmentSpeed;
+  const isSpeedLocked = controlledSpeed !== null;
   const [level, setLevel] = useState<ExerciseLevel>(initialLevel);
-  const [speed, setSpeed] = useState(DEFAULT_SPEED);
+  const [freeSpeed, setFreeSpeed] = useState<SpeedOption>(DEFAULT_SPEED);
+  const speed = controlledSpeed ?? freeSpeed;
   const [isRunning, setIsRunning] = useState(false);
   const [roundData, setRoundData] = useState<RoundData>(() => createRound(initialLevel, wordSets));
 
@@ -571,7 +588,7 @@ export function TwoSideFocusExerciseClient({
   };
 
   const handleSpeedChange = (value: number) => {
-    setSpeed(clampSpeed(value));
+    setFreeSpeed(clampSpeed(value) as SpeedOption);
   };
 
   return (
@@ -583,7 +600,7 @@ export function TwoSideFocusExerciseClient({
         settings={(
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.levelSelect}`}>{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
-            <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Hız: {speed} ms</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" /></label>
+            <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Hız: {speed} ms</span>{isSpeedLocked ? <select value={speed} disabled className="min-h-9 rounded-xl border border-slate-300 bg-slate-100 px-2 text-xs text-slate-500">{SPEED_OPTIONS.map((value) => <option key={value} value={value}>{value} ms</option>)}</select> : <input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" />}</label>
           </div>
         )}
         footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} disabled={isTimeUp && !isRunning} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50 md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button></div>}

@@ -96,6 +96,10 @@ export type GroupingReadingTaskSettings = {
   customWordsPerMinute?: 100 | 150 | 200 | 250 | 300 | 400 | 500 | 600 | 800 | 1000;
 };
 
+export type TwoSideFocusTaskSettings = {
+  speed?: 1500 | 1200 | 900 | 650 | 450;
+};
+
 export type EducationProgramTemplateTask = {
   id: string;
   templateDayId: string;

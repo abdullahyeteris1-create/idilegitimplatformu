@@ -26,6 +26,40 @@ test("resolveTwoSideFocusDurationSeconds: Education Program modunda ogretmenin a
   assert.equal(seconds, 30);
 });
 
+test("Education Program katalogu cift-tarafli-odak icin speed ayarini sunar", async () => {
+  const source = await read("src/lib/education-programs/exerciseSettingsSchemas.ts");
+  assert.match(source, /exerciseSlug: "cift-tarafli-odak"/);
+  assert.match(source, /key: "speed"/);
+  assert.match(source, /options: \[1500, 1200, 900, 650, 450\]/);
+});
+
+test("TwoSideFocusExerciseClient Education Program speed ayarini launch settings'ten okur ve kilitler", async () => {
+  const source = await read("src/app/egzersizler/cift-tarafli-odak/TwoSideFocusExerciseClient.tsx");
+
+  assert.match(source, /pickEducationProgramSettingOption\(\s*educationProgramLaunch\?\.settings,\s*"speed",\s*SPEED_OPTIONS,\s*DEFAULT_SPEED,/);
+  assert.match(source, /const isSpeedLocked = controlledSpeed !== null;/);
+  assert.match(source, /<select value=\{speed\} disabled/);
+});
+
+test("Eski Education Program gorevlerinde speed yoksa 1500 ms varsayilani korunur", async () => {
+  const source = await read("src/app/egzersizler/cift-tarafli-odak/TwoSideFocusExerciseClient.tsx");
+
+  assert.match(source, /const DEFAULT_SPEED: SpeedOption = 1500;/);
+  assert.match(source, /const \[freeSpeed, setFreeSpeed\] = useState<SpeedOption>\(DEFAULT_SPEED\);/);
+  assert.match(source, /const speed = controlledSpeed \?\? freeSpeed;/);
+});
+
+test("Speed ayari mevcut generic settings JSON/form akisiyla tasinir, yeni kolon gerektirmez", async () => {
+  const editor = await read("src/components/education-programs/EducationProgramTemplateEditor.tsx");
+  const actions = await read("src/app/ogretmen/idil-panel/egitim-programlari/actions.ts");
+  const launch = await read("src/lib/education-programs/exerciseLaunchValidation.ts");
+
+  assert.match(editor, /getExerciseSettingsSchema\(exerciseSlug\)/);
+  assert.match(editor, /settings-\$\{field\.key\}/);
+  assert.match(actions, /readRawExerciseSettingsFromFormData/);
+  assert.match(launch, /settings: result\.value\.settings/);
+});
+
 test("resolveTwoSideFocusDurationSeconds: Assignment modunda ogretmenin atadigi sure kullanilir", () => {
   const seconds = resolveTwoSideFocusDurationSeconds({
     isEducationProgramMode: false,
