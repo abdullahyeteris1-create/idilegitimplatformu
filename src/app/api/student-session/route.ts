@@ -6,6 +6,8 @@ import {
   parseSessionVersion,
   STUDENT_SESSION_COOKIE_NAME,
 } from "@/lib/auth/studentSession";
+import { hashStudentPassword } from "@/lib/auth/studentPassword";
+import { verifyStudentLoginPassword } from "@/lib/auth/studentPasswordLogin";
 import { isStudentActiveStatus } from "@/lib/auth/verifyStudentAccess";
 import { checkStudentDateAccess } from "@/lib/students/studentAccessDates";
 import { getIstanbulDateString } from "@/lib/students/studentAccessDates";
@@ -99,6 +101,64 @@ function normalizeLookup(value: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
+async function upgradeLegacyStudentPassword(
+  supabase: NonNullable<ReturnType<typeof getSupabaseServiceRoleClient>>,
+  studentId: string,
+  password: string,
+): Promise<boolean> {
+  let passwordHash: string;
+  try {
+    passwordHash = await hashStudentPassword(password);
+  } catch {
+    console.error("Student password hash upgrade failed", { studentId });
+    return true;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(STUDENTS_TABLE)
+      .update({ password_hash: passwordHash, password_hash_version: 1 })
+      .eq("id", studentId)
+      .is("password_hash", null)
+      .select("id");
+
+    if (error) {
+      console.error("Student password hash upgrade failed", { studentId });
+      return true;
+    }
+
+    if (Array.isArray(data) && data.length === 1) {
+      return true;
+    }
+
+    const { data: raceRow, error: raceError } = await supabase
+      .from(STUDENTS_TABLE)
+      .select("password_hash,password_hash_version")
+      .eq("id", studentId)
+      .maybeSingle();
+
+    if (raceError || !raceRow) {
+      return true;
+    }
+
+    if (raceRow.password_hash === null || raceRow.password_hash === undefined || raceRow.password_hash === "") {
+      return true;
+    }
+
+    return (
+      await verifyStudentLoginPassword({
+        password,
+        passwordHash: raceRow.password_hash,
+        passwordHashVersion: raceRow.password_hash_version,
+        legacyPassword: null,
+      })
+    ).authenticated;
+  } catch {
+    console.error("Student password hash upgrade failed", { studentId });
+    return true;
+  }
+}
+
 export async function POST(request: NextRequest) {
   let body: StudentLoginBody;
   try {
@@ -124,7 +184,7 @@ export async function POST(request: NextRequest) {
     lookupResult = await supabase
       .from(STUDENTS_TABLE)
       .select(
-        "id,name,username,password,class_name,parent_name,phone,parent_email,is_active,status,education_start_date,access_end_date,education_status,education_level,assignment_mode,created_at,notes",
+        "id,name,username,password,password_hash,password_hash_version,class_name,parent_name,phone,parent_email,is_active,status,education_start_date,access_end_date,education_status,education_level,assignment_mode,created_at,notes",
       );
   } catch {
     return NextResponse.json({ ok: false, message: LOGIN_COMPLETION_FAILED_MESSAGE }, { status: 500 });
@@ -143,7 +203,17 @@ export async function POST(request: NextRequest) {
     return rowUsername === normalizedUsername || rowName === normalizedUsername;
   });
 
-  if (!student || String(student.password ?? "").trim() !== password) {
+  if (!student) {
+    return NextResponse.json({ ok: false, message: "Kullanici adi veya sifre hatali." }, { status: 401 });
+  }
+
+  const passwordCheck = await verifyStudentLoginPassword({
+    password,
+    passwordHash: student.password_hash,
+    passwordHashVersion: student.password_hash_version,
+    legacyPassword: student.password,
+  });
+  if (!passwordCheck.authenticated) {
     return NextResponse.json({ ok: false, message: "Kullanici adi veya sifre hatali." }, { status: 401 });
   }
 
@@ -159,6 +229,10 @@ export async function POST(request: NextRequest) {
 
   if (!dateAccessCheck.allowed) {
     return NextResponse.json({ ok: false, message: dateAccessCheck.message }, { status: 403 });
+  }
+
+  if (passwordCheck.shouldUpgradeLegacy && !(await upgradeLegacyStudentPassword(supabase, String(student.id), password))) {
+    return NextResponse.json({ ok: false, message: "Kullanici adi veya sifre hatali." }, { status: 401 });
   }
 
   let rpcData: unknown;
