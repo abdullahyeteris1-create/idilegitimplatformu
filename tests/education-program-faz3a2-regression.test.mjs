@@ -69,10 +69,11 @@ test("FAZ 3A-2'de yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle ay
   // Phase 1B idempotency migration'iyle sayi bir kez daha arttigi icin
   // burada beklenen toplam mevcut migration sayisini kontrol ediyoruz.
   // 2026-07-29: cift-tarafli-odak exercise'i icin yeni migration eklendi.
+  // 2026-07-29: goz-kaslari exercise'i icin yeni migration eklendi (20260729230000).
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 27);
+  assert.equal(sqlFiles.length, 28);
   assert.ok(sqlFiles.includes("20260725190000_start_education_program_task_rpc.sql"));
 
   const migrationSource = await read(

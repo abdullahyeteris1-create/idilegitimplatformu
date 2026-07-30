@@ -33,6 +33,7 @@ const TASK_VISUAL_BY_SLUG: Record<string, StudentProgramTaskVisual> = {
   "ayni-olani-yakala": { icon: "target", tone: "cyan" },
   "harf-rakam-sayma": { icon: "target", tone: "cyan" },
   "cift-tarafli-odak": { icon: "activity", tone: "purple" },
+  "goz-kaslari": { icon: "eye", tone: "purple" },
 };
 
 export function getStudentProgramTaskVisual(

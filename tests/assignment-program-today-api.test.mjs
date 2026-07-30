@@ -308,7 +308,7 @@ test("Egzersiz katalogundaki (exerciseCatalog.ts) baslik alanlarinda eksik Turkc
   assert.match(source, /title: "Odaklı Okuma"/);
   assert.match(source, /title: "Çift Taraflı Odak"/);
   assert.match(source, /title: "Aynı Olanı Yakala"/);
-  assert.match(source, /title: "Göz Kasları"/);
+  assert.match(source, /title: "Göz Kaslarını Geliştirme Çalışması"/);
   assert.match(source, /title: "Göz Çalışması"/);
   assert.match(source, /title: "Göz Egzersizleri Kolonlar"/);
   assert.match(source, /title: "Kart Hafıza"/);

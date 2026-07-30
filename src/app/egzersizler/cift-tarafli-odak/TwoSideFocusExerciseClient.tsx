@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
+import {
+  buildTwoSideFocusResultPayload,
+  getTwoSideFocusRemainingSeconds,
+  isTwoSideFocusTimedMode,
+  resolveTwoSideFocusDurationSeconds,
+} from "./twoSideFocusDuration";
 import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
@@ -34,6 +42,14 @@ const SPEED_MIN = 500;
 const SPEED_MAX = 5000;
 const DEFAULT_SPEED = 1500;
 const NET_TARGET = 10;
+const EXPECTED_RESULT_EXERCISE_TYPE = "two-side-focus";
+
+function formatTime(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, Math.round(totalSeconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 
 
@@ -164,10 +180,33 @@ export function TwoSideFocusExerciseClient({
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
   const wordSets = initialWordSets;
 
-  const educationProgramTaskId = educationProgramLaunch?.taskId;
-  useEducationProgramTaskCompletion(
+  // Egitim Programi / Odev (Assignment System V2) modlarinda sure, ogretmenin
+  // sablonda/gorev snapshot'inda belirledigi deger ile SUNUCUDAN gelir ve
+  // ogrenci tarafindan degistirilemez - serbest kullanimda ise (ikisi de
+  // yoksa) sure kavrami hic yoktur, calisma mevcut davranisiyla suresiz
+  // devam eder (bkz. Kare Gorme Alani / Goz Kaslari'ndaki ayni ayrim).
+  const assignmentTask = useAssignmentTask();
+  const isEducationProgramMode = Boolean(educationProgramLaunch);
+  const isAssignmentMode = !isEducationProgramMode && assignmentTask !== null;
+  const isTimedMode = isTwoSideFocusTimedMode(isEducationProgramMode, isAssignmentMode);
+
+  const educationProgramDurationSeconds = educationProgramLaunch?.durationSeconds;
+  const assignmentDurationSeconds = assignmentTask?.durationSeconds;
+  const resolvedDurationSeconds = useMemo(
+    () =>
+      resolveTwoSideFocusDurationSeconds({
+        isEducationProgramMode,
+        isAssignmentMode,
+        educationProgramDurationSeconds,
+        assignmentDurationSeconds,
+      }),
+    [assignmentDurationSeconds, educationProgramDurationSeconds, isAssignmentMode, isEducationProgramMode],
+  );
+
+  const educationProgramTaskId = isEducationProgramMode ? educationProgramLaunch?.taskId : undefined;
+  const { completionStatus, completeTaskAfterResultSave, retryTaskCompletion } = useEducationProgramTaskCompletion(
     educationProgramTaskId,
-    "two-side-focus",
+    EXPECTED_RESULT_EXERCISE_TYPE,
   );
 
   const initialLevel = (educationProgramLaunch?.initialLevel ?? 1) as ExerciseLevel;
@@ -178,6 +217,9 @@ export function TwoSideFocusExerciseClient({
 
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const [feedback, setFeedback] = useState<{
     type: "success" | "error" | "info";
     message: string;
@@ -188,9 +230,15 @@ export function TwoSideFocusExerciseClient({
 
   const answerLockedRef = useRef(false);
   const timeoutRef = useRef<number | null>(null);
+  const hasFinalizedRef = useRef(false);
+  const saveInFlightRef = useRef(false);
+  const saveCompletedRef = useRef(false);
+  const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
 
   const netCount = correctCount - wrongCount;
   const wordCount = useMemo(() => getWordCount(level), [level]);
+  const remainingSeconds = getTwoSideFocusRemainingSeconds(resolvedDurationSeconds, elapsedSeconds);
+  const isTimeUp = isTimedMode && remainingSeconds <= 0;
 
   const clearRoundTimeout = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -198,6 +246,58 @@ export function TwoSideFocusExerciseClient({
       timeoutRef.current = null;
     }
   }, []);
+
+  const persistResult = useCallback(
+    async (payload: SecureExerciseResultInput) => {
+      if (saveInFlightRef.current || saveCompletedRef.current) return;
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+      setSaveMessage("Sonuç kaydediliyor...");
+
+      try {
+        const saved = await saveExerciseResultSecure(payload);
+        saveCompletedRef.current = true;
+        setSaveStatus("success");
+        setSaveMessage(
+          saved.assignmentCompletionStatus === "failed"
+            ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+            : "Sonuç başarıyla kaydedildi.",
+        );
+        await completeTaskAfterResultSave();
+      } catch {
+        setSaveStatus("error");
+        setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+      } finally {
+        saveInFlightRef.current = false;
+      }
+    },
+    [completeTaskAfterResultSave],
+  );
+
+  // Egitim Programi/Odev modunda sure dogal olarak 0'a indiginde TEK sefer
+  // cagirilir (hasFinalizedRef korumasi) - calismayi durdurur ve sonucu
+  // kaydeder. Serbest kullanimda isTimedMode false oldugu icin bu yol hic
+  // tetiklenmez, mevcut suresiz davranis degismez.
+  const finishExercise = useCallback(() => {
+    if (hasFinalizedRef.current) return;
+    hasFinalizedRef.current = true;
+
+    clearRoundTimeout();
+    setIsRunning(false);
+
+    const payload = buildTwoSideFocusResultPayload({
+      durationSeconds: resolvedDurationSeconds,
+      correctCount,
+      wrongCount,
+    }) satisfies SecureExerciseResultInput;
+
+    pendingResultRef.current = payload;
+    setFeedback({
+      type: "info",
+      message: "Çalışma süresi doldu. Sonuç kaydediliyor...",
+    });
+    void persistResult(payload);
+  }, [clearRoundTimeout, correctCount, persistResult, resolvedDurationSeconds, wrongCount]);
 
   const createNextRound = useCallback(
     (nextLevel = level) => {
@@ -378,6 +478,28 @@ export function TwoSideFocusExerciseClient({
     };
   }, [clearRoundTimeout, handleTimeOut, isRunning, roundData, speed]);
 
+  // Egitim Programi/Odev suresi: yalniz isTimedMode'da ve calisma calisirken
+  // saniyede bir azalir; Duraklat ile isRunning false olunca interval
+  // temizlenir (durur), Devam Et ile isRunning tekrar true olunca kaldigi
+  // elapsedSeconds degerinden devam eder. Serbest kullanimda isTimedMode
+  // false oldugu icin bu efekt hicbir sey yapmaz.
+  useEffect(() => {
+    if (!isTimedMode || !isRunning) return;
+
+    const intervalId = window.setInterval(() => {
+      setElapsedSeconds((previous) => Math.min(previous + 1, resolvedDurationSeconds));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isRunning, isTimedMode, resolvedDurationSeconds]);
+
+  useEffect(() => {
+    if (!isTimedMode || !isRunning) return;
+    if (elapsedSeconds >= resolvedDurationSeconds) {
+      finishExercise();
+    }
+  }, [elapsedSeconds, finishExercise, isRunning, isTimedMode, resolvedDurationSeconds]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
@@ -399,6 +521,12 @@ export function TwoSideFocusExerciseClient({
   }, [handleAnswer]);
 
   const handleStartStop = () => {
+    // Sure dolduysa (Egitim Programi/Odev modunda) yeniden baslatilamaz -
+    // ogrenci "Yeniden Başlat" ile acikca sifirlamadan tekrar oynayamaz.
+    if (isTimeUp && !isRunning) {
+      return;
+    }
+
     const nextRunning = !isRunning;
 
     setIsRunning(nextRunning);
@@ -429,6 +557,13 @@ export function TwoSideFocusExerciseClient({
     setIsRunning(false);
     resetLevelStats();
     setRoundData(createRound(level, wordSets));
+    setElapsedSeconds(0);
+    hasFinalizedRef.current = false;
+    saveInFlightRef.current = false;
+    saveCompletedRef.current = false;
+    pendingResultRef.current = null;
+    setSaveStatus("idle");
+    setSaveMessage("");
     setFeedback({
       type: "info",
       message: "Çalışma sıfırlandı. Başlat'a basarak yeniden başla.",
@@ -444,14 +579,14 @@ export function TwoSideFocusExerciseClient({
       <ExerciseFullscreenShell
         title="Çift Taraflı Odak"
         backHref="/egzersizler"
-        status={<><span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {level}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Doğru: {correctCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Yanlış: {wrongCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Net: {netCount}/{NET_TARGET}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Kelime: {wordCount}</span></>}
+        status={<>{isTimedMode ? <span className={`compact-stat-chip ${styles.statChipOverride}`}>Süre: {formatTime(remainingSeconds)}</span> : null}<span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {level}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Doğru: {correctCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Yanlış: {wrongCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Net: {netCount}/{NET_TARGET}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Kelime: {wordCount}</span></>}
         settings={(
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.levelSelect}`}>{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>
             <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Hız: {speed} ms</span><input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" /></label>
           </div>
         )}
-        footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button></div>}
+        footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} disabled={isTimeUp && !isRunning} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50 md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button></div>}
       >
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
           <div className="shrink-0 px-1 md:px-2">
@@ -475,6 +610,32 @@ export function TwoSideFocusExerciseClient({
             >
               {feedback.message}
             </div>
+            {saveStatus === "error" ? (
+              <div className={`mt-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-center text-[10px] font-bold text-rose-700 ${styles.feedbackError}`}>
+                <p>{saveMessage}</p>
+                <button
+                  type="button"
+                  className="mt-1 min-h-8 rounded-lg bg-rose-700 px-3 text-white"
+                  onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}
+                >
+                  Yeniden Dene
+                </button>
+              </div>
+            ) : null}
+            {completionStatus.state === "error" ? (
+              <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-center text-[10px] font-bold text-amber-900">
+                <p>{completionStatus.message}</p>
+                {completionStatus.canRetry ? (
+                  <button
+                    type="button"
+                    className="mt-1 min-h-8 rounded-lg bg-amber-700 px-3 text-white"
+                    onClick={() => void retryTaskCompletion()}
+                  >
+                    Program ilerlemesini yeniden dene
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-1 md:px-2">

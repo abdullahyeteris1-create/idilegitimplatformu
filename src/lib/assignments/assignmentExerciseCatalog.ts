@@ -90,7 +90,7 @@ export function isDeniedAssignmentExerciseSlug(exerciseSlug: string): boolean {
 type AllowlistMetadata = Omit<AssignmentExerciseDefinition, "title" | "route" | "category" | "resultExerciseType">;
 
 const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
-  // ---- integrationStatus: "ready" (mevcut 9) ----
+  // ---- integrationStatus: "ready" (mevcut 10) ----
   {
     exerciseSlug: "kare-gorme-alani",
     assignmentEligible: true,
@@ -155,6 +155,17 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
       flowDirection: { kind: "enum", values: ["column", "row"] },
     },
     defaultSettings: { jumpSpeed: 1000, columnCount: 5, flowDirection: "column" },
+  },
+  {
+    exerciseSlug: "goz-kaslari",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 5,
+    supportsSpeed: false,
+    settingsSchema: {},
+    defaultSettings: {},
   },
   {
     exerciseSlug: "takistoskop",

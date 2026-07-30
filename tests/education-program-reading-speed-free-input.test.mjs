@@ -340,7 +340,8 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // Phase 1B ve sonraki eklemelerle mevcut toplam sayiyi dogru sekilde 26
   // olarak kontrol ediyoruz.
   // 2026-07-29: cift-tarafli-odak exercise'i icin yeni migration eklendi (27).
-  assert.equal(sqlFiles.length, 27);
+  // 2026-07-29: goz-kaslari exercise'i icin yeni migration eklendi (28).
+  assert.equal(sqlFiles.length, 28);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {

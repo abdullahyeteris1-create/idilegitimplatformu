@@ -33,10 +33,11 @@ test("FAZ 3A-3A'da yeni migration olusturulmadi (dosya sayisi FAZ 3A-1'dekiyle a
   // Phase 1B idempotency migration'iyle toplam sayi tekrar arttigi icin
   // mevcut migration toplamini kontrol ediyoruz.
   // 2026-07-29: cift-tarafli-odak exercise'i icin yeni migration eklendi.
+  // 2026-07-29: goz-kaslari exercise'i icin yeni migration eklendi (20260729230000).
   const files = await readdir(new URL("../supabase/migrations", import.meta.url));
   const sqlFiles = files.filter((name) => name.endsWith(".sql"));
 
-  assert.equal(sqlFiles.length, 27);
+  assert.equal(sqlFiles.length, 28);
 });
 
 test("Kare Gorme Alani route'u sonraki bir turda paylasilan helper'a gecirildi (kopyalanmis ozel dogrulama kaldirildi)", async () => {

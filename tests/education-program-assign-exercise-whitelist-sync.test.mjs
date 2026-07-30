@@ -9,7 +9,7 @@ async function read(relativePath) {
 const FIX_MIGRATION_PATH =
   "supabase/migrations/20260728020000_sync_assign_education_program_template_exercise_whitelist.sql";
 const NEWEST_MIGRATION_PATH =
-  "supabase/migrations/20260729220000_add_cift_tarafli_odak_to_exercise_whitelist.sql";
+  "supabase/migrations/20260729230000_add_goz_kaslari_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";

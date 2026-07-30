@@ -19,6 +19,7 @@ const READY_EXERCISE_COMPONENTS = {
   "benzer-kelimeler": "../src/app/egzersizler/benzer-kelimeler/SimilarWordsExerciseClient.tsx",
   "kelime-bulma": "../src/app/egzersizler/kelime-bulma/WordFindingExerciseClient.tsx",
   "goz-egzersizleri-kolonlar": "../src/app/egzersizler/goz-egzersizleri-kolonlar/ColumnEyeExerciseClient.tsx",
+  "goz-kaslari": "../src/app/egzersizler/goz-kaslari/EyeMuscleExerciseClient.tsx",
   "harf-rakam-sayma": "../src/app/egzersizler/harf-rakam-sayma/LetterNumberCountingFocusClient.tsx",
   "hafiza-gelistirme": "../src/app/egzersizler/hafiza-gelistirme/MemoryGameExerciseClient.tsx",
   "kart-eslestirme": "../src/app/egzersizler/kart-eslestirme/CardMatchingExerciseClient.tsx",
@@ -61,6 +62,7 @@ test("kaydedilen exerciseType degerleri katalogun resultExerciseType'i ile ESLES
   // kalirdi - bu yuzden esleme acikca dogrulanir.
   const expected = {
     "goz-egzersizleri-kolonlar": "eye-columns",
+    "goz-kaslari": "eye-muscle",
     "hafiza-gelistirme": "memory-game",
     "kart-eslestirme": "card-matching",
   };

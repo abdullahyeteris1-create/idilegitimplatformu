@@ -139,6 +139,17 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "goz-kaslari",
+    title: "Göz Kaslarını Geliştirme Çalışması",
+    resultExerciseType: "eye-muscle",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 5,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "golgeleme",
     title: "Gölgeleme",
     resultExerciseType: "shadow-reading",

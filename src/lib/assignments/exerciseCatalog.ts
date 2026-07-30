@@ -117,7 +117,7 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
   },
   {
     slug: "goz-kaslari",
-    title: "Göz Kasları",
+    title: "Göz Kaslarını Geliştirme Çalışması",
     route: "/egzersizler/goz-kaslari",
     resultExerciseType: "eye-muscle",
     category: "eye",
