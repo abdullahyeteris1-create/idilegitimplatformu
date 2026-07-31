@@ -202,8 +202,6 @@ export async function POST(request: NextRequest) {
   const payload = {
     name,
     username,
-    // Retained temporarily for schemas where the legacy column is NOT NULL.
-    password,
     password_hash: passwordHash,
     password_hash_version: 1,
     password_changed_at: null,

@@ -290,15 +290,13 @@ export async function PATCH(
   if (passwordValidation && !passwordValidation.ok) {
     return errorResponse(passwordValidation.message, 400);
   }
+  const passwordHash = passwordValidation?.ok
+    ? await hashStudentPassword(passwordValidation.value)
+    : null;
 
   const payload: Record<string, unknown> = {};
   if (Object.hasOwn(body, "name")) payload.name = optionalString(body.name);
   if (Object.hasOwn(body, "username")) payload.username = nextUsername;
-  if (passwordValidation?.ok) {
-    payload.password_hash = await hashStudentPassword(passwordValidation.value);
-    payload.password_hash_version = 1;
-    payload.password_changed_at = new Date().toISOString();
-  }
   if (Object.hasOwn(body, "classLevel")) payload.class_name = optionalString(body.classLevel);
   if (Object.hasOwn(body, "parentName")) payload.parent_name = optionalString(body.parentName);
   if (Object.hasOwn(body, "parentPhone")) payload.phone = optionalString(body.parentPhone);
@@ -343,6 +341,25 @@ export async function PATCH(
 
   if (!data) {
     return errorResponse("Öğrenci bulunamadı.", 404);
+  }
+
+  if (passwordHash) {
+    const { error: passwordUpdateError } = await supabase.rpc(
+      "admin_update_student_password_v1",
+      {
+        p_student_id: studentId,
+        p_password_hash: passwordHash,
+        p_password_hash_version: 1,
+      },
+    );
+
+    if (passwordUpdateError) {
+      console.error("Student password update failed", {
+        code: passwordUpdateError.code,
+        message: passwordUpdateError.message,
+      });
+      return errorResponse("Öğrenci parolası güncellenemedi. Lütfen tekrar deneyin.", 500);
+    }
   }
 
   return NextResponse.json({

@@ -17,7 +17,7 @@ test("yönetici parola yazma rotaları sunucu hash helper'ını ve hash alanlar�
 
 test("güncellemede boş parola gönderimi mevcut parolayı değiştirmez", () => {
   assert.match(updateRoute, /rawPassword\.trim\(\)/);
-  assert.match(updateRoute, /if \(passwordValidation\?\.ok\)/);
+  assert.match(updateRoute, /if \(passwordHash\)/);
   assert.match(editForm, /password\.trim\(\) \? \{ password \} : \{\}/);
   assert.match(editForm, /autoComplete="new-password"/);
 });
