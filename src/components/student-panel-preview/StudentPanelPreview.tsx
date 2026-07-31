@@ -618,6 +618,7 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
   const earnedCount = badgeStates.filter((badge) => badge.isEarned).length;
   const totalCount = badgeStates.length;
   const completionPercent = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
+  const visibleBadges = badgeStates.slice(0, 3);
 
   return (
     <section className={styles.sideCard}>
@@ -628,7 +629,7 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
       <p className={styles.readingEmpty}>{earnedCount} rozet açık • {totalCount - earnedCount} rozet kilitli</p>
 
       <div className={styles.badges} role="list" aria-label="Rozetler">
-        {badgeStates.map((badge) => {
+        {visibleBadges.map((badge) => {
           const badgeState = badge.isEarned ? "earned" : badge.comingSoon ? "comingSoon" : "locked";
 
           return (
