@@ -154,7 +154,7 @@
 }
 
 .darkTheme .helperText {
-  color: var(--br-muted) !important;
+  color: #334155 !important;
 }
 
 .darkTheme .warnText {
@@ -162,8 +162,8 @@
 }
 
 .darkTheme .runningWord {
-  color: var(--br-text) !important;
-  text-shadow: 0 0 24px rgba(167, 139, 250, 0.35) !important;
+  color: #0f172a !important;
+  text-shadow: 0 0 24px rgba(15, 23, 42, 0.18) !important;
 }
 
 .darkTheme .resultCardOverride {

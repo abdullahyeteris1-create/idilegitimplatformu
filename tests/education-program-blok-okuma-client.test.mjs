@@ -442,6 +442,15 @@ test("55) navigasyon butonlari (Yeniden Baslat / Ortak Sonuc Ekrani) saveStatus 
   assert.equal(disabledMatches.length, 2, "hem Yeniden Baslat hem Ortak Sonuc Ekrani butonu kilitlenmeli");
 });
 
+test("56) dark mode'da çalışma alanı metinleri açık zeminde okunabilir koyu renkte kalır", async () => {
+  const themeSource = await read("src/components/exercises/block-reading-theme.module.css");
+
+  assert.match(themeSource, /\.darkTheme \.helperText \{\s*color: #334155 !important;/);
+  assert.match(themeSource, /\.darkTheme \.runningWord \{\s*color: #0f172a !important;/);
+  assert.match(themeSource, /\.lightTheme \.helperText \{\s*color: var\(--br-muted\) !important;/);
+  assert.match(themeSource, /\.lightTheme \.runningWord \{\s*color: var\(--br-text\) !important;/);
+});
+
 // NOT: Golgeleme VE Gruplama Calismasi, Blok Okuma'dan SONRAKI turlarda
 // kasitli olarak Egitim Programi'na entegre edildi (bkz.
 // education-program-shadow-reading-*.test.mjs ve
