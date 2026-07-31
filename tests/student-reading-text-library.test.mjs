@@ -27,4 +27,17 @@ test("Anlama Testi aktif soruları aynı remote soru kaynağından alır ve hata
 
 test("uzak kategori değerleri ortak kategori normalizasyonundan geçer", () => {
   assert.match(textStorage, /category: normalizeCategoryName\(/);
+  assert.ok(textStorage.includes('.replace(/[İIı]/g, "i")'));
+});
+
+test("storage erişimi başarısız olsa bile remote metin sorgusu engellenmez", () => {
+  assert.match(textStorage, /readTextLibraryStorageValue/);
+  assert.match(textStorage, /writeTextLibraryStorageValue/);
+  assert.match(textStorage, /catch \{\n    textLibraryStorageAccess = false;/);
+  assert.match(textStorage, /stage=\$\{fields\.stage\}.*storageAccess=/s);
+});
+
+test("iOS teşhis logu yalnız güvenli primitive alanları kullanır", () => {
+  assert.match(textStorage, /student-text-library-ios/);
+  assert.doesNotMatch(textStorage, /console\.(info|error)\([^;]*(message|details|hint|content|token|cookie)/s);
 });

@@ -97,6 +97,52 @@ function hasWindow(): boolean {
   return typeof window !== "undefined";
 }
 
+let textLibraryStorageAccess = true;
+
+function resetTextLibraryStorageDiagnostics(): void {
+  textLibraryStorageAccess = true;
+}
+
+function readTextLibraryStorageValue(storageKey: string): string | null {
+  if (!hasWindow()) {
+    return null;
+  }
+
+  try {
+    return window.localStorage.getItem(storageKey);
+  } catch {
+    textLibraryStorageAccess = false;
+    return null;
+  }
+}
+
+function writeTextLibraryStorageValue(storageKey: string, value: string): void {
+  if (!hasWindow()) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(storageKey, value);
+  } catch {
+    textLibraryStorageAccess = false;
+  }
+}
+
+function logSafeTextLibraryDiagnostic(fields: {
+  stage: string;
+  fetchStarted: "true" | "false";
+  fetchCompleted: "true" | "false";
+  errorCode: string;
+  rowCount: string;
+  categoryLength: string;
+  renderStage: string;
+}): void {
+  const platform = hasWindow() && typeof navigator.platform === "string" ? navigator.platform.slice(0, 32) : "unknown";
+  console.info(
+    `[student-text-library-ios] stage=${fields.stage} platform=${platform} fetchStarted=${fields.fetchStarted} fetchCompleted=${fields.fetchCompleted} errorCode=${fields.errorCode} rowCount=${fields.rowCount} categoryLength=${fields.categoryLength} renderStage=${fields.renderStage} storageAccess=${textLibraryStorageAccess ? "true" : "false"}`,
+  );
+}
+
 function createTextId(): string {
   return `text-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 }
@@ -111,7 +157,8 @@ function uniqueCategories(categories: string[]): string[] {
 function normalizeLookup(value: string): string {
   return value
     .trim()
-    .toLocaleLowerCase("tr-TR")
+    .replace(/[İIı]/g, "i")
+    .toLowerCase()
     .replace(/ğ/g, "g")
     .replace(/[üu]/g, "u")
     .replace(/ş/g, "s")
@@ -141,7 +188,8 @@ function fixMojibake(value: string): string {
 function normalizeCategoryLookup(value: string): string {
   const normalized = fixMojibake(value)
     .trim()
-    .toLocaleLowerCase("tr-TR")
+    .replace(/[İIı]/g, "i")
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\u0131/g, "i")
@@ -332,7 +380,7 @@ function readItemsFromStorageKey(storageKey: string): TextLibraryItem[] {
     return [];
   }
 
-  const raw = localStorage.getItem(storageKey);
+  const raw = readTextLibraryStorageValue(storageKey);
   if (!raw) {
     return [];
   }
@@ -375,7 +423,7 @@ function writeItems(items: TextLibraryItem[]): void {
     return;
   }
 
-  localStorage.setItem(TEXT_LIBRARY_STORAGE_KEY, JSON.stringify(items));
+  writeTextLibraryStorageValue(TEXT_LIBRARY_STORAGE_KEY, JSON.stringify(items));
 }
 
 function writeCategories(categories: string[]): void {
@@ -383,7 +431,7 @@ function writeCategories(categories: string[]): void {
     return;
   }
 
-  localStorage.setItem(TEXT_CATEGORY_STORAGE_KEY, JSON.stringify(uniqueCategories(categories)));
+  writeTextLibraryStorageValue(TEXT_CATEGORY_STORAGE_KEY, JSON.stringify(uniqueCategories(categories)));
 }
 
 function ensureInitialItems(): TextLibraryItem[] {
@@ -482,13 +530,15 @@ async function upsertTextPayload(payload: Record<string, unknown>) {
   return supabase?.from(TEXT_LIBRARY_TABLE).upsert(payload, { onConflict: "id" }).select("*").single();
 }
 
-function logTextLibrarySupabaseError(action: string, error: { message?: string; details?: string; hint?: string; code?: string }, extra?: Record<string, unknown>): void {
-  console.error(`Supabase ${TEXT_LIBRARY_TABLE} ${action} failed`, {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-    ...extra,
+function logTextLibrarySupabaseError(action: string, error: { code?: string }): void {
+  logSafeTextLibraryDiagnostic({
+    stage: `${action}-error`,
+    fetchStarted: "true",
+    fetchCompleted: "true",
+    errorCode: typeof error.code === "string" ? error.code : "null",
+    rowCount: "null",
+    categoryLength: "null",
+    renderStage: "fetch-error",
   });
 }
 
@@ -496,6 +546,16 @@ async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLi
   if (!supabase) {
     return null;
   }
+
+  logSafeTextLibraryDiagnostic({
+    stage: "fetch-start",
+    fetchStarted: "true",
+    fetchCompleted: "false",
+    errorCode: "null",
+    rowCount: "null",
+    categoryLength: "null",
+    renderStage: "fetch",
+  });
 
   let query = supabase.from(TEXT_LIBRARY_TABLE).select("id,title,category,content,is_active,created_at,updated_at").order("updated_at", { ascending: false });
 
@@ -517,6 +577,15 @@ async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLi
   }
 
   const items = data.map((row) => mapSupabaseRowToTextItem(row as Record<string, unknown>));
+  logSafeTextLibraryDiagnostic({
+    stage: "fetch-complete",
+    fetchStarted: "true",
+    fetchCompleted: "true",
+    errorCode: "null",
+    rowCount: String(items.length),
+    categoryLength: String(items[0]?.category.length ?? 0),
+    renderStage: "mapped",
+  });
   return {
     items,
     error: null,
@@ -544,7 +613,7 @@ async function upsertTextToSupabase(item: TextLibraryItem): Promise<TextLibraryW
 
   if (error || !data) {
     if (error) {
-      logTextLibrarySupabaseError("upsert", error, { payload });
+      logTextLibrarySupabaseError("upsert", error);
     }
 
     return {
@@ -572,7 +641,7 @@ async function deleteTextFromSupabase(id: string): Promise<string | null> {
   const { error } = await supabase.from(TEXT_LIBRARY_TABLE).delete().eq("id", id);
 
   if (error) {
-    logTextLibrarySupabaseError("delete", error, { id });
+    logTextLibrarySupabaseError("delete", error);
     return TEXT_LIBRARY_WRITE_ERROR;
   }
 
@@ -690,6 +759,7 @@ export async function refreshTextLibraryCache(): Promise<TextLibraryLoadResult> 
 }
 
 export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResult> {
+  resetTextLibraryStorageDiagnostics();
   const localActiveItems = getActiveTextLibraryItems();
   const remoteResult = await fetchTextLibraryFromSupabase(true);
 
@@ -704,6 +774,15 @@ export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResul
     if (!remoteResult.error && remoteResult.items.length > 0) {
       const currentItems = readItemsRaw().filter((item) => !item.isActive);
       writeItems([...remoteResult.items, ...currentItems]);
+      logSafeTextLibraryDiagnostic({
+        stage: "render-ready",
+        fetchStarted: "true",
+        fetchCompleted: "true",
+        errorCode: "null",
+        rowCount: String(remoteResult.items.length),
+        categoryLength: String(remoteResult.items[0]?.category.length ?? 0),
+        renderStage: "state-update",
+      });
       return {
         ...remoteResult,
         diagnostics: {
