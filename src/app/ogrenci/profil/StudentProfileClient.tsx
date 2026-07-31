@@ -16,6 +16,11 @@ type Profile = {
 };
 
 type ProfileResponse = { ok: boolean; message?: string; profile?: Profile };
+type PasswordResponse = {
+  success?: boolean;
+  message?: string;
+  requiresReauthentication?: boolean;
+};
 
 const emptyProfile: Profile = { name: "", birthDate: "", classLevel: "", schoolName: "", username: "" };
 
@@ -27,12 +32,32 @@ async function readProfileResponse(response: Response): Promise<ProfileResponse>
   }
 }
 
+async function readPasswordResponse(response: Response): Promise<PasswordResponse> {
+  try {
+    return (await response.json()) as PasswordResponse;
+  } catch {
+    return { success: false, message: "Şifre değiştirme yanıtı okunamadı." };
+  }
+}
+
 export function StudentProfileClient() {
   const [profile, setProfile] = useState<Profile>(emptyProfile);
   const [savedProfile, setSavedProfile] = useState<Profile>(emptyProfile);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordMessageType, setPasswordMessageType] = useState<"error" | "success">("error");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordChangeSucceeded, setPasswordChangeSucceeded] = useState(false);
 
   async function loadProfile() {
     setStatus("loading");
@@ -93,6 +118,56 @@ export function StudentProfileClient() {
     }
   }
 
+  async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isChangingPassword || passwordChangeSucceeded) return;
+
+    setPasswordMessage("");
+    setPasswordMessageType("error");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordMessage("Lütfen tüm şifre alanlarını doldurun.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage("Yeni şifre ve şifre tekrarı eşleşmiyor.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch("/api/student/profile/password", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+      const result = await readPasswordResponse(response);
+
+      if (!response.ok || !result.success) {
+        if (result.requiresReauthentication) {
+          window.location.assign("/giris");
+          return;
+        }
+        throw new Error(result.message ?? "Şifreniz şu anda değiştirilemedi.");
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordMessageType("success");
+      setPasswordMessage("Şifreniz başarıyla değiştirildi. Güvenlik nedeniyle tekrar giriş yapmanız gerekiyor.");
+      setPasswordChangeSucceeded(true);
+      window.setTimeout(() => {
+        window.location.assign("/giris?reason=password-changed");
+      }, 900);
+    } catch (error) {
+      setPasswordMessage(error instanceof Error ? error.message : "Şifreniz şu anda değiştirilemedi.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
+
   if (status === "loading") {
     return <main className={styles.page}><div className={styles.shell}><div className={styles.skeleton} aria-label="Profil yükleniyor">Profil bilgileri yükleniyor...</div></div></main>;
   }
@@ -130,12 +205,116 @@ export function StudentProfileClient() {
             <label htmlFor="profile-username">Kullanıcı Adı<input id="profile-username" value={profile.username} readOnly aria-describedby="profile-username-help" className={styles.readonly} /><small id="profile-username-help">Kullanıcı adı değiştirilemez.</small></label>
           </section>
 
-          <section className={`${styles.card} ${styles.securityCard}`}>
-            <div className={styles.cardHeading}><span className={styles.cardIcon}><Icon name="lock" /></span><div><h2>Şifre Değiştir</h2><p>Hesap güvenliği için ayrı bir işlem.</p></div></div>
-            <div className={styles.securityNotice} role="status"><strong>Şifre değişikliği şu anda kullanılamıyor.</strong><p>Bu öğrenci hesabı sistemi henüz güvenli Auth yeniden doğrulama akışına bağlı değil. Mevcut şifreyi düz metin olarak kontrol eden veya doğrulamasız değiştiren bir işlem sunulmuyor.</p><p>Şifreni değiştirmek için öğretmeninle iletişime geçebilirsin.</p></div>
-          </section>
+          <form className={`${styles.card} ${styles.securityCard}`} onSubmit={handlePasswordSubmit}>
+            <div className={styles.cardHeading}><span className={styles.cardIcon}><Icon name="lock" /></span><div><h2>Şifre Değiştir</h2><p>Hesap güvenliğin için mevcut şifreni doğrula.</p></div></div>
+            <div className={styles.passwordFields}>
+              <PasswordField
+                id="profile-current-password"
+                label="Mevcut Şifre"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                visible={passwordVisibility.current}
+                onToggle={() => setPasswordVisibility((value) => ({ ...value, current: !value.current }))}
+                autoComplete="current-password"
+                disabled={isChangingPassword || passwordChangeSucceeded}
+                describedBy="profile-password-message"
+              />
+              <PasswordField
+                id="profile-new-password"
+                label="Yeni Şifre"
+                value={newPassword}
+                onChange={setNewPassword}
+                visible={passwordVisibility.next}
+                onToggle={() => setPasswordVisibility((value) => ({ ...value, next: !value.next }))}
+                autoComplete="new-password"
+                disabled={isChangingPassword || passwordChangeSucceeded}
+                describedBy="profile-password-rules profile-password-message"
+              />
+              <PasswordField
+                id="profile-confirm-password"
+                label="Yeni Şifre Tekrarı"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                visible={passwordVisibility.confirm}
+                onToggle={() => setPasswordVisibility((value) => ({ ...value, confirm: !value.confirm }))}
+                autoComplete="new-password"
+                disabled={isChangingPassword || passwordChangeSucceeded}
+                describedBy="profile-password-message"
+              />
+            </div>
+            <ul id="profile-password-rules" className={styles.passwordRules}>
+              <li>En az 8 karakter</li>
+              <li>Harf ve rakam içermeli</li>
+              <li>Kullanıcı adı veya ad soyad olamaz</li>
+            </ul>
+            <div className={styles.formFooter}>
+              <button type="submit" className={styles.primaryButton} disabled={isChangingPassword || passwordChangeSucceeded}>
+                {passwordChangeSucceeded ? "Girişe Yönlendiriliyor..." : isChangingPassword ? "Şifre Değiştiriliyor..." : "Şifreyi Değiştir"}
+              </button>
+              {passwordMessage ? (
+                <p
+                  id="profile-password-message"
+                  className={passwordMessageType === "success" ? styles.successMessage : styles.errorMessage}
+                  role={passwordMessageType === "error" ? "alert" : "status"}
+                  aria-live="polite"
+                >
+                  {passwordMessage}
+                </p>
+              ) : null}
+            </div>
+          </form>
         </div>
       </div>
     </main>
+  );
+}
+
+function PasswordField({
+  id,
+  label,
+  value,
+  onChange,
+  visible,
+  onToggle,
+  autoComplete,
+  disabled,
+  describedBy,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  visible: boolean;
+  onToggle: () => void;
+  autoComplete: "current-password" | "new-password";
+  disabled: boolean;
+  describedBy: string;
+}) {
+  return (
+    <label htmlFor={id} className={styles.passwordLabel}>
+      {label}
+      <span className={styles.passwordInputWrap}>
+        <input
+          id={id}
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete={autoComplete}
+          disabled={disabled}
+          aria-describedby={describedBy}
+          required
+        />
+        <button
+          type="button"
+          className={styles.visibilityButton}
+          onClick={onToggle}
+          disabled={disabled}
+          aria-label={`${label} alanındaki şifreyi ${visible ? "gizle" : "göster"}`}
+          aria-pressed={visible}
+        >
+          {visible ? "Gizle" : "Göster"}
+        </button>
+      </span>
+    </label>
   );
 }

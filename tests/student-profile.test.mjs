@@ -26,9 +26,9 @@ test("profil API'si kimliği yalnız imzalı oturumdan çözer ve allowlist uygu
   assert.doesNotMatch(apiSource, /password/);
 });
 
-test("kullanıcı adı salt okunur gösterilir ve şifreler arayüze alınmaz", () => {
+test("kullanıcı adı salt okunur gösterilir ve şifre formu profil güncellemesinden ayrıdır", () => {
   assert.match(clientSource, /id="profile-username"[^>]*value=\{profile\.username\}[^>]*readOnly/);
   assert.match(clientSource, /Şifre Değiştir/);
-  assert.match(clientSource, /güvenli Auth yeniden doğrulama akışına bağlı değil/);
-  assert.doesNotMatch(clientSource, /current-password|new-password|password/);
+  assert.match(clientSource, /fetch\("\/api\/student\/profile\/password"/);
+  assert.doesNotMatch(apiSource, /currentPassword|newPassword|confirmPassword/);
 });

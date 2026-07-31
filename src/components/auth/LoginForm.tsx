@@ -13,6 +13,10 @@ const TAB_ORDER: LoginMode[] = ["student", "teacher"];
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reasonMessage =
+    searchParams.get("reason") === "password-changed"
+      ? "Şifreniz değiştirildi. Yeni şifrenizle tekrar giriş yapın."
+      : "";
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<LoginMode>("student");
   const [tabDirection, setTabDirection] = useState<TabDirection>("forward");
@@ -203,6 +207,12 @@ export function LoginForm() {
             Sifremi Unuttum
           </button>
         </div>
+
+        {reasonMessage ? (
+          <p className="rounded-xl border border-emerald-600/40 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-200" role="status">
+            {reasonMessage}
+          </p>
+        ) : null}
 
         {message ? (
           <p className="rounded-xl border border-amber-600/40 bg-amber-500/10 px-3 py-2 text-sm font-semibold text-amber-200">
