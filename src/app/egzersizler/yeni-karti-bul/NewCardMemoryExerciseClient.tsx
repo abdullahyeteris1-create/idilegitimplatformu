@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/new-card-memory-theme.module.css";
@@ -143,6 +144,7 @@ export default function NewCardMemoryExerciseClient() {
   const feedbackTimerRef = useRef<number | null>(null);
   const exerciseStartedAtRef = useRef(0);
   const pendingResultRef = useRef<FinalResultMetrics | null>(null);
+  const completionStartedRef = useRef(false);
 
   const activeLevel = getLevelConfig(selectedLevel);
 
@@ -225,6 +227,7 @@ export default function NewCardMemoryExerciseClient() {
     setPausedFrom(null);
     setSaveError("");
     pendingResultRef.current = null;
+    completionStartedRef.current = false;
     exerciseStartedAtRef.current = Date.now();
     prepareRound(0);
   }
@@ -260,6 +263,8 @@ export default function NewCardMemoryExerciseClient() {
   }, []);
 
   const finishExercise = useCallback((metrics: FinalResultMetrics) => {
+    if (completionStartedRef.current) return;
+    completionStartedRef.current = true;
     if (feedbackTimerRef.current !== null) {
       window.clearTimeout(feedbackTimerRef.current);
       feedbackTimerRef.current = null;
@@ -402,6 +407,7 @@ export default function NewCardMemoryExerciseClient() {
     setIsAnswerLocked(false);
     answerLockedRef.current = false;
     pendingResultRef.current = null;
+    completionStartedRef.current = false;
   }
 
   function changeLevel(level: number) {
@@ -409,6 +415,7 @@ export default function NewCardMemoryExerciseClient() {
 
     setSelectedLevel(level);
     setStatus("idle");
+    completionStartedRef.current = false;
     setMemoryCards([]);
     setChallengeCards([]);
     setAddedCard(null);
@@ -443,8 +450,8 @@ export default function NewCardMemoryExerciseClient() {
         : "grid-cols-3 sm:grid-cols-4";
 
   return (
-    <main className={`min-h-screen bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 px-3 py-4 text-slate-900 sm:px-6 ${styles.pageBackground} ${themeRootClassName}`}>
-      <section className={`mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl ${styles.panel}`}>
+    <main className={`flex min-h-[100dvh] items-start overflow-x-hidden bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 px-2 py-2 text-slate-900 sm:px-4 sm:py-4 ${styles.pageBackground} ${themeRootClassName}`}>
+      <section className={`mx-auto flex max-h-[calc(100dvh-1rem)] min-h-0 w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl ${styles.panel}`}>
         <header className={`border-b border-slate-200 px-5 py-5 sm:px-7 ${styles.panelHeader}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -547,7 +554,7 @@ export default function NewCardMemoryExerciseClient() {
           status === "challenge" ||
           status === "feedback" ||
           status === "paused") && (
-          <div className="px-4 py-5 sm:px-7 sm:py-7">
+          <div className="min-h-0 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
             <div className="mb-5">
               <div className="mb-2 flex items-center justify-between gap-4 text-sm font-black">
                 <span>
@@ -796,6 +803,12 @@ export default function NewCardMemoryExerciseClient() {
                 >
                   Ayarlara Dön
                 </button>
+                <Link
+                  href="/egzersizler"
+                  className={`rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 ${styles.secondaryButton}`}
+                >
+                  Egzersizlere Dön
+                </Link>
               </div>
             </div>
 

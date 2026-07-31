@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/color-match-theme.module.css";
@@ -109,6 +110,7 @@ export default function RenkUyumuExerciseClient() {
   const exerciseStartedAtRef = useRef(0);
   const pendingResultRef = useRef<FinalResultMetrics | null>(null);
   const answerLockedRef = useRef(false);
+  const completionStartedRef = useRef(false);
   const nextQuestionTimerRef = useRef<number | null>(null);
 
   const choiceCount = useMemo(() => {
@@ -172,6 +174,8 @@ export default function RenkUyumuExerciseClient() {
   }, []);
 
   const finishExercise = useCallback((metrics: FinalResultMetrics) => {
+    if (completionStartedRef.current) return;
+    completionStartedRef.current = true;
     answerLockedRef.current = true;
     setIsAnswerLocked(true);
     setFeedback(null);
@@ -280,6 +284,7 @@ export default function RenkUyumuExerciseClient() {
     setWrongCount(0);
     setAnswerHistory([]);
     setStatus("running");
+    completionStartedRef.current = false;
     setFeedback(null);
     setLastResponseTime(null);
     setSaveError("");
@@ -302,6 +307,7 @@ export default function RenkUyumuExerciseClient() {
     }
 
     setStatus("idle");
+    completionStartedRef.current = false;
     setScore(0);
     setCorrectCount(0);
     setWrongCount(0);
@@ -330,14 +336,15 @@ export default function RenkUyumuExerciseClient() {
     setLastResponseTime(null);
     setSaveError("");
     setStatus("idle");
+    completionStartedRef.current = false;
     answerLockedRef.current = false;
     setIsAnswerLocked(false);
     pendingResultRef.current = null;
   }
 
   return (
-    <main className={`${themeRootClassName} min-h-screen px-3 py-4 sm:px-6`}>
-      <section className={`mx-auto w-full max-w-5xl overflow-hidden rounded-3xl ${styles.card}`}>
+    <main className={`${themeRootClassName} flex min-h-[100dvh] items-start overflow-x-hidden px-2 py-2 sm:px-4 sm:py-4`}>
+      <section className={`mx-auto flex max-h-[calc(100dvh-1rem)] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-3xl ${styles.card}`}>
         <header className={`px-5 py-5 sm:px-7 ${styles.cardHeader}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -412,7 +419,7 @@ export default function RenkUyumuExerciseClient() {
         )}
 
         {status === "running" && (
-          <div className="px-4 py-5 sm:px-7 sm:py-7">
+          <div className="min-h-0 overflow-y-auto px-4 py-5 sm:px-7 sm:py-7">
             <div className="mb-5">
               <div className="mb-2 flex items-center justify-between gap-4 text-sm font-black">
                 <span>
@@ -498,6 +505,28 @@ export default function RenkUyumuExerciseClient() {
               <p className={`mt-3 text-center text-xs ${styles.helperText}`}>
                 Klavye desteği: 1–{choiceCount} tuşlarını kullanabilirsin.
               </p>
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (nextQuestionTimerRef.current !== null) {
+                      window.clearTimeout(nextQuestionTimerRef.current);
+                      nextQuestionTimerRef.current = null;
+                    }
+                    const answeredCount = correctCount + wrongCount;
+                    finishExercise({
+                      score,
+                      correctCount,
+                      wrongCount,
+                      successRate: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0,
+                      durationSeconds: Math.max(0, Math.round((Date.now() - exerciseStartedAtRef.current) / 1000)),
+                    });
+                  }}
+                  className={`min-h-11 rounded-xl px-5 py-2.5 text-sm font-black transition ${styles.secondaryButton}`}
+                >
+                  Bitir
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -523,7 +552,7 @@ export default function RenkUyumuExerciseClient() {
         )}
 
         {status === "finished" && (
-          <div className="px-5 py-7 sm:px-7">
+          <div className="min-h-0 overflow-y-auto px-5 py-7 sm:px-7">
             <div className={`rounded-3xl p-6 text-center sm:p-8 ${styles.resultCard}`}>
               <div className="text-5xl">🏆</div>
               <h2 className={`mt-3 text-2xl font-black ${styles.resultTitle}`}>
@@ -556,6 +585,12 @@ export default function RenkUyumuExerciseClient() {
                 >
                   Ayarlara Dön
                 </button>
+                <Link
+                  href="/egzersizler"
+                  className={`rounded-xl px-6 py-3 text-sm font-black transition ${styles.secondaryButton}`}
+                >
+                  Egzersizlere Dön
+                </Link>
               </div>
             </div>
 
