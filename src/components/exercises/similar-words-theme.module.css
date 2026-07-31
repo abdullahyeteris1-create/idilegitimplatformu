@@ -245,16 +245,17 @@
 
 .box {
   --tone: var(--sw-blue);
-  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--sw-line));
-  background: linear-gradient(150deg, color-mix(in srgb, var(--tone) 16%, var(--sw-panel)), var(--sw-panel-2));
-  color: var(--sw-text);
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
   box-shadow: 0 0 14px color-mix(in srgb, var(--tone) 12%, transparent);
 }
 
 .box:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.01);
-  border-color: var(--tone);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--tone) 30%, transparent);
+  border-color: #94a3b8;
+  background: #f8fafc;
+  box-shadow: 0 0 20px rgba(15, 23, 42, 0.12);
 }
 
 .boxTone0 {
@@ -287,6 +288,11 @@
   box-shadow: 0 0 24px color-mix(in srgb, var(--sw-green) 35%, transparent) !important;
 }
 
+.boxCorrect .boxWord,
+.boxWrong .boxWord {
+  color: var(--sw-text);
+}
+
 .boxWrong {
   border-color: var(--sw-pink) !important;
   background: linear-gradient(150deg, color-mix(in srgb, var(--sw-pink) 30%, var(--sw-panel)), var(--sw-panel-2)) !important;
@@ -303,7 +309,7 @@
 }
 
 .boxWord {
-  color: var(--sw-text);
+  color: #0f172a;
 }
 
 /* ---- result screen (non-fullscreen section) ---- */
