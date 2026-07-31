@@ -30,6 +30,11 @@ export type QuestionActivationResult = {
   error: string | null;
 };
 
+export type QuestionLibraryLoadResult = {
+  items: ComprehensionQuestion[];
+  error: string | null;
+};
+
 const QUESTION_ACTIVATION_ERROR = "Bağlı soruların yayın durumu Supabase'e kaydedilemedi.";
 
 function hasWindow(): boolean {
@@ -233,6 +238,27 @@ async function fetchQuestionsFromSupabase(): Promise<ComprehensionQuestion[] | n
   }
 
   return normalizeQuestionLibrary(data.map((row) => mapSupabaseRowToQuestion(row as Record<string, unknown>)));
+}
+
+export async function loadActiveQuestionLibraryItems(): Promise<QuestionLibraryLoadResult> {
+  if (!supabase) {
+    return { items: [], error: "Sorular yüklenemedi. Supabase istemcisi kullanılamıyor." };
+  }
+
+  const { data, error } = await supabase
+    .from(QUESTION_LIBRARY_TABLE)
+    .select("*")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error || !Array.isArray(data)) {
+    return { items: [], error: "Sorular yüklenemedi. Lütfen tekrar deneyin." };
+  }
+
+  return {
+    items: normalizeQuestionLibrary(data.map((row) => mapSupabaseRowToQuestion(row as Record<string, unknown>))),
+    error: null,
+  };
 }
 
 async function upsertQuestionToSupabase(question: ComprehensionQuestion): Promise<void> {

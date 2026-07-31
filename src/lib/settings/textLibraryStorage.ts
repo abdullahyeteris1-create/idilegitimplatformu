@@ -713,23 +713,12 @@ export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResul
       };
     }
 
-    if (localActiveItems.length > 0) {
-      return {
-        items: localActiveItems,
-        error: null,
-        diagnostics: {
-          ...diagnosticsBase,
-          source: "localStorage",
-        },
-      };
-    }
-
     return {
-      items: [],
+      items: remoteResult.error ? [] : remoteResult.items,
       error: remoteResult.error,
       diagnostics: {
         ...diagnosticsBase,
-        source: "none",
+        source: remoteResult.error ? "none" : "supabase",
       },
     };
   }

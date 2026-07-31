@@ -22,7 +22,7 @@ import { saveReadingTestResult } from "@/lib/results/readingTestStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
-import { getActiveQuestionsByTextId, mapQuestionToReadingQuestion, refreshQuestionLibraryCache } from "@/lib/settings/questionLibraryStorage";
+import { loadActiveQuestionLibraryItems, mapQuestionToReadingQuestion } from "@/lib/settings/questionLibraryStorage";
 import { DEFAULT_TEXT_CATEGORY, getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
@@ -141,21 +141,21 @@ export function ReadingComprehensionTestClient({
         setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
         setIsLoadingTexts(true);
         setTextLoadError(null);
-        await refreshQuestionLibraryCache();
-
-        const result = await loadActiveTextLibraryItems();
+        const [questionResult, result] = await Promise.all([loadActiveQuestionLibraryItems(), loadActiveTextLibraryItems()]);
         const activeTexts = result.items
           .map((item) => ({
             id: item.id,
             category: item.category,
             title: item.title,
             text: item.content,
-            questions: getActiveQuestionsByTextId(item.id).map((question) => mapQuestionToReadingQuestion(question)),
+            questions: questionResult.items
+              .filter((question) => question.textId === item.id)
+              .map((question) => mapQuestionToReadingQuestion(question)),
           }))
           .filter((item) => item.questions.length > 0);
 
         setLibraryTexts(activeTexts);
-        setTextLoadError(result.error);
+        setTextLoadError(result.error ?? questionResult.error);
         setSelectedCategory(ALL_CATEGORIES);
         setSelectedTextId(activeTexts[0]?.id ?? "");
         setIsLoadingTexts(false);
