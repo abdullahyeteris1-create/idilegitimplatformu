@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
@@ -17,6 +17,26 @@ import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp
 import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
+type AccountMenuState = { panel: DemoPanel; toggle: (panel: Exclude<DemoPanel, null>) => void };
+const emptyAccountMenuState: AccountMenuState = { panel: null, toggle: () => undefined };
+let accountMenuState = emptyAccountMenuState;
+const accountMenuListeners = new Set<() => void>();
+
+function setAccountMenuState(nextState: AccountMenuState): void {
+  accountMenuState = nextState;
+  accountMenuListeners.forEach((listener) => listener());
+}
+
+function useAccountMenuState(): AccountMenuState {
+  return useSyncExternalStore(
+    (listener) => {
+      accountMenuListeners.add(listener);
+      return () => accountMenuListeners.delete(listener);
+    },
+    () => accountMenuState,
+    () => emptyAccountMenuState,
+  );
+}
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
 export type AuthenticatedStudent = { id: string; name: string; username?: string; classLevel?: string | null };
 type StudentPanelPreviewProps = {
@@ -273,7 +293,14 @@ function Brand() {
   return <div className={styles.brand}><span className={styles.brandMark}><Icon name="rocket" /></span><span><strong>İDİL</strong><small>HIZLI OKUMA</small></span></div>;
 }
 
-function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void }) {
+function NavAction({ item, active = false, onDemo, onNavigate, panel, onTogglePanel }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void; panel?: DemoPanel; onTogglePanel?: (panel: Exclude<DemoPanel, null>) => void }) {
+  const sharedAccountMenu = useAccountMenuState();
+
+  if (item.label === "Ayarlar") {
+    const toggle = onTogglePanel ?? sharedAccountMenu.toggle;
+    return <AccountMenuTrigger open={(panel ?? sharedAccountMenu.panel) === "profile"} onToggle={() => toggle("profile")} />;
+  }
+
   const content = <><Icon name={item.icon}/><span>{item.label}</span></>;
   const className = active ? styles.activeNav : undefined;
 
@@ -282,6 +309,10 @@ function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem
   }
 
   return <button type="button" className={className} onClick={() => { onDemo("Bu özellik önizleme aşamasında."); onNavigate?.(); }}>{content}</button>;
+}
+
+function AccountMenuTrigger({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return <button type="button" className={styles.accountMenuTrigger} aria-haspopup="menu" aria-expanded={open} aria-controls="student-account-menu" onClick={onToggle}><Icon name="settings"/><span>Ayarlar</span><Icon name="arrow"/></button>;
 }
 
 function Sidebar({
@@ -687,6 +718,10 @@ function MobileMenu({ onDemo, onClose }: { onDemo: (message: string) => void; on
 }
 
 function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentName, classLabel, popoverRef }: { panel: Exclude<DemoPanel, "menu" | null>; onDemo: (message: string) => void; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; studentName: string; classLabel: string; popoverRef?: RefObject<HTMLElement | null> }) {
+  if (panel === "profile") {
+    return <AccountMenuPopover studentName={studentName} classLabel={classLabel} onClose={onClose} onLogout={onLogout} isLoggingOut={isLoggingOut} popoverRef={popoverRef} />;
+  }
+
   return (
     <section id="preview-demo-panel" ref={popoverRef} className={styles.demoPopover} role="dialog" aria-modal="true" aria-labelledby="preview-demo-panel-title">
       <div className={styles.popoverTitle}>
@@ -708,6 +743,16 @@ function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentNa
       )}
     </section>
   );
+}
+
+function AccountMenuPopover({ studentName, classLabel, onClose, onLogout, isLoggingOut, popoverRef }: { studentName: string; classLabel: string; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; popoverRef?: RefObject<HTMLElement | null> }) {
+  return <section id="student-account-menu" ref={popoverRef} className={styles.demoPopover} role="menu" aria-label="Hesap menüsü">
+    <div className={styles.popoverTitle}><div><small>HESAP</small><h2>{studentName}</h2><span className={styles.accountClassLabel}>{classLabel}</span></div><button type="button" onClick={onClose} aria-label="Hesap menüsünü kapat">×</button></div>
+    <div className={styles.profileMenu}>
+      <Link href="/ogrenci/profil" className={styles.profileMenuLink} role="menuitem"><Icon name="user"/> Profilim</Link>
+      <button type="button" className={styles.profileLogout} role="menuitem" onClick={onLogout} disabled={isLoggingOut}><Icon name="arrow"/> {isLoggingOut ? "Çıkış yapılıyor..." : "Çıkış Yap"}</button>
+    </div>
+  </section>;
 }
 
 export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard = false, showStatisticsCard = false, xpSnapshot }: StudentPanelPreviewProps) {
@@ -746,7 +791,11 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
     if (shouldRestoreFocus && trigger) window.requestAnimationFrame(() => trigger.focus());
   }, [panel]);
 
-  const togglePanel = (nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel);
+  const togglePanel = useCallback((nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel), []);
+  useEffect(() => {
+    setAccountMenuState({ panel, toggle: togglePanel });
+    return () => setAccountMenuState(emptyAccountMenuState);
+  }, [panel, togglePanel]);
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
@@ -865,7 +914,8 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") closePanel(); };
     window.addEventListener("keydown", closeOnEscape);
     const focusFrame = window.requestAnimationFrame(() => {
-      const firstItem = (popoverRef.current ?? document.getElementById("preview-demo-panel"))?.querySelectorAll<HTMLElement>("button")[1];
+      const panelRoot = popoverRef.current ?? document.getElementById("preview-demo-panel");
+      const firstItem = panelRoot?.querySelector<HTMLElement>('[role="menuitem"]') ?? panelRoot?.querySelectorAll<HTMLElement>("button")[1];
       firstItem?.focus();
     });
     return () => {
