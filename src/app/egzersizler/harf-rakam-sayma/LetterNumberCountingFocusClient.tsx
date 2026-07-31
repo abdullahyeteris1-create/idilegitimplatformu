@@ -7,6 +7,7 @@ import {
   calculateNet,
   generateCountingRound,
   getNextLevel,
+  getNextCountingTotals,
   getRoundDurationBySpeed,
   shouldLevelUp,
   type CountingDifficulty,
@@ -89,6 +90,8 @@ export function LetterNumberCountingFocusClient({
   const timerRef = useRef<number | null>(null);
   const feedbackRef = useRef<number | null>(null);
   const hasSavedResultRef = useRef(false);
+  const totalCorrectRef = useRef(0);
+  const totalWrongRef = useRef(0);
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
@@ -114,6 +117,8 @@ export function LetterNumberCountingFocusClient({
   const [round, setRound] = useState<CountingRound | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [totalWrong, setTotalWrong] = useState(0);
   const [unansweredCount, setUnansweredCount] = useState(0);
   const [totalRounds, setTotalRounds] = useState(0);
   const [levelUpCount, setLevelUpCount] = useState(0);
@@ -122,7 +127,7 @@ export function LetterNumberCountingFocusClient({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
 
-  const net = calculateNet(correctCount, wrongCount);
+  const net = calculateNet(totalCorrect, totalWrong);
   const safeSpeedSeconds = getRoundDurationBySpeed(speedSeconds);
 
   // Odev modunda ogretmenin belirledigi sure, Egitim Programi modunda gorev
@@ -172,6 +177,10 @@ export function LetterNumberCountingFocusClient({
     setLevel(nextStartLevel);
     setCorrectCount(0);
     setWrongCount(0);
+    totalCorrectRef.current = 0;
+    totalWrongRef.current = 0;
+    setTotalCorrect(0);
+    setTotalWrong(0);
     setUnansweredCount(0);
     setTotalRounds(0);
     setLevelUpCount(0);
@@ -197,6 +206,10 @@ export function LetterNumberCountingFocusClient({
     startedAtRef.current = Date.now();
     setCorrectCount(0);
     setWrongCount(0);
+    totalCorrectRef.current = 0;
+    totalWrongRef.current = 0;
+    setTotalCorrect(0);
+    setTotalWrong(0);
     setUnansweredCount(0);
     setTotalRounds(0);
     setLevelUpCount(0);
@@ -235,6 +248,11 @@ export function LetterNumberCountingFocusClient({
     const isCorrect = answer === round.targetCount;
     const nextCorrect = correctCount + (isCorrect ? 1 : 0);
     const nextWrong = wrongCount + (isCorrect ? 0 : 1);
+    const nextTotals = getNextCountingTotals(totalCorrectRef.current, totalWrongRef.current, isCorrect);
+    totalCorrectRef.current = nextTotals.correct;
+    totalWrongRef.current = nextTotals.wrong;
+    setTotalCorrect(nextTotals.correct);
+    setTotalWrong(nextTotals.wrong);
     if (isCorrect) {
       setCorrectCount(nextCorrect);
       setFeedback({ tone: "ok", message: "Dogru!" });
@@ -317,8 +335,8 @@ export function LetterNumberCountingFocusClient({
     hasSavedResultRef.current = true;
     clearTimer();
     clearFeedbackTimer();
-    const finalCorrect = correctCount;
-    const finalWrong = wrongCount;
+    const finalCorrect = totalCorrectRef.current;
+    const finalWrong = totalWrongRef.current;
     const finalNet = calculateNet(finalCorrect, finalWrong);
     const answered = finalCorrect + finalWrong;
     const score = Math.max(0, finalCorrect * 10 - finalWrong * 5);
@@ -351,7 +369,6 @@ export function LetterNumberCountingFocusClient({
   }, [
     clearFeedbackTimer,
     clearTimer,
-    correctCount,
     difficulty,
     level,
     levelUpCount,
@@ -361,7 +378,6 @@ export function LetterNumberCountingFocusClient({
     startLevel,
     totalRounds,
     unansweredCount,
-    wrongCount,
   ]);
 
   // Tur bazli cevap suresini sayan mevcut interval'in AYNISI - ikinci bir
@@ -396,8 +412,8 @@ export function LetterNumberCountingFocusClient({
   };
 
   const stats = [
-    { label: "Dogru", value: correctCount, tone: "ok" as const },
-    { label: "Yanlis", value: wrongCount, tone: "bad" as const },
+    { label: "Dogru", value: totalCorrect, tone: "ok" as const },
+    { label: "Yanlis", value: totalWrong, tone: "bad" as const },
     { label: "Net", value: net, tone: "brand" as const },
     { label: "Seviye", value: level },
     { label: "Zorluk", value: difficulty === "normal" ? "Normal" : "Zor" },

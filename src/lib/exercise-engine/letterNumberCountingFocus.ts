@@ -167,6 +167,17 @@ export function calculateNet(correctCount: number, wrongCount: number): number {
   return correctCount - wrongCount;
 }
 
+export function getNextCountingTotals(
+  totalCorrect: number,
+  totalWrong: number,
+  isCorrect: boolean,
+): { correct: number; wrong: number } {
+  return {
+    correct: totalCorrect + (isCorrect ? 1 : 0),
+    wrong: totalWrong + (isCorrect ? 0 : 1),
+  };
+}
+
 export function shouldLevelUp(net: number): boolean {
   return net >= 10;
 }
