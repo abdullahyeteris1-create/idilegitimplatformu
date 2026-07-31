@@ -9,7 +9,7 @@ import {
 import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
-import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
+import { validateStudentProfilePassword } from "@/lib/students/studentProfilePasswordValidation";
 
 export const runtime = "nodejs";
 
@@ -17,6 +17,7 @@ const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "stude
 const PASSWORD_HASH_VERSION = 1;
 const MAX_BODY_LENGTH = 4096;
 const ALLOWED_FIELDS = new Set(["currentPassword", "newPassword", "confirmPassword"]);
+
 const INVALID_BODY_MESSAGE = "Geçersiz istek gövdesi.";
 const CURRENT_PASSWORD_MESSAGE = "Mevcut şifre doğrulanamadı.";
 const PASSWORD_UNAVAILABLE_MESSAGE = "Bu hesap için şifre değiştirme işlemi kullanılamıyor.";
@@ -148,10 +149,7 @@ export async function POST(request: NextRequest) {
     return jsonError(CURRENT_PASSWORD_MESSAGE, 401);
   }
 
-  const validation = validateStudentPassword(body.newPassword, {
-    username: student.username,
-    name: student.name,
-  });
+  const validation = validateStudentProfilePassword(body.newPassword);
   if (!validation.ok) {
     return jsonError(validation.message, 400);
   }

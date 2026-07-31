@@ -35,9 +35,9 @@ begin
       password_hash = p_password_hash,
       password_hash_version = p_password_hash_version,
       password_changed_at = now(),
-      session_version = coalesce(session_version, 0) + 1,
+      session_version = coalesce(public.students.session_version, 0) + 1,
       updated_at = now()
-    where id = p_student_id
+    where public.students.id = p_student_id
     returning
       public.students.session_version,
       public.students.password_changed_at;

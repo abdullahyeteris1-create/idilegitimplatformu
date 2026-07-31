@@ -701,7 +701,7 @@ function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentNa
         <div className={styles.profileMenu}>
           <div className={styles.profileSummary}><span>👨‍🚀</span><div><strong>{studentName}</strong><small>{classLabel}</small></div></div>
           <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="user"/> Profili Gör</button>
-          <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="settings"/> Ayarlar</button>
+          <Link href="/ogrenci/profil" className={styles.profileMenuLink}><Icon name="settings"/> Ayarlar</Link>
           <button type="button" className={styles.profileLogout} onClick={onLogout} disabled={isLoggingOut}><Icon name="arrow"/> {isLoggingOut ? "Çıkış yapılıyor..." : "Çıkış Yap"}</button>
         </div>
       )}

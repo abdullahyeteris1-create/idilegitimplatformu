@@ -37,9 +37,10 @@ test("autocomplete ve erişilebilir göster gizle davranışı tanımlıdır", (
 });
 
 test("kurallar, hata erişilebilirliği ve güvenli başarı mesajı gösterilir", () => {
-  assert.match(clientSource, /En az 8 karakter/);
-  assert.match(clientSource, /Harf ve rakam içermeli/);
-  assert.match(clientSource, /Kullanıcı adı veya ad soyad olamaz/);
+  assert.doesNotMatch(clientSource, /En az 8 karakter/);
+  assert.doesNotMatch(clientSource, /Harf ve rakam içermeli/);
+  assert.doesNotMatch(clientSource, /Kullanıcı adı veya ad soyad olamaz/);
+  assert.doesNotMatch(clientSource, /profile-password-rules/);
   assert.match(clientSource, /role=\{passwordMessageType === "error" \? "alert" : "status"\}/);
   assert.match(clientSource, /aria-live="polite"/);
   assert.match(

@@ -146,7 +146,7 @@ export const navItems: NavItem[] = [
   { label: "Raporlarım", icon: "chart", href: "/sonuc" },
   { label: "Rozetlerim", icon: "badge", href: "/ogrenci/rozetlerim" },
   { label: "Profilim", icon: "user", href: "/ogrenci/profil" },
-  { label: "Ayarlar", icon: "settings" },
+  { label: "Ayarlar", icon: "settings", href: "/ogrenci/profil" },
 ];
 
 export const stats: { label: string; value: string; note: string; icon: IconName; tone: string }[] = [

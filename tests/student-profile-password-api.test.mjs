@@ -126,9 +126,8 @@ test("yeni parola ortak doğrulama helper'ından değiştirilmeden geçer", asyn
   assert.equal(validateStudentPassword("Ayşe Yılmaz", context).ok, false);
   assert.equal(validateStudentPassword("GüvenliŞifre7", context).ok, true);
 
-  assert.match(routeSource, /validateStudentPassword\(body\.newPassword/);
-  assert.match(routeSource, /username: student\.username/);
-  assert.match(routeSource, /name: student\.name/);
+  assert.match(routeSource, /validateStudentProfilePassword\(body\.newPassword\)/);
+  assert.doesNotMatch(routeSource, /validateStudentPassword\(body\.newPassword/);
 });
 
 test("hash server-side üretilir ve yalnız hash parametreleri atomik RPC'ye gider", () => {
@@ -147,7 +146,7 @@ test("RPC session'ı atomik geçersiz kılar ve başarı cookie'yi temizler", ()
   assert.match(migrationSource, /password_hash = p_password_hash/);
   assert.match(migrationSource, /password_hash_version = p_password_hash_version/);
   assert.match(migrationSource, /password_changed_at = now\(\)/);
-  assert.match(migrationSource, /session_version = coalesce\(session_version, 0\) \+ 1/);
+  assert.match(migrationSource, /session_version = coalesce\(public\.students\.session_version, 0\) \+ 1/);
   assert.match(routeSource, /clearStudentSessionCookie\(response\)/);
   assert.match(
     routeSource,
@@ -169,4 +168,20 @@ test("parola, hash, salt ve request body loglanmaz", () => {
   assert.doesNotMatch(routeSource, /console\.(?:log|info|warn)\(/);
   assert.doesNotMatch(routeSource, /console\.error\([^)]*(?:body|passwordHash|student\.password_hash)/s);
   assert.doesNotMatch(routeSource, /JSON\.stringify\(body\)/);
+  assert.doesNotMatch(routeSource, /student-password-change-rpc/);
+});
+
+test("profil parola akışı yalnız temel parola kurallarını uygular", async () => {
+  const { validateStudentProfilePassword } = await import(
+    "../src/lib/students/studentProfilePasswordValidation.ts"
+  );
+
+  assert.equal(validateStudentProfilePassword("a").ok, true);
+  assert.equal(validateStudentProfilePassword("123456").ok, true);
+  assert.equal(validateStudentProfilePassword("ayse12").ok, true);
+  assert.equal(validateStudentProfilePassword("Ayşe Yılmaz").ok, true);
+  assert.equal(validateStudentProfilePassword("").ok, false);
+  assert.equal(validateStudentProfilePassword("A".repeat(129)).ok, false);
+  assert.equal(validateStudentProfilePassword(" parola").ok, false);
+  assert.equal(validateStudentProfilePassword("parola ").ok, false);
 });

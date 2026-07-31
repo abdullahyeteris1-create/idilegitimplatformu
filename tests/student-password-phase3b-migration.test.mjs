@@ -11,7 +11,7 @@ const bulkRoute = await readFile("src/app/api/admin/students/bulk/route.ts", "ut
 test("Faz 3B migration password kolonunu nullable yapar ve toplu null güncellemesi içermez", () => {
   assert.match(migration, /alter table if exists public\.students[\s\S]*alter column password drop not null/);
   assert.doesNotMatch(migration, /update public\.students[\s\S]*where id is null/i);
-  assert.doesNotMatch(migration, /update public\.students[\s\S]*password\s*=\s*null[\s\S]*where\s+(?!id\s*=)/i);
+  assert.match(migration, /update public\.students[\s\S]*password\s*=\s*null[\s\S]*where public\.students\.id\s*=\s*p_student_id/i);
 });
 
 test("atomik admin parola RPC'si hash, legacy null ve session sürümünü birlikte günceller", () => {
@@ -20,7 +20,7 @@ test("atomik admin parola RPC'si hash, legacy null ve session sürümünü birli
   assert.match(migration, /password_hash = p_password_hash/);
   assert.match(migration, /password_hash_version = p_password_hash_version/);
   assert.match(migration, /password_changed_at = now\(\)/);
-  assert.match(migration, /session_version = coalesce\(session_version, 0\) \+ 1/);
+  assert.match(migration, /session_version = coalesce\(public\.students\.session_version, 0\) \+ 1/);
   assert.match(migration, /security definer/);
   assert.match(migration, /set search_path = public, pg_temp/);
   assert.match(migration, /grant execute on function public\.admin_update_student_password_v1\(uuid, text, smallint\) to service_role/);

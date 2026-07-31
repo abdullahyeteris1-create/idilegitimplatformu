@@ -228,7 +228,7 @@ export function StudentProfileClient() {
                 onToggle={() => setPasswordVisibility((value) => ({ ...value, next: !value.next }))}
                 autoComplete="new-password"
                 disabled={isChangingPassword || passwordChangeSucceeded}
-                describedBy="profile-password-rules profile-password-message"
+                describedBy="profile-password-message"
               />
               <PasswordField
                 id="profile-confirm-password"
@@ -242,11 +242,6 @@ export function StudentProfileClient() {
                 describedBy="profile-password-message"
               />
             </div>
-            <ul id="profile-password-rules" className={styles.passwordRules}>
-              <li>En az 8 karakter</li>
-              <li>Harf ve rakam içermeli</li>
-              <li>Kullanıcı adı veya ad soyad olamaz</li>
-            </ul>
             <div className={styles.formFooter}>
               <button type="submit" className={styles.primaryButton} disabled={isChangingPassword || passwordChangeSucceeded}>
                 {passwordChangeSucceeded ? "Girişe Yönlendiriliyor..." : isChangingPassword ? "Şifre Değiştiriliyor..." : "Şifreyi Değiştir"}
