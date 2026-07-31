@@ -275,9 +275,9 @@ export function WordGuessExerciseClient() {
         controls={<div className="mx-auto grid w-full max-w-4xl gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"><input value={currentGuess} onChange={(event) => setCurrentGuess(normalizeInput(event.target.value, wordLength))} onKeyDown={(event) => { if (event.key === "Enter") submitGuess(); }} disabled={status !== "playing"} placeholder={`${wordLength} harfli tahmin yaz`} className={`min-h-11 rounded-xl px-3 text-center font-bold uppercase ${styles.textInput}`} /><button type="button" onClick={submitGuess} disabled={status !== "playing"} className={`min-h-11 rounded-xl px-4 font-bold ${styles.primaryButton}`}>Tahmin Et</button><button type="button" onClick={() => resetGame(wordLength)} className={`min-h-11 rounded-xl px-4 font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status !== "playing"} className={`min-h-11 rounded-xl px-4 font-bold ${styles.finishButton}`}>Bitir</button></div>}
         onExit={() => router.push("/egzersizler")}
       >
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1 overflow-hidden px-1 py-1 md:gap-2">
+        <div className="flex h-full w-full flex-col items-center justify-center gap-1 overflow-y-auto px-1 py-1 md:gap-2">
           {/* Oyun tahtasi - viewport'a sığacak şekilde */}
-          <section className={`flex max-h-full w-full max-w-3xl flex-col items-center gap-1 overflow-hidden rounded-2xl px-2 py-2 md:gap-1.5 md:rounded-3xl md:px-4 md:py-2 ${styles.card}`}>
+          <section className={`flex max-h-full w-full max-w-3xl flex-col items-center gap-1 overflow-y-auto rounded-2xl px-2 py-2 md:gap-1.5 md:rounded-3xl md:px-4 md:py-2 ${styles.card}`}>
           {/* Tahmin kutulari */}
           <div className={styles.guessGrid}>
             {rows.map((row, rowIndex) => {
