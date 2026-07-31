@@ -138,11 +138,11 @@ export type NavItem = { label: string; icon: IconName; href?: string };
 export const navItems: NavItem[] = [
   { label: "Eğitim Programım", icon: "bookOpen", href: "/ogrenci/egitim-programim" },
   { label: "Öğrenci Paneli", icon: "home", href: "/ogrenci-paneli-onizleme" },
-  { label: "Ana Sayfa", icon: "house", href: "/" },
+  { label: "Ana Sayfa", icon: "house", href: "/ogrenci" },
   { label: "Egzersizler", icon: "checkbox", href: "/egzersizler" },
   { label: "Çalışmalarım", icon: "clock" },
   { label: "Sonuçlarım", icon: "medal", href: "/sonuc" },
-  { label: "Okuma Testlerim", icon: "bookOpen", href: "/egzersizler/anlama-testi" },
+  { label: "Okuma Testlerim", icon: "bookOpen", href: "/ogrenci/okuma-testlerim" },
   { label: "Raporlarım", icon: "chart", href: "/sonuc" },
   { label: "Rozetlerim", icon: "badge", href: "/ogrenci/rozetlerim" },
   { label: "Profilim", icon: "user", href: "/ogrenci/profil" },

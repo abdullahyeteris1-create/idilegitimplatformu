@@ -17,6 +17,14 @@ test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
     /label: "Ayarlar", icon: "settings", href: "\/ogrenci\/profil"/,
   );
   assert.match(
+    navSource,
+    /label: "Okuma Testlerim", icon: "bookOpen", href: "\/ogrenci\/okuma-testlerim"/,
+  );
+  assert.match(
+    navSource,
+    /label: "Ana Sayfa", icon: "house", href: "\/ogrenci"/,
+  );
+  assert.match(
     panelSource,
     /<Link href="\/ogrenci\/profil" className=\{styles\.profileMenuLink\}>[\s\S]*Ayarlar<\/Link>/,
   );
