@@ -108,8 +108,8 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
   },
   "eye-columns": {
     durationMinutes: { type: "integer", min: 1, max: 5 },
-    jumpSpeed: { type: "integer", min: 200, max: 5_000 },
-    intervalMs: { type: "integer", min: 200, max: 5_000 },
+    jumpSpeed: { type: "integer", min: 50, max: 5_000 },
+    intervalMs: { type: "integer", min: 50, max: 5_000 },
     columnCount: { type: "integer", min: 3, max: 7 },
     flowDirection: { type: "string", values: ["column", "row"] },
     completedSteps: { type: "integer", min: 0, max: 100_000 },

@@ -18,7 +18,7 @@ export type EducationProgramTaskSettings = Record<string, string | number | bool
 // component'lerindeki gercek state/option tanimlarindan birebir alinmistir
 // (bkz. src/lib/education-programs/exerciseSettingsSchemas.ts).
 export type EyeColumnsTaskSettings = {
-  jumpSpeed?: 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
+  jumpSpeed?: 50 | 100 | 150 | 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
   columnCount?: 3 | 4 | 5 | 6 | 7;
   flowDirection?: "column" | "row";
 };

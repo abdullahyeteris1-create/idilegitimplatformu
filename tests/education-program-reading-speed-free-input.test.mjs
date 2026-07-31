@@ -282,7 +282,7 @@ test("12) editor enum/integer alanlar icin hala <select> render eder (integer-ra
 
 test("13) sema tanimli diger 9 egzersizin (integer-range disi) hicbir alani etkilenmedi", () => {
   const untouchedSchemas = [
-    ["goz-egzersizleri-kolonlar", "jumpSpeed", [200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]],
+    ["goz-egzersizleri-kolonlar", "jumpSpeed", [50, 100, 150, 200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]],
     ["kelime-bulma", "targetWordsPerText", [3, 4, 5, 6]],
     ["kare-gorme-alani", "gridSize", [7, 9, 11, 13, 15]],
     ["ayni-olani-yakala", "speed", [1500, 1000, 750, 500]],

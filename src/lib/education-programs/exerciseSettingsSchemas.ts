@@ -50,7 +50,7 @@ const EYE_COLUMNS_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
       key: "jumpSpeed",
       label: "Geçiş Hızı",
       type: "integer",
-      options: [200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
+      options: [50, 100, 150, 200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
       defaultValue: 1000,
       unit: "ms",
     },

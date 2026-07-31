@@ -93,11 +93,11 @@ test("eye-columns semasi wildcard veya genel kabul icermez, her alan acikca tipl
   assert.doesNotMatch(schemaBlock, /"eye-columns":\s*\{\s*\}/);
   assert.match(
     schemaBlock,
-    /jumpSpeed: \{ type: "integer", min: 200, max: 5_000 \}/,
+    /jumpSpeed: \{ type: "integer", min: 50, max: 5_000 \}/,
   );
   assert.match(
     schemaBlock,
-    /intervalMs: \{ type: "integer", min: 200, max: 5_000 \}/,
+    /intervalMs: \{ type: "integer", min: 50, max: 5_000 \}/,
   );
   assert.match(
     schemaBlock,

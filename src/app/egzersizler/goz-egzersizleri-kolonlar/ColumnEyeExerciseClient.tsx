@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
@@ -16,12 +16,13 @@ import {
   FULLSCREEN_TOUCH_STYLE,
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
+import { shuffleWordColumnsWords } from "@/lib/exercises/word-columns/wordColumnsWords";
 import styles from "@/components/exercises/eye-columns-theme.module.css";
 
 type Phase = "setup" | "ready" | "running" | "paused" | "result";
 type DurationMinutes = 1 | 2 | 3 | 4 | 5;
 type ColumnCount = 3 | 4 | 5 | 6 | 7;
-type JumpSpeed = 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
+type JumpSpeed = 50 | 100 | 150 | 200 | 400 | 600 | 800 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000;
 type FlowDirection = "column" | "row";
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
@@ -37,6 +38,9 @@ const DURATION_OPTIONS: DurationMinutes[] = [1, 2, 3, 4, 5];
 const COLUMN_OPTIONS: ColumnCount[] = [3, 4, 5, 6, 7];
 const EXPECTED_RESULT_EXERCISE_TYPE = "eye-columns";
 const JUMP_SPEED_OPTIONS: JumpSpeed[] = [
+  50,
+  100,
+  150,
   200,
   400,
   600,
@@ -51,44 +55,6 @@ const JUMP_SPEED_OPTIONS: JumpSpeed[] = [
   4500,
   5000,
 ];
-
-const WORD_POOL = [
-  "ada", "adım", "ağaç", "akıl", "akşam", "alan", "alev", "anahtar", "anlam", "arı",
-  "armağan", "ayna", "bahar", "balık", "barış", "başarı", "bayrak", "beden", "beyin", "bilgi",
-  "bitki", "bulut", "burç", "buzul", "cadde", "ceviz", "çiçek", "çizgi", "çocuk", "dağ",
-  "dalga", "damla", "dans", "davet", "deniz", "denge", "dere", "destek", "dikkat", "doğa",
-  "dost", "dünya", "duygu", "düşünce", "ekran", "elma", "enerji", "esinti", "evren", "fener",
-  "fidan", "fikir", "gemi", "genç", "gezi", "göl", "gölge", "görev", "gözlem", "güneş",
-  "haber", "hafıza", "harita", "hayal", "hedef", "heyecan", "hız", "ışık", "ırmak", "içerik",
-  "ilgi", "ilham", "insan", "ipucu", "istek", "iz", "kalem", "kalp", "kanat", "kapı",
-  "karar", "kavram", "kaynak", "kıyı", "kitap", "kolon", "konu", "köprü", "kural", "kuş",
-  "kutu", "lamba", "liman", "masa", "mavi", "merak", "metin", "meyve", "müzik", "nehir",
-  "nesne", "not", "odak", "okul", "orman", "oyun", "öğrenci", "öykü", "pencere", "renk",
-  "ritim", "rüzgar", "saat", "sabır", "sayfa", "ses", "sıra", "soru", "süre", "şehir",
-  "şekil", "takip", "taş", "tempo", "toprak", "ufuk", "uyum", "uzay", "vadi", "varlık",
-  "yaprak", "yaşam", "yazı", "yıldız", "yol", "yön", "zaman", "zeka", "zihin", "zirve",
-  "açı", "ağ", "anı", "araç", "artı", "başlangıç", "beceri", "çaba", "çatı", "çember",
-  "çözüm", "değer", "düş", "eğitim", "etki", "fırsat", "gece", "gelişim", "güç", "hareket",
-  "hazine", "hikaye", "iletişim", "işaret", "kare", "kelime", "kırmızı", "kök", "merkez", "nokta",
-  "okuma", "örnek", "plan", "sabah", "satır", "seçim", "sistem", "sonuç", "sütun", "tablo",
-  "tasarım", "tekrar", "uygulama", "yakın", "yapı", "yöntem", "yumuşak", "zengin", "zorluk", "çevre",
-  "bölüm", "birikim", "bağlantı", "cesaret", "çalışma", "dakika", "deneyim", "düzen", "fark", "görüş",
-  "güven", "hatıra", "huzur", "inceleme", "karşılık", "kazanım", "lider", "macera", "miktar", "özgür",
-  "parça", "sakin", "sevinç", "sınır", "sürpriz", "takım", "üretim", "veri", "yaklaşım", "yarın",
-  "yetenek", "yolculuk", "zincir", "adalet", "akış", "antrenman", "bağ", "çözümleme", "detay", "doğruluk",
-  "etkinlik", "görüntü", "hızlanma", "konsantrasyon", "mantık", "odaklanma", "performans", "seviye", "alışkanlık", "algılama",
-];
-
-function shuffleUniqueWords(): string[] {
-  const copy = [...new Set(WORD_POOL)];
-
-  for (let index = copy.length - 1; index > 0; index--) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
-  }
-
-  return copy;
-}
 
 function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -138,6 +104,9 @@ export function ColumnEyeExerciseClient({
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  const wordQueueRef = useRef<string[]>([]);
+  const lastDisplayedWordRef = useRef<string | null>(null);
+  const activeIndexRef = useRef(0);
 
   const [phase, setPhase] = useState<Phase>("setup");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
@@ -190,23 +159,23 @@ export function ColumnEyeExerciseClient({
   );
   const remainingSeconds = Math.max(0, totalDurationSeconds - elapsedSeconds);
 
-  const rowsPerColumn = useMemo(() => {
-    const preferredRows = 10;
-    return Math.max(7, Math.min(preferredRows, Math.floor(words.length / columnCount)));
-  }, [columnCount, words.length]);
+  const rowsPerColumn = 10;
 
   const visibleWordCount = rowsPerColumn * columnCount;
 
-  const visibleWords = useMemo(() => {
-    const selected = words.slice(0, visibleWordCount);
-
-    if (selected.length === visibleWordCount) {
-      return selected;
+  const getNextWordGroup = useCallback((groupSize: number) => {
+    if (wordQueueRef.current.length < groupSize) {
+      const remainingWords = wordQueueRef.current;
+      const nextCycle = shuffleWordColumnsWords(lastDisplayedWordRef.current)
+        .filter((word) => !remainingWords.includes(word));
+      wordQueueRef.current = [...remainingWords, ...nextCycle];
     }
 
-    const extra = shuffleUniqueWords().filter((word) => !selected.includes(word));
-    return [...selected, ...extra].slice(0, visibleWordCount);
-  }, [visibleWordCount, words]);
+    const nextGroup = wordQueueRef.current.slice(0, groupSize);
+    wordQueueRef.current = wordQueueRef.current.slice(groupSize);
+    lastDisplayedWordRef.current = nextGroup[nextGroup.length - 1] ?? lastDisplayedWordRef.current;
+    return nextGroup;
+  }, []);
 
   const totalSteps = Math.max(
     1,
@@ -218,8 +187,11 @@ export function ColumnEyeExerciseClient({
     Math.round((elapsedSeconds / totalDurationSeconds) * 100),
   );
 
-  const resetExercise = useCallback(() => {
-    setWords(shuffleUniqueWords());
+  const resetExercise = useCallback((nextColumnCount = columnCount) => {
+    wordQueueRef.current = [];
+    lastDisplayedWordRef.current = null;
+    activeIndexRef.current = 0;
+    setWords(getNextWordGroup(10 * nextColumnCount));
     setActiveIndex(0);
     setElapsedSeconds(0);
     setCompletedSteps(0);
@@ -232,7 +204,7 @@ export function ColumnEyeExerciseClient({
     pendingResultRef.current = null;
     setSaveStatus("idle");
     setSaveMessage("");
-  }, []);
+  }, [columnCount, getNextWordGroup]);
 
   const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
     if (saveInFlightRef.current || saveCompletedRef.current) return;
@@ -332,14 +304,18 @@ export function ColumnEyeExerciseClient({
     }
 
     const movementId = window.setInterval(() => {
-      setActiveIndex((current) =>
-        getNextIndex(current, flowDirection, rowsPerColumn, columnCount),
-      );
+      const current = activeIndexRef.current;
+      const next = getNextIndex(current, flowDirection, rowsPerColumn, columnCount);
+      if (current === visibleWordCount - 1) {
+        setWords(getNextWordGroup(visibleWordCount));
+      }
+      activeIndexRef.current = next;
+      setActiveIndex(next);
       setCompletedSteps((current) => current + 1);
     }, intervalMs);
 
     return () => window.clearInterval(movementId);
-  }, [columnCount, flowDirection, intervalMs, phase, rowsPerColumn, visibleWordCount]);
+  }, [columnCount, flowDirection, getNextWordGroup, intervalMs, phase, rowsPerColumn, visibleWordCount]);
 
   useEffect(() => {
     if (phase !== "running") {
@@ -363,7 +339,10 @@ export function ColumnEyeExerciseClient({
   }, [phase, totalDurationSeconds]);
 
   const beginExercise = () => {
-    setWords(shuffleUniqueWords());
+    wordQueueRef.current = [];
+    lastDisplayedWordRef.current = null;
+    activeIndexRef.current = 0;
+    setWords(getNextWordGroup(visibleWordCount));
     setActiveIndex(0);
     setElapsedSeconds(0);
     setCompletedSteps(0);
@@ -451,8 +430,9 @@ export function ColumnEyeExerciseClient({
           value={columnCount}
           disabled={isEducationProgramMode}
           onChange={(event) => {
-            setColumnCount(Number(event.target.value) as ColumnCount);
-            resetExercise();
+            const nextColumnCount = Number(event.target.value) as ColumnCount;
+            setColumnCount(nextColumnCount);
+            resetExercise(nextColumnCount);
           }}
           className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
         >
@@ -583,7 +563,7 @@ export function ColumnEyeExerciseClient({
           <button
             type="button"
             disabled={saveStatus !== "success"}
-            onClick={resetExercise}
+            onClick={() => resetExercise()}
             className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`}
             style={FULLSCREEN_TOUCH_STYLE}
           >
@@ -688,8 +668,9 @@ export function ColumnEyeExerciseClient({
                 value={columnCount}
                 disabled={isEducationProgramMode}
                 onChange={(event) => {
-                  setColumnCount(Number(event.target.value) as ColumnCount);
-                  resetExercise();
+                  const nextColumnCount = Number(event.target.value) as ColumnCount;
+                  setColumnCount(nextColumnCount);
+                  resetExercise(nextColumnCount);
                 }}
                 className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
               >
@@ -760,7 +741,7 @@ export function ColumnEyeExerciseClient({
                 gridTemplateRows: `repeat(${rowsPerColumn}, minmax(0, 1fr))`,
               }}
             >
-              {visibleWords.map((word, wordIndex) => {
+              {words.map((word, wordIndex) => {
                 const isActive = wordIndex === activeIndex;
 
                 return (

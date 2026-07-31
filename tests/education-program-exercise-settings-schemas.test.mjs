@@ -115,7 +115,7 @@ test("eye-columns semasi client'in gercek alanlariyla birebir eslesir", () => {
 
   assert.deepEqual(Object.keys(fieldsByKey).sort(), ["columnCount", "flowDirection", "jumpSpeed"]);
   assert.deepEqual(fieldsByKey.jumpSpeed.options, [
-    200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+    50, 100, 150, 200, 400, 600, 800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
   ]);
   assert.equal(fieldsByKey.jumpSpeed.defaultValue, 1000);
   assert.deepEqual(fieldsByKey.columnCount.options, [3, 4, 5, 6, 7]);
