@@ -12,6 +12,7 @@ import { categories, navItems, type Category, type NavItem } from "./data";
 import { Icon, type IconName } from "./icons";
 import styles from "./student-panel-preview.module.css";
 import { TodaysProgramTasksCard } from "./TodaysProgramTasksCard";
+import { HeroBanner } from "./hero/HeroBanner";
 import { getStudentXpBadges } from "@/lib/xp/xpBadges";
 import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
@@ -68,7 +69,7 @@ type DailyTaskState =
   | { status: "error" }
   | { status: "empty" }
   | { status: "ready"; assignment: DailyAssignment };
-type ResumeTarget =
+export type ResumeTarget =
   | { status: "loading" }
   | { status: "error" }
   | { status: "assignment"; item: DailyAssignmentItem; href: string; actionLabel: string; details: string[] }
@@ -433,7 +434,29 @@ function Header({
 }
 
 function SpaceScene() {
-  return <div className={styles.spaceScene} aria-hidden="true"><span className={styles.planet}>◉</span><span className={styles.starOne}>✦</span><span className={styles.starTwo}>✧</span><div className={styles.rocket}><Icon name="rocket"/></div><div className={styles.rocketTrail}/></div>;
+  return <div className={styles.spaceScene} aria-hidden="true">
+    <span className={styles.heroGlow} />
+    <span className={`${styles.cloud} ${styles.cloudOne}`} />
+    <span className={`${styles.cloud} ${styles.cloudTwo}`} />
+    <span className={`${styles.star} ${styles.starOne}`}>✦</span>
+    <span className={`${styles.star} ${styles.starTwo}`}>✧</span>
+    <span className={`${styles.star} ${styles.starThree}`}>·</span>
+    <span className={`${styles.planet} ${styles.planetOne}`}>◉</span>
+    <span className={`${styles.planet} ${styles.planetTwo}`}>◌</span>
+    <span className={`${styles.book} ${styles.bookBack}`}>▱</span>
+    <span className={`${styles.book} ${styles.bookFront}`}>▱</span>
+    <span className={styles.pencil}>✎</span>
+    <span className={styles.xpCrystal}>◆</span>
+    <span className={`${styles.xpCrystal} ${styles.xpCrystalTwo}`}>◆</span>
+    <span className={styles.trophy}>♛</span>
+    <div className={styles.readerIllustration}>
+      <span className={styles.readerHead} />
+      <span className={styles.readerHair} />
+      <span className={styles.readerBody} />
+      <span className={styles.readerBook} />
+      <span className={styles.robot}><i /><b /></span>
+    </div>
+  </div>;
 }
 
 function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget: ResumeTarget }) {
@@ -446,19 +469,22 @@ function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget
     resumeContent = <p className={styles.resumeState}>Devam bilgisi şu anda görüntülenemiyor.</p>;
   } else if (resumeTarget.status === "assignment") {
     resumeContent = <><small className={styles.resumeEyebrow}>Günlük görev</small><strong>{resumeTarget.item.exerciseTitle}</strong><div className={styles.resumeDetails}>{resumeTarget.details.map((detail) => <span key={detail}>{detail}</span>)}</div></>;
-    resumeAction = <Link href={resumeTarget.href} data-resume-action="assignment">{resumeTarget.actionLabel} <Icon name="arrow"/></Link>;
+    resumeAction = <Link href={resumeTarget.href} data-resume-action="assignment">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
   } else if (resumeTarget.status === "result") {
     const title = resumeTarget.result.exerciseTitle?.trim() || "Çalışma";
     const isReadingSpeedTest = resumeTarget.result.exerciseType === "reading-speed-test";
     const readingSpeedWpm = getResultDetailNumber(resumeTarget.result, "readingSpeedWpm");
     resumeContent = <><small className={styles.resumeEyebrow}>Son çalışmana dön</small><strong>{title}</strong><div className={styles.resumeDetails}><span>{formatResultDate(resumeTarget.result.date)}</span>{isReadingSpeedTest ? <><span>Okuma Hızı: {readingSpeedWpm !== null ? `${readingSpeedWpm} kelime/dk` : "-"}</span><span>Süre: {formatResultDuration(resumeTarget.result.durationSeconds)}</span></> : <><span>Başarı: %{clampPercentage(resumeTarget.result.successRate)}</span><span>Puan: {Number.isFinite(resumeTarget.result.score) ? resumeTarget.result.score : 0}</span></>}</div></>;
-    resumeAction = <Link href={resumeTarget.href} data-resume-action="result">Bu Çalışmaya Yeniden Başla <Icon name="arrow"/></Link>;
+    resumeAction = <Link href={resumeTarget.href} data-resume-action="result">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
   } else {
     resumeContent = <><small className={styles.resumeEyebrow}>Çalışma önerisi</small><strong>Yeni bir çalışmaya başla</strong><p className={styles.resumeDescription}>Egzersizlerden birini seçerek gelişimine devam edebilirsin.</p></>;
     resumeAction = <Link href={resumeTarget.href} data-resume-action="empty">Egzersizleri Aç <Icon name="arrow"/></Link>;
   }
 
-  return <section className={styles.hero}><div className={styles.heroCopy}><h2>{getGreeting()}, {studentName}! <span>👋</span></h2><p>Bugünkü hedeflerine ulaşmaya hazır mısın?</p><div className={styles.tags}><span>◉ Odak</span><span>✦ Hız</span><span>♢ Anlama</span><span>⊙ Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci">Bugünkü Programı Başlat <Icon name="arrow"/></Link>{resumeAction}</div></div><SpaceScene/></section>;
+  return <HeroBanner studentName={studentName} resumeTarget={resumeTarget} resumeContent={resumeContent} resumeAction={resumeAction} />;
+
+  const resumeLabel = resumeTarget.status === "assignment" ? "Devam etmeye hazır" : resumeTarget.status === "result" ? "Son çalışman hazır" : "Yeni hedef seç";
+  return <section className={styles.hero}><div className={styles.heroCopy}><div className={styles.heroEyebrow}><span className={styles.heroStatusDot} /> Kişisel çalışma alanın</div><h2>{getGreeting()}, {studentName}! <span>👋</span></h2><p className={styles.heroLead}>Bugün hedeflerine ulaşmaya hazır mısın?</p><p className={styles.heroMotivation}>Bugün tamamlayacağın her çalışma seni bir üst seviyeye yaklaştıracak.</p><div className={styles.tags}><span className={styles.tagFocus}>● Odak</span><span className={styles.tagSpeed}>● Hız</span><span className={styles.tagComprehension}>● Anlama</span><span className={styles.tagFluency}>● Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow"/></Link>{resumeAction}</div></div><div className={styles.heroAside}><div className={styles.heroFloatCard}><span>Bugünkü hedef</span><strong>{resumeLabel}</strong><small>Programına göz at ve başla</small></div><div className={`${styles.heroFloatCard} ${styles.heroFloatCardBottom}`}><span>İlerleme hissi</span><strong>Bir adım daha</strong><small>Ritmini koru, yükselmeye devam et</small></div></div><SpaceScene/></section>;
 }
 
 type DashboardStat = { label: string; value: string; note: string; icon: IconName; tone: string };
