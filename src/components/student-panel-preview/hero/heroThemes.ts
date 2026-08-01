@@ -1,5 +1,3 @@
-import type { HeroSceneId } from "./heroScenes";
-
 export type HeroTheme = {
   id: string;
   /** Tema seçicide gösterilen simge. */
@@ -11,24 +9,27 @@ export type HeroTheme = {
   motivationText: string;
   backgroundClass: string;
   accentColor: string;
-  /** Bu banner'a özel illüstrasyon; her tema kendi kompozisyonunu çizer. */
-  scene: HeroSceneId;
-  particles:
-    | "stars" | "pages" | "leaves" | "confetti" | "clouds" | "birds"
-    | "bubbles" | "sparks" | "waves" | "flags" | "comets" | "petals";
+  sceneType: "image";
+  imagePath: string;
+  desktopPosition: string;
+  tabletPosition: string;
+  mobilePosition: string;
+  overlay: string;
+  animationPreset: "slowZoom" | "gentleFloat";
+  textColor: string;
+  /**
+   * Banner örtüsünün tonu — hero metninin kontrastını belirler. Panelin açık/koyu
+   * modundan bağımsızdır; yüzey tonları için `AppearanceMode` kullanılır.
+   */
+  heroTone: "light" | "dark";
+  particles: "stars" | "pages" | "leaves" | "confetti" | "clouds" | "sparks";
 };
 
 export const HERO_THEMES: HeroTheme[] = [
-  { id: "speed-reading", emoji: "⚡", shortTitle: "Hızlı Okuma", title: "⚡ Hızlı Okuma", subtitle: "Kronometre çalışıyor, tempoyu yakala", motivationText: "Her gün biraz daha hızlı, biraz daha net oku.", backgroundClass: "themeSpeed", accentColor: "#7ee0ff", scene: "speedReading", particles: "sparks" },
-  { id: "reading-quest", emoji: "🗺️", shortTitle: "Okuma Serüveni", title: "🗺️ Okuma Serüveni", subtitle: "Rotanı çiz, zirveye tırman", motivationText: "Her sayfa, haritada bir adım ileri demek.", backgroundClass: "themeAdventure", accentColor: "#ffd18a", scene: "readingQuest", particles: "flags" },
-  { id: "student-desk", emoji: "🎒", shortTitle: "Çalışma Masası", title: "🎒 Çalışma Masası", subtitle: "Lamban yanık, defterin açık", motivationText: "Düzenli çalışan, farkı en çabuk görendir.", backgroundClass: "themeDesk", accentColor: "#ffc98a", scene: "studentDesk", particles: "pages" },
-  { id: "magic-library", emoji: "📚", shortTitle: "Kütüphane", title: "📚 Sihirli Kütüphane", subtitle: "Parlayan sayfaların arasında", motivationText: "Her kitap yeni bir süper güç kazandırır.", backgroundClass: "themeLibrary", accentColor: "#ffd27a", scene: "magicLibrary", particles: "pages" },
-  { id: "space-adventure", emoji: "🚀", shortTitle: "Uzay", title: "🚀 Uzay Macerası", subtitle: "Mor uzayda yeni bir keşif", motivationText: "Bugün yeni bir gezegen keşfetmeye hazır mısın?", backgroundClass: "themeSpace", accentColor: "#9f8cff", scene: "spaceRocket", particles: "stars" },
-  { id: "focus-training", emoji: "👁️", shortTitle: "Odak", title: "👁️ Odak Antrenmanı", subtitle: "Gözünü hedefe kilitle", motivationText: "Odaklanan göz, daha az yorulur daha çok görür.", backgroundClass: "themeFocus", accentColor: "#8ef0ff", scene: "focusEye", particles: "waves" },
-  { id: "word-garden", emoji: "🌱", shortTitle: "Kelime Bahçesi", title: "🌱 Kelime Bahçesi", subtitle: "Öğrendiğin her kelime filizlenir", motivationText: "Küçük adımlar, kocaman bir kelime bahçesi yapar.", backgroundClass: "themeGarden", accentColor: "#9ee6b5", scene: "wordGarden", particles: "petals" },
-  { id: "champion-arena", emoji: "🏆", shortTitle: "Şampiyon", title: "🏆 Şampiyonluk Kürsüsü", subtitle: "Bugünün sahnesi senin", motivationText: "Her çalışma seni zirveye biraz daha yaklaştırıyor.", backgroundClass: "themeArena", accentColor: "#ffd36e", scene: "champion", particles: "confetti" },
-  { id: "ocean-depths", emoji: "🌊", shortTitle: "Okyanus", title: "🌊 Okyanus Derinlikleri", subtitle: "Kitap denizaltısıyla derine dal", motivationText: "Derine indikçe daha çok şey keşfedeceksin.", backgroundClass: "themeOcean", accentColor: "#6fd8f5", scene: "oceanDive", particles: "bubbles" },
-  { id: "science-lab", emoji: "🧪", shortTitle: "Laboratuvar", title: "🧪 Bilim Laboratuvarı", subtitle: "Her deney yeni bir bilgi", motivationText: "Merak eden beyin her gün büyür.", backgroundClass: "themeLab", accentColor: "#7ef7c8", scene: "scienceLab", particles: "sparks" },
-  { id: "castle-quest", emoji: "🏰", shortTitle: "Şato", title: "🏰 Şato Macerası", subtitle: "Kelimelerin kalesine giriş", motivationText: "Her doğru cevap kalenin bir kapısını açar.", backgroundClass: "themeCastle", accentColor: "#ffc38a", scene: "castle", particles: "flags" },
-  { id: "night-sky", emoji: "🌌", shortTitle: "Gece Gökyüzü", title: "🌌 Gece Gökyüzü", subtitle: "Teleskopunu takımyıldıza çevir", motivationText: "Sakin bir odak, en parlak sonucu getirir.", backgroundClass: "themeAurora", accentColor: "#8ef0d8", scene: "nightSky", particles: "stars" },
+  { id: "live-space", emoji: "🚀", shortTitle: "Uzay", title: "🚀 Uzay Macerası", subtitle: "Gezegenler arasında yeni bilgiler keşfet", motivationText: "Merakın seni her gün daha uzağa götürsün.", backgroundClass: "themeLiveSpace", accentColor: "#9f8cff", sceneType: "image", imagePath: "/login-backgrounds/space-reading.webp", desktopPosition: "center center", tabletPosition: "58% center", mobilePosition: "68% center", overlay: "linear-gradient(90deg, rgba(8,10,38,.9) 0%, rgba(20,18,70,.62) 48%, rgba(12,8,42,.18) 100%)", animationPreset: "slowZoom", textColor: "#fff", heroTone: "dark",particles: "stars" },
+  { id: "live-library", emoji: "📚", shortTitle: "Kitaplık", title: "📚 Sihirli Kütüphane", subtitle: "Parlayan sayfaların arasında ilerle", motivationText: "Her kitap yeni bir süper güç kazandırır.", backgroundClass: "themeLiveLibrary", accentColor: "#ffd27a", sceneType: "image", imagePath: "/login-backgrounds/magical-library.webp", desktopPosition: "center center", tabletPosition: "54% center", mobilePosition: "62% center", overlay: "linear-gradient(90deg, rgba(31,17,40,.9) 0%, rgba(54,28,60,.64) 50%, rgba(22,11,35,.18) 100%)", animationPreset: "gentleFloat", textColor: "#fff", heroTone: "dark",particles: "pages" },
+  { id: "live-sky-books", emoji: "☁️", shortTitle: "Bulut", title: "☁️ Bulutlar ve Uçan Kitaplar", subtitle: "Hayal gücünle gökyüzüne yüksel", motivationText: "Her sayfa, hedeflerine açılan yeni bir kanat.", backgroundClass: "themeLiveSky", accentColor: "#ffd18a", sceneType: "image", imagePath: "/login-backgrounds/sky-books-01.webp", desktopPosition: "center center", tabletPosition: "55% center", mobilePosition: "58% center", overlay: "linear-gradient(90deg, rgba(20,43,91,.78) 0%, rgba(48,80,140,.42) 52%, rgba(13,31,71,.1) 100%)", animationPreset: "slowZoom", textColor: "#fff", heroTone: "dark",particles: "clouds" },
+  { id: "live-nature", emoji: "🌿", shortTitle: "Doğa", title: "🌿 Doğa ve Keşif", subtitle: "Doğanın içinde yeni yollar keşfet", motivationText: "Her küçük adım, büyük bir keşfin başlangıcıdır.", backgroundClass: "themeLiveNature", accentColor: "#9ee6b5", sceneType: "image", imagePath: "/login-backgrounds/nature-reading.webp", desktopPosition: "center center", tabletPosition: "58% center", mobilePosition: "64% center", overlay: "linear-gradient(90deg, rgba(13,44,42,.82) 0%, rgba(30,74,61,.48) 52%, rgba(12,35,28,.1) 100%)", animationPreset: "gentleFloat", textColor: "#fff", heroTone: "dark",particles: "leaves" },
+  { id: "live-arena", emoji: "🏆", shortTitle: "Arena", title: "🏆 Başarı Arenası", subtitle: "Bugünün sahnesi senin", motivationText: "Her çalışma seni zirveye biraz daha yaklaştırır.", backgroundClass: "themeLiveArena", accentColor: "#ffd36e", sceneType: "image", imagePath: "/login-backgrounds/achievement-arena.webp", desktopPosition: "center center", tabletPosition: "56% center", mobilePosition: "63% center", overlay: "linear-gradient(90deg, rgba(61,25,38,.86) 0%, rgba(106,50,45,.5) 53%, rgba(48,19,32,.12) 100%)", animationPreset: "slowZoom", textColor: "#fff", heroTone: "dark",particles: "confetti" },
+  { id: "live-sunrise", emoji: "🌅", shortTitle: "Gün", title: "🌅 Gün Doğumu", subtitle: "Yeni güne umutla başla", motivationText: "Her sabah, başarıya atılan yepyeni bir adımdır.", backgroundClass: "themeLiveSunrise", accentColor: "#ffd28a", sceneType: "image", imagePath: "/login-backgrounds/sunrise-reading.webp", desktopPosition: "center center", tabletPosition: "55% center", mobilePosition: "60% center", overlay: "linear-gradient(90deg, rgba(83,39,48,.76) 0%, rgba(128,71,56,.4) 52%, rgba(70,31,37,.08) 100%)", animationPreset: "slowZoom", textColor: "#fff", heroTone: "dark",particles: "sparks" },
 ];
