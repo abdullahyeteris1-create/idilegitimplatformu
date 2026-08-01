@@ -222,13 +222,6 @@ function formatResultDate(value: string): string {
   return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getGreeting(): string {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: ISTANBUL_TIME_ZONE, hour: "numeric", hour12: false }).format(new Date()));
-  if (hour < 12) return "Günaydın";
-  if (hour < 18) return "Tünaydın";
-  return "İyi akşamlar";
-}
-
 function resolveResumeTarget(taskState: DailyTaskState, resultsState: PreviewResultsState): ResumeTarget {
   if (taskState.status === "loading") return { status: "loading" };
   if (taskState.status === "error") return { status: "error" };
@@ -434,32 +427,6 @@ function Header({
   );
 }
 
-function SpaceScene() {
-  return <div className={styles.spaceScene} aria-hidden="true">
-    <span className={styles.heroGlow} />
-    <span className={`${styles.cloud} ${styles.cloudOne}`} />
-    <span className={`${styles.cloud} ${styles.cloudTwo}`} />
-    <span className={`${styles.star} ${styles.starOne}`}>✦</span>
-    <span className={`${styles.star} ${styles.starTwo}`}>✧</span>
-    <span className={`${styles.star} ${styles.starThree}`}>·</span>
-    <span className={`${styles.planet} ${styles.planetOne}`}>◉</span>
-    <span className={`${styles.planet} ${styles.planetTwo}`}>◌</span>
-    <span className={`${styles.book} ${styles.bookBack}`}>▱</span>
-    <span className={`${styles.book} ${styles.bookFront}`}>▱</span>
-    <span className={styles.pencil}>✎</span>
-    <span className={styles.xpCrystal}>◆</span>
-    <span className={`${styles.xpCrystal} ${styles.xpCrystalTwo}`}>◆</span>
-    <span className={styles.trophy}>♛</span>
-    <div className={styles.readerIllustration}>
-      <span className={styles.readerHead} />
-      <span className={styles.readerHair} />
-      <span className={styles.readerBody} />
-      <span className={styles.readerBook} />
-      <span className={styles.robot}><i /><b /></span>
-    </div>
-  </div>;
-}
-
 function Hero({ studentName, resumeTarget, progressSummary }: { studentName: string; resumeTarget: ResumeTarget; progressSummary: HeroProgressSummary }) {
   let resumeContent: ReactNode;
   let resumeAction: ReactNode = null;
@@ -483,9 +450,6 @@ function Hero({ studentName, resumeTarget, progressSummary }: { studentName: str
   }
 
   return <HeroBanner studentName={studentName} resumeTarget={resumeTarget} resumeContent={resumeContent} resumeAction={resumeAction} progressSummary={progressSummary} />;
-
-  const resumeLabel = resumeTarget.status === "assignment" ? "Devam etmeye hazır" : resumeTarget.status === "result" ? "Son çalışman hazır" : "Yeni hedef seç";
-  return <section className={styles.hero}><div className={styles.heroCopy}><div className={styles.heroEyebrow}><span className={styles.heroStatusDot} /> Kişisel çalışma alanın</div><h2>{getGreeting()}, {studentName}! <span>👋</span></h2><p className={styles.heroLead}>Bugün hedeflerine ulaşmaya hazır mısın?</p><p className={styles.heroMotivation}>Bugün tamamlayacağın her çalışma seni bir üst seviyeye yaklaştıracak.</p><div className={styles.tags}><span className={styles.tagFocus}>● Odak</span><span className={styles.tagSpeed}>● Hız</span><span className={styles.tagComprehension}>● Anlama</span><span className={styles.tagFluency}>● Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow"/></Link>{resumeAction}</div></div><div className={styles.heroAside}><div className={styles.heroFloatCard}><span>Bugünkü hedef</span><strong>{resumeLabel}</strong><small>Programına göz at ve başla</small></div><div className={`${styles.heroFloatCard} ${styles.heroFloatCardBottom}`}><span>İlerleme hissi</span><strong>Bir adım daha</strong><small>Ritmini koru, yükselmeye devam et</small></div></div><SpaceScene/></section>;
 }
 
 type DashboardStat = {
