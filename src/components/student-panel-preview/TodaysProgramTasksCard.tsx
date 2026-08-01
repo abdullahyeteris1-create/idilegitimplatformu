@@ -156,7 +156,7 @@ export function TodaysProgramTasksCard() {
             </p>
           ) : null}
           <ul className={styles.todaysProgramList}>
-            {state.tasks.map((task) => {
+            {state.tasks.slice(0, 4).map((task) => {
               // Buton yalniz gercekten hazir bir egzersize, katalogdan gelen
               // bir route varsa VE durum uygunsa gosterilir. href, API'nin
               // dondurdugu (katalogdan cozulmus) route'a ?programTaskId=
@@ -202,6 +202,9 @@ export function TodaysProgramTasksCard() {
               );
             })}
           </ul>
+          <Link href="/ogrenci/egitim-programim" className={styles.todaysProgramAllLink}>
+            Tüm Programımı Gör
+          </Link>
         </>
       )}
     </section>

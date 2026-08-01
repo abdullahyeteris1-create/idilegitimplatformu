@@ -8,8 +8,8 @@ import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
 import type { ExerciseResult, ExerciseType } from "@/lib/results/types";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
-import { categories, navItems, stats, type Category, type NavItem } from "./data";
-import { Icon } from "./icons";
+import { categories, navItems, type Category, type NavItem } from "./data";
+import { Icon, type IconName } from "./icons";
 import styles from "./student-panel-preview.module.css";
 import { TodaysProgramTasksCard } from "./TodaysProgramTasksCard";
 import { getStudentXpBadges } from "@/lib/xp/xpBadges";
@@ -124,18 +124,6 @@ function clampPercentage(value: number): number {
   return Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0;
 }
 
-function calculateAverageSuccess(results: ExerciseResult[]): number | null {
-  const validValues = results
-    .filter((result) => result.exerciseType !== "reading-speed-test")
-    .map((result) => result.successRate)
-    .filter(Number.isFinite);
-  if (validValues.length === 0) {
-    return results.some((result) => result.exerciseType === "reading-speed-test") ? null : 0;
-  }
-
-  return clampPercentage(validValues.reduce((total, value) => total + value, 0) / validValues.length);
-}
-
 function getResultDetailNumber(result: ExerciseResult, ...keys: string[]): number | null {
   for (const key of keys) {
     const value = result.details?.[key];
@@ -199,23 +187,6 @@ function getUniqueResults(results: ExerciseResult[]): ExerciseResult[] {
   });
 }
 
-function getWeeklyResults(results: ExerciseResult[], now = new Date()): ExerciseResult[] {
-  const todayKey = getIstanbulDateKey(now);
-  const todayDayNumber = todayKey ? dateKeyToDayNumber(todayKey) : null;
-  if (todayDayNumber === null) return [];
-
-  const todayWeekday = new Date(todayDayNumber * 86_400_000).getUTCDay();
-  const mondayDayNumber = todayDayNumber - ((todayWeekday + 6) % 7);
-  const nextMondayDayNumber = mondayDayNumber + 7;
-
-  return getUniqueResults(results).filter((result) => {
-    const resultDayNumber = getResultDayNumber(result);
-    return resultDayNumber !== null
-      && resultDayNumber >= mondayDayNumber
-      && resultDayNumber < nextMondayDayNumber;
-  });
-}
-
 function calculateDailyStreak(results: ExerciseResult[], now = new Date()): number {
   const todayKey = getIstanbulDateKey(now);
   const todayDayNumber = todayKey ? dateKeyToDayNumber(todayKey) : null;
@@ -247,6 +218,13 @@ function formatResultDate(value: string): string {
   if (Number.isNaN(date.getTime())) return "Tarih bilgisi yok";
 
   return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function getGreeting(): string {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: ISTANBUL_TIME_ZONE, hour: "numeric", hour12: false }).format(new Date()));
+  if (hour < 12) return "Günaydın";
+  if (hour < 18) return "Tünaydın";
+  return "İyi akşamlar";
 }
 
 function resolveResumeTarget(taskState: DailyTaskState, resultsState: PreviewResultsState): ResumeTarget {
@@ -480,40 +458,20 @@ function Hero({ studentName, resumeTarget }: { studentName: string; resumeTarget
     resumeAction = <Link href={resumeTarget.href} data-resume-action="empty">Egzersizleri Aç <Icon name="arrow"/></Link>;
   }
 
-  return <section className={styles.hero}><div className={styles.heroCopy}><h2>Hoş geldin, {studentName}! <span>👋</span></h2><p>Bugün odaklan, öğren, gelişimini bir üst seviyeye taşı.</p><div className={styles.tags}><span>◉ Odak</span><span>✦ Hız</span><span>♢ Anlama</span><span>⊙ Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci">Bugünkü Görevine Başla <Icon name="arrow"/></Link>{resumeAction}</div></div><SpaceScene/></section>;
+  return <section className={styles.hero}><div className={styles.heroCopy}><h2>{getGreeting()}, {studentName}! <span>👋</span></h2><p>Bugünkü hedeflerine ulaşmaya hazır mısın?</p><div className={styles.tags}><span>◉ Odak</span><span>✦ Hız</span><span>♢ Anlama</span><span>⊙ Akıcılık</span></div><div className={styles.resumePanel} data-resume-state={resumeTarget.status}>{resumeContent}</div><div className={styles.heroActions}><Link href="/ogrenci">Bugünkü Programı Başlat <Icon name="arrow"/></Link>{resumeAction}</div></div><SpaceScene/></section>;
 }
 
-function StatCard({ stat, index }: { stat: typeof stats[number]; index: number }) {
+type DashboardStat = { label: string; value: string; note: string; icon: IconName; tone: string };
+
+function StatCard({ stat, index }: { stat: DashboardStat; index: number }) {
   return <article className={`${styles.statCard} ${styles[stat.tone]}`} data-stat-label={stat.label} style={{ "--delay": `${index * 70}ms` } as React.CSSProperties}><div><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.note}</small></div><Icon name={stat.icon}/>{stat.icon === "activity" && <div className={styles.sparkline}>⌁⌁⌁</div>}</article>;
 }
 
-function CategoryCard({ category, index }: { category: Category; index: number }) {
-  return (
-    <article
-      className={`${styles.categoryCard} ${styles[category.tone]}`}
-      data-category={category.id}
-      style={{ "--delay": `${index * 55}ms` } as React.CSSProperties}
-    >
-      <div className={styles.categoryHead}>
-        <div>
-          <Link href={category.href} className={styles.categoryTitleLink} aria-label={`${category.title} kategorisini aç`}>
-            <h3>{category.title}</h3>
-          </Link>
-          <p>{category.count} {category.countLabel ?? "çalışma"}</p>
-        </div>
-        <span className={styles.categoryIcon}><Icon name={category.icon}/></span>
-      </div>
-      {category.description && <p className={styles.categoryDescription}>{category.description}</p>}
-      {category.examples && category.examples.length > 0 && (
-        <div className={styles.categoryExamples} aria-label={`${category.title} örnek egzersizleri`}>
-          {category.examples.slice(0, 4).map((example) => <Link href={example.href} key={example.href}>{example.title}</Link>)}
-        </div>
-      )}
-      <div className={styles.percent}>%{category.progress}</div>
-      <Progress value={category.progress} label={`${category.title} tamamlanma oranı yüzde ${category.progress}`}/>
-      <Link href={category.href}>Devam Et <Icon name="arrow"/></Link>
-    </article>
-  );
+// Kategoriler egzersizler sayfasında yaşamaya devam eder; ana panelde tekrar
+// gösterilmez. Bu uyumluluk bileşeni eski önizleme işaretlemeleri için boştur.
+function CategoryCard(_props: { category: Category; index: number }) {
+  void _props;
+  return null;
 }
 
 function selectDailyTaskItem(items: DailyAssignmentItem[]): DailyAssignmentItem | null {
@@ -646,10 +604,9 @@ function StatisticsCard() {
 
 function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
   const badgeStates = getStudentXpBadges(xpSnapshot);
-  const earnedCount = badgeStates.filter((badge) => badge.isEarned).length;
-  const totalCount = badgeStates.length;
-  const completionPercent = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
-  const visibleBadges = badgeStates.slice(0, 3);
+  const earnedBadges = badgeStates.filter((badge) => badge.isEarned);
+  const earnedCount = earnedBadges.length;
+  const visibleBadges = earnedBadges.slice(-3).reverse();
 
   return (
     <section className={styles.sideCard}>
@@ -657,20 +614,16 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
         <h2>Rozetlerim</h2>
         <Link href="/ogrenci/rozetlerim">Tümünü Gör</Link>
       </div>
-      <p className={styles.readingEmpty}>{earnedCount} rozet açık • {totalCount - earnedCount} rozet kilitli</p>
-
-      <div className={styles.badges} role="list" aria-label="Rozetler">
+      {visibleBadges.length === 0 ? <p className={styles.readingEmpty}>İlk rozetini kazanmak için bugünkü çalışmalarını tamamla!</p> : <div className={styles.badges} role="list" aria-label="Son kazanılan rozetler">
         {visibleBadges.map((badge) => {
-          const badgeState = badge.isEarned ? "earned" : badge.comingSoon ? "comingSoon" : "locked";
-
           return (
             <span
               key={badge.id}
               role="listitem"
               className={styles.badgeItem}
-              data-badge-state={badgeState}
+              data-badge-state="earned"
               title={`${badge.title} - ${badge.description}`}
-              aria-label={`${badge.title} ${badge.isEarned ? "açık" : badge.comingSoon ? "yakında" : "kilitli"}`}
+              aria-label={`${badge.title} kazanıldı`}
             >
               <span className={styles.badgeIcon} aria-hidden="true">
                 <Icon name={badge.icon} />
@@ -678,26 +631,14 @@ function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
               <small className={styles.badgeTitle} title={badge.title}>
                 {badge.title}
               </small>
-              <span className={styles.badgeStatus} data-badge-state={badgeState}>
-                {badge.isEarned ? "Açık" : "Kilitli"}
+              <span className={styles.badgeStatus} data-badge-state="earned">
+                Kazanıldı
               </span>
             </span>
           );
         })}
-      </div>
-
-      <div className={styles.badgeProgress} aria-label="Toplam ilerleme">
-        <div className={styles.badgeProgressHead}>
-          <span>Toplam İlerleme</span>
-          <strong>
-            {earnedCount} / {totalCount}
-          </strong>
-        </div>
-        <div className={styles.badgeProgressBar} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent} aria-label={`Rozet ilerlemesi yüzde ${completionPercent}`}>
-          <span style={{ width: `${completionPercent}%` }} />
-        </div>
-        <p className={styles.badgeProgressText}>%{completionPercent} tamamlandı</p>
-      </div>
+      </div>}
+      {visibleBadges.length > 0 && <p className={styles.readingEmpty}>{earnedCount} rozet kazandın</p>}
     </section>
   );
 }
@@ -939,8 +880,6 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
   const resultsLoading = resultsState.status === "loading";
   const resultsError = resultsState.status === "error";
   const recentResults = useMemo(() => resultsState.results.slice(0, 3), [resultsState.results]);
-  const weeklyResults = useMemo(() => getWeeklyResults(resultsState.results), [resultsState.results]);
-  const weeklyAverageSuccess = useMemo(() => calculateAverageSuccess(weeklyResults), [weeklyResults]);
   const dailyStreak = useMemo(() => calculateDailyStreak(resultsState.results), [resultsState.results]);
   const metricPlaceholder = resultsLoading || resultsError ? "—" : null;
   const streakValue = metricPlaceholder ?? `${dailyStreak} gün`;
@@ -951,18 +890,36 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
       : dailyStreak > 0
         ? "Mevcut sonuçlarına göre"
         : "Henüz aktif seri yok";
-  const dashboardStats = useMemo(() => stats.map((stat) => {
-    if (stat.label === "Bu Haftaki Çalışma") {
-      return { ...stat, value: metricPlaceholder ?? weeklyResults.length.toLocaleString("tr-TR"), note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : stat.note };
-    }
-    if (stat.label === "Haftalık Başarı") {
-      return { ...stat, value: metricPlaceholder ?? (weeklyAverageSuccess === null ? "—" : `%${weeklyAverageSuccess}`), note: resultsLoading ? "Sonuçlar yükleniyor" : resultsError ? "Sonuçlar görüntülenemiyor" : weeklyAverageSuccess === null ? "Puanlı çalışma bulunmuyor" : stat.note };
-    }
-    if (stat.label === "Günlük Seri") {
-      return { ...stat, value: streakValue, note: streakNote };
-    }
-    return stat;
-  }), [metricPlaceholder, resultsError, resultsLoading, streakNote, streakValue, weeklyAverageSuccess, weeklyResults.length]);
+  const dashboardStats = useMemo<DashboardStat[]>(() => [
+    {
+      label: "Günlük Seri",
+      value: metricPlaceholder ?? `${dailyStreak} gün`,
+      note: resultsLoading ? "Sonuçlar yükleniyor" : dailyStreak > 0 ? "Bugünkü ritmini koru" : "İlk serini başlat",
+      icon: "flame",
+      tone: "orange",
+    },
+    {
+      label: "Toplam XP",
+      value: `${formatNumber(safeXpSnapshot.totalXp)} XP`,
+      note: `${safeXpSnapshot.remainingXp} XP sonra seviye ${safeXpSnapshot.level + 1}`,
+      icon: "sparkles",
+      tone: "purple",
+    },
+    {
+      label: "Mevcut Seviye",
+      value: `Seviye ${safeXpSnapshot.level}`,
+      note: safeXpSnapshot.title,
+      icon: "target",
+      tone: "cyan",
+    },
+    {
+      label: "Tamamlanan Çalışma",
+      value: metricPlaceholder ?? formatNumber(resultsState.results.length),
+      note: resultsLoading ? "Sonuçlar yükleniyor" : "Toplam tamamlanan çalışma",
+      icon: "activity",
+      tone: "green",
+    },
+  ], [dailyStreak, metricPlaceholder, resultsLoading, resultsState.results.length, safeXpSnapshot]);
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
 
