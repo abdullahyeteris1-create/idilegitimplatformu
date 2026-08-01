@@ -28,7 +28,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    // `data-idil-theme` / `data-idil-accent` hidrasyondan önce aşağıdaki FOUC
+    // önleme script'i tarafından yazılıyor; React'in sunucu çıktısında bu
+    // öznitelikler bulunmadığı için yalnızca <html> düzeyinde uyarı bastırılır.
+    <html lang="tr" suppressHydrationWarning>
       <head>
         <Script id="idil-theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
