@@ -228,3 +228,151 @@
   .badgeItem{min-height:124px;padding:12px}
   .badgeProgressHead{font-size:11px}
 }
+
+/* --- Hero tema seçici ------------------------------------------------- */
+.heroThemePicker{position:relative;z-index:6;margin-top:14px;max-width:min(100%,470px)}
+.heroThemePickerLabel{display:block;margin-bottom:7px;color:#e7e0ff;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.heroThemeChips{display:flex;flex-wrap:wrap;gap:6px}
+.heroThemeChip{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 10px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.1);color:#f4f1ff;font-size:10px;font-weight:700;letter-spacing:.01em;white-space:nowrap;backdrop-filter:blur(8px);box-shadow:inset 0 1px rgba(255,255,255,.12);transition:transform .2s,background .2s,border-color .2s,box-shadow .2s}
+.heroThemeChip span{font-size:12px;line-height:1}
+.heroThemeChip:hover{transform:translateY(-2px);background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.42)}
+.heroThemeChip[data-active]{background:linear-gradient(135deg,color-mix(in srgb,var(--chip-accent,#fff) 55%,transparent),rgba(255,255,255,.2));border-color:color-mix(in srgb,var(--chip-accent,#fff) 70%,#fff);color:#1c1038;box-shadow:0 6px 16px rgba(12,4,40,.28),inset 0 1px rgba(255,255,255,.5)}
+.heroThemeShuffle{--chip-accent:#ffd27a;border-style:dashed}
+
+/* --- Hero tema geçiş animasyonu --------------------------------------- */
+.hero{transition:background .5s ease}
+.hero[data-hero-ready] .spaceScene{animation:heroThemeSwap .55s cubic-bezier(.2,.8,.2,1) both}
+.hero[data-hero-ready] .heroMotivation{animation:heroThemeFade .45s ease both}
+@keyframes heroThemeSwap{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes heroThemeFade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* --- İstatistik kartları ---------------------------------------------- */
+.statsGrid{gap:12px}
+.statCard{min-height:150px;display:flex;flex-direction:column;gap:10px;padding:15px;border-radius:18px;border:1px solid color-mix(in srgb,var(--tone,#38a9ff) 26%,var(--line));background:linear-gradient(155deg,color-mix(in srgb,var(--tone,#38a9ff) 12%,#0d1a31),#0a1425 72%)}
+.statCard:before{content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:50%;background:var(--tone,#38a9ff);opacity:.16;filter:blur(28px);pointer-events:none;transition:opacity .25s}
+.statCard:hover:before{opacity:.3}
+.statCardHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.statCard .statCardIcon{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;border:1px solid color-mix(in srgb,var(--tone,#38a9ff) 42%,transparent);background:color-mix(in srgb,var(--tone,#38a9ff) 18%,transparent);color:var(--tone,#38a9ff)}
+.statCardIcon svg{width:18px;height:18px}
+.statCard .statCardBadge{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--tone,#38a9ff) 30%,transparent);background:color-mix(in srgb,var(--tone,#38a9ff) 12%,transparent);color:color-mix(in srgb,var(--tone,#38a9ff) 78%,#fff);font-size:9px;font-weight:800;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56%}
+.statCardBody{margin-top:auto}
+.statCardBody span{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#9fadc4}
+.statCardBody strong{font-size:24px;line-height:1.15;margin:6px 0 5px;letter-spacing:-.02em}
+.statCardBody small{font-size:10px;line-height:1.45;color:#93a1b8;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.statCardMeter{height:5px;border-radius:999px;background:#ffffff14;overflow:hidden}
+.statCardMeter span{display:block;height:100%;width:var(--stat-progress,0%);border-radius:inherit;background:linear-gradient(90deg,color-mix(in srgb,var(--tone,#38a9ff) 55%,#ffffff),var(--tone,#38a9ff));box-shadow:0 0 10px color-mix(in srgb,var(--tone,#38a9ff) 60%,transparent);animation:statMeterFill .9s var(--delay,0ms) cubic-bezier(.2,.8,.2,1) both}
+@keyframes statMeterFill{from{width:0}to{width:var(--stat-progress,0%)}}
+
+.light .statCard{border-color:color-mix(in srgb,var(--tone,#38a9ff) 30%,#dbe3ee);background:linear-gradient(155deg,color-mix(in srgb,var(--tone,#38a9ff) 9%,#fff),#fff 70%)}
+.light .statCard:before{opacity:.14}
+.light .statCard .statCardBadge{color:color-mix(in srgb,var(--tone,#38a9ff) 62%,#0f172a);background:color-mix(in srgb,var(--tone,#38a9ff) 14%,#fff)}
+.light .statCardBody span{color:#5a6a82}
+.light .statCardBody small{color:#5f6d84}
+.light .statCardMeter{background:#e6ecf5}
+
+@media(max-width:900px){.heroThemePicker{margin-top:12px;max-width:100%}.statCard{min-height:142px}}
+@media(max-width:560px){
+  .heroThemePicker{max-width:100%}
+  .heroThemePickerLabel{font-size:8px}
+  .heroThemeChips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .heroThemeChips::-webkit-scrollbar{display:none}
+  .heroThemeChip{flex:0 0 auto}
+  .statsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .statCard{min-height:136px;padding:13px}
+  .statCardBody strong{font-size:19px}
+  .statCard .statCardBadge{font-size:8px;padding:0 6px}
+}
+@media(max-width:360px){.statsGrid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.statCardMeter span{animation:none}.hero[data-hero-ready] .spaceScene,.hero[data-hero-ready] .heroMotivation{animation:none}}
+
+/* Uzay ve bulut temaları için eksik olan tema-özel dokunuşlar. */
+.particlesstars span{color:#fff3b0}
+.particlesclouds span{color:#ffe9fb}
+
+/* --- Tema kapsamı: yalnızca değişken taşır, yerleşimi etkilemez ---------- */
+.heroThemeScope{display:contents}
+
+/* --- Yeni banner temaları ---------------------------------------------- */
+.themeOcean,.hero.themeOcean{background:radial-gradient(circle at 80% 14%,rgba(111,216,245,.42),transparent 24%),radial-gradient(circle at 70% 104%,rgba(56,169,255,.5),transparent 32%),radial-gradient(circle at 45% 80%,rgba(24,110,180,.7),transparent 44%),linear-gradient(120deg,#062a4d 0%,#0a3f6b 44%,#0b5470 76%,#07314b 100%)}
+.themeLab,.hero.themeLab{background:radial-gradient(circle at 79% 15%,rgba(126,247,200,.36),transparent 23%),radial-gradient(circle at 72% 103%,rgba(64,214,190,.44),transparent 31%),radial-gradient(circle at 46% 80%,rgba(28,120,120,.66),transparent 43%),linear-gradient(120deg,#07281f 0%,#0c3b3a 45%,#123a52 78%,#0a2333 100%)}
+.themeAurora,.hero.themeAurora{background:radial-gradient(ellipse at 72% 10%,rgba(142,240,216,.34),transparent 26%),radial-gradient(ellipse at 40% 6%,rgba(180,140,255,.32),transparent 24%),radial-gradient(circle at 68% 104%,rgba(80,120,220,.42),transparent 32%),linear-gradient(120deg,#0a1030 0%,#141b4d 45%,#0f2a52 78%,#070c22 100%)}
+.themeCastle,.hero.themeCastle{background:radial-gradient(circle at 80% 16%,rgba(255,195,138,.4),transparent 23%),radial-gradient(circle at 72% 104%,rgba(214,109,74,.48),transparent 31%),radial-gradient(circle at 46% 80%,rgba(126,66,120,.62),transparent 43%),linear-gradient(120deg,#3a1836 0%,#5a2436 44%,#6d3a28 76%,#2e1526 100%)}
+.themeGarden,.hero.themeGarden{background:radial-gradient(circle at 79% 14%,rgba(255,179,217,.5),transparent 24%),radial-gradient(circle at 70% 103%,rgba(158,230,181,.46),transparent 31%),radial-gradient(circle at 45% 80%,rgba(214,124,186,.55),transparent 43%),linear-gradient(120deg,#4a1e50 0%,#6b2a63 42%,#3f6a52 78%,#2c1436 100%)}
+
+.themeOcean .heroGlow{background:rgba(111,216,245,.26)}
+.themeLab .heroGlow{background:rgba(126,247,200,.24)}
+.themeAurora .heroGlow{background:rgba(142,240,216,.24)}
+.themeCastle .heroGlow{background:rgba(255,195,138,.26)}
+.themeGarden .heroGlow{background:rgba(255,179,217,.3)}
+
+/* Yeni temalarda genel illüstrasyon yuvalarının kullanımı. */
+
+
+.particlesbubbles span{color:#bff0ff}
+.particlessparks span{color:#c9ffe9}
+.particleswaves span{color:#a9f5e2}
+.particlesflags span{color:#ffd9ae}
+.particlescomets span{color:#ffd7de}
+.particlespetals span{color:#ffd7ee}
+
+/* --- Çok sayıda tema için yatay kayan çip şeridi ------------------------ */
+.heroThemePicker{max-width:min(100%,520px)}
+.heroThemeChips{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding-bottom:5px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.35) transparent;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 92%,transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 92%,transparent 100%)}
+.heroThemeChips::-webkit-scrollbar{height:4px}
+.heroThemeChips::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(255,255,255,.3)}
+.heroThemeChip{flex:0 0 auto;scroll-snap-align:start}
+
+/* --- Sağ sütun kartları aktif banner temasını izler --------------------- */
+.levelCard,.rightColumn .sideCard,.motivation{border-color:color-mix(in srgb,var(--hero-accent,#9f8cff) 34%,#293958);transition:border-color .45s ease,box-shadow .45s ease}
+.levelCard,.rightColumn .sideCard{background:linear-gradient(145deg,color-mix(in srgb,var(--hero-accent,#9f8cff) 11%,#101b36),#0b1529 74%);box-shadow:0 10px 26px rgba(4,10,23,.35)}
+.rightColumn .sideCard:before{content:"";position:absolute;right:-26px;top:-34px;width:110px;height:110px;border-radius:50%;background:var(--hero-accent,#9f8cff);opacity:.14;filter:blur(26px);pointer-events:none;transition:opacity .45s ease}
+.rightColumn .sideCard:hover:before{opacity:.26}
+.rightColumn .sideCard h2{display:flex;align-items:center;gap:8px}
+.rightColumn .sideCard h2:before{content:"";flex:0 0 auto;width:4px;height:15px;border-radius:999px;background:var(--hero-accent,#9f8cff);box-shadow:0 0 10px var(--hero-accent,#9f8cff)}
+.cornerSpark{color:var(--hero-accent,#9a47ff);text-shadow:0 0 10px currentColor;transition:color .45s ease}
+.motivation{background:radial-gradient(circle at 86% 45%,color-mix(in srgb,var(--hero-accent,#9f8cff) 46%,#4f2080),transparent 40%),linear-gradient(135deg,#121b4b,color-mix(in srgb,var(--hero-accent,#9f8cff) 22%,#35105b));transition:background .45s ease,border-color .45s ease}
+.hexBadge{background:linear-gradient(145deg,color-mix(in srgb,var(--hero-accent,#9f8cff) 55%,#6f22e7),#34137b);filter:drop-shadow(0 0 8px color-mix(in srgb,var(--hero-accent,#9f8cff) 70%,#9d43ff))}
+
+.light .levelCard,.light .rightColumn .sideCard{border-color:color-mix(in srgb,var(--hero-accent,#9f8cff) 32%,#dbe3ee);background:linear-gradient(150deg,color-mix(in srgb,var(--hero-accent,#9f8cff) 10%,#fff),#fff 68%);box-shadow:0 10px 24px rgba(15,23,42,.06)}
+.light .rightColumn .sideCard:before{opacity:.12}
+.light .motivation{border-color:color-mix(in srgb,var(--hero-accent,#9f8cff) 34%,#dbe3ee);background:radial-gradient(circle at 86% 45%,color-mix(in srgb,var(--hero-accent,#9f8cff) 30%,#fff),transparent 44%),linear-gradient(135deg,#fff,color-mix(in srgb,var(--hero-accent,#9f8cff) 14%,#fff));color:#172033}
+.light .cornerSpark{color:color-mix(in srgb,var(--hero-accent,#9f8cff) 68%,#5b21b6)}
+
+
+/* --- Banner sahnesi: her tema kendi SVG kompozisyonunu cizer -------------- */
+.heroSceneStage{position:absolute;inset:0;display:grid;place-items:center;padding:16px 14px 12px;pointer-events:none}
+.heroSceneStage svg{width:100%;height:100%;max-height:230px;overflow:visible;filter:drop-shadow(0 12px 18px rgba(10,4,32,.32))}
+.hero[data-hero-ready] .heroSceneStage svg{animation:heroThemeSwap .55s cubic-bezier(.2,.8,.2,1) both}
+
+.sceneFloat{animation:sceneFloat 5.2s ease-in-out infinite}
+.sceneFloatSlow{animation:sceneFloat 7.6s ease-in-out infinite;animation-delay:-2.1s}
+.sceneDrift{animation:sceneDrift 6.4s ease-in-out infinite}
+.scenePulse{animation:scenePulse 3.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.sceneSpin{animation:sceneSpin 14s linear infinite}
+.sceneSway{animation:sceneSway 5.8s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom center}
+.sceneSwaySlow{animation:sceneSway 8.2s ease-in-out infinite;animation-delay:-1.6s;transform-box:fill-box;transform-origin:bottom center}
+.sceneRise{animation:sceneRise .8s cubic-bezier(.2,.8,.2,1) both}
+.sceneRiseSlow{animation:sceneBubble 5.4s ease-in-out infinite}
+.sceneDash{animation:sceneDash 9s linear infinite}
+
+@keyframes sceneFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes sceneDrift{0%,100%{transform:translateX(0);opacity:.85}50%{transform:translateX(-10px);opacity:1}}
+@keyframes scenePulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.16);opacity:1}}
+@keyframes sceneSpin{to{transform:rotate(360deg)}}
+@keyframes sceneSway{0%,100%{transform:rotate(-3.5deg)}50%{transform:rotate(3.5deg)}}
+@keyframes sceneRise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sceneBubble{0%{transform:translateY(6px);opacity:.35}50%{opacity:1}100%{transform:translateY(-18px);opacity:.2}}
+@keyframes sceneDash{to{stroke-dashoffset:-80}}
+
+/* --- Yeni sahnelere ait arka planlar ------------------------------------- */
+.themeSpeed,.hero.themeSpeed{background:radial-gradient(circle at 80% 14%,rgba(126,224,255,.42),transparent 24%),radial-gradient(circle at 68% 104%,rgba(84,126,255,.5),transparent 32%),radial-gradient(circle at 44% 80%,rgba(58,74,200,.66),transparent 44%),linear-gradient(120deg,#101a4e 0%,#1c2a86 44%,#123a7a 78%,#0b1440 100%)}
+.themeAdventure,.hero.themeAdventure{background:radial-gradient(circle at 79% 15%,rgba(255,209,138,.44),transparent 24%),radial-gradient(circle at 70% 104%,rgba(226,122,74,.46),transparent 31%),radial-gradient(circle at 44% 80%,rgba(46,124,124,.6),transparent 43%),linear-gradient(120deg,#123a3e 0%,#1d5350 44%,#7a4a30 80%,#2a1c2e 100%)}
+.themeDesk,.hero.themeDesk{background:radial-gradient(circle at 78% 16%,rgba(255,201,138,.46),transparent 25%),radial-gradient(circle at 68% 104%,rgba(196,120,90,.4),transparent 31%),radial-gradient(circle at 44% 80%,rgba(78,66,150,.6),transparent 44%),linear-gradient(120deg,#232152 0%,#3a2e63 44%,#6b4a54 80%,#1e1836 100%)}
+.themeFocus,.hero.themeFocus{background:radial-gradient(circle at 80% 13%,rgba(142,240,255,.4),transparent 23%),radial-gradient(circle at 70% 104%,rgba(120,90,255,.48),transparent 31%),radial-gradient(circle at 45% 80%,rgba(40,110,170,.62),transparent 44%),linear-gradient(120deg,#141046 0%,#242a7e 44%,#0f3a68 78%,#0a0e30 100%)}
+
+.themeSpeed .heroGlow{background:rgba(126,224,255,.26)}
+.themeAdventure .heroGlow{background:rgba(255,209,138,.26)}
+.themeDesk .heroGlow{background:rgba(255,201,138,.26)}
+.themeFocus .heroGlow{background:rgba(142,240,255,.26)}
+
+@media(prefers-reduced-motion:reduce){.heroSceneStage svg *{animation:none!important}}
