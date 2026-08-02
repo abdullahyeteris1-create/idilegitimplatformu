@@ -18,8 +18,7 @@ import {
   type PuzzleImage,
   type PuzzleTile,
 } from "@/lib/exercise-engine/visualPuzzle";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -98,6 +97,17 @@ function getTileBackgroundStyle(tile: PuzzleTile, rows: number, cols: number): C
   };
 }
 
+/**
+ * details semasindaki string ust siniri (200) ile ayni; kirpma burada
+ * yapilmazsa uzun oturumlarda gecerli bir sonuc bile 400 ile reddedilir ve
+ * kayit kaybolur.
+ */
+const IMAGE_TITLES_MAX_LENGTH = 200;
+
+function joinImageTitles(titles: string[]): string {
+  return titles.join(",").slice(0, IMAGE_TITLES_MAX_LENGTH);
+}
+
 export function VisualPuzzleExerciseClient() {
   const router = useRouter();
   const { theme } = useIdilTheme();
@@ -108,6 +118,8 @@ export function VisualPuzzleExerciseClient() {
   const hasSavedResultRef = useRef(false);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const [startLevel, setStartLevel] = useState(1);
   const [level, setLevel] = useState(1);
   const [selectedImageId, setSelectedImageId] = useState(PUZZLE_IMAGES[0].id);
@@ -171,6 +183,8 @@ export function VisualPuzzleExerciseClient() {
     clearTimer();
     clearFeedbackTimer();
     hasSavedResultRef.current = false;
+    setSaveStatus("idle");
+    setSaveMessage("");
     setLevel(nextStartLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -195,6 +209,8 @@ export function VisualPuzzleExerciseClient() {
 
   const handleStart = () => {
     hasSavedResultRef.current = false;
+    setSaveStatus("idle");
+    setSaveMessage("");
     setLevel(startLevel);
     setElapsedSeconds(0);
     setCorrectCount(0);
@@ -355,6 +371,21 @@ export function VisualPuzzleExerciseClient() {
     setPhase("playing");
   };
 
+  const persistResult = async (payload: SecureExerciseResultInput) => {
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    }
+  };
+
   const finishExercise = () => {
     if (hasSavedResultRef.current) {
       return;
@@ -368,11 +399,8 @@ export function VisualPuzzleExerciseClient() {
     const score = calculateScore(correctCount, wrongCount);
     const successRate = calculateSuccessRate(correctCount, wrongCount);
     const finalNet = calculateNet(levelCorrectCount, levelWrongCount);
-    const student = getCurrentStudent();
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "visual-puzzle",
       exerciseTitle: "Gorsel Puzzle Calismasi",
       durationSeconds,
@@ -393,16 +421,20 @@ export function VisualPuzzleExerciseClient() {
         elapsedSeconds: durationSeconds,
         levelUpCount,
         completedRounds,
-        completedImages,
+        // Sunucu tarafi details semasi yalniz skaler deger kabul eder; gorsel
+        // basligi listeleri ayni anahtar altinda birlestirilip kirpilir.
+        completedImages: joinImageTitles(completedImages),
         imageChangeCount,
         lastImageTitle: selectedImage.title,
-        usedImageTitles,
+        usedImageTitles: joinImageTitles(usedImageTitles),
         selectedImage: selectedImage.title,
         helpMode,
         scoreRule: "correctCount * 10 - wrongCount * 5",
         maxLevel: 5,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    void persistResult(payload);
 
     setResult({
       correctCount,
@@ -569,7 +601,13 @@ export function VisualPuzzleExerciseClient() {
       <div className={themeRootClassName}>
       <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
         <h2 className={`text-2xl font-bold ${styles.resultTitle}`}>Gorsel Puzzle Sonucu</h2>
-        <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>Calisma sonucu kaydedildi.</p>
+        <p
+          role={saveStatus === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className={`mt-1 text-sm ${saveStatus === "error" ? "text-[var(--bad)]" : `text-[var(--muted)] ${styles.resultMuted}`}`}
+        >
+          {saveMessage || "Çalışma tamamlandı."}
+        </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>

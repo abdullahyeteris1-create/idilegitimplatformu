@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
-import { getCurrentStudent } from "@/lib/auth/auth";
 import {
   calculateNet,
   calculateScore,
@@ -19,7 +18,7 @@ import {
   type MazePath,
   type MazeRound,
 } from "@/lib/exercise-engine/attentionMaze";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import {
   FullscreenExerciseIntro,
   FullscreenExerciseShell,
@@ -171,6 +170,8 @@ export function AttentionMazeExerciseClient() {
   const latestLevelRef = useRef<MazeLevel>(1);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const [level, setLevel] = useState<MazeLevel>(1);
   const [startLevel, setStartLevel] = useState<MazeLevel>(1);
   const [selectedDuration, setSelectedDuration] = useState<RoundDuration>(20);
@@ -290,6 +291,21 @@ export function AttentionMazeExerciseClient() {
     [level, levelCorrect, levelWrong, round, scheduleNextRound],
   );
 
+  const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Çalışma tamamlandı ve sonuç kaydı oluşturuldu.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    }
+  }, []);
+
   const finishExercise = useCallback(() => {
     if (hasSavedResultRef.current) {
       return;
@@ -304,13 +320,10 @@ export function AttentionMazeExerciseClient() {
       1,
       startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
     );
-    const student = getCurrentStudent();
     const finalScore = calculateScore(totalCorrect, totalWrong);
     const finalSuccessRate = calculateSuccessRate(totalCorrect, totalWrong);
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "attention-maze",
       exerciseTitle: "Dikkat Labirenti",
       durationSeconds,
@@ -331,13 +344,15 @@ export function AttentionMazeExerciseClient() {
         maxLevel: MAX_ATTENTION_MAZE_LEVEL,
         scoreRule: "Dogru +10, yanlis -5",
       },
-    });
+    } satisfies SecureExerciseResultInput;
 
+    void persistResult(payload);
     setPhase("completed");
   }, [
     elapsedSeconds,
     levelNet,
     levelUpCount,
+    persistResult,
     reachedLevel,
     selectedDuration,
     startLevel,
@@ -349,6 +364,8 @@ export function AttentionMazeExerciseClient() {
   const handleStartSetup = () => {
     clearFeedbackTimer();
     hasSavedResultRef.current = false;
+    setSaveStatus("idle");
+    setSaveMessage("");
     answeredForRoundRef.current = false;
     startedAtRef.current = null;
     latestLevelRef.current = level;
@@ -554,7 +571,13 @@ export function AttentionMazeExerciseClient() {
     return (
       <section className="idil-card mx-auto w-full max-w-5xl p-4 md:p-6">
         <h2 className="text-2xl font-bold">Dikkat Labirenti Sonucu</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Calisma tamamlandi ve sonuc kaydi olusturuldu.</p>
+        <p
+          role={saveStatus === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className={`mt-1 text-sm ${saveStatus === "error" ? "text-[var(--bad)]" : "text-[var(--muted)]"}`}
+        >
+          {saveMessage || "Çalışma tamamlandı."}
+        </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <article className="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-center">
