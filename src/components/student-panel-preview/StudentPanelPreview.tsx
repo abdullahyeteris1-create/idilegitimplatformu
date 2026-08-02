@@ -620,7 +620,7 @@ function ReadingTest({ test, loading }: { test?: ReadingTestResult; loading: boo
 }
 
 function StatisticsCard() {
-  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>İstatistikler</h2><p className={styles.readingEmpty}>Çalışma geçmişinizi ve gelişiminizi inceleyin.</p><Link href="/ogrenci/istatistikler" className={styles.subtleButton}>İstatistikleri Gör <Icon name="chart"/></Link></section>;
+  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>İstatistikler</h2><p className={styles.readingEmpty}>Çalışma geçmişinizi ve gelişiminizi inceleyin.</p><Link href="/sonuc" className={styles.subtleButton}>İstatistikleri Gör <Icon name="chart"/></Link></section>;
 }
 
 const mobileItems: NavItem[] = [
