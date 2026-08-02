@@ -14,9 +14,9 @@ import {
   splitTextIntoWords,
   type ShadowReadingSpeedMode,
 } from "@/lib/exercise-engine/shadowReading";
-import { getCurrentStudent, getResolvedCurrentUser } from "@/lib/auth/auth";
+import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
@@ -85,6 +85,8 @@ export function FocusedReadingExerciseClient() {
   const startedAtRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const [isTeacher, setIsTeacher] = useState(false);
   const [libraryTexts, setLibraryTexts] = useState<ReadableText[]>([]);
   const [category, setCategory] = useState(ALL_CATEGORIES);
@@ -227,6 +229,21 @@ export function FocusedReadingExerciseClient() {
   const completedBlocks = phase === "running" ? Math.min(currentBlockIndex + 1, totalBlocks) : 0;
   const progressPercent = totalBlocks === 0 ? 0 : Math.round((completedBlocks / totalBlocks) * 100);
 
+  const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    }
+  }, []);
+
   const finalizeExercise = useCallback((completed: boolean) => {
     if (!selectedText || totalBlocks === 0 || saveLockRef.current) {
       return;
@@ -242,11 +259,7 @@ export function FocusedReadingExerciseClient() {
       startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds,
     );
 
-    const student = getCurrentStudent();
-
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "focused-reading",
       exerciseTitle: "Odakli Okuma",
       durationSeconds,
@@ -271,7 +284,9 @@ export function FocusedReadingExerciseClient() {
         estimatedDurationSeconds,
         actualDurationSeconds: durationSeconds,
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    void persistResult(payload);
 
     setResult({
       completed,
@@ -294,6 +309,7 @@ export function FocusedReadingExerciseClient() {
     estimatedDurationSeconds,
     fontSize,
     intervalMs,
+    persistResult,
     selectedText,
     safeWordsPerMinute,
     speedMode,
@@ -304,6 +320,8 @@ export function FocusedReadingExerciseClient() {
 
   const handleStart = () => {
     saveLockRef.current = false;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = null;
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
@@ -318,6 +336,8 @@ export function FocusedReadingExerciseClient() {
     }
 
     saveLockRef.current = false;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = Date.now();
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
@@ -328,6 +348,8 @@ export function FocusedReadingExerciseClient() {
 
   const resetFlowToReady = () => {
     saveLockRef.current = true;
+    setSaveStatus("idle");
+    setSaveMessage("");
     startedAtRef.current = null;
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
@@ -601,8 +623,12 @@ export function FocusedReadingExerciseClient() {
       <div className={themeRootClassName}>
         <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
           <h2 className="text-2xl font-bold">Odakli Okuma Sonucu</h2>
-          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>
-            {result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi."}
+          <p
+            role={saveStatus === "error" ? "alert" : "status"}
+            aria-live="polite"
+            className={`mt-1 text-sm ${saveStatus === "error" ? "text-[var(--bad)]" : `text-[var(--muted)] ${styles.resultMuted}`}`}
+          >
+            {saveMessage || (result.completed ? "Metin tamamlandi." : "Egzersiz erken bitirildi.")}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
