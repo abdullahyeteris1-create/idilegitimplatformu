@@ -143,7 +143,7 @@ export const navItems: NavItem[] = [
   { label: "Çalışmalarım", icon: "clock" },
   { label: "Sonuçlarım", icon: "medal", href: "/sonuc" },
   { label: "Okuma Testlerim", icon: "bookOpen", href: "/ogrenci/okuma-testlerim" },
-  { label: "Raporlarım", icon: "chart", href: "/sonuc" },
+  { label: "Raporlarım", icon: "chart", href: "/ogrenci/istatistikler" },
   { label: "Rozetlerim", icon: "badge", href: "/ogrenci/rozetlerim" },
   { label: "Profilim", icon: "user", href: "/ogrenci/profil" },
   { label: "Ayarlar", icon: "settings" },

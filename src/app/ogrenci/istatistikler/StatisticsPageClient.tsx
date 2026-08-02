@@ -179,8 +179,8 @@ export function StatisticsPageClient({ authenticatedStudent }: StatisticsPageCli
               <Icon name="chart" />
             </span>
             <div className={styles.headerText}>
-              <h1>İstatistikler</h1>
-              <p>Çalışma geçmişinizi ve gelişiminizi inceleyin.</p>
+              <h1>Raporlarım</h1>
+              <p>Çalışmalarını, gelişimini ve egzersiz dağılımını incele.</p>
             </div>
           </div>
 

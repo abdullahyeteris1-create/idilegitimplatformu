@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
@@ -267,6 +268,7 @@ function Brand() {
 
 function NavAction({ item, active = false, onDemo, onNavigate, panel, onTogglePanel }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void; panel?: DemoPanel; onTogglePanel?: (panel: Exclude<DemoPanel, null>) => void }) {
   const sharedAccountMenu = useAccountMenuState();
+  const pathname = usePathname();
 
   if (item.label === "Ayarlar") {
     const toggle = onTogglePanel ?? sharedAccountMenu.toggle;
@@ -274,7 +276,7 @@ function NavAction({ item, active = false, onDemo, onNavigate, panel, onTogglePa
   }
 
   const content = <><Icon name={item.icon}/><span>{item.label}</span></>;
-  const className = active ? styles.activeNav : undefined;
+  const className = item.href === pathname || (active && !pathname) ? styles.activeNav : undefined;
 
   if (item.href) {
     return <Link href={item.href} className={className} onClick={onNavigate}>{content}</Link>;
