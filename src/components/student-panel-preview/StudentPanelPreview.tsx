@@ -616,7 +616,7 @@ function ReadingTest({ test, loading }: { test?: ReadingTestResult; loading: boo
   }
 
   const readingSpeed = Number.isFinite(test.readingSpeedWpm) ? Math.max(0, Math.round(test.readingSpeedWpm)) : 0;
-  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><div className={styles.testBody}><div className={styles.scoreRing}><strong>{readingSpeed}</strong><span>kelime/dk</span></div><div><p>Anlama <b>%{clampPercentage(test.comprehensionScore)}</b></p><small>{formatResultDate(test.date)}</small></div></div><Link href="/sonuc" className={styles.subtleButton}>Sonuçları Gör <Icon name="bookOpen"/></Link></section>;
+  return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>Son Okuma Testim</h2><div className={styles.testBody}><div className={styles.scoreRing}><strong>{readingSpeed}</strong><span>kelime/dk</span></div><div><p>Anlama <b>%{clampPercentage(test.comprehensionScore)}</b></p><small>{formatResultDate(test.date)}</small></div></div><Link href="/ogrenci/okuma-testlerim" className={styles.subtleButton}>Sonuçları Gör <Icon name="bookOpen"/></Link></section>;
 }
 
 function StatisticsCard() {
