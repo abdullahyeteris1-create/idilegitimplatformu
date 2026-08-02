@@ -3,8 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/word-guess-theme.module.css";
 import { normalizeTurkishText, TURKISH_ALPHABET } from "@/lib/exercises/word-games/turkishAlphabet";
@@ -115,6 +114,8 @@ export function WordGuessExerciseClient() {
   const [message, setMessage] = useState("5 harfli kelimeyi tahmin et.");
   const [status, setStatus] = useState<GameStatus>("playing");
   const [keyboardStates, setKeyboardStates] = useState<Record<string, LetterState>>({});
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const hasSavedResultRef = useRef(false);
 
   const rows = useMemo(() => {
@@ -139,15 +140,12 @@ export function WordGuessExerciseClient() {
     }
 
     hasSavedResultRef.current = true;
-    const student = getCurrentStudent();
     const attemptsUsed = attempts.length;
     const finalScore = getScore(finalStatus, attemptsUsed);
     const successRate = finalStatus === "won" ? 100 : 0;
     const wrongCount = finalStatus === "won" ? Math.max(0, attemptsUsed - 1) : attemptsUsed;
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "word-guess",
       exerciseTitle: "Kelime Tahmin",
       durationSeconds: 0,
@@ -162,9 +160,28 @@ export function WordGuessExerciseClient() {
         wordLength,
         maxAttempts: MAX_ATTEMPTS,
         attemptsUsed,
-        guessedWords: attempts,
+        // Sunucu tarafi details semasi yalniz skaler deger kabul eder;
+        // tahmin listesi ayni anahtar altinda virgulle birlestirilir.
+        guessedWords: attempts.join(","),
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    void persistResult(payload);
+  }
+
+  async function persistResult(payload: SecureExerciseResultInput) {
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    }
   }
 
   function resetGame(nextLength = wordLength) {
@@ -176,6 +193,8 @@ export function WordGuessExerciseClient() {
     setMessage(`${nextLength} harfli kelimeyi tahmin et.`);
     setStatus("playing");
     setKeyboardStates({});
+    setSaveStatus("idle");
+    setSaveMessage("");
   }
 
   function updateKeyboard(guess: string) {
@@ -276,6 +295,15 @@ export function WordGuessExerciseClient() {
         onExit={() => router.push("/egzersizler")}
       >
         <div className="flex h-full w-full flex-col items-center justify-center gap-1 overflow-y-auto px-1 py-1 md:gap-2">
+          {saveStatus !== "idle" ? (
+            <p
+              role={saveStatus === "error" ? "alert" : "status"}
+              aria-live="polite"
+              className={`w-full max-w-3xl rounded-xl px-3 py-1.5 text-center text-sm font-semibold ${styles.infoBar} ${saveStatus === "error" ? "text-rose-500" : ""}`}
+            >
+              {saveMessage}
+            </p>
+          ) : null}
           {/* Oyun tahtasi - viewport'a sığacak şekilde */}
           <section className={`flex max-h-full w-full max-w-3xl flex-col items-center gap-1 overflow-y-auto rounded-2xl px-2 py-2 md:gap-1.5 md:rounded-3xl md:px-4 md:py-2 ${styles.card}`}>
           {/* Tahmin kutulari */}

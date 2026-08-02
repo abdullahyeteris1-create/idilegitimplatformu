@@ -3,8 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
-import { getCurrentStudent } from "@/lib/auth/auth";
-import { saveExerciseResult } from "@/lib/results/resultStorage";
+import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/hangman-theme.module.css";
 import { HANGMAN_WORDS } from "@/lib/exercises/word-games/hangmanWords";
@@ -31,6 +30,8 @@ export function HangmanExerciseClient() {
   const [guesses, setGuesses] = useState<string[]>([]);
   const [maxWrongGuesses, setMaxWrongGuesses] = useState<MaxWrongGuesses>(DEFAULT_MAX_WRONG_GUESSES);
   const [hasStarted, setHasStarted] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveMessage, setSaveMessage] = useState("");
   const hasSavedResultRef = useRef(false);
 
   const wrongGuesses = useMemo(() => guesses.filter((letter) => !word.includes(letter)), [guesses, word]);
@@ -49,7 +50,6 @@ export function HangmanExerciseClient() {
     }
 
     hasSavedResultRef.current = true;
-    const student = getCurrentStudent();
     const uniqueCorrectLetters = new Set(word.split(""));
     let correctCount = 0;
 
@@ -64,9 +64,7 @@ export function HangmanExerciseClient() {
     const successRate = won ? 100 : Math.round((correctCount / uniqueCorrectLetters.size) * 100);
     const score = won ? Math.max(50, 120 - wrongCount * 10) : Math.max(0, correctCount * 8 - wrongCount * 6);
 
-    saveExerciseResult({
-      studentId: student?.id ?? "no-student",
-      studentName: student?.name ?? "Secilmemis Ogrenci",
+    const payload = {
       exerciseType: "hangman",
       exerciseTitle: "Adam Asmaca",
       durationSeconds: 0,
@@ -80,9 +78,28 @@ export function HangmanExerciseClient() {
         status: won ? "won" : "lost",
         maxWrongGuesses,
         remaining: maxWrongGuesses - wrongCount,
-        guessedLetters: snapshotGuesses,
+        // Sunucu tarafi details semasi yalniz skaler deger kabul eder;
+        // harf listesi ayni anahtar altinda birlestirilmis metin olarak saklanir.
+        guessedLetters: snapshotGuesses.join(""),
       },
-    });
+    } satisfies SecureExerciseResultInput;
+
+    void persistResult(payload);
+  }
+
+  async function persistResult(payload: SecureExerciseResultInput) {
+    setSaveStatus("saving");
+    setSaveMessage("Sonuç kaydediliyor...");
+    try {
+      const saved = await saveExerciseResultSecure(payload);
+      setSaveStatus("success");
+      setSaveMessage(saved.assignmentCompletionStatus === "failed"
+        ? "Sonuç kaydedildi ancak görev tamamlanamadı."
+        : "Sonuç başarıyla kaydedildi.");
+    } catch {
+      setSaveStatus("error");
+      setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
+    }
   }
 
   const guessLetter = (letter: string) => {
@@ -115,6 +132,8 @@ export function HangmanExerciseClient() {
     setWord(pickWord());
     setGuesses([]);
     setHasStarted(false);
+    setSaveStatus("idle");
+    setSaveMessage("");
   };
 
   const finishExercise = () => {
@@ -214,6 +233,16 @@ export function HangmanExerciseClient() {
                 {isLost ? <p className={`rounded-xl px-4 py-2 text-sm font-semibold ${styles.feedbackLost}`}>Kaybettin! Kelime: {word}</p> : null}
                 {!isFinished ? <p className={`text-sm ${styles.helperText}`}>Bir harf secerek tahmin yap.</p> : null}
               </div>
+
+              {saveStatus !== "idle" ? (
+                <p
+                  role={saveStatus === "error" ? "alert" : "status"}
+                  aria-live="polite"
+                  className={`mt-2 text-sm font-semibold ${saveStatus === "error" ? styles.feedbackLost : styles.helperText}`}
+                >
+                  {saveMessage}
+                </p>
+              ) : null}
 
               <div className="mt-4">
                 <p className={`text-sm font-semibold ${styles.usedLettersLabel}`}>Kullanilan Harfler</p>
