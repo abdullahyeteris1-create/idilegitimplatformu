@@ -502,30 +502,6 @@ textarea {
   box-shadow: none;
 }
 
-.idil-login-form {
-  color-scheme: dark;
-}
-
-.idil-login-input {
-  color: #f1f5f9 !important;
-  -webkit-text-fill-color: #f1f5f9 !important;
-  caret-color: #f1f5f9;
-  background-color: rgba(2, 6, 23, 0.72) !important;
-}
-
-.idil-login-input::placeholder {
-  color: #64748b !important;
-  -webkit-text-fill-color: #64748b;
-}
-
-.idil-login-input:-webkit-autofill,
-.idil-login-input:-webkit-autofill:hover,
-.idil-login-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f1f5f9 !important;
-  box-shadow: inset 0 0 0 1000px rgba(2, 6, 23, 0.92) !important;
-  caret-color: #f1f5f9;
-}
-
 .exercise-stage-fit {
   min-width: 0;
   max-width: 100%;
