@@ -18,6 +18,25 @@ type ReadingTestsStatisticsProps = {
 
 type ChartMetric = "wpm" | "success";
 
+/** Liste ve iki grafiğin ortak kapsamı; tek state olarak tutulur. */
+export type ReadingTestRange = 10 | 20 | "all";
+
+const RANGE_OPTIONS: { value: ReadingTestRange; label: string }[] = [
+  { value: 10, label: "Son 10 test" },
+  { value: 20, label: "Son 20 test" },
+  { value: "all", label: "Tüm testler" },
+];
+
+function rangeToLimit(range: ReadingTestRange): number {
+  return range === "all" ? Number.POSITIVE_INFINITY : range;
+}
+
+/**
+ * Grafik sabit 760px viewBox kullanıyor; nokta sayısı arttıkça değer etiketleri
+ * üst üste biner. Bu eşiğin üstünde etiketler gizlenir, ölçümler okunur kalır.
+ */
+const VALUE_LABEL_LIMIT = 24;
+
 const TIME_FORMATTER = new Intl.DateTimeFormat("tr-TR", {
   timeZone: "Europe/Istanbul",
   hour: "2-digit",
@@ -192,12 +211,16 @@ function PerformanceChart({
                   <line className={styles.markerBody} x1={x} x2={x} y1={Math.max(top, y - 8)} y2={Math.min(top + chartHeight, y + 8)} />
                   {selected && <circle className={styles.markerRing} cx={x} cy={y} r={13} />}
                   <circle className={styles.markerDot} cx={x} cy={y} r={6} />
-                  <text className={styles.pointValue} x={x} y={Math.max(18, y - 18)} textAnchor="middle">
-                    {formatNumber(value)}
-                  </text>
-                  <text className={styles.pointLabel} x={x} y={height - 20} textAnchor="middle">
-                    {points.length > 6 ? index + 1 : date.short}
-                  </text>
+                  {(points.length <= VALUE_LABEL_LIMIT || selected) && (
+                    <text className={styles.pointValue} x={x} y={Math.max(18, y - 18)} textAnchor="middle">
+                      {formatNumber(value)}
+                    </text>
+                  )}
+                  {(points.length <= VALUE_LABEL_LIMIT || selected) && (
+                    <text className={styles.pointLabel} x={x} y={height - 20} textAnchor="middle">
+                      {points.length > 6 ? index + 1 : date.short}
+                    </text>
+                  )}
                 </g>
               );
             })}
@@ -221,17 +244,19 @@ function PerformanceChart({
 
 function RecordList({
   records,
+  rangeDescription,
   selectedResultId,
   onSelect,
 }: {
   records: NormalizedReadingTestResult[];
+  rangeDescription: string;
   selectedResultId: string | null;
   onSelect: (id: string) => void;
 }) {
   return (
     <article className={styles.recordPanel}>
       <div className={styles.panelHeading}>
-        <div><h3>Test Geçmişi</h3><p>Son 10 okuma testi</p></div>
+        <div><h3>Test Geçmişi</h3><p>{rangeDescription}</p></div>
         <span>{records.length}</span>
       </div>
       <div className={styles.recordList}>
@@ -323,7 +348,17 @@ function LoadingState() {
 
 export function ReadingTestsStatistics({ results, status, hideHeader = false }: ReadingTestsStatisticsProps) {
   const { theme } = useIdilTheme();
-  const statistics = useMemo(() => createReadingTestStatistics(results, 10), [results]);
+  // Tek ortak kapsam state'i: liste ve iki grafik aynı diziden türediği için
+  // bu değer üçünü birden kontrol eder.
+  const [range, setRange] = useState<ReadingTestRange>(10);
+  const statistics = useMemo(
+    () => createReadingTestStatistics(results, rangeToLimit(range)),
+    [results, range],
+  );
+  const shownCount = statistics.recordsNewestFirst.length;
+  const rangeDescription = range === "all"
+    ? `Tüm okuma testleri (${shownCount})`
+    : `Son ${shownCount} okuma testi`;
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const selectedRecord = statistics.recordsNewestFirst.find((record) => record.id === selectedResultId)
     ?? statistics.recordsNewestFirst[0]
@@ -399,6 +434,31 @@ export function ReadingTestsStatistics({ results, status, hideHeader = false }: 
             />
           </div>
 
+          <div className={styles.rangeFilter}>
+            <span id="reading-test-range-label">Gösterilen aralık</span>
+            <div className={styles.rangeOptions} role="radiogroup" aria-labelledby="reading-test-range-label">
+              {RANGE_OPTIONS.map((option) => {
+                const active = option.value === range;
+                return (
+                  <button
+                    key={String(option.value)}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    className={styles.rangeOption}
+                    data-active={active ? "true" : undefined}
+                    onClick={() => setRange(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <small aria-live="polite">
+              {statistics.summary.totalTests} testin {shownCount} tanesi gösteriliyor
+            </small>
+          </div>
+
           <div className={styles.chartsGrid}>
             <PerformanceChart
               title="Okuma Hızı Gelişimi"
@@ -421,6 +481,7 @@ export function ReadingTestsStatistics({ results, status, hideHeader = false }: 
           <div className={styles.historyGrid}>
             <RecordList
               records={statistics.recordsNewestFirst}
+              rangeDescription={rangeDescription}
               selectedResultId={effectiveSelectedId}
               onSelect={setSelectedResultId}
             />

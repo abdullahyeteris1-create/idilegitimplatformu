@@ -162,6 +162,71 @@
 .greenTone { color: var(--green); }
 .orangeTone { color: var(--orange); }
 
+/* Liste ve iki grafiğin ortak kapsam filtresi. */
+.rangeFilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 13px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-secondary);
+  min-width: 0;
+}
+
+.rangeFilter > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rangeFilter > small {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rangeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rangeOption {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.rangeOption:hover {
+  border-color: var(--focus);
+}
+
+.rangeOption:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.rangeOption[data-active] {
+  background: var(--speed);
+  border-color: var(--speed);
+  color: #ffffff;
+}
+
 .chartsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -694,6 +759,22 @@
 @media (max-width: 700px) {
   .historyGrid {
     grid-template-columns: 1fr;
+  }
+
+  .rangeFilter > small {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .rangeOptions {
+    width: 100%;
+  }
+
+  .rangeOption {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 8px;
+    font-size: 11px;
   }
 
   .recordButton {
