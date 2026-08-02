@@ -43,7 +43,9 @@ type SecureResultResponse = {
     details?: Record<string, unknown>;
   };
   reward?: {
-    eventType: string;
+    // XP kazandirmayan egzersiz turlerinde null gelir (bkz. xpPolicy.ts);
+    // bu durumda awardedXp 0'dir ve XP bildirimi tetiklenmez.
+    eventType: string | null;
     awardedXp: number;
     currentTotalXp: number;
     replayed: boolean;

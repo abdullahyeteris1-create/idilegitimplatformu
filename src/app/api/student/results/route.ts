@@ -5,7 +5,9 @@ import { verifyStudentAccess, type StudentAccessFailure } from "@/lib/auth/verif
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import { getAssignmentItemById, getDailyAssignmentById } from "@/lib/assignments/assignmentRepository";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { recordStudentResultAndAwardXp } from "@/lib/xp/xpRepository";
+import { recordStudentResultAndAwardXp, getStudentXpSnapshotByStudentId } from "@/lib/xp/xpRepository";
+import { exerciseTypeAwardsXp, getExerciseXpAward, getExerciseXpEventType } from "@/lib/xp/xpPolicy";
+import { recordStudentResultWithoutXp } from "@/lib/results/secureResultRepository";
 
 export const runtime = "nodejs";
 
@@ -152,6 +154,80 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     completedCycles: { type: "integer", min: 0, max: 100_000 },
     averageJumpDurationMs: { type: "integer", min: 50, max: 5_000 },
     reason: { type: "string", values: ["natural", "manual"] },
+  },
+  // --- XP kazandirmayan turler (bkz. src/lib/xp/xpPolicy.ts) ---
+  hangman: {
+    category: { type: "string", maxLength: 80 },
+    reason: { type: "string", values: ["completed", "manual"] },
+    status: { type: "string", values: ["won", "lost"] },
+    maxWrongGuesses: { type: "integer", min: 1, max: 40 },
+    // "Egzersizi Bitir" akisinda kalan tum yanlis harfler eklendigi icin
+    // negatif deger normaldir.
+    remaining: { type: "integer", min: -60, max: 40 },
+    guessedLetters: { type: "string", maxLength: 120 },
+  },
+  "word-guess": {
+    category: { type: "string", maxLength: 80 },
+    status: { type: "string", values: ["playing", "won", "lost"] },
+    reason: { type: "string", values: ["completed", "manual"] },
+    wordLength: { type: "integer", min: 4, max: 9 },
+    maxAttempts: { type: "integer", min: 1, max: 20 },
+    attemptsUsed: { type: "integer", min: 0, max: 20 },
+    guessedWords: { type: "string", maxLength: 200 },
+  },
+  "attention-maze": {
+    startLevel: { type: "integer", min: 1, max: 5 },
+    reachedLevel: { type: "integer", min: 1, max: 5 },
+    selectedDuration: { type: "integer", min: 1, max: 120 },
+    totalRounds: { type: "integer", min: 0, max: 100_000 },
+    correctCount: { type: "integer", min: 0, max: 100_000 },
+    wrongCount: { type: "integer", min: 0, max: 100_000 },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    levelNet: { type: "integer", min: -100_000, max: 100_000 },
+    levelUpCount: { type: "integer", min: 0, max: 5 },
+    maxLevel: { type: "integer", min: 1, max: 5 },
+    scoreRule: { type: "string", maxLength: 120 },
+  },
+  "visual-puzzle": {
+    startLevel: { type: "integer", min: 1, max: 5 },
+    reachedLevel: { type: "integer", min: 1, max: 5 },
+    gridRows: { type: "integer", min: 2, max: 4 },
+    gridCols: { type: "integer", min: 2, max: 4 },
+    totalPieces: { type: "integer", min: 4, max: 16 },
+    totalMoves: { type: "integer", min: 0, max: 100_000 },
+    correctMoves: { type: "integer", min: 0, max: 100_000 },
+    wrongMoves: { type: "integer", min: 0, max: 100_000 },
+    net: { type: "integer", min: -100_000, max: 100_000 },
+    elapsedSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
+    levelUpCount: { type: "integer", min: 0, max: 5 },
+    completedRounds: { type: "integer", min: 0, max: 100_000 },
+    completedImages: { type: "string", maxLength: 200 },
+    imageChangeCount: { type: "integer", min: 0, max: 100_000 },
+    lastImageTitle: { type: "string", maxLength: 160 },
+    usedImageTitles: { type: "string", maxLength: 200 },
+    selectedImage: { type: "string", maxLength: 160 },
+    helpMode: { type: "boolean" },
+    scoreRule: { type: "string", maxLength: 120 },
+    maxLevel: { type: "integer", min: 1, max: 5 },
+  },
+  "focused-reading": {
+    category: { type: "string", maxLength: 80 },
+    textTitle: { type: "string", maxLength: 160 },
+    totalWords: { type: "integer", min: 0, max: 1_000_000 },
+    totalCharacters: { type: "integer", min: 0, max: 10_000_000 },
+    blockSize: { type: "integer", min: 1, max: 5 },
+    speedMode: { type: "string", values: ["interval", "wpm"] },
+    intervalMs: { type: "integer", min: 50, max: 60_000 },
+    wordsPerMinute: { type: "integer", min: 1, max: 10_000 },
+    fontSize: { type: "integer", min: 20, max: 56 },
+    completedBlocks: { type: "integer", min: 0, max: 1_000_000 },
+    totalBlocks: { type: "integer", min: 0, max: 1_000_000 },
+    progressPercent: { type: "integer", min: 0, max: 100 },
+    completedPercent: { type: "integer", min: 0, max: 100 },
+    // Gercek sure degil, metin uzunlugu x atlama hizindan turetilen TAHMIN;
+    // uzun metin + yavas hizda 6 saatlik gercek-sure tavanini asabilir.
+    estimatedDurationSeconds: { type: "integer", min: 0, max: 10_000_000 },
+    actualDurationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
   },
   "color-match": {},
   "memory-game": {
@@ -505,18 +581,6 @@ function mapResult(row: Record<string, unknown>, studentId: string) {
   };
 }
 
-function getRewardEventType(exerciseType: string) {
-  if (exerciseType === "reading-comprehension") {
-    return "reading_comprehension_completed";
-  }
-
-  if (exerciseType === "reading-speed-test") {
-    return "reading_speed_test_completed";
-  }
-
-  return "exercise_completed";
-}
-
 export async function GET(request: NextRequest) {
   const access = await verifyStudentAccess(request);
   if (!access.ok) {
@@ -628,6 +692,49 @@ export async function POST(request: NextRequest) {
       durationSeconds: body.durationSeconds,
       ...(body.assignmentItemId ? { assignmentItemId: body.assignmentItemId } : {}),
     };
+    // XP politikasi MERKEZI: bkz. src/lib/xp/xpPolicy.ts. XP kazandirmayan
+    // turler ayni endpoint, ayni oturum dogrulamasi, ayni validation ve ayni
+    // submission_key idempotency'siyle kaydedilir; yalniz XP tarafina hicbir
+    // yazma yapilmaz.
+    if (!exerciseTypeAwardsXp(body.exerciseType)) {
+      const recordedWithoutXp = await recordStudentResultWithoutXp(supabase, {
+        studentId: access.studentId,
+        studentName,
+        username: username || access.username,
+        exerciseType: body.exerciseType,
+        exerciseTitle: body.exerciseTitle,
+        score: body.score,
+        successRate: body.successRate,
+        correctCount: body.correctCount,
+        wrongCount: body.wrongCount,
+        completedAt: body.completedAt,
+        submissionKey: body.submissionKey,
+        details,
+      });
+
+      if (!recordedWithoutXp) {
+        return jsonResponse({ message: "Sonuç kaydedilemedi." }, 500);
+      }
+
+      const snapshot = await getStudentXpSnapshotByStudentId(access.studentId);
+
+      return jsonResponse(
+        {
+          success: true,
+          result: mapResult(recordedWithoutXp.resultRow, access.studentId),
+          replayed: recordedWithoutXp.replayed,
+          reward: {
+            eventType: getExerciseXpEventType(body.exerciseType),
+            awardedXp: getExerciseXpAward(body.exerciseType) ?? 0,
+            currentTotalXp: snapshot.totalXp,
+            replayed: recordedWithoutXp.replayed,
+            rewardKey: `result:${body.submissionKey}`,
+          },
+        },
+        recordedWithoutXp.replayed ? 200 : 201,
+      );
+    }
+
     const recorded = await recordStudentResultAndAwardXp(supabase, {
       studentId: access.studentId,
       studentName,
@@ -650,10 +757,11 @@ export async function POST(request: NextRequest) {
 
     return jsonResponse(
       {
+        success: true,
         result: mapResult(recorded.resultRow, access.studentId),
         replayed: recorded.replayed,
         reward: {
-          eventType: getRewardEventType(body.exerciseType),
+          eventType: getExerciseXpEventType(body.exerciseType),
           awardedXp: recorded.xpAwarded,
           currentTotalXp: recorded.totalXp,
           replayed: recorded.replayed,
