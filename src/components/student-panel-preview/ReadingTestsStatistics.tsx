@@ -37,6 +37,17 @@ function rangeToLimit(range: ReadingTestRange): number {
  */
 const VALUE_LABEL_LIMIT = 24;
 
+/**
+ * Y ekseni otomatik ölçeklenmez. Tek bir hatalı/aşırı ölçüm (ör. 76.400 WPM)
+ * ekseni şişirip normal sonuçları dibe yapıştırdığı için her metriğin tavanı
+ * sabittir; tavanı aşan değerler YALNIZCA çizimde kırpılır, gerçek değer
+ * etikette ve tooltip'te olduğu gibi gösterilmeye devam eder.
+ */
+const METRIC_AXIS_MAXIMUM: Record<ChartMetric, number> = {
+  wpm: 1000,
+  success: 100,
+};
+
 const TIME_FORMATTER = new Intl.DateTimeFormat("tr-TR", {
   timeZone: "Europe/Istanbul",
   hour: "2-digit",
@@ -137,9 +148,7 @@ function PerformanceChart({
   const bottom = 54;
   const chartWidth = width - left - right;
   const chartHeight = height - top - bottom;
-  const values = points.map((point) => metric === "wpm" ? point.readingSpeedWpm ?? 0 : point.successRate ?? 0);
-  const dynamicMaximum = values.length ? Math.max(...values) : 0;
-  const maximum = metric === "success" ? 100 : Math.max(100, Math.ceil(dynamicMaximum / 50) * 50);
+  const maximum = METRIC_AXIS_MAXIMUM[metric];
   const metricLabel = metric === "wpm" ? "kelime/dk" : "%";
   const gridLines = [0, 0.25, 0.5, 0.75, 1];
 
@@ -184,15 +193,18 @@ function PerformanceChart({
             })}
 
             {points.map((point, index) => {
-              const value = metric === "wpm" ? point.readingSpeedWpm ?? 0 : point.successRate ?? 0;
+              // Gerçek ölçüm etiket ve tooltip'te; çizim yüksekliği sabit eksene kırpılır.
+              const realValue = metric === "wpm" ? point.readingSpeedWpm ?? 0 : point.successRate ?? 0;
+              const displayValue = Math.min(Math.max(realValue, 0), maximum);
+              const clamped = realValue > maximum;
               const x = points.length === 1
                 ? left + chartWidth / 2
                 : left + (index / (points.length - 1)) * chartWidth;
-              const y = top + chartHeight - (value / maximum) * chartHeight;
+              const y = top + chartHeight - (displayValue / maximum) * chartHeight;
               const selected = point.id === selectedResultId;
               const date = formatRecordDate(point);
               const markerTone = point.type === "reading-speed-test" ? styles.speedMarker : styles.comprehensionMarker;
-              const ariaLabel = `${getTestLabel(point)}, ${date.date || "tarih bilgisi yok"}, ${formatNumber(value)} ${metricLabel}`;
+              const ariaLabel = `${getTestLabel(point)}, ${date.date || "tarih bilgisi yok"}, ${formatNumber(realValue)} ${metricLabel}${clamped ? ` (grafik ölçeği ${formatNumber(maximum)} ile sınırlı)` : ""}`;
 
               return (
                 <g
@@ -213,7 +225,7 @@ function PerformanceChart({
                   <circle className={styles.markerDot} cx={x} cy={y} r={6} />
                   {(points.length <= VALUE_LABEL_LIMIT || selected) && (
                     <text className={styles.pointValue} x={x} y={Math.max(18, y - 18)} textAnchor="middle">
-                      {formatNumber(value)}
+                      {formatNumber(realValue)}
                     </text>
                   )}
                   {(points.length <= VALUE_LABEL_LIMIT || selected) && (
