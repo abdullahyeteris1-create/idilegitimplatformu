@@ -230,11 +230,6 @@ export function SquareVisionExerciseClient({
     [soundEnabled],
   );
 
-  const prepareRound = useCallback(() => {
-    setRound(createRound(gridSize, level));
-    setLastFeedback(null);
-  }, [gridSize, level]);
-
   const resetExercise = useCallback(() => {
     setRound(createRound(gridSize, level));
     setElapsedSeconds(0);
