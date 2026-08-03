@@ -383,6 +383,20 @@ const TWO_SIDE_FOCUS_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const WORD_RACE_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "kelime-yarisi",
+  fields: [
+    {
+      key: "speedMs",
+      label: "Hız",
+      type: "integer",
+      options: [5000, 4000, 3000, 2500, 2000, 1500, 1000],
+      defaultValue: 2500,
+      unit: "ms",
+    },
+  ],
+};
+
 const THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   exerciseSlug: "13-nokta-emoji-takip",
   fields: [
@@ -422,6 +436,7 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     SHADOW_READING_SETTINGS_SCHEMA,
     GROUPING_READING_SETTINGS_SCHEMA,
     TWO_SIDE_FOCUS_SETTINGS_SCHEMA,
+    WORD_RACE_SETTINGS_SCHEMA,
     THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA,
     GROWING_SHAPES_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),

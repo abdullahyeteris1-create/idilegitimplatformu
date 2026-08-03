@@ -206,6 +206,19 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     defaultSettings: { speedMode: "fixed", jumpDurationMs: 500, jumpEndDurationMs: 100, clearMode: "without-clearing", showMetronome: false, showFocusPoint: true, showCorners: false },
   },
   {
+    exerciseSlug: "kelime-yarisi",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 5,
+    supportsSpeed: true,
+    settingsSchema: {
+      speedMs: { kind: "enum", values: [5000, 4000, 3000, 2500, 2000, 1500, 1000] },
+    },
+    defaultSettings: { speedMs: 2500 },
+  },
+  {
     exerciseSlug: "takistoskop",
     assignmentEligible: true,
     integrationStatus: "ready",

@@ -181,6 +181,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Odak", "Hız"],
       },
       {
+        title: "Kelime Yarışı",
+        description: "Doğru kelimeyi takip ederek şerit değiştir, dikkatini koru ve hızlı karar ver.",
+        href: "/egzersizler/kelime-yarisi",
+        icon: "KY",
+        image: "/exercise-visuals/categories/attention.svg",
+        tags: ["Odaklanma", "Görsel Takip", "Hızlı Karar"],
+      },
+      {
         title: "Harf / Rakam Sayma Odak Çalışması",
         description: "Dağınık karakterler arasından hedef harf veya rakamı hızla say.",
         href: "/egzersizler/harf-rakam-sayma",

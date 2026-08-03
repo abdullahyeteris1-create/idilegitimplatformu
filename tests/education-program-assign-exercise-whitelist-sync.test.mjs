@@ -14,6 +14,8 @@ const FORWARD_MIGRATION_PATH =
   "supabase/migrations/20260730130000_add_13_nokta_emoji_takip_to_exercise_whitelist.sql";
 const GROWING_SHAPES_MIGRATION_PATH =
   "supabase/migrations/20260730140000_add_buyuyen_sekiller_altigen_to_exercise_whitelist.sql";
+const WORD_RACE_MIGRATION_PATH =
+  "supabase/migrations/20260804120000_add_kelime_yarisi_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";
@@ -54,6 +56,7 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const newestSource = await read(NEWEST_MIGRATION_PATH);
   const forwardSource = await read(FORWARD_MIGRATION_PATH);
   const growingShapesSource = await read(GROWING_SHAPES_MIGRATION_PATH);
+  const wordRaceSource = await read(WORD_RACE_MIGRATION_PATH);
 
   const catalogSlugs = extractCatalogSlugs(catalogSource);
   assert.ok(catalogSlugs.length >= 14, "katalogda en az 14 egzersiz beklenir");
@@ -63,7 +66,8 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const newestWhitelistSlugs = extractWhitelistSlugs(newestSource);
   const forwardWhitelistSlugs = extractWhitelistSlugs(forwardSource);
   const growingShapesWhitelistSlugs = extractWhitelistSlugs(growingShapesSource);
-  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs]);
+  const wordRaceWhitelistSlugs = [...wordRaceSource.matchAll(/'([a-z0-9-]+)'/g)].map((match) => match[1]);
+  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs, ...wordRaceWhitelistSlugs]);
 
   for (const slug of catalogSlugs) {
     assert.ok(

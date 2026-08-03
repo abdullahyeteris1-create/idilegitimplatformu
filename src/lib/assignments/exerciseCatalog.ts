@@ -84,6 +84,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["level", "durationMinutes", "difficulty"],
   },
   {
+    slug: "kelime-yarisi",
+    title: "Kelime Yarışı",
+    route: "/egzersizler/kelime-yarisi",
+    resultExerciseType: "word-race",
+    category: "attention",
+    assignmentEnabled: true,
+    supportedSettings: ["level", "speedMs", "durationMinutes"],
+  },
+  {
     slug: "kare-gorme-alani",
     title: "Kare Görme Çalışması",
     route: "/egzersizler/kare-gorme-alani",
