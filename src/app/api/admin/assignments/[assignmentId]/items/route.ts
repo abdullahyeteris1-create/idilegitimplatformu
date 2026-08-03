@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ as
 
   const exerciseSlug = typeof body.exerciseSlug === "string" ? body.exerciseSlug.trim() : "";
   const definition = ASSIGNMENT_EXERCISE_BY_SLUG.get(exerciseSlug);
-  if (!definition) {
+  if (!definition || !definition.assignmentEnabled) {
     return NextResponse.json({ ok: false, message: "Gecersiz egzersiz secimi." }, { status: 400 });
   }
 

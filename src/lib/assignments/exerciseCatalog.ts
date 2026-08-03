@@ -89,8 +89,11 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     route: "/egzersizler/kelime-yarisi",
     resultExerciseType: "word-race",
     category: "attention",
-    assignmentEnabled: true,
+    // GECICI YAYIN DISI (2026-08-04): entegrasyon ve eski kayitlar korunur;
+    // ogrenci kataloglari ile yeni Assignment atamalarinda listelenmez.
+    assignmentEnabled: false,
     supportedSettings: ["level", "speedMs", "durationMinutes"],
+    isStudentCatalogVisible: false,
   },
   {
     slug: "kare-gorme-alani",

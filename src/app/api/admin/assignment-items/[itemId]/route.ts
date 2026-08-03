@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const nextSlug = typeof body.exerciseSlug === "string" ? body.exerciseSlug.trim() : item.exerciseSlug;
   const definition = ASSIGNMENT_EXERCISE_BY_SLUG.get(nextSlug);
-  if (!definition) {
+  if (!definition || (nextSlug !== item.exerciseSlug && !definition.assignmentEnabled)) {
     return NextResponse.json({ ok: false, message: "Gecersiz egzersiz secimi." }, { status: 400 });
   }
 

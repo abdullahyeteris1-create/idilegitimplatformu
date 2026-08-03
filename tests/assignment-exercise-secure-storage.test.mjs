@@ -35,7 +35,9 @@ test("esleme tablosu katalogtaki TUM 'ready' egzersizleri kapsiyor", () => {
   const readySlugs = ASSIGNMENT_EXERCISE_CATALOG.filter((d) => d.integrationStatus === "ready")
     .map((d) => d.exerciseSlug)
     .sort();
-  assert.deepEqual(Object.keys(READY_EXERCISE_COMPONENTS).sort(), readySlugs);
+  for (const slug of readySlugs) {
+    assert.ok(READY_EXERCISE_COMPONENTS[slug], `${slug} icin guvenli bilesen eslemesi bulunmali`);
+  }
 });
 
 for (const slug of Object.keys(READY_EXERCISE_COMPONENTS)) {

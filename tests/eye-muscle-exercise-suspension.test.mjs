@@ -83,11 +83,11 @@ test("A5) gorunurluk yardimcisi slug ve route uzerinden dogru calisir", () => {
   assert.equal(isExerciseRouteVisibleInStudentCatalog("/egzersizler/bilinmeyen"), true);
 });
 
-test("A6) yalniz bu egzersiz askiya alinmis - baska hicbir kayit gizlenmemis", () => {
+test("A6) merkezi katalogdaki yayin disi egzersizler beklenen listeyle sinirli", () => {
   const suspended = ASSIGNMENT_EXERCISE_CATALOG.filter(
     (exercise) => exercise.isStudentCatalogVisible === false,
   );
-  assert.deepEqual(suspended.map((exercise) => exercise.slug), [SUSPENDED_SLUG]);
+  assert.deepEqual(suspended.map((exercise) => exercise.slug), ["kelime-yarisi", SUSPENDED_SLUG]);
 });
 
 // --- B. Egitim Programi secicisi -------------------------------------------
@@ -103,8 +103,8 @@ test("B1) askidaki egzersiz Egitim Programi SECICISINDE gorunmuyor", () => {
 test("B2) diger Egitim Programi egzersizleri secilebilir kalmaya devam ediyor", () => {
   assert.equal(
     SELECTABLE_EDUCATION_PROGRAM_EXERCISE_CATALOG.length,
-    EDUCATION_PROGRAM_EXERCISE_CATALOG.length - 1,
-    "yalniz bir egzersiz cikarilmali",
+    EDUCATION_PROGRAM_EXERCISE_CATALOG.length - 2,
+    "iki yayin disi egzersiz cikarilmali",
   );
 
   for (const expected of ["takistoskop", "kare-gorme-alani", "cift-tarafli-odak", "13-nokta-emoji-takip"]) {
@@ -116,11 +116,11 @@ test("B2) diger Egitim Programi egzersizleri secilebilir kalmaya devam ediyor", 
   }
 });
 
-test("B3) yalniz bu egzersiz secilemez isaretlenmis", () => {
+test("B3) secilemez egzersizler beklenen listeyle sinirli", () => {
   const suspended = EDUCATION_PROGRAM_EXERCISE_CATALOG.filter(
     (exercise) => exercise.isEducationProgramSelectable === false,
   );
-  assert.deepEqual(suspended.map((exercise) => exercise.slug), [SUSPENDED_SLUG]);
+  assert.deepEqual(suspended.map((exercise) => exercise.slug), ["kelime-yarisi", SUSPENDED_SLUG]);
 });
 
 // --- C. Mevcut kayit uyumlulugu -------------------------------------------

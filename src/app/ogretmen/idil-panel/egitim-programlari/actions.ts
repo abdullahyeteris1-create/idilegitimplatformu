@@ -20,6 +20,7 @@ import {
   validateEducationProgramTemplateMetadata,
 } from "@/lib/education-programs/validation";
 import { buildPublishValidationMessage } from "@/lib/education-programs/publishMessages";
+import { isEducationProgramExerciseSelectable } from "@/lib/education-programs/exerciseCatalog";
 import { getExerciseSettingsSchema, readRawExerciseSettingsFromFormData } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { assignStudentEducationProgram } from "@/lib/education-programs/studentProgramRepository";
 import type { StudentEducationProgramActionState } from "@/lib/education-programs/studentProgramTypes";
@@ -144,6 +145,33 @@ export async function saveEducationProgramDayAction(
     return errorState("Eğitim programı servisi yapılandırılmamış.");
   }
 
+  const taskInputs = readTaskInputs(formData);
+  const existingTemplateResult = await getEducationProgramTemplate(supabase, templateId);
+  if (!existingTemplateResult.ok) {
+    return errorState(existingTemplateResult.message);
+  }
+
+  // Yayin disi bir egzersiz yeni goreve eklenemez. Ancak ayni gunde zaten
+  // kayitli eski bir gorev korunabilir ve diger alanlari duzenlenebilir.
+  const existingDay = existingTemplateResult.value.days.find((day) => day.dayNumber === dayNumber);
+  const legacyUnselectableSlugs = new Set(
+    (existingDay?.tasks ?? [])
+      .map((task) => task.exerciseSlug)
+      .filter(
+        (exerciseSlug): exerciseSlug is string =>
+          typeof exerciseSlug === "string" && !isEducationProgramExerciseSelectable(exerciseSlug),
+      ),
+  );
+  const newlyUnavailableTask = taskInputs.find(
+    (task) =>
+      task.exerciseSlug &&
+      !isEducationProgramExerciseSelectable(task.exerciseSlug) &&
+      !legacyUnselectableSlugs.has(task.exerciseSlug),
+  );
+  if (newlyUnavailableTask?.exerciseSlug) {
+    return errorState("Seçilen çalışma şu anda yeni eğitim programı görevlerine eklenemiyor.");
+  }
+
   // Bu gun kaydindan ONCE mevcut status okunur - saveEducationProgramTemplateDay
   // her cagrida statusu kosulsuz "draft"a dondurur (bkz. repository.ts), bu
   // yuzden yayinda bir sablonun sessizce taslaga dustugunu tespit etmenin tek
@@ -159,7 +187,7 @@ export async function saveEducationProgramDayAction(
     supabase,
     templateId,
     dayNumber,
-    readTaskInputs(formData),
+    taskInputs,
   );
   if (!saveResult.ok) {
     return errorState(saveResult.message);

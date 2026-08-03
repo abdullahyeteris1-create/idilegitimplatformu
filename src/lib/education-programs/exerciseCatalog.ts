@@ -161,6 +161,9 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     defaultDurationSeconds: 300,
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+    // GECICI YAYIN DISI: tam lookup eski program gorevleri icin korunur,
+    // yalniz yeni egzersiz secicisinden cikarilir.
+    isEducationProgramSelectable: false,
   },
   {
     slug: "goz-kaslari",

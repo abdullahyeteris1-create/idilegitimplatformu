@@ -208,7 +208,9 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
   {
     exerciseSlug: "kelime-yarisi",
     assignmentEligible: true,
-    integrationStatus: "ready",
+    // Tam katalog kaydi eski programlari cozumlemek icin korunur; ready
+    // olmadigi surece yeni Assignment Program gorevlerine secilemez.
+    integrationStatus: "needs_minor_changes",
     supportsLevel: true,
     levelMin: 1,
     levelMax: 5,
