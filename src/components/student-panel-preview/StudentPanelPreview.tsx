@@ -93,7 +93,6 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "shadow-reading": "/egzersizler/golgeleme",
   "focused-reading": "/egzersizler/odakli-okuma",
   "two-side-focus": "/egzersizler/cift-tarafli-odak",
-  "word-race": "/egzersizler/kelime-yarisi",
   "attention-maze": "/egzersizler/dikkat-labirenti",
   "memory-game": "/egzersizler/hafiza-gelistirme",
   "word-finding": "/egzersizler/kelime-bulma",

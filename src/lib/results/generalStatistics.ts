@@ -211,7 +211,6 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "shadow-reading": { categoryId: "fluency", route: "/egzersizler/golgeleme" },
   "focused-reading": { categoryId: "fluency", route: "/egzersizler/odakli-okuma" },
   "two-side-focus": { categoryId: "focus", route: "/egzersizler/cift-tarafli-odak" },
-  "word-race": { categoryId: "focus", route: "/egzersizler/kelime-yarisi" },
   "attention-maze": { categoryId: "word-games", route: "/egzersizler/dikkat-labirenti" },
   "memory-game": { categoryId: "memory", route: null },
   "word-finding": { categoryId: "attention", route: "/egzersizler/kelime-bulma" },

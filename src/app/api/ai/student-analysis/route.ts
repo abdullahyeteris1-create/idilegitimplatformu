@@ -21,7 +21,6 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "shadow-reading": "Gölgeleme",
   "focused-reading": "Odaklı Okuma",
   "two-side-focus": "Çift Taraflı Odak",
-  "word-race": "Kelime Yarışı",
   "attention-maze": "Dikkat Labirenti",
   "memory-game": "Hafıza Geliştirme",
   "word-finding": "Kelime Bulma",

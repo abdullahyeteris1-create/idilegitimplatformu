@@ -69,17 +69,6 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     totalClicks: { type: "integer", min: 0, max: 100_000 },
     scoreRule: { type: "string", maxLength: 120 },
   },
-  "word-race": {
-    category: { type: "string", values: ["attention"] },
-    reachedLevel: { type: "integer", min: 1, max: 5 },
-    reachedSpeedMs: { type: "integer", min: 1_000, max: 5_000 },
-    startingLevel: { type: "integer", min: 1, max: 5 },
-    startingSpeedMs: { type: "integer", min: 1_000, max: 5_000 },
-    carId: { type: "string", values: ["spor", "viper", "taksi", "polis", "minivan"] },
-    completionReason: { type: "string", values: ["wrong_limit", "all_levels_completed", "user_exit"] },
-    completedSpeedTiers: { type: "integer", min: 0, max: 7 },
-    maxWrong: { type: "integer", min: 10, max: 10 },
-  },
   "word-finding": {
     targetWordsPerText: { type: "integer", min: 1, max: 100 },
     completedRounds: { type: "integer", min: 0, max: 100_000 },
