@@ -215,6 +215,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
     image: "/exercise-visuals/categories/attention.svg",
     exercises: [
       {
+        title: "Kelime Yarışı",
+        description: "Doğru kelimeyi takip ederek şerit değiştir, dikkatini koru ve hızlı karar ver.",
+        href: "/egzersizler/kelime-yarisi",
+        icon: "KY",
+        image: "/exercise-visuals/categories/attention.svg",
+        tags: ["Kelime", "Görsel Takip", "Hızlı Karar"],
+      },
+      {
         title: "Kelime Tahmin",
         description: "Gizli kelimeyi tahmin et, harflerin yerini bul ve kelime farkindaligini gelistir.",
         href: "/egzersizler/kelime-tahmin",

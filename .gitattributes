@@ -2,4 +2,4 @@
 # `-text` her turlu satir sonu donusumunu kapatir, boylece checkout ayarindan
 # bagimsiz olarak iki dosya birbirinin birebir kopyasi olur.
 prototypes/kelime-yarisi.html -text
-src/private-previews/kelime-yarisi.html -text
+src/exercise-assets/kelime-yarisi.html -text

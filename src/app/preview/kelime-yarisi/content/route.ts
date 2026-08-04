@@ -1,13 +1,5 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { isValidWordRacePreviewToken } from "@/lib/preview/wordRacePreview";
-
-/**
- * Prototip HTML'i `public/` altinda degil, web'den dogrudan erisilemeyen
- * `src/private-previews/` altinda durur. Tek cikis kapisi burasidir ve
- * kisa omurlu preview token'i olmadan 404 doner.
- */
-const PREVIEW_HTML_PATH = path.join(process.cwd(), "src", "private-previews", "kelime-yarisi.html");
+import { readWordRaceHtml } from "@/lib/word-race/wordRaceAsset";
 
 function notFound(): Response {
   return new Response("Not Found", {
@@ -29,7 +21,8 @@ export async function GET(request: Request) {
   let html: string;
 
   try {
-    html = await readFile(PREVIEW_HTML_PATH, "utf8");
+    // Kaynak prototipin ham hali - egzersiz akisindaki sonuc koprusu YOK.
+    html = await readWordRaceHtml();
   } catch {
     return notFound();
   }

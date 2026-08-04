@@ -21,7 +21,7 @@ const { GET } = await import("../src/app/preview/kelime-yarisi/content/route.ts"
 
 const ROOT = process.cwd();
 const SOURCE_PROTOTYPE = path.join(ROOT, "prototypes", "kelime-yarisi.html");
-const PRIVATE_PROTOTYPE = path.join(ROOT, "src", "private-previews", "kelime-yarisi.html");
+const PRIVATE_PROTOTYPE = path.join(ROOT, "src", "exercise-assets", "kelime-yarisi.html");
 
 function withEnv(env, run) {
   const previous = {
@@ -160,8 +160,17 @@ test("sunulan kopya kaynak prototiple ayni hash'e sahip (prototip degistirilmedi
   assert.equal(hash(copy), hash(source));
   assert.equal(
     hash(source),
-    "324ad6ad848bab26d9f18c2c4578075e3363a918759022d9bd0e7d9d9d602bd8",
+    // 2026-08-04: oyun ici araba boyutu kucultuldu (drawCar olcegi).
+    "54dac9367de5a211f06a93a8f9c78b1f9d08807e08b8bdbd7becaf70116ccf07",
   );
+});
+
+test("onizleme route'u ham prototipi sunar (sonuc koprusu enjekte edilmez)", async () => {
+  const response = await GET(contentRequest(createWordRacePreviewToken()));
+  const served = await response.text();
+
+  assert.doesNotMatch(served, /idil-word-race/);
+  assert.doesNotMatch(served, /__idilWordRaceStartedAt/);
 });
 
 test("prototip public/ altina kopyalanmadi (dogrudan statik URL yok)", async () => {

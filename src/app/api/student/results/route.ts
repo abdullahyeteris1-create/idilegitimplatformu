@@ -69,6 +69,19 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     totalClicks: { type: "integer", min: 0, max: 100_000 },
     scoreRule: { type: "string", maxLength: 120 },
   },
+  "word-race": {
+    // "attention": 2026-08-04 oncesi kayitlar; guncel kategori "word-games".
+    category: { type: "string", values: ["attention", "word-games"] },
+    reachedLevel: { type: "integer", min: 1, max: 5 },
+    reachedSpeedMs: { type: "integer", min: 1_000, max: 5_000 },
+    startingLevel: { type: "integer", min: 1, max: 5 },
+    startingSpeedMs: { type: "integer", min: 1_000, max: 5_000 },
+    carId: { type: "string", values: ["spor", "viper", "taksi", "polis", "minivan"] },
+    completionReason: { type: "string", values: ["wrong_limit", "all_levels_completed", "user_exit"] },
+    completedSpeedTiers: { type: "integer", min: 0, max: 7 },
+    maxWrong: { type: "integer", min: 10, max: 10 },
+    lanes: { type: "integer", min: 2, max: 8 },
+  },
   "word-finding": {
     targetWordsPerText: { type: "integer", min: 1, max: 100 },
     completedRounds: { type: "integer", min: 0, max: 100_000 },

@@ -5,6 +5,7 @@
   | "shadow-reading"
   | "focused-reading"
   | "two-side-focus"
+  | "word-race"
   | "attention-maze"
   | "memory-game"
   | "word-finding"

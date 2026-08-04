@@ -50,7 +50,7 @@ const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
-  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti"],
+  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi"],
   assessment: ["anlama-testi", "okuma-hizi-testi"],
   memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme"],
 };
@@ -72,6 +72,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "odakli-okuma": { description: "Seçilen metni odak alanında kelime grupları halinde oku.", tags: ["Odak", "Metin"] },
   "gruplama-calismasi": { description: "Kelime gruplarını tek bakışta algılayarak okuma alanını geliştir.", tags: ["Gruplama", "Okuma Alanı"] },
   "cift-tarafli-odak": { description: "İki tarafı aynı anda takip ederek karar verme hızını güçlendir.", tags: ["Odak", "Hız"] },
+  "kelime-yarisi": { description: "Doğru kelimeyi takip ederek şerit değiştir, dikkatini koru ve hızlı karar ver.", tags: ["Kelime", "Görsel Takip"] },
   "harf-rakam-sayma": { description: "Dağınık karakterler arasından hedef harf veya rakamı hızla say.", tags: ["Sayma", "Odak"] },
   "ayni-olani-yakala": { description: "Arka arkaya aynı gelen öğeyi yakala; dikkat ve tepki hızını güçlendir.", tags: ["Dikkat", "Tepki"] },
   "sayi-tablosu": { description: "Sayıları doğru sırayla bularak görsel tarama becerini geliştir.", tags: ["Sayı", "Tarama"] },

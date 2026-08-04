@@ -152,6 +152,17 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "kelime-yarisi",
+    title: "Kelime Yarışı",
+    resultExerciseType: "word-race",
+    // Seviye ve hiz oyunun KENDI baslangic ekranindan secilir (prototip
+    // davranisi korunuyor), bu yuzden platform tarafinda seviye ayari yok.
+    supportsLevel: false,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "goz-kaslari",
     title: "Göz Kaslarını Geliştirme Çalışması",
     resultExerciseType: "eye-muscle",

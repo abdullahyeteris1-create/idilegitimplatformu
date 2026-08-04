@@ -25,6 +25,9 @@ const READY_EXERCISE_COMPONENTS = {
   "harf-rakam-sayma": "../src/app/egzersizler/harf-rakam-sayma/LetterNumberCountingFocusClient.tsx",
   "hafiza-gelistirme": "../src/app/egzersizler/hafiza-gelistirme/MemoryGameExerciseClient.tsx",
   "kart-eslestirme": "../src/app/egzersizler/kart-eslestirme/CardMatchingExerciseClient.tsx",
+  // Oyun motoru iframe'deki prototip; bu bilesen sonuc koprusu olarak calisir
+  // ve kaydi ayni guvenli akistan yapar.
+  "kelime-yarisi": "../src/app/egzersizler/kelime-yarisi/WordRaceExerciseClient.tsx",
   takistoskop: "../src/components/exercises/TachistoscopeExerciseClient.tsx",
 };
 
