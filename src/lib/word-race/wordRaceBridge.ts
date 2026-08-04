@@ -6,6 +6,16 @@
  */
 export const WORD_RACE_BRIDGE_MESSAGE_SOURCE = "idil-word-race";
 
+/** Platform -> iframe yonu (liderlik tablosu verisi). */
+export const WORD_RACE_HOST_MESSAGE_SOURCE = "idil-word-race-host";
+
+export type WordRaceLeaderboardEntryView = {
+  rank: number;
+  displayName: string;
+  score: number;
+  isCurrentStudent: boolean;
+};
+
 export const WORD_RACE_RESULT_EXERCISE_TYPE = "word-race";
 
 export const WORD_RACE_EXERCISE_SLUG = "kelime-yarisi";

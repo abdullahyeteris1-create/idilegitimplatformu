@@ -8,8 +8,10 @@ import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import {
   WORD_RACE_BRIDGE_MESSAGE_SOURCE,
   WORD_RACE_EXERCISE_TITLE,
+  WORD_RACE_HOST_MESSAGE_SOURCE,
   WORD_RACE_RESULT_EXERCISE_TYPE,
   type WordRaceFinishedPayload,
+  type WordRaceLeaderboardEntryView,
 } from "@/lib/word-race/wordRaceBridge";
 
 const EXERCISE_TITLE = WORD_RACE_EXERCISE_TITLE;
@@ -56,6 +58,38 @@ export function WordRaceExerciseClient({
   const { completionStatus, completeTaskAfterResultSave } =
     useEducationProgramTaskCompletion(educationProgramTaskId, RESULT_EXERCISE_TYPE);
 
+  /**
+   * Sinif siralamasini cekip oyunun KENDI sonuc ekranina gonderir. Sonuc
+   * kaydedildikten SONRA cagrilir ki oyuncunun yeni skoru da listeye girsin.
+   * iframe sandbox'li (opaque origin) oldugu icin veriyi kendisi cekemez;
+   * bu yuzden postMessage ile iceri aktarilir.
+   */
+  const pushLeaderboard = useCallback(async () => {
+    const frame = frameRef.current?.contentWindow;
+    if (!frame) return;
+
+    let entries: WordRaceLeaderboardEntryView[] = [];
+
+    try {
+      const response = await fetch("/api/student/word-race-leaderboard", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const payload = (await response.json()) as { ok?: boolean; entries?: unknown };
+
+      if (response.ok && payload.ok && Array.isArray(payload.entries)) {
+        entries = payload.entries as WordRaceLeaderboardEntryView[];
+      }
+    } catch {
+      // Siralama gosterilemezse oyun akisi bozulmaz; bolum bos gecilir.
+    }
+
+    frame.postMessage(
+      { source: WORD_RACE_HOST_MESSAGE_SOURCE, type: "leaderboard", entries },
+      "*",
+    );
+  }, []);
+
   const persistResult = useCallback(
     async (payload: WordRaceFinishedPayload) => {
       if (saveInFlightRef.current) return;
@@ -93,9 +127,11 @@ export function WordRaceExerciseClient({
         setSaveMessage("Sonuç kaydedilemedi. Tekrar oynadığında yeniden denenecek.");
       } finally {
         saveInFlightRef.current = false;
+        // Kayit basarisiz olsa bile mevcut siralama gosterilir.
+        await pushLeaderboard();
       }
     },
-    [completeTaskAfterResultSave],
+    [completeTaskAfterResultSave, pushLeaderboard],
   );
 
   useEffect(() => {
@@ -112,15 +148,19 @@ export function WordRaceExerciseClient({
 
       if (!isFinishedPayload(data.payload)) return;
 
-      // Hic soru cevaplanmadan kapatilan turlar sonuc/XP uretmez.
-      if (data.payload.correctCount + data.payload.wrongCount <= 0) return;
+      // Hic soru cevaplanmadan kapatilan turlar sonuc/XP uretmez; siralama
+      // yine de gosterilir.
+      if (data.payload.correctCount + data.payload.wrongCount <= 0) {
+        void pushLeaderboard();
+        return;
+      }
 
       void persistResult(data.payload);
     }
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [persistResult]);
+  }, [persistResult, pushLeaderboard]);
 
   const statusText = saveStatus === "idle" ? "" : saveMessage;
 
