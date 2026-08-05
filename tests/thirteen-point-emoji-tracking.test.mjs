@@ -88,3 +88,56 @@ test("ana eylem butonu tema degiskenleriyle gorunur ve tamamlaninca yeniden basl
   assert.match(theme, /background: var\(--idil-strong\)/);
   assert.match(theme, /color: var\(--idil-strong-contrast\)/);
 });
+
+test("production'da reddedilen 60 saniyelik payload artik route dogrulamasindan gecmektedir", async () => {
+  const payload = {
+    exerciseType: "thirteen-point-emoji-tracking",
+    exerciseTitle: "13 Nokta Emoji Takip Egzersizi",
+    score: 85,
+    successRate: 100,
+    correctCount: 85,
+    wrongCount: 0,
+    durationSeconds: 60,
+    completedAt: "2025-08-05T10:00:00.000Z",
+    submissionKey: "submission-production-regression",
+    assignmentItemId: null,
+    details: {
+      durationSeconds: 60,
+      speed: 700,
+      jumpCount: 85,
+      emojiMode: "fixed",
+      emoji: "⭐",
+      movementPattern: "sequential",
+      soundEnabled: false,
+    },
+  };
+
+  const route = await fs.readFile("src/app/api/student/results/route.ts", "utf8");
+  const forbiddenStart = route.indexOf("const FORBIDDEN_DETAIL_KEYS");
+  const forbiddenEnd = route.indexOf("]);", forbiddenStart);
+  const forbiddenKeys = route.slice(forbiddenStart, forbiddenEnd);
+  assert.doesNotMatch(forbiddenKeys, /"durationseconds"/);
+
+  const schemaStart = route.indexOf('"thirteen-point-emoji-tracking": {');
+  const schemaEnd = route.indexOf("\n  },", schemaStart);
+  const schema = route.slice(schemaStart, schemaEnd);
+  const expectedRules = {
+    durationSeconds: /durationSeconds: \{ type: "integer", min: 1, max: MAX_DURATION_SECONDS \}/,
+    speed: /speed: \{ type: "integer", min: 300, max: 5_000 \}/,
+    jumpCount: /jumpCount: \{ type: "integer", min: 0, max: 100_000 \}/,
+    emojiMode: /emojiMode: \{ type: "string", values: \["fixed", "random"\] \}/,
+    emoji: /emoji: \{ type: "string", maxLength: 8 \}/,
+    movementPattern: /movementPattern: \{ type: "string", values: \["sequential", "reverse", "random", "center-out", "outer-center"\] \}/,
+    soundEnabled: /soundEnabled: \{ type: "boolean" \}/,
+  };
+  assert.deepEqual(Object.keys(payload.details), Object.keys(expectedRules));
+  for (const [key, rule] of Object.entries(expectedRules)) assert.match(schema, rule, `${key} kurali eslesmeli`);
+  assert.equal(payload.durationSeconds, 60);
+  assert.equal(payload.details.durationSeconds, 60);
+  assert.equal(typeof payload.details.speed, "number");
+  assert.equal(typeof payload.details.jumpCount, "number");
+  assert.equal(typeof payload.details.emojiMode, "string");
+  assert.equal(typeof payload.details.emoji, "string");
+  assert.equal(typeof payload.details.movementPattern, "string");
+  assert.equal(typeof payload.details.soundEnabled, "boolean");
+});
