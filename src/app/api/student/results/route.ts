@@ -38,7 +38,7 @@ const MAX_FUTURE_CLOCK_SKEW_MS = 5 * 60 * 1000;
 const MAX_DETAILS_BYTES = 8 * 1024;
 const FORBIDDEN_DETAIL_KEYS = new Set([
   "__proto__", "constructor", "prototype",
-  "durationseconds", "duration_seconds",
+  "duration_seconds",
   "assignmentitemid", "assignment_item_id",
   "studentid", "student_id", "resultid", "id",
 ]);
