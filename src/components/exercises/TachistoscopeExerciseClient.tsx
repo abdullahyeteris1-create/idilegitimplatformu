@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FULLSCREEN_TOUCH_STYLE } from "@/components/exercises/FullscreenExerciseShell";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { normalizeTachistoscopeLevel, type TachistoscopeLevel } from "@/lib/exercise-engine/tachistoscopeWords";
+import { generateTachistoscopeContent, type TachistoscopeContentType } from "@/lib/exercise-engine/tachistoscopeContent";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
@@ -19,7 +20,7 @@ type ResponsePhase = "show" | "answer" | "feedback";
 type SpeedMs = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
 type Level = TachistoscopeLevel;
 type WorkMode = "automatic" | "manual";
-type ContentType = "letter" | "number" | "mixed";
+type ContentType = TachistoscopeContentType;
 type SaveStatus = "idle" | "saving" | "success" | "error";
 
 type TachistoscopeRound = {
@@ -58,52 +59,6 @@ function normalizeInput(value: string): string {
   return value.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
 }
 
-function getWordLength(word: string): number {
-  return Array.from(word.trim()).length;
-}
-
-function getRandomTachistoscopeWordFromPools(
-  level: unknown,
-  previousWord: string | undefined,
-  wordsByLevel: TachistoscopeWords,
-): string {
-  const normalizedLevel = normalizeTachistoscopeLevel(level);
-  const words = (wordsByLevel[normalizedLevel] ?? []).filter((word) => {
-    const wordLength = getWordLength(word);
-
-    if (normalizedLevel === 15) {
-      return wordLength >= 15;
-    }
-
-    return wordLength === normalizedLevel;
-  });
-
-  const fallbackWords = wordsByLevel[normalizedLevel] ?? [];
-  const source = words.length > 0 ? words : fallbackWords;
-
-  if (source.length === 0) {
-    return "";
-  }
-
-  if (source.length === 1) {
-    return source[0];
-  }
-
-  let selectedWord = source[Math.floor(Math.random() * source.length)];
-  let tryCount = 0;
-
-  while (selectedWord === previousWord && tryCount < 10) {
-    selectedWord = source[Math.floor(Math.random() * source.length)];
-    tryCount += 1;
-  }
-
-  return selectedWord;
-}
-
-function generateContent(level: Level, previousWord: string | undefined, wordsByLevel: TachistoscopeWords): string {
-  return getRandomTachistoscopeWordFromPools(level, previousWord, wordsByLevel).toLocaleUpperCase("tr-TR");
-}
-
 const STAT_TONE_CLASS = {
   default: tkStyles.statNeutral,
   ok: tkStyles.statOk,
@@ -138,6 +93,9 @@ export function TachistoscopeExerciseClient({
   educationProgramLaunch?: EducationProgramExerciseLaunchProps;
   tachistoscopeWords: TachistoscopeWords;
 }) {
+  // Keep the server-provided word DTO in the public component contract; the
+  // currently exposed content types generate character sequences.
+  void tachistoscopeWords;
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -281,11 +239,14 @@ export function TachistoscopeExerciseClient({
   }, [currentRound, phase, responsePhase]);
 
   const startNextRound = (overrideSettings?: Partial<RoundSettings>) => {
+    if (revealTimerRef.current) window.clearTimeout(revealTimerRef.current);
+    if (autoAdvanceTimerRef.current) window.clearTimeout(autoAdvanceTimerRef.current);
+
     const settings = { ...latestSettingsRef.current, ...overrideSettings };
     const normalizedLevel = normalizeTachistoscopeLevel(settings.level);
 
     const nextRound: TachistoscopeRound = {
-      expected: generateContent(normalizedLevel, currentRound?.expected, tachistoscopeWords),
+      expected: generateTachistoscopeContent(normalizedLevel, settings.contentType, currentRound?.expected),
       content: "",
       level: normalizedLevel,
       speedMs: settings.speedMs,
@@ -312,6 +273,21 @@ export function TachistoscopeExerciseClient({
       autoAdvanceTimerRef.current = null;
       startNextRound();
     }, AUTO_ADVANCE_DELAY_MS);
+  };
+
+  const handleSpeedChange = (nextSpeedMs: SpeedMs) => {
+    setSpeedMs(nextSpeedMs);
+    if (phase === "play") startNextRound({ speedMs: nextSpeedMs });
+  };
+
+  const handleLevelChange = (nextLevel: Level) => {
+    setLevel(nextLevel);
+    if (phase === "play") startNextRound({ level: nextLevel });
+  };
+
+  const handleContentTypeChange = (nextContentType: ContentType) => {
+    setContentType(nextContentType);
+    if (phase === "play") startNextRound({ contentType: nextContentType });
   };
 
   const handleBeginPlay = () => {
@@ -590,10 +566,10 @@ export function TachistoscopeExerciseClient({
 
   const stageSettings = (
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 landscape:grid-cols-4 landscape:gap-1.5">
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Hız</span><select className={tkStyles.select} value={speedMs} onChange={(event) => setSpeedMs(Number(event.target.value) as SpeedMs)} disabled={isEducationProgramMode}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Seviye</span><select className={tkStyles.select} value={level} onChange={(event) => setLevel(Number(event.target.value) as Level)} disabled={isEducationProgramMode}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Hız</span><select className={tkStyles.select} value={speedMs} onChange={(event) => handleSpeedChange(Number(event.target.value) as SpeedMs)} disabled={isEducationProgramMode}>{SPEED_OPTIONS.map((item) => <option key={item} value={item}>{item} ms</option>)}</select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Seviye</span><select className={tkStyles.select} value={level} onChange={(event) => handleLevelChange(Number(event.target.value) as Level)} disabled={isEducationProgramMode}>{LEVEL_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
       <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>Çalışma şekli</span><select className={tkStyles.select} value={workMode} onChange={(event) => setWorkMode(event.target.value as WorkMode)} disabled={isEducationProgramMode}><option value="manual">Manuel</option><option value="automatic">Otomatik</option></select></label>
-      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>İçerik türü</span><select className={tkStyles.select} value={contentType} onChange={(event) => setContentType(event.target.value as ContentType)} disabled={isEducationProgramMode}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
+      <label className={`grid min-w-0 gap-1 text-xs font-bold ${tkStyles.settingsLabel}`}><span>İçerik türü</span><select className={tkStyles.select} value={contentType} onChange={(event) => handleContentTypeChange(event.target.value as ContentType)} disabled={isEducationProgramMode}><option value="letter">Harf</option><option value="number">Rakam</option><option value="mixed">Harf + Rakam</option></select></label>
     </div>
   );
 
