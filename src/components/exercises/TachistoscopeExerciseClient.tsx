@@ -93,9 +93,6 @@ export function TachistoscopeExerciseClient({
   educationProgramLaunch?: EducationProgramExerciseLaunchProps;
   tachistoscopeWords: TachistoscopeWords;
 }) {
-  // Keep the server-provided word DTO in the public component contract; the
-  // currently exposed content types generate character sequences.
-  void tachistoscopeWords;
   const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
@@ -246,7 +243,12 @@ export function TachistoscopeExerciseClient({
     const normalizedLevel = normalizeTachistoscopeLevel(settings.level);
 
     const nextRound: TachistoscopeRound = {
-      expected: generateTachistoscopeContent(normalizedLevel, settings.contentType, currentRound?.expected),
+      expected: generateTachistoscopeContent(
+        normalizedLevel,
+        settings.contentType,
+        tachistoscopeWords,
+        currentRound?.expected,
+      ),
       content: "",
       level: normalizedLevel,
       speedMs: settings.speedMs,
