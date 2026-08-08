@@ -254,6 +254,17 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/visual-puzzle.svg",
         tags: ["Puzzle", "Görsel"],
       },
+      {
+        // SERBEST OYUN: sonuc/XP/istatistik uretmez. Tek ogrencilik performans
+        // calismasi olan "Kart Eslestirme Calismasi" ile karistirilmamali -
+        // o "Hafiza Teknikleri" grubunda kalir.
+        title: "Hafıza Yarışı",
+        description: "İki veya üç kişilik eğlenceli hafıza ve eşleştirme oyunu.",
+        href: "/egzersizler/hafiza-yarisi",
+        icon: "🎲",
+        image: "/exercise-visuals/exercises/card-matching.svg",
+        tags: ["Serbest Oyun", "Akıl ve Zeka"],
+      },
     ],
   },
   {
