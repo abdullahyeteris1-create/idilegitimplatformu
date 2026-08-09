@@ -31,6 +31,6 @@ export type WordRaceFinishedPayload = {
   lanes: number;
   reachedSpeedMs: number;
   carId: string;
-  completionReason: string;
+  completionReason: "wrong_limit" | "all_levels_completed" | "user_exit";
   maxWrong: number;
 };

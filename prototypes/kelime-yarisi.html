@@ -430,7 +430,7 @@
      DURUM
      ========================================================== */
   const S = {
-    running: false, paused: false, over: false,
+    running: false, paused: false, over: false, finished: false,
     // phase: "play"      → normal oyun, kelime grupları geliyor
     //        "toFinish"  → seviye hak edildi, finiş çizgisi yaklaşıyor
     //        "countdown" → finiş geçildi, 3-2-1 geri sayım
@@ -530,7 +530,7 @@
      ========================================================== */
   function startGame(level, { preserveTotals = false } = {}) {
     clearProgressionState();
-    S.running = true; S.paused = false; S.over = false;
+    S.running = true; S.paused = false; S.over = false; S.finished = false;
     S.endReason = null;
     S.selectedSpeedMs = S.car.speedMs;
     S.speed = getSelectedSpeedLevel();
@@ -794,7 +794,11 @@
     touch = null;
 
     const isFinal = nextCar === null;
-    if (isFinal) S.hasCompletedAllCarTiers = true;
+    if (isFinal) {
+      S.hasCompletedAllCarTiers = true;
+      finish("allLevelsCompleted");
+      return;
+    }
     el("progressionTitle").textContent = isFinal ? "Muhteşem! 🏆" : "Tebrikler! 🎉";
     el("progressionMessage").textContent = isFinal
       ? "Bütün araçları ve seviyeleri tamamladın."
@@ -1317,6 +1321,8 @@
     el("veilPause").classList.add("hidden");
   }
   function finish(reason = "manual") {
+    if (S.finished) return;
+    S.finished = true;
     clearProgressionState();
     S.running = false; S.over = true; S.paused = false;
     S.endReason = reason;

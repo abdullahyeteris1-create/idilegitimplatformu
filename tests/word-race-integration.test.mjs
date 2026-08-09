@@ -105,6 +105,31 @@ test("oyun HTML'i postMessage koprusunu ve gerekli alanlari icerir", async () =>
   }
 });
 
+test("wrong-limit ve Viper tamamlama tek-seferlik merkezi finalizasyona baglidir", async () => {
+  const source = await read("src/exercise-assets/kelime-yarisi.html");
+  const prototype = await read("prototypes/kelime-yarisi.html");
+  assert.equal(source, prototype, "production asset ve prototip senkron kalmali");
+
+  const judge = source.slice(source.indexOf("function judge(g)"), source.indexOf("function checkLevelUp()"));
+  assert.match(judge, /S\.wrong >= MAX_TOTAL_WRONG/);
+  assert.match(judge, /finish\("wrongLimit"\)/);
+
+  const tier = source.slice(source.indexOf("function completeCarTier()"), source.indexOf('function finish(reason = "manual")'));
+  assert.match(tier, /const isFinal = nextCar === null/);
+  assert.match(tier, /finish\("allLevelsCompleted"\)/);
+  assert.match(tier, /return;/);
+
+  const finish = source.slice(source.indexOf('function finish(reason = "manual")'), source.indexOf('el("btnStart")'));
+  assert.match(finish, /if \(S\.finished\) return/);
+  assert.match(finish, /S\.finished = true/);
+  assert.match(finish, /el\("ovWrong"\)\.textContent = S\.wrong/);
+
+  const bridged = injectWordRaceResultBridge(source);
+  assert.match(bridged, /reason === "allLevelsCompleted"/);
+  assert.match(bridged, /"all_levels_completed"/);
+  assert.match(bridged, /completionReason:/);
+});
+
 /* ---------------- katalog / route entegrasyonu ---------------- */
 
 test("Egitim Programi katalogunda ve route allow-list'inde kayitli", () => {

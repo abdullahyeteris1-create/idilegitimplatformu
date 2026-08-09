@@ -51,7 +51,11 @@ const FINISH_HOOK = `
           lanes: S.lanes,
           reachedSpeedMs: S.car.speedMs,
           carId: S.car.id,
-          completionReason: reason === "wrongLimit" ? "wrong_limit" : "user_exit",
+          completionReason: reason === "wrongLimit"
+            ? "wrong_limit"
+            : reason === "allLevelsCompleted"
+              ? "all_levels_completed"
+              : "user_exit",
           maxWrong: MAX_TOTAL_WRONG
         }
       }, "*");
