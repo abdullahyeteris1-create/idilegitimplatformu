@@ -324,8 +324,36 @@ test("eski 'Hafiza Teknikleri' kartI kaldirildi ve duplicate kayit yok", async (
     "egzersiz merkezinde tek kayit olmali",
   );
 
-  const previewGroups = await read("src/components/exercises-preview/exercisePreviewGroups.ts");
-  assert.doesNotMatch(previewGroups, /hafiza-yarisi/, "onizleme kataloguna eklenmedi");
+});
+
+test("aktif ogrenci katalogu Hafiza Yarisi'ni filtrelerden sonra tam bir kez render eder", async () => {
+  const route = "/egzersizler/hafiza-yarisi";
+  const slug = "hafiza-yarisi";
+  const { PREVIEW_EXERCISE_GROUPS } = await import(
+    "../src/components/exercises-preview/exercisePreviewGroups.ts"
+  );
+  const {
+    ASSIGNMENT_EXERCISE_BY_SLUG,
+    isExerciseRouteVisibleInStudentCatalog,
+    isExerciseVisibleInStudentCatalog,
+  } = await import("../src/lib/assignments/exerciseCatalog.ts");
+
+  assert.equal(isExerciseRouteVisibleInStudentCatalog(route), true);
+  assert.equal(isExerciseVisibleInStudentCatalog(slug), true);
+  assert.equal(ASSIGNMENT_EXERCISE_BY_SLUG.has(slug), false, "serbest oyun odev kataloguna girmemeli");
+
+  const wordGames = PREVIEW_EXERCISE_GROUPS.find((group) => group.id === "word-games");
+  const memory = PREVIEW_EXERCISE_GROUPS.find((group) => group.id === "memory");
+  assert.ok(wordGames, "word-games grubu render listesinde olmali");
+  assert.equal(wordGames.title, "Akıl ve Zeka Oyunları");
+  assert.ok(memory, "hafiza grubu render listesinde olmali");
+  assert.ok(wordGames.exercises.some((exercise) => exercise.slug === slug && exercise.href === route));
+  assert.ok(!memory.exercises.some((exercise) => exercise.slug === slug || exercise.href === route));
+
+  const renderedCards = PREVIEW_EXERCISE_GROUPS.flatMap((group) =>
+    group.exercises.filter((exercise) => exercise.slug === slug || exercise.href === route),
+  );
+  assert.equal(renderedCards.length, 1, "aktif render listesinde tek Hafiza Yarisi karti olmali");
 });
 
 test("mevcut Kart Eslestirme egzersizinden AYRI durur", async () => {
