@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { completeEducationProgramTask } from "@/lib/education-programs/completeEducationProgramTaskClient";
+import { emitProgramTaskCompleted } from "@/lib/results/programTaskEvents";
 
 const COMPLETION_CONFLICT_CODES = new Set([
   "program_not_active",
@@ -117,6 +118,7 @@ export function useEducationProgramTaskCompletion(
             message: "Program ilerlemeniz güncellendi.",
           });
         }
+        emitProgramTaskCompleted();
         return true;
       }
 

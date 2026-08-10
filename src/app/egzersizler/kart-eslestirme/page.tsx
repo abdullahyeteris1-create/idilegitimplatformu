@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { CardMatchingExerciseClient } from "./CardMatchingExerciseClient";
 
 const EXERCISE_SLUG = "kart-eslestirme";
@@ -18,6 +19,6 @@ export default async function CardMatchingExercisePage({ searchParams }: CardMat
   );
 
   return (
-    <CardMatchingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><CardMatchingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

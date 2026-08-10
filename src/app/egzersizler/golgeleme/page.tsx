@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { ShadowReadingExerciseClient } from "./ShadowReadingExerciseClient";
 
 const EXERCISE_SLUG = "golgeleme";
@@ -18,6 +19,6 @@ export default async function ShadowReadingPage({ searchParams }: ShadowReadingP
   );
 
   return (
-    <ShadowReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><ShadowReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

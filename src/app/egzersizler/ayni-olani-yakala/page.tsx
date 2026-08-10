@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { CatchSameExerciseClient } from "./CatchSameExerciseClient";
 
 const EXERCISE_SLUG = "ayni-olani-yakala";
@@ -18,6 +19,6 @@ export default async function CatchSamePage({ searchParams }: CatchSamePageProps
   );
 
   return (
-    <CatchSameExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><CatchSameExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

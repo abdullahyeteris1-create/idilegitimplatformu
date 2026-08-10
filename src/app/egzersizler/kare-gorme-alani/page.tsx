@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { SquareVisionExerciseClient } from "./SquareVisionExerciseClient";
 
 const EXERCISE_SLUG = "kare-gorme-alani";
@@ -20,6 +21,6 @@ export default async function SquareVisionExercisePage({
   );
 
   return (
-    <SquareVisionExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><SquareVisionExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

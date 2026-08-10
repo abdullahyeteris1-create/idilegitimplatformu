@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { MemoryGameExerciseClient } from "./MemoryGameExerciseClient";
 
 const EXERCISE_SLUG = "hafiza-gelistirme";
@@ -18,6 +19,6 @@ export default async function MemoryGamePage({ searchParams }: MemoryGamePagePro
   );
 
   return (
-    <MemoryGameExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><MemoryGameExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

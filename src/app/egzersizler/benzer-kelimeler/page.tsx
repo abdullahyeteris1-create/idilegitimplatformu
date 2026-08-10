@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { loadSimilarWordPools } from "@/lib/similar-word-pools/similarWordPoolsRepository";
 import { SimilarWordsExerciseClient } from "./SimilarWordsExerciseClient";
 
@@ -22,9 +23,6 @@ export default async function SimilarWordsPage({ searchParams }: SimilarWordsPag
   const similarWordPools = (await loadSimilarWordPools()).pools;
 
   return (
-    <SimilarWordsExerciseClient
-      educationProgramLaunch={educationProgramLaunch ?? undefined}
-      similarWordPools={similarWordPools}
-    />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><SimilarWordsExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} similarWordPools={similarWordPools} /></EducationProgramExerciseChrome>
   );
 }

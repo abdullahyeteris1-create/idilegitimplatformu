@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import EyeMuscleExerciseClient from "./EyeMuscleExerciseClient";
 
 const EXERCISE_SLUG = "goz-kaslari";
@@ -19,5 +20,5 @@ export default async function EyeMusclePage({ searchParams }: EyeMusclePageProps
     EXERCISE_SLUG,
   );
 
-  return <EyeMuscleExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />;
+  return <EducationProgramExerciseChrome launch={educationProgramLaunch}><EyeMuscleExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>;
 }

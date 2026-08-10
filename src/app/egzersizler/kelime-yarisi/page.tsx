@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { WordRaceExerciseClient } from "./WordRaceExerciseClient";
 
 const EXERCISE_SLUG = "kelime-yarisi";
@@ -19,5 +20,5 @@ export default async function WordRacePage({ searchParams }: WordRacePageProps) 
     EXERCISE_SLUG,
   );
 
-  return <WordRaceExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />;
+  return <EducationProgramExerciseChrome launch={educationProgramLaunch}><WordRaceExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>;
 }

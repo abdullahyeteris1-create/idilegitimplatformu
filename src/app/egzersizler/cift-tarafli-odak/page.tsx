@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { loadTwoSideFocusWordSets } from "@/lib/two-side-focus/twoSideFocusRepository";
 import { TwoSideFocusExerciseClient } from "./TwoSideFocusExerciseClient";
 
@@ -22,9 +23,6 @@ export default async function TwoSideFocusPage({ searchParams }: TwoSideFocusPag
   const { wordSets } = await loadTwoSideFocusWordSets();
 
   return (
-    <TwoSideFocusExerciseClient
-      educationProgramLaunch={educationProgramLaunch ?? undefined}
-      initialWordSets={wordSets}
-    />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><TwoSideFocusExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} initialWordSets={wordSets} /></EducationProgramExerciseChrome>
   );
 }

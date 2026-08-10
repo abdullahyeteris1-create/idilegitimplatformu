@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { GroupingExerciseClient } from "./GroupingExerciseClient";
 
 const EXERCISE_SLUG = "gruplama-calismasi";
@@ -18,6 +19,6 @@ export default async function GroupingExercisePage({ searchParams }: GroupingExe
   );
 
   return (
-    <GroupingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><GroupingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

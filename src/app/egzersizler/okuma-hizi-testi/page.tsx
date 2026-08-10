@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { ReadingSpeedTestClient } from "./ReadingSpeedTestClient";
 
 const EXERCISE_SLUG = "okuma-hizi-testi";
@@ -18,6 +19,6 @@ export default async function ReadingSpeedTestPage({ searchParams }: ReadingSpee
   );
 
   return (
-    <ReadingSpeedTestClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><ReadingSpeedTestClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

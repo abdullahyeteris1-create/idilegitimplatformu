@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { WordFindingExerciseClient } from "./WordFindingExerciseClient";
 
 const EXERCISE_SLUG = "kelime-bulma";
@@ -18,6 +19,6 @@ export default async function WordFindingPage({ searchParams }: WordFindingPageP
   );
 
   return (
-    <WordFindingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><WordFindingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

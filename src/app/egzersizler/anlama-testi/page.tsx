@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { ReadingComprehensionTestClient } from "./ReadingComprehensionTestClient";
 
 const EXERCISE_SLUG = "anlama-testi";
@@ -18,6 +19,6 @@ export default async function ReadingComprehensionTestPage({ searchParams }: Rea
   );
 
   return (
-    <ReadingComprehensionTestClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><ReadingComprehensionTestClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

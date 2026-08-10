@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { loadTachistoscopeWords } from "@/lib/tachistoscope/tachistoscopeRepository";
 import { TachistoscopeExerciseClient } from "@/components/exercises/TachistoscopeExerciseClient";
 
@@ -22,9 +23,6 @@ export default async function TakistoskopPage({ searchParams }: TakistoskopPageP
   const tachistoscopeWords = (await loadTachistoscopeWords()).wordsByLevel;
 
   return (
-    <TachistoscopeExerciseClient
-      educationProgramLaunch={educationProgramLaunch ?? undefined}
-      tachistoscopeWords={tachistoscopeWords}
-    />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><TachistoscopeExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} tachistoscopeWords={tachistoscopeWords} /></EducationProgramExerciseChrome>
   );
 }

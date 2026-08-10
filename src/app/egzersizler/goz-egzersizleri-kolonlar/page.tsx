@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { ColumnEyeExerciseClient } from "./ColumnEyeExerciseClient";
 
 const EXERCISE_SLUG = "goz-egzersizleri-kolonlar";
@@ -18,6 +19,6 @@ export default async function ColumnEyeExercisePage({ searchParams }: ColumnEyeE
   );
 
   return (
-    <ColumnEyeExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><ColumnEyeExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

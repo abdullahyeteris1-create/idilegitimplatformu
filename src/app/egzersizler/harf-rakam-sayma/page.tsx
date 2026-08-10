@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { LetterNumberCountingFocusClient } from "./LetterNumberCountingFocusClient";
 
 const EXERCISE_SLUG = "harf-rakam-sayma";
@@ -20,6 +21,6 @@ export default async function LetterNumberCountingFocusPage({
   );
 
   return (
-    <LetterNumberCountingFocusClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><LetterNumberCountingFocusClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

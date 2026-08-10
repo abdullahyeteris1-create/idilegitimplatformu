@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { BlockReadingExerciseClient } from "./BlockReadingExerciseClient";
 
 const EXERCISE_SLUG = "blok-okuma";
@@ -18,6 +19,6 @@ export default async function BlockReadingPage({ searchParams }: BlockReadingPag
   );
 
   return (
-    <BlockReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><BlockReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

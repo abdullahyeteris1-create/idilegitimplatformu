@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import ThirteenPointEmojiTrackingClient from "./ThirteenPointEmojiTrackingClient";
 
 const EXERCISE_SLUG = "13-nokta-emoji-takip";
@@ -13,5 +14,5 @@ export default async function ThirteenPointEmojiTrackingPage({ searchParams }: P
   const params = await searchParams;
   const educationProgramLaunch = await resolveEducationProgramExerciseLaunch(params.educationLaunch, EXERCISE_SLUG);
 
-  return <ThirteenPointEmojiTrackingClient educationProgramLaunch={educationProgramLaunch ?? undefined} />;
+  return <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><ThirteenPointEmojiTrackingClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>;
 }

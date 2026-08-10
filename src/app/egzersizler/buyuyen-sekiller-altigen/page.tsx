@@ -1,4 +1,5 @@
 import { resolveEducationProgramExerciseLaunch } from "@/lib/education-programs/exerciseLaunchValidation";
+import { EducationProgramExerciseChrome } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { GrowingShapesHexagonExerciseClient } from "./GrowingShapesHexagonExerciseClient";
 
 const EXERCISE_SLUG = "buyuyen-sekiller-altigen";
@@ -22,6 +23,6 @@ export default async function GrowingShapesHexagonPage({
   );
 
   return (
-    <GrowingShapesHexagonExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} />
+    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><GrowingShapesHexagonExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }
