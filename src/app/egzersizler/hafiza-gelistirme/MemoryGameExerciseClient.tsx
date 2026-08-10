@@ -25,6 +25,7 @@ import {
 } from "@/components/exercises/FullscreenExerciseShell";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import styles from "@/components/exercises/memory-game-theme.module.css";
+import { formatRemainingTime } from "@/lib/exercises/timing";
 
 type ExercisePhase = "setup" | "ready" | "play" | "result";
 type RoundPhase = "prepare" | "show" | "select" | "feedback";
@@ -209,6 +210,14 @@ export function MemoryGameExerciseClient({
   const totalDurationSeconds = useAssignedDurationSeconds(
     educationProgramLaunch?.durationSeconds ?? Number.POSITIVE_INFINITY,
   );
+  const hasEducationProgramCountdown =
+    isEducationProgramMode && Number.isFinite(totalDurationSeconds);
+  const remainingSeconds = hasEducationProgramCountdown
+    ? Math.max(0, totalDurationSeconds - elapsedSeconds)
+    : null;
+  const remainingTimeTone = remainingSeconds !== null && remainingSeconds <= 60
+    ? "bad"
+    : "brand";
   const isAssignmentMode = useIsAssignmentMode();
   const educationProgramTaskId =
     isEducationProgramMode && !isAssignmentMode ? educationProgramLaunch?.taskId : undefined;
@@ -659,6 +668,13 @@ export function MemoryGameExerciseClient({
             { label: "Seviye", value: level },
             { label: "Yanan Kutu", value: level, tone: "brand" },
             { label: "Hedef Net", value: NET_TARGET },
+            ...(remainingSeconds !== null
+              ? [{
+                  label: "Kalan Süre",
+                  value: formatRemainingTime(remainingSeconds),
+                  tone: remainingTimeTone as "brand" | "bad",
+                }]
+              : []),
           ]}
           stageClassName="fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:min-h-[350px]"
           footer={footerControls}
@@ -834,6 +850,13 @@ export function MemoryGameExerciseClient({
           { label: "Doğru", value: levelCorrectCount, tone: "ok" },
           { label: "Yanlış", value: levelWrongCount, tone: "bad" },
           { label: "Net", value: net, tone: "brand" },
+          ...(remainingSeconds !== null
+            ? [{
+                label: "Kalan Süre",
+                value: formatRemainingTime(remainingSeconds),
+                tone: remainingTimeTone as "brand" | "bad",
+              }]
+            : []),
         ]}
         finishButton={
           <button

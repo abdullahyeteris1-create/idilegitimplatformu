@@ -1,6 +1,14 @@
 export const MIN_EXERCISE_DELAY_MS = 50;
 export const MAX_EXERCISE_DELAY_MS = 60_000;
 
+export function formatRemainingTime(seconds: number): string {
+  const safe = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(safe / 60);
+  const secs = safe % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
 
 export const MIN_READING_SPEED = 1;
 export const MAX_READING_SPEED = Number.MAX_SAFE_INTEGER;
@@ -52,4 +60,3 @@ export function wordsPerMinuteToDelay(
 
   return Math.max(1, Math.round((60_000 * safeWordCount) / safeWordsPerMinute));
 }
-
