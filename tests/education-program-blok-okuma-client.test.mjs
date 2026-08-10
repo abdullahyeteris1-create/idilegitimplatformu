@@ -204,7 +204,7 @@ test("25) metin bitince cumulative tam olarak BIR kez guncellenir, sonra hasReac
   );
   assert.match(
     source,
-    /if \(hasReachedAssignedDuration\(assignedDurationSeconds, nextTotalActiveSeconds, 0\)\) \{/,
+    /const currentTaskElapsedSeconds = taskStartedAtRef\.current[\s\S]*?if \(hasReachedAssignedDuration\(assignedDurationSeconds, currentTaskElapsedSeconds, 0\)\) \{/,
   );
 });
 
@@ -231,7 +231,7 @@ test("27) yeni-metin bildirimi tamamlanan sureyi, kalan sureyi ve tamamlanan met
 
   assert.match(
     source,
-    /setNewTextNotice\(\{\s*\n\s*cumulativeActiveSeconds: nextTotalActiveSeconds,\s*\n\s*remainingSeconds: calculateRemainingActiveSeconds\(assignedDurationSeconds, nextTotalActiveSeconds, 0\),\s*\n\s*completedTextCount: completedTextCountRef\.current,\s*\n\s*\}\);/,
+    /setNewTextNotice\(\{\s*\n\s*cumulativeActiveSeconds: nextTotalActiveSeconds,\s*\n\s*remainingSeconds: calculateRemainingActiveSeconds\(assignedDurationSeconds, currentTaskElapsedSeconds, 0\),\s*\n\s*completedTextCount: completedTextCountRef\.current,\s*\n\s*\}\);/,
   );
 });
 
@@ -308,8 +308,17 @@ test("34) süre ogretmenin belirledigi degere metin ORTASINDA ulasirsa ikinci bi
 
   assert.match(
     source,
-    /if \(!isEducationProgramMode \|\| phase !== "running" \|\| isPaused\) \{\s*\n\s*return;\s*\n\s*\}\s*\n\s*\n\s*if \(hasReachedAssignedDuration\(assignedDurationSeconds, cumulativeActiveSecondsRef\.current, elapsedSeconds\)\) \{\s*\n\s*handleTextEnd\(false\);/,
+    /const isTextRunning = phase === "running" && !isPaused;[\s\S]*?const isTaskRunning = isEducationProgramMode && taskStartedAtRef\.current !== null && phase !== "result";[\s\S]*?setTaskElapsedSeconds\(nextElapsedSeconds\);[\s\S]*?handleTextEnd\(false\);/,
   );
+});
+
+test("34a) Egitim Programi gorev baslangici metin degisiminde korunur ve kalan sure gorevden hesaplanir", async () => {
+  const source = await read(CLIENT_PATH);
+
+  assert.match(source, /const taskStartedAtRef = useRef<number \| null>\(null\);/);
+  assert.match(source, /taskStartedAtRef\.current === null/);
+  assert.match(source, /const taskRemainingSeconds = isEducationProgramMode/);
+  assert.match(source, /Math\.max\(0, assignedDurationSeconds - taskElapsedSeconds\)/);
 });
 
 test("35) completedTextCount yalniz gercekten tamamlanan (completedText true olan) metinleri sayar", async () => {

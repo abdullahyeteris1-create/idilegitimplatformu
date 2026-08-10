@@ -120,6 +120,8 @@ export function BlockReadingExerciseClient({
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  const taskStartedAtRef = useRef<number | null>(null);
+  const taskFinishedRef = useRef(false);
   // Egitim Programi coklu-metin biriken sure modeli: bu iki ref, ayni client
   // yasam dongusu icinde onceki metinlerde biriken aktif saniyeyi ve
   // tamamen bitirilen metin sayisini tutar - sayfa yenilenirse kaybolur
@@ -175,6 +177,7 @@ export function BlockReadingExerciseClient({
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [taskElapsedSeconds, setTaskElapsedSeconds] = useState(0);
   const [result, setResult] = useState<BlockReadingResult | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
@@ -366,8 +369,11 @@ export function BlockReadingExerciseClient({
     // yalniz-aktif-calisirken-artan toplam saniyeden gelir - Date.now() farki
     // KULLANILMAZ (pause suresini de icerebilir). Standalone modda mevcut
     // davranis (Date.now() farki, yoksa elapsedSeconds) aynen korunur.
+    const taskElapsedAtFinish = taskStartedAtRef.current
+      ? Math.max(0, Math.floor((Date.now() - taskStartedAtRef.current) / 1000))
+      : taskElapsedSeconds;
     const durationSeconds = isEducationProgramMode
-      ? Math.max(1, cumulativeActiveSecondsRef.current)
+      ? Math.max(1, taskElapsedAtFinish)
       : Math.max(1, startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds);
 
     const payload = {
@@ -425,6 +431,7 @@ export function BlockReadingExerciseClient({
     isEducationProgramMode,
     persistResult,
     selectedText,
+    taskElapsedSeconds,
     speedMode,
     totalBlocks,
     totalWords,
@@ -433,7 +440,9 @@ export function BlockReadingExerciseClient({
 
   const resetFlowToReady = useCallback(() => {
     saveLockRef.current = true;
-    startedAtRef.current = null;
+    if (!isEducationProgramMode) {
+      startedAtRef.current = null;
+    }
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
     setResult(null);
@@ -444,13 +453,16 @@ export function BlockReadingExerciseClient({
     pendingResultRef.current = null;
     setSaveStatus("idle");
     setSaveMessage("");
-  }, []);
+  }, [isEducationProgramMode]);
 
   const handleStart = () => {
     saveLockRef.current = false;
     startedAtRef.current = null;
+    taskStartedAtRef.current = null;
+    taskFinishedRef.current = false;
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
+    setTaskElapsedSeconds(0);
     setResult(null);
     setIsPaused(false);
     setPhase("ready");
@@ -467,7 +479,13 @@ export function BlockReadingExerciseClient({
     }
 
     saveLockRef.current = false;
-    startedAtRef.current = Date.now();
+    if (!isEducationProgramMode) {
+      startedAtRef.current = Date.now();
+    } else if (taskStartedAtRef.current === null) {
+      taskStartedAtRef.current = Date.now();
+      taskFinishedRef.current = false;
+      setTaskElapsedSeconds(0);
+    }
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
     setResult(null);
@@ -485,6 +503,9 @@ export function BlockReadingExerciseClient({
     cumulativeActiveSecondsRef.current = 0;
     completedTextCountRef.current = 0;
     textEndInFlightRef.current = false;
+    taskStartedAtRef.current = null;
+    taskFinishedRef.current = false;
+    setTaskElapsedSeconds(0);
     setNewTextNotice(null);
     resetFlowToReady();
   };
@@ -507,11 +528,16 @@ export function BlockReadingExerciseClient({
       );
       cumulativeActiveSecondsRef.current = nextTotalActiveSeconds;
 
+      const currentTaskElapsedSeconds = taskStartedAtRef.current
+        ? Math.max(0, Math.floor((Date.now() - taskStartedAtRef.current) / 1000))
+        : taskElapsedSeconds;
+      setTaskElapsedSeconds(currentTaskElapsedSeconds);
+
       if (completedText) {
         completedTextCountRef.current += 1;
       }
 
-      if (hasReachedAssignedDuration(assignedDurationSeconds, nextTotalActiveSeconds, 0)) {
+      if (hasReachedAssignedDuration(assignedDurationSeconds, currentTaskElapsedSeconds, 0)) {
         finalizeExercise(completedText);
         return;
       }
@@ -519,12 +545,12 @@ export function BlockReadingExerciseClient({
       textEndInFlightRef.current = false;
       setNewTextNotice({
         cumulativeActiveSeconds: nextTotalActiveSeconds,
-        remainingSeconds: calculateRemainingActiveSeconds(assignedDurationSeconds, nextTotalActiveSeconds, 0),
+        remainingSeconds: calculateRemainingActiveSeconds(assignedDurationSeconds, currentTaskElapsedSeconds, 0),
         completedTextCount: completedTextCountRef.current,
       });
       resetFlowToReady();
     },
-    [assignedDurationSeconds, elapsedSeconds, finalizeExercise, isEducationProgramMode, resetFlowToReady],
+    [assignedDurationSeconds, elapsedSeconds, finalizeExercise, isEducationProgramMode, resetFlowToReady, taskElapsedSeconds],
   );
 
   const handleFinishEarly = () => {
@@ -547,35 +573,43 @@ export function BlockReadingExerciseClient({
     onTick: advanceBlock,
   });
 
-  // Ogretmenin belirledigi gorev suresi bir metnin ORTASINDA dolabilir - bu
-  // efekt, mevcut tek aktif-saniye sayacini (elapsedSeconds) izleyerek bunu
-  // yakalar; ikinci/bagimsiz bir setInterval KURULMAZ.
+  // Tek interval iki farkli kavrami gunceller: metin ici elapsedSeconds ve
+  // Egitim Programi gorev saati. Gorev saati metin secimi/ready ekraninda da
+  // devam eder ve elapsedSeconds state'inden bagimsizdir.
   useEffect(() => {
-    if (!isEducationProgramMode || phase !== "running" || isPaused) {
+    const isTextRunning = phase === "running" && !isPaused;
+    const isTaskRunning = isEducationProgramMode && taskStartedAtRef.current !== null && phase !== "result";
+    if (!isTextRunning && !isTaskRunning) {
       return;
     }
 
-    if (hasReachedAssignedDuration(assignedDurationSeconds, cumulativeActiveSecondsRef.current, elapsedSeconds)) {
-      handleTextEnd(false);
-    }
-  }, [assignedDurationSeconds, elapsedSeconds, handleTextEnd, isEducationProgramMode, isPaused, phase]);
+    const updateClocks = () => {
+      if (isTextRunning) {
+        setElapsedSeconds((previous) => previous + 1);
+      }
 
-  useEffect(() => {
-    if (phase !== "running" || isPaused) {
-      return;
-    }
-
-    const timerId = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => {
-      window.clearInterval(timerId);
+      if (isTaskRunning) {
+        const startedAt = taskStartedAtRef.current;
+        if (startedAt === null) return;
+        const nextElapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        setTaskElapsedSeconds(nextElapsedSeconds);
+        if (hasReachedAssignedDuration(assignedDurationSeconds, nextElapsedSeconds, 0) && !taskFinishedRef.current) {
+          taskFinishedRef.current = true;
+          saveLockRef.current = false;
+          handleTextEnd(false);
+        }
+      }
     };
-  }, [isPaused, phase]);
+
+    const timerId = window.setInterval(updateClocks, 1000);
+    return () => window.clearInterval(timerId);
+  }, [assignedDurationSeconds, handleTextEnd, isEducationProgramMode, isPaused, phase]);
 
   const completedBlocks = phase === "running" ? Math.min(currentBlockIndex + 1, totalBlocks) : 0;
   const progressPercent = totalBlocks === 0 ? 0 : Math.round((completedBlocks / totalBlocks) * 100);
+  const taskRemainingSeconds = isEducationProgramMode
+    ? Math.max(0, assignedDurationSeconds - taskElapsedSeconds)
+    : elapsedSeconds;
 
   const footerControls = (
     <div className="grid gap-3 lg:grid-cols-7">
@@ -750,6 +784,9 @@ export function BlockReadingExerciseClient({
           { label: "Kelime", value: totalWords },
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
+          ...(isEducationProgramMode
+            ? [{ label: "Kalan Sure", value: formatElapsed(taskRemainingSeconds), tone: "brand" as const }]
+            : []),
         ]}
         stageClassName={`fx-slide-up flex min-h-[300px] w-full flex-col items-center justify-center rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(255,248,246,0.88)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[350px] ${styles.stageOverride}`}
         footer={footerControls}
@@ -939,7 +976,7 @@ export function BlockReadingExerciseClient({
       subtitle={selectedText?.title ?? "Tam ekran çalışma modu"}
       stats={[
         { label: "Blok", value: `${currentBlockIndex + 1}/${totalBlocks}` },
-        { label: "Süre", value: formatElapsed(elapsedSeconds) },
+        { label: isEducationProgramMode ? "Kalan Süre" : "Süre", value: formatElapsed(taskRemainingSeconds) },
         { label: "Hız", value: speedLabel, tone: "brand" },
         { label: "Kelime", value: blockSize },
       ]}
