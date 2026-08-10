@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json(
-    { ok: false, message: access.message },
+    { ok: false, message: access.message, reason: access.reason },
     { status: access.status, headers: NO_STORE_HEADERS },
   );
 

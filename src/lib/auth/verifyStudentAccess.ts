@@ -23,16 +23,18 @@ export type StudentAccessFailure = {
   status: 401 | 403 | 500;
   message: string;
   clearSessionCookie: boolean;
+  reason: "session_invalid" | "session_version_mismatch" | "student_inactive" | "access_expired" | "access_check_failed";
 };
 
 export type StudentAccessResult = StudentAccessSuccess | StudentAccessFailure;
 
-function sessionFailure(): StudentAccessFailure {
+function sessionFailure(reason: "session_invalid" | "session_version_mismatch" = "session_invalid"): StudentAccessFailure {
   return {
     ok: false,
     status: 401,
     message: STUDENT_SESSION_EXPIRED_MESSAGE,
     clearSessionCookie: true,
+    reason,
   };
 }
 
@@ -61,6 +63,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
       status: 500,
       message: ACCESS_CHECK_FAILED_MESSAGE,
       clearSessionCookie: false,
+      reason: "access_check_failed",
     };
   }
 
@@ -83,6 +86,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
         status: 500,
         message: ACCESS_CHECK_FAILED_MESSAGE,
         clearSessionCookie: false,
+        reason: "access_check_failed",
       };
     }
 
@@ -92,7 +96,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
 
     const currentSessionVersion = parseSessionVersion(student.session_version);
     if (currentSessionVersion === null || currentSessionVersion !== session.sessionVersion) {
-      return sessionFailure();
+      return sessionFailure("session_version_mismatch");
     }
 
     if (!isStudentActiveStatus(student.is_active, student.status)) {
@@ -101,6 +105,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
         status: 403,
         message: PASSIVE_STUDENT_MESSAGE,
         clearSessionCookie: false,
+        reason: "student_inactive",
       };
     }
 
@@ -114,6 +119,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
         status: 403,
         message: dateAccess.message,
         clearSessionCookie: false,
+        reason: "access_expired",
       };
     }
 
@@ -133,6 +139,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
       status: 500,
       message: ACCESS_CHECK_FAILED_MESSAGE,
       clearSessionCookie: false,
+      reason: "access_check_failed",
     };
   }
 }

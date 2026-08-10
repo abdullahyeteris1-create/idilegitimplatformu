@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import panelStyles from "@/components/student-panel-preview/student-panel-preview.module.css";
 
@@ -7,12 +8,12 @@ type PreviewHeaderProps = {
   light: boolean;
   onToggleTheme: () => void;
   onNotify: () => void;
-  onProfile: () => void;
+  profileHref: string;
   studentName: string;
   classLabel: string;
 };
 
-export function PreviewHeader({ light, onToggleTheme, onNotify, onProfile, studentName, classLabel }: PreviewHeaderProps) {
+export function PreviewHeader({ light, onToggleTheme, onNotify, profileHref, studentName, classLabel }: PreviewHeaderProps) {
   return (
     <header className={panelStyles.header}>
       <div>
@@ -35,14 +36,14 @@ export function PreviewHeader({ light, onToggleTheme, onNotify, onProfile, stude
           <Icon name="bell" />
           <span>3</span>
         </button>
-        <button type="button" className={panelStyles.profile} aria-label="Profil menüsünü aç" onClick={onProfile}>
+        <Link href={profileHref} className={panelStyles.profile} aria-label="Profil sayfasını aç">
           <span>👨‍🚀</span>
           <div>
             <strong>{studentName}</strong>
             <small>{classLabel}</small>
           </div>
           <Icon name="arrow" />
-        </button>
+        </Link>
       </div>
     </header>
   );

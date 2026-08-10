@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
 import type { DailyAssignment, DailyAssignmentItem } from "@/lib/assignments/assignmentTypes";
 import { getReadingTestsByStudent, type ReadingTestResult } from "@/lib/results/readingTestStorage";
@@ -19,26 +19,6 @@ import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp
 import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
-type AccountMenuState = { panel: DemoPanel; toggle: (panel: Exclude<DemoPanel, null>) => void };
-const emptyAccountMenuState: AccountMenuState = { panel: null, toggle: () => undefined };
-let accountMenuState = emptyAccountMenuState;
-const accountMenuListeners = new Set<() => void>();
-
-function setAccountMenuState(nextState: AccountMenuState): void {
-  accountMenuState = nextState;
-  accountMenuListeners.forEach((listener) => listener());
-}
-
-function useAccountMenuState(): AccountMenuState {
-  return useSyncExternalStore(
-    (listener) => {
-      accountMenuListeners.add(listener);
-      return () => accountMenuListeners.delete(listener);
-    },
-    () => accountMenuState,
-    () => emptyAccountMenuState,
-  );
-}
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
 export type AuthenticatedStudent = { id: string; name: string; username?: string; classLevel?: string | null };
 type StudentPanelPreviewProps = {
@@ -267,14 +247,8 @@ function Brand() {
   return <div className={styles.brand}><span className={styles.brandMark}><Icon name="rocket" /></span><span><strong>İDİL</strong><small>HIZLI OKUMA</small></span></div>;
 }
 
-function NavAction({ item, active = false, onDemo, onNavigate, panel, onTogglePanel }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void; panel?: DemoPanel; onTogglePanel?: (panel: Exclude<DemoPanel, null>) => void }) {
-  const sharedAccountMenu = useAccountMenuState();
+function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void }) {
   const pathname = usePathname();
-
-  if (item.label === "Ayarlar") {
-    const toggle = onTogglePanel ?? sharedAccountMenu.toggle;
-    return <AccountMenuTrigger open={(panel ?? sharedAccountMenu.panel) === "profile"} onToggle={() => toggle("profile")} />;
-  }
 
   const content = <><Icon name={item.icon}/><span>{item.label}</span></>;
   const className = item.href === pathname || (active && !pathname) ? styles.activeNav : undefined;
@@ -284,10 +258,6 @@ function NavAction({ item, active = false, onDemo, onNavigate, panel, onTogglePa
   }
 
   return <button type="button" className={className} onClick={() => { onDemo("Bu özellik önizleme aşamasında."); onNavigate?.(); }}>{content}</button>;
-}
-
-function AccountMenuTrigger({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  return <button type="button" className={styles.accountMenuTrigger} aria-haspopup="menu" aria-expanded={open} aria-controls="student-account-menu" onClick={onToggle}><Icon name="settings"/><span>Ayarlar</span><Icon name="arrow"/></button>;
 }
 
 function Sidebar({
@@ -715,9 +685,21 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
 
   const togglePanel = useCallback((nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel), []);
   useEffect(() => {
-    setAccountMenuState({ panel, toggle: togglePanel });
-    return () => setAccountMenuState(emptyAccountMenuState);
-  }, [panel, togglePanel]);
+    const closePanelOnRestore = () => setPanel(null);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") closePanelOnRestore();
+    };
+
+    window.addEventListener("pageshow", closePanelOnRestore);
+    window.addEventListener("focus", closePanelOnRestore);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", closePanelOnRestore);
+      window.removeEventListener("focus", closePanelOnRestore);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
   const handleLogout = async () => {
     if (isLoggingOut) return;
 

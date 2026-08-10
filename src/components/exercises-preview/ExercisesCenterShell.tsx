@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import panelStyles from "@/components/student-panel-preview/student-panel-preview.module.css";
@@ -36,6 +36,29 @@ export function ExercisesCenterShell() {
     () => PREVIEW_EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? PREVIEW_EXERCISE_GROUPS[0],
     [activeGroupId],
   );
+  const searchParamsKey = searchParams.toString();
+
+  useEffect(() => {
+    const closeId = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    return () => window.clearTimeout(closeId);
+  }, [pathname, searchParamsKey]);
+
+  useEffect(() => {
+    const closeMenu = () => setMobileMenuOpen(false);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") closeMenu();
+    };
+
+    window.addEventListener("pageshow", closeMenu);
+    window.addEventListener("focus", closeMenu);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pageshow", closeMenu);
+      window.removeEventListener("focus", closeMenu);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const showToast = (message: string) => {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -44,6 +67,9 @@ export function ExercisesCenterShell() {
   };
 
   const handleSelectGroup = (groupId: string) => {
+    setMobileMenuOpen(false);
+    if (groupId === activeGroupId) return;
+
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set("category", groupId);
     router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
@@ -82,7 +108,7 @@ export function ExercisesCenterShell() {
             light={light}
             onToggleTheme={() => setTheme(light ? "dark" : "light")}
             onNotify={() => showToast(COMING_SOON_MESSAGE)}
-            onProfile={() => showToast(COMING_SOON_MESSAGE)}
+            profileHref="/ogrenci/profil"
             studentName={STUDENT_NAME}
             classLabel={CLASS_LABEL}
           />
@@ -114,16 +140,16 @@ export function ExercisesCenterShell() {
         <Link href="/sonuc" aria-label="Sonuçlar">
           <Icon name="chart" />
         </Link>
-        <button type="button" aria-label="Profil" onClick={() => showToast(COMING_SOON_MESSAGE)}>
+        <Link href="/ogrenci/profil" aria-label="Profil">
           <Icon name="user" />
-        </button>
+        </Link>
       </nav>
 
       {mobileMenuOpen && (
         <>
           <button
             type="button"
-            className={panelStyles.panelBackdrop}
+            className={`${panelStyles.panelBackdrop} ${panelStyles.panelBackdropOpen}`}
             aria-label="Menüyü kapat"
             onClick={() => setMobileMenuOpen(false)}
           />

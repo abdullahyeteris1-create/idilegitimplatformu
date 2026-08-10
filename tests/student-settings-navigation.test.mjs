@@ -14,7 +14,7 @@ const panelSource = fs.readFileSync(
 test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
   assert.match(
     navSource,
-    /label: "Ayarlar", icon: "settings" \}/,
+    /label: "Ayarlar", icon: "settings", href: "\/ogrenci\/profil" \}/,
   );
   assert.match(
     navSource,
@@ -28,12 +28,11 @@ test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
     panelSource,
     /function AccountMenuPopover/,
   );
-  assert.match(panelSource, /AccountMenuTrigger/);
-  assert.match(panelSource, /aria-haspopup="menu"/);
-  assert.match(panelSource, /student-account-menu/);
+  assert.match(panelSource, /href=\{item\.href\}/);
   assert.match(panelSource, /<Link href="\/ogrenci\/profil" className=\{styles\.profileMenuLink\}[^>]*>[\s\S]*Profilim<\/Link>/);
   assert.match(panelSource, /profileLogout/);
   assert.match(panelSource, /navItems\.map/);
+  assert.doesNotMatch(panelSource, /if \(item\.label === "Ayarlar"\)/);
 });
 
 test("profil menü bağlantısı mevcut profil akışını korur", () => {
