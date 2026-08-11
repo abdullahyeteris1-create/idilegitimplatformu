@@ -23,6 +23,6 @@ export default async function TwoSideFocusPage({ searchParams }: TwoSideFocusPag
   const { wordSets } = await loadTwoSideFocusWordSets();
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><TwoSideFocusExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} initialWordSets={wordSets} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><TwoSideFocusExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} initialWordSets={wordSets} /></EducationProgramExerciseChrome>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
@@ -132,6 +133,7 @@ export function SquareVisionExerciseClient({
   const isEducationProgramMode = Boolean(educationProgramLaunch);
 
   const [phase, setPhase] = useState<Phase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "running");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
   // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayar
   // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;

@@ -19,6 +19,6 @@ export default async function WordFindingPage({ searchParams }: WordFindingPageP
   );
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><WordFindingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><WordFindingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

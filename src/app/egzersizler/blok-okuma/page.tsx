@@ -19,6 +19,6 @@ export default async function BlockReadingPage({ searchParams }: BlockReadingPag
   );
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><BlockReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><BlockReadingExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseStage } from "@/components/exercises/ExerciseStage";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
@@ -240,6 +241,7 @@ export default function EyeMuscleExerciseClient({ educationProgramLaunch }: EyeM
   const totalFlashesRef = useRef(0);
 
   const [status, setStatus] = useState<ExerciseStatus>("idle");
+  useEducationProgramExerciseRunning(isEducationProgramMode && status === "running");
   const [selectedLevel, setSelectedLevel] = useState(() =>
     clampLevel(educationProgramLaunch?.initialLevel ?? assignmentTask?.currentLevel ?? 1),
   );
@@ -598,7 +600,7 @@ export default function EyeMuscleExerciseClient({ educationProgramLaunch }: EyeM
           <>
             <span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {resolvedLevel}</span>
             <span className={`compact-stat-chip ${styles.statChipOverride}`}>Gösterim: {totalFlashes}</span>
-            <span className={`compact-stat-chip ${styles.statChipOverride}`}>Süre: {formatTime(elapsedSeconds)}</span>
+            {!isEducationProgramMode ? <span className={`compact-stat-chip ${styles.statChipOverride}`}>Süre: {formatTime(elapsedSeconds)}</span> : null}
             <span className={`compact-stat-chip ${styles.statChipOverride}`}>Desen: {selectedPattern.name}</span>
             {isAssignmentMode ? (
               <span className={`compact-stat-chip ${styles.statChipOverride}`}>Ödev: {assignmentTask?.dayNumber}.{assignmentTask?.taskOrder}</span>

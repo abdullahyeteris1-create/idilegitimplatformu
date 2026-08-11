@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { formatRemainingTime } from "@/lib/exercises/timing";
-import {
-  PROGRAM_TASK_COMPLETED_EVENT,
-} from "@/lib/results/programTaskEvents";
+import { EducationProgramCountdownBadge } from "@/components/education-programs/EducationProgramCountdownBadge";
+import { PROGRAM_TASK_COMPLETED_EVENT } from "@/lib/results/programTaskEvents";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 
 const EDUCATION_PROGRAM_ROUTE = "/ogrenci/egitim-programim";
@@ -49,26 +47,7 @@ function EducationProgramCountdown({
     return () => window.clearInterval(intervalId);
   }, [isRunning, remainingSeconds]);
 
-  const warning = remainingSeconds <= 60;
-  const critical = remainingSeconds <= 10;
-
-  return (
-    <div
-      role="timer"
-      aria-live="off"
-      aria-label={`Kalan süre ${formatRemainingTime(remainingSeconds)}`}
-      className={`fixed left-1/2 top-3 z-[9998] -translate-x-1/2 rounded-full border px-4 py-1.5 text-sm font-black tabular-nums shadow-lg ${
-        critical
-          ? "border-red-500 bg-red-600 text-white"
-          : warning
-            ? "border-amber-400 bg-amber-100 text-amber-900"
-            : "border-slate-700 bg-slate-900/95 text-white"
-      }`}
-    >
-      <span className="mr-1.5 text-[10px] uppercase tracking-wider opacity-80">Kalan Süre</span>
-      {formatRemainingTime(remainingSeconds)}
-    </div>
-  );
+  return <EducationProgramCountdownBadge remainingSeconds={remainingSeconds} />;
 }
 
 function EducationProgramContinueButton() {

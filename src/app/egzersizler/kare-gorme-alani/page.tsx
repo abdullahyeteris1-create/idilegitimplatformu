@@ -21,6 +21,6 @@ export default async function SquareVisionExercisePage({
   );
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><SquareVisionExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><SquareVisionExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

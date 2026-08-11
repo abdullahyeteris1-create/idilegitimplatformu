@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
@@ -53,6 +54,8 @@ export function WordRaceExerciseClient({
   const saveInFlightRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
+  const [isGameRunning, setIsGameRunning] = useState(false);
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && isGameRunning);
 
   const educationProgramTaskId = educationProgramLaunch?.taskId;
   const { completionStatus, completeTaskAfterResultSave } =
@@ -142,9 +145,17 @@ export function WordRaceExerciseClient({
       if (!frameRef.current || event.source !== frameRef.current.contentWindow) return;
 
       const data = event.data as { source?: unknown; type?: unknown; payload?: unknown } | null;
-      if (!data || data.source !== WORD_RACE_BRIDGE_MESSAGE_SOURCE || data.type !== "finished") {
+      if (!data || data.source !== WORD_RACE_BRIDGE_MESSAGE_SOURCE) {
         return;
       }
+
+      if (data.type === "started") {
+        setIsGameRunning(true);
+        return;
+      }
+
+      if (data.type !== "finished") return;
+      setIsGameRunning(false);
 
       if (!isFinishedPayload(data.payload)) return;
 

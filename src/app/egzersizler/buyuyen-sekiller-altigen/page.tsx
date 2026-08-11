@@ -23,6 +23,6 @@ export default async function GrowingShapesHexagonPage({
   );
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><GrowingShapesHexagonExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><GrowingShapesHexagonExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>
   );
 }

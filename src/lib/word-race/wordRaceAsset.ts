@@ -33,7 +33,10 @@ const FINISH_ANCHOR = '    el("veilOver").classList.remove("hidden");';
 // bu yuzden fonksiyonlarin ICINE eklenir. Degiskenler `window.` uzerinde
 // tutulur ki IIFE'deki hicbir isimle cakismasin.
 const START_HOOK = `
-    if (!window.__idilWordRaceStartedAt) window.__idilWordRaceStartedAt = Date.now();`;
+    if (!window.__idilWordRaceStartedAt) {
+      window.__idilWordRaceStartedAt = Date.now();
+      window.parent.postMessage({ source: "${WORD_RACE_BRIDGE_MESSAGE_SOURCE}", type: "started" }, "*");
+    }`;
 
 const FINISH_HOOK = `
     try {

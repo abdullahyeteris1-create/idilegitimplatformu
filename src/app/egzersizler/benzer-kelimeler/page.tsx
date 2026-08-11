@@ -23,6 +23,6 @@ export default async function SimilarWordsPage({ searchParams }: SimilarWordsPag
   const similarWordPools = (await loadSimilarWordPools()).pools;
 
   return (
-    <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><SimilarWordsExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} similarWordPools={similarWordPools} /></EducationProgramExerciseChrome>
+    <EducationProgramExerciseChrome launch={educationProgramLaunch}><SimilarWordsExerciseClient educationProgramLaunch={educationProgramLaunch ?? undefined} similarWordPools={similarWordPools} /></EducationProgramExerciseChrome>
   );
 }

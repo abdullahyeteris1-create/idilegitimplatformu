@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
@@ -109,6 +110,7 @@ export function ColumnEyeExerciseClient({
   const activeIndexRef = useRef(0);
 
   const [phase, setPhase] = useState<Phase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "running");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(1);
   // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayarlar
   // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;

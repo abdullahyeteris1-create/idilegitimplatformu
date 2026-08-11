@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
@@ -233,6 +234,7 @@ export function TwoSideFocusExerciseClient({
   const [freeSpeed, setFreeSpeed] = useState<SpeedOption>(DEFAULT_SPEED);
   const speed = controlledSpeed ?? freeSpeed;
   const [isRunning, setIsRunning] = useState(false);
+  useEducationProgramExerciseRunning(isEducationProgramMode && isRunning);
   const [roundData, setRoundData] = useState<RoundData>(() => createRound(initialLevel, wordSets));
 
   const [correctCount, setCorrectCount] = useState(0);
@@ -599,7 +601,7 @@ export function TwoSideFocusExerciseClient({
       <ExerciseFullscreenShell
         title="Çift Taraflı Odak"
         backHref="/egzersizler"
-        status={<>{isTimedMode ? <span className={`compact-stat-chip ${styles.statChipOverride}`}>Süre: {formatTime(remainingSeconds)}</span> : null}<span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {level}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Doğru: {correctCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Yanlış: {wrongCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Net: {netCount}/{NET_TARGET}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Kelime: {wordCount}</span></>}
+        status={<>{isTimedMode && !isEducationProgramMode ? <span className={`compact-stat-chip ${styles.statChipOverride}`}>Süre: {formatTime(remainingSeconds)}</span> : null}<span className={`compact-stat-chip ${styles.statChipOverride}`}>Seviye: {level}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Doğru: {correctCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Yanlış: {wrongCount}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Net: {netCount}/{NET_TARGET}</span><span className={`compact-stat-chip ${styles.statChipOverride}`}>Kelime: {wordCount}</span></>}
         settings={(
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Seviye</span><select value={level} onChange={(event) => prepareLevel(Number(event.target.value) as ExerciseLevel)} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-2 text-xs ${styles.levelSelect}`}>{LEVELS.map((value) => <option key={value} value={value}>{value}. seviye</option>)}</select></label>

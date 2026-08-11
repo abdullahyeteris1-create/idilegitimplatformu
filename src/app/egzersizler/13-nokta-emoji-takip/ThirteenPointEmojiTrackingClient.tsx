@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ExerciseFullscreenShell } from "@/components/exercises/ExerciseFullscreenShell";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
@@ -126,6 +127,7 @@ export default function ThirteenPointEmojiTrackingClient({ educationProgramLaunc
   const [soundEnabled, setSoundEnabled] = useState(readBooleanSetting(settings, "soundEnabled", false));
   const [showPoints, setShowPoints] = useState(true);
   const [status, setStatus] = useState<ExerciseStatus>("idle");
+  useEducationProgramExerciseRunning(isEducationProgramMode && status === "running");
   const [remainingSeconds, setRemainingSeconds] = useState(initialDuration);
   const [currentPositionId, setCurrentPositionId] = useState(THIRTEEN_POINT_POSITIONS[0].id);
   const [currentEmoji, setCurrentEmoji] = useState(DEFAULT_EMOJI);
@@ -460,7 +462,7 @@ export default function ThirteenPointEmojiTrackingClient({ educationProgramLaunc
         title="13 Nokta Emoji Takip Egzersizi"
         description="Başınızı hareket ettirmeden yalnızca gözlerinizle ekrandaki emoji veya simgeyi takip edin."
         backHref="/egzersizler"
-        status={<><span className="compact-stat-chip">{statusLabel}</span><span className="compact-stat-chip">Süre: {remainingLabel}</span><span className="compact-stat-chip">Sıçrama: {jumpCount}</span></>}
+        status={<><span className="compact-stat-chip">{statusLabel}</span>{!isEducationProgramMode ? <span className="compact-stat-chip">Süre: {remainingLabel}</span> : null}<span className="compact-stat-chip">Sıçrama: {jumpCount}</span></>}
         settings={(
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-[1.15fr_0.85fr_1.1fr_0.9fr_1fr_0.6fr_0.7fr] xl:items-end xl:gap-3">
             <div className={SETTINGS_FIELD_CLASS}>

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
@@ -169,6 +170,7 @@ export function MemoryGameExerciseClient({
   const nextRoundTimerRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "play");
   const [roundPhase, setRoundPhase] = useState<RoundPhase>("prepare");
 
   const [gridLayout, setGridLayout] = useState<MemoryGridLayout>(() =>
@@ -668,7 +670,7 @@ export function MemoryGameExerciseClient({
             { label: "Seviye", value: level },
             { label: "Yanan Kutu", value: level, tone: "brand" },
             { label: "Hedef Net", value: NET_TARGET },
-            ...(remainingSeconds !== null
+            ...(!isEducationProgramMode && remainingSeconds !== null
               ? [{
                   label: "Kalan Süre",
                   value: formatRemainingTime(remainingSeconds),
@@ -850,7 +852,7 @@ export function MemoryGameExerciseClient({
           { label: "Doğru", value: levelCorrectCount, tone: "ok" },
           { label: "Yanlış", value: levelWrongCount, tone: "bad" },
           { label: "Net", value: net, tone: "brand" },
-          ...(remainingSeconds !== null
+          ...(!isEducationProgramMode && remainingSeconds !== null
             ? [{
                 label: "Kalan Süre",
                 value: formatRemainingTime(remainingSeconds),

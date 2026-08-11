@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { FixedExerciseStage } from "@/components/exercises/FixedExerciseStage";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
@@ -213,6 +214,7 @@ export function SimilarWordsExerciseClient({
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  useEducationProgramExerciseRunning(isEducationProgramMode && phase === "play");
   const assignmentDifficulty = assignmentTask?.settings.difficulty;
   const activeDifficulty: SimilarWordsDifficulty = isSimilarWordsDifficulty(assignmentDifficulty)
     ? assignmentDifficulty
@@ -510,7 +512,7 @@ export function SimilarWordsExerciseClient({
           topStats={
             <>
               <CategoryTag />
-              <SwStat label="Sure" value={formatDuration(effectiveDurationSeconds)} tone="brand" />
+              {!isEducationProgramMode ? <SwStat label="Sure" value={formatDuration(effectiveDurationSeconds)} tone="brand" /> : null}
               <SwStat label="Kutu" value={boxCount} />
               <SwStat label="Hedef" value={targetDifferentCount} tone="progress" />
               <SwStat label="Kalan" value={targetDifferentCount} tone="progress" />
@@ -704,7 +706,7 @@ export function SimilarWordsExerciseClient({
         topStats={
           <>
             <CategoryTag />
-            <SwStat label="Sure" value={formatDuration(remainingSeconds)} tone="brand" />
+            {!isEducationProgramMode ? <SwStat label="Sure" value={formatDuration(remainingSeconds)} tone="brand" /> : null}
             <SwStat label="Kutu" value={boxCount} />
             <SwStat label="Tur Hedefi" value={targetDifferentCount} tone="progress" />
             <SwStat label="Kalan" value={remainingTarget} tone="progress" />

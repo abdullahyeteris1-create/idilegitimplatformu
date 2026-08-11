@@ -206,7 +206,7 @@ test("TwoSideFocusExerciseClient Assignment/Education Program ayrimi eye-muscle 
 test("TwoSideFocusExerciseClient sayac yalniz zamanli modda gorunur, serbest kullanimda gizli", async () => {
   const source = await read("src/app/egzersizler/cift-tarafli-odak/TwoSideFocusExerciseClient.tsx");
 
-  assert.match(source, /\{isTimedMode \? <span[^>]*>Süre: \{formatTime\(remainingSeconds\)\}<\/span> : null\}/);
+  assert.match(source, /isTimedMode && !isEducationProgramMode \? <span[^>]*>Süre: \{formatTime\(remainingSeconds\)\}<\/span> : null/);
 });
 
 test("TwoSideFocusExerciseClient dogal bitiste tek seferlik tamamlama koruyucusu var", async () => {

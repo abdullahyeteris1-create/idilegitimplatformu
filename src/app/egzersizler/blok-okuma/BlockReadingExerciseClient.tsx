@@ -964,7 +964,7 @@ export function BlockReadingExerciseClient({
       subtitle={selectedText?.title ?? "Tam ekran çalışma modu"}
       stats={[
         { label: "Blok", value: `${currentBlockIndex + 1}/${totalBlocks}` },
-        { label: isEducationProgramMode ? "Kalan Süre" : "Süre", value: formatElapsed(taskRemainingSeconds) },
+        ...(!isEducationProgramMode ? [{ label: "Süre", value: formatElapsed(taskRemainingSeconds) }] : []),
         { label: "Hız", value: speedLabel, tone: "brand" },
         { label: "Kelime", value: blockSize },
       ]}

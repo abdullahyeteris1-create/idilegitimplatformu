@@ -8,6 +8,7 @@ import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useE
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { advanceGrowingShapesMotor, createGrowingShapesMotor, getGrowingShapesResponsiveMetrics, type GrowingShapesMotorState } from "@/lib/exercise-engine/growingShapes";
 import { FULLSCREEN_PRIMARY_BUTTON_CLASS, FULLSCREEN_SECONDARY_BUTTON_CLASS } from "@/components/exercises/FullscreenExerciseShell";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 
 type Phase = "setup" | "running" | "paused" | "result";
@@ -70,6 +71,7 @@ export function GrowingShapesHexagonExerciseClient({ educationProgramLaunch }: {
   const saveInFlightRef = useRef(false);
   const audioRef = useRef<AudioContext | null>(null);
   const [phase, setPhase] = useState<Phase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "running");
   const [durationSeconds, setDurationSeconds] = useState<DurationSeconds>(pickEducationProgramSettingOption(settings, "durationSeconds", DURATIONS, 60));
   const [speedMode, setSpeedMode] = useState<SpeedMode>(setting(settings, "speedMode", "fixed"));
   const [jumpDurationMs, setJumpDurationMs] = useState<number>(setting(settings, "jumpDurationMs", 500));

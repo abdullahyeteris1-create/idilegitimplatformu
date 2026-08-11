@@ -14,5 +14,5 @@ export default async function ThirteenPointEmojiTrackingPage({ searchParams }: P
   const params = await searchParams;
   const educationProgramLaunch = await resolveEducationProgramExerciseLaunch(params.educationLaunch, EXERCISE_SLUG);
 
-  return <EducationProgramExerciseChrome launch={educationProgramLaunch} showCountdown={false}><ThirteenPointEmojiTrackingClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>;
+  return <EducationProgramExerciseChrome launch={educationProgramLaunch}><ThirteenPointEmojiTrackingClient educationProgramLaunch={educationProgramLaunch ?? undefined} /></EducationProgramExerciseChrome>;
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import {
   calculateNet,
   generateCountingRound,
@@ -102,6 +103,7 @@ export function LetterNumberCountingFocusClient({
     : 1;
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "running");
   const [mode, setMode] = useState<CountingMode>(() =>
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "mode", MODE_OPTIONS, "letters"),
   );
@@ -571,7 +573,7 @@ export function LetterNumberCountingFocusClient({
     <FullscreenExerciseShell
       title="Harf / Rakam Sayma Odak Calismasi"
       subtitle={round ? ("Kac tane " + round.target + " var?") : "Sayma turu"}
-      stats={[...stats, { label: "Kalan", value: remainingSeconds + " sn", tone: remainingSeconds <= 3 ? "bad" as const : "brand" as const }]}
+      stats={[...stats, { label: "Tur Süresi", value: remainingSeconds + " sn", tone: remainingSeconds <= 3 ? "bad" as const : "brand" as const }]}
       footer={footerControls}
       settings={footerControls}
     >
@@ -582,7 +584,7 @@ export function LetterNumberCountingFocusClient({
             <p className={`text-sm font-black text-slate-950 md:text-base ${styles.targetTitle}`}>Kac tane <span className={`text-red-700 ${styles.targetValue}`}>{round?.target ?? "?"}</span> var?</p>
           </div>
           <div className={`rounded-xl border border-white/80 bg-white px-2 py-1 text-center shadow-sm ${styles.timerChip}`}>
-            <p className={`text-[10px] font-bold text-slate-500 ${styles.timerLabel}`}>Sure</p>
+            <p className={`text-[10px] font-bold text-slate-500 ${styles.timerLabel}`}>Tur Süresi</p>
             <p className={`text-base font-black text-red-700 md:text-lg ${styles.timerValue}`}>{remainingSeconds}</p>
           </div>
         </div>

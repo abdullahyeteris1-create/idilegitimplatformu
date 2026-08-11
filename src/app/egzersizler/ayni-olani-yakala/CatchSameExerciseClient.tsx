@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FixedExerciseStage, FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useAssignmentTask } from "@/components/assignments/AssignmentTaskProvider";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
@@ -69,6 +70,7 @@ export function CatchSameExerciseClient({
   const assignmentTask = useAssignmentTask();
   const isAssignmentMode = assignmentTask !== null;
   const isEducationProgramMode = Boolean(educationProgramLaunch);
+  useEducationProgramExerciseRunning(isEducationProgramMode && status === "running");
   const educationProgramTaskId =
     isEducationProgramMode && !isAssignmentMode
       ? educationProgramLaunch?.taskId
@@ -380,7 +382,7 @@ export function CatchSameExerciseClient({
       <FixedExerciseStage
         title="Aynı Olanı Yakala"
         subtitle={statusLabel}
-        topStats={<><FixedExerciseStat label="Süre" value={timeLeft} /><FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
+        topStats={<>{!isEducationProgramMode ? <FixedExerciseStat label="Süre" value={timeLeft} /> : null}<FixedExerciseStat label="Doğru" value={correct} tone="ok" /><FixedExerciseStat label="Yanlış" value={wrong} tone="bad" /><FixedExerciseStat label="Kaçırılan" value={missed} /><FixedExerciseStat label="Skor" value={score} tone="brand" /></>}
         bottomSettings={<div className="flex flex-wrap items-end gap-1.5"><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Mod</span><select value={mode} onChange={(event) => setMode(event.target.value as GameMode)} disabled={status === "running" || status === "paused" || isEducationProgramMode} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}><option value="word">Kelime</option><option value="letter">Harf</option><option value="symbol">Sembol</option><option value="number">Rakam</option></select></label><label className="flex shrink-0 flex-col gap-0.5"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Hız</span><select value={speed} onChange={(event) => setSpeed(Number(event.target.value) as SpeedOption)} disabled={status === "running" || status === "paused" || isEducationProgramMode} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{SPEED_OPTIONS.map((option) => <option key={option} value={option}>{formatSpeed(option)}</option>)}</select></label><label className="flex shrink-0 flex-col gap-0.5" hidden={isAssignmentMode || isEducationProgramMode}><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${styles.settingsLabel}`}>Süre</span><select value={selectedDuration} onChange={(event) => { const value = Number(event.target.value) as DurationOption; setSelectedDuration(value); if (status === "ready") setTimeLeft(value); }} disabled={status === "running" || status === "paused"} className={`min-h-11 rounded-xl px-2 text-xs ${styles.select}`}>{DURATION_OPTIONS.map((option) => <option key={option} value={option}>{option}s</option>)}</select></label></div>}
         controls={<div className="flex flex-wrap justify-center gap-1.5">{status === "ready" || status === "finished" ? <button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={startGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.primaryButton}`}>Başlat</button> : status === "running" ? <button type="button" onClick={pauseGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.pauseButton}`}>Duraklat</button> : <button type="button" onClick={resumeGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.resumeButton}`}>Devam Et</button>}<button type="button" disabled={status === "finished" && saveStatus !== "success"} onClick={newGame} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.secondaryButton}`}>Yeni Oyun</button><button type="button" onClick={finishExercise} disabled={status === "ready" || status === "finished" || saveStatus === "saving"} className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.finishButton}`}>Bitir</button>{saveStatus === "error" ? <button type="button" className={`min-h-11 rounded-xl px-3 text-xs font-bold ${styles.retryButton}`} onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div>}
         onExit={() => router.push("/egzersizler")}

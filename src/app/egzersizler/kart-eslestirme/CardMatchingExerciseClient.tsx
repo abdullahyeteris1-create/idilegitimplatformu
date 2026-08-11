@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import {
   calculateNet,
   calculateScore,
@@ -148,6 +149,7 @@ export function CardMatchingExerciseClient({
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  useEducationProgramExerciseRunning(isEducationProgramMode && (phase === "preview" || phase === "playing"));
   const [startLevel, setStartLevel] = useState(initialLevel);
   const [level, setLevel] = useState(initialLevel);
   const [previewDurationMs, setPreviewDurationMs] = useState(() =>

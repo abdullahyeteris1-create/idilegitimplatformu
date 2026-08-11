@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { WORD_FINDING_TEXTS } from "@/lib/data/wordFindingTexts";
 import {
   calculateScore,
@@ -83,6 +84,7 @@ export function WordFindingExerciseClient({
   const tickRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<ExercisePhase>("setup");
+  useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase === "running");
   const [durationMinutes, setDurationMinutes] = useState<DurationMinutes>(2);
   // Egitim Programi baglaminda ogretmenin sablonda belirledigi ayar
   // (educationProgramLaunch.settings) baslangic degeri olarak kullanilir;
