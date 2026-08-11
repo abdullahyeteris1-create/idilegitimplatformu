@@ -1,13 +1,95 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import fs from "node:fs/promises";
-import { getStudentExerciseRecommendations, analyzeStudentSkills } from "../src/lib/recommendations/studentExerciseRecommendations.ts";
+import { getStudentExerciseRecommendations, analyzeStudentSkills, AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS } from "../src/lib/recommendations/studentExerciseRecommendations.ts";
+import { ASSIGNMENT_EXERCISE_CATALOG } from "../src/lib/assignments/exerciseCatalog.ts";
 
 const result = (exerciseType, successRate, index) => ({
   id: `${exerciseType}-${index}`,
   exerciseType,
   successRate,
   completedAt: new Date(Date.UTC(2026, 7, 11, 12, index)).toISOString(),
+});
+
+test("Akil ve Zeka Oyunu dusuk basariyla bile onerilmez", () => {
+  const input = [
+    ...[10, 10, 10].map((score, i) => result("word-race", score, i)),
+    ...[60, 60, 60].map((score, i) => result("two-side-focus", score, i + 3)),
+  ];
+  const output = getStudentExerciseRecommendations(input);
+  assert.equal(output.analysis.some((item) => item.averageSuccessRate === 10), false);
+  assert.equal(output.recommendations.some((item) => item.exerciseSlug === "kelime-yarisi"), false);
+});
+
+test("word-games grubundaki katalog oyunlarinin hicbiri recommendation analizine girmez", () => {
+  assert.deepEqual(AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS, [
+    "kelime-tahmin",
+    "adam-asmaca",
+    "gorsel-puzzle",
+    "dikkat-labirenti",
+    "kelime-yarisi",
+    "hafiza-yarisi",
+  ]);
+  const gameTypes = ASSIGNMENT_EXERCISE_CATALOG
+    .filter((exercise) => AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS.includes(exercise.slug))
+    .map((exercise) => exercise.resultExerciseType);
+  const output = analyzeStudentSkills(gameTypes.flatMap((type) => [
+    result(type, 10, 1),
+    result(type, 10, 2),
+    result(type, 10, 3),
+  ]));
+  assert.deepEqual(output, []);
+});
+
+test("Akil ve Zeka Oyunu sonuclari kategori ortalama ve trend hesabina girmez", () => {
+  const input = [
+    ...[95, 95, 95, 95, 95, 95].map((score, i) => result("word-race", score, i)),
+    ...[60, 60, 60].map((score, i) => result("two-side-focus", score, i + 6)),
+  ];
+  const output = analyzeStudentSkills(input);
+  const attention = output.find((item) => item.categoryId === "attention");
+  assert.equal(attention?.sampleCount, 3);
+  assert.equal(attention?.averageSuccessRate, 60);
+  assert.equal(attention?.trend, "stable");
+});
+
+test("oyunlar insufficient_data ve balanced_practice fallback onerilerinde cikmaz", () => {
+  const insufficient = getStudentExerciseRecommendations([
+    result("word-race", 50, 1),
+    result("word-race", 50, 2),
+  ]);
+  assert.equal(insufficient.recommendations.some((item) => item.exerciseSlug === "kelime-yarisi"), false);
+
+  const balanced = getStudentExerciseRecommendations([
+    ...[80, 80, 80].map((score, i) => result("word-race", score, i)),
+    ...[80, 80, 80].map((score, i) => result("two-side-focus", score, i + 3)),
+  ]);
+  assert.equal(balanced.recommendations.some((item) => item.exerciseSlug === "kelime-yarisi"), false);
+  assert.equal(balanced.recommendations.some((item) => item.reasonCode === "balanced_practice"), true);
+});
+
+test("yalnizca Akil ve Zeka Oyunu sonucu olan ogrenci zayif alan olarak degerlendirilmez", () => {
+  const output = getStudentExerciseRecommendations([
+    ...[10, 10, 10, 10].map((score, i) => result("word-race", score, i)),
+  ]);
+  assert.equal(output.analysis.length, 0);
+  assert.equal(output.recommendations.length, 0);
+  assert.deepEqual(output.summary.developmentAreas, []);
+  assert.deepEqual(output.summary.trends, []);
+});
+
+test("normal gelisim egzersizleri onerilmeye devam eder ve limit diversity korunur", () => {
+  const input = [
+    ...[45, 45, 45].map((score, i) => result("two-side-focus", score, i)),
+    ...[55, 55, 55].map((score, i) => result("block-reading", score, i + 3)),
+    ...[65, 65, 65].map((score, i) => result("eye-brain", score, i + 6)),
+    ...[5, 5, 5].map((score, i) => result("word-race", score, i + 9)),
+  ];
+  const output = getStudentExerciseRecommendations(input);
+  assert.ok(output.recommendations.length > 0);
+  assert.ok(output.recommendations.length <= 3);
+  assert.equal(new Set(output.recommendations.map((item) => item.categoryId)).size, output.recommendations.length);
+  assert.equal(output.recommendations.some((item) => item.exerciseSlug === "kelime-yarisi"), false);
 });
 
 test("yetersiz veri kesin zayıf alan etiketi üretmez ve fallback döner", () => {

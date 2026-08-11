@@ -44,7 +44,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   memory: "Görsel hafıza, eşleştirme ve parça-bütün algısını geliştiren çalışmalar.",
 };
 
-const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
+export const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   eye: ["goz-beyin", "goz-kaslari", "13-nokta-emoji-takip", "buyuyen-sekiller-altigen"],
   attention: ["takistoskop", "benzer-kelimeler", "kelime-bulma", "goz-egzersizleri-kolonlar", "kare-gorme-alani"],
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],

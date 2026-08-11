@@ -1,4 +1,5 @@
 import { ASSIGNMENT_EXERCISE_CATALOG, type AssignmentExerciseCategory } from "@/lib/assignments/exerciseCatalog";
+import { CATEGORY_EXERCISE_SLUGS } from "@/components/exercises-preview/exercisePreviewGroups";
 
 export type RecommendationTrend = "improving" | "stable" | "declining" | "insufficient_data";
 export type RecommendationPriority = "high" | "medium" | "low";
@@ -60,6 +61,20 @@ export const RECOMMENDATION_REASON_WEIGHT: Readonly<Record<RecommendationReasonC
   insufficient_data: 1,
 };
 
+const AKIL_VE_ZEKA_OYUNLARI_GROUP_ID = "word-games";
+
+/** Recommendation disallow-list derives from the student catalog group. */
+export const AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS = Object.freeze([
+  ...(CATEGORY_EXERCISE_SLUGS[AKIL_VE_ZEKA_OYUNLARI_GROUP_ID] ?? []),
+]);
+
+const AKIL_VE_ZEKA_OYUNLARI_SLUG_SET = new Set(AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS);
+const AKIL_VE_ZEKA_OYUNLARI_RESULT_TYPES = new Set(
+  ASSIGNMENT_EXERCISE_CATALOG
+    .filter((exercise) => AKIL_VE_ZEKA_OYUNLARI_SLUG_SET.has(exercise.slug))
+    .map((exercise) => exercise.resultExerciseType),
+);
+
 const CATEGORY_TITLES: Record<AssignmentExerciseCategory, string> = {
   speed: "Okuma Hızı",
   attention: "Dikkat",
@@ -80,7 +95,7 @@ export const EXERCISE_ANALYSIS_MAP: Readonly<Record<string, {
     .map((item) => [item.resultExerciseType, {
       categoryId: item.category,
       usableMetric: "successRate" as const,
-      recommendationEligible: true,
+      recommendationEligible: !AKIL_VE_ZEKA_OYUNLARI_RESULT_TYPES.has(item.resultExerciseType),
     }]),
 );
 
@@ -188,7 +203,7 @@ export function getStudentExerciseRecommendations(input: RecommendationResultInp
   for (const item of analysis) {
     const reason = reasonFor(item, now.getTime());
     const priorityScore = priorityFor(item.score, item.trend, item.lastPracticedAt, now.getTime());
-    const exercises = ASSIGNMENT_EXERCISE_CATALOG.filter((exercise) => exercise.category === item.categoryId && exercise.assignmentEnabled && exercise.isStudentCatalogVisible !== false);
+    const exercises = ASSIGNMENT_EXERCISE_CATALOG.filter((exercise) => exercise.category === item.categoryId && exercise.assignmentEnabled && exercise.isStudentCatalogVisible !== false && !AKIL_VE_ZEKA_OYUNLARI_SLUG_SET.has(exercise.slug));
     const chosen = exercises.find((exercise) => !recentTypes.has(exercise.resultExerciseType)) ?? exercises[0];
     if (chosen) candidates.push({ exerciseSlug: chosen.slug, exerciseTitle: chosen.title, categoryId: item.categoryId, categoryTitle: item.categoryTitle, reasonCode: reason.code, reasonText: reason.text, priorityScore });
   }
