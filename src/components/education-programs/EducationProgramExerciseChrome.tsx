@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { formatRemainingTime } from "@/lib/exercises/timing";
 import {
   PROGRAM_TASK_COMPLETED_EVENT,
@@ -16,48 +16,38 @@ type EducationProgramExerciseChromeProps = {
   children: ReactNode;
 };
 
-function getStorageKey(taskId: string): string {
-  return `idil:education-task-started-at:${taskId}`;
-}
+type ExerciseRunningContextValue = {
+  setExerciseRunning: (isRunning: boolean) => void;
+};
 
-function readOrCreateTaskStartedAt(taskId: string): number {
-  const storageKey = getStorageKey(taskId);
-  try {
-    const stored = Number(window.sessionStorage.getItem(storageKey));
-    if (Number.isFinite(stored) && stored > 0) return stored;
-    const startedAt = Date.now();
-    window.sessionStorage.setItem(storageKey, String(startedAt));
-    return startedAt;
-  } catch {
-    return Date.now();
-  }
+const ExerciseRunningContext = createContext<ExerciseRunningContextValue | null>(null);
+
+export function useEducationProgramExerciseRunning(isRunning: boolean): void {
+  const context = useContext(ExerciseRunningContext);
+
+  useEffect(() => {
+    context?.setExerciseRunning(isRunning);
+    return () => context?.setExerciseRunning(false);
+  }, [context, isRunning]);
 }
 
 function EducationProgramCountdown({
   launch,
+  isRunning,
 }: {
   launch: EducationProgramExerciseLaunchProps;
+  isRunning: boolean;
 }) {
-  const [startedAt] = useState<number | null>(() =>
-    typeof window === "undefined" ? null : readOrCreateTaskStartedAt(launch.taskId),
-  );
   const [remainingSeconds, setRemainingSeconds] = useState(launch.durationSeconds);
 
   useEffect(() => {
-    if (startedAt === null) return;
+    if (!isRunning || remainingSeconds <= 0) return;
 
-    const update = () => {
-      const next = Math.max(
-        0,
-        Math.ceil((startedAt + launch.durationSeconds * 1000 - Date.now()) / 1000),
-      );
-      setRemainingSeconds(next);
-    };
-
-    update();
-    const intervalId = window.setInterval(update, 1000);
+    const intervalId = window.setInterval(() => {
+      setRemainingSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
     return () => window.clearInterval(intervalId);
-  }, [launch.durationSeconds, startedAt]);
+  }, [isRunning, remainingSeconds]);
 
   const warning = remainingSeconds <= 60;
   const critical = remainingSeconds <= 10;
@@ -100,10 +90,15 @@ export function EducationProgramExerciseChrome({
   children,
 }: EducationProgramExerciseChromeProps) {
   const [completed, setCompleted] = useState(false);
+  const [isExerciseRunning, setIsExerciseRunning] = useState(false);
   const hasCountdown = showCountdown && Boolean(
     launch && Number.isFinite(launch.durationSeconds) && launch.durationSeconds > 0,
   );
   const countdownLaunch = launch && hasCountdown ? launch : null;
+  const runningContext = useMemo(
+    () => ({ setExerciseRunning: setIsExerciseRunning }),
+    [],
+  );
 
   useEffect(() => {
     if (!launch) return;
@@ -114,9 +109,9 @@ export function EducationProgramExerciseChrome({
 
   return (
     <>
-      {children}
+      <ExerciseRunningContext.Provider value={runningContext}>{children}</ExerciseRunningContext.Provider>
       {countdownLaunch ? (
-        <EducationProgramCountdown launch={countdownLaunch} />
+        <EducationProgramCountdown launch={countdownLaunch} isRunning={isExerciseRunning && !completed} />
       ) : null}
       {completed && launch ? <EducationProgramContinueButton /> : null}
     </>

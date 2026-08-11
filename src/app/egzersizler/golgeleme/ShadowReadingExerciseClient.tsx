@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useRouter } from "next/navigation";
 import { ExerciseNavigationControls } from "@/components/exercises/ExerciseNavigationControls";
 import { useExerciseTimer } from "@/hooks/useExerciseTimer";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import {
   calculateCharacterCount,
   calculateIntervalMs,
@@ -172,6 +173,7 @@ export function ShadowReadingExerciseClient({
 
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  useEducationProgramExerciseRunning(isEducationProgramMode && phase === "running" && !isPaused);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [result, setResult] = useState<ShadowReadingResult | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

@@ -195,7 +195,7 @@ test("24) handleTextEnd Egitim Programi modunda textEndInFlightRef ile cift-teti
   );
 });
 
-test("25) metin bitince cumulative tam olarak BIR kez guncellenir, sonra hasReachedAssignedDuration kontrolu yapilir", async () => {
+test("25) metin bitince cumulative tam olarak BIR kez guncellenir ve aktif sure kontrolu yapilir", async () => {
   const source = await read(CLIENT_PATH);
 
   assert.match(
@@ -204,7 +204,7 @@ test("25) metin bitince cumulative tam olarak BIR kez guncellenir, sonra hasReac
   );
   assert.match(
     source,
-    /const currentTaskElapsedSeconds = taskStartedAtRef\.current[\s\S]*?if \(hasReachedAssignedDuration\(assignedDurationSeconds, currentTaskElapsedSeconds, 0\)\) \{/,
+    /const currentTaskElapsedSeconds = nextTotalActiveSeconds;[\s\S]*?if \(hasReachedAssignedDuration\(assignedDurationSeconds, currentTaskElapsedSeconds, 0\)\) \{/,
   );
 });
 
@@ -308,15 +308,15 @@ test("34) süre ogretmenin belirledigi degere metin ORTASINDA ulasirsa ikinci bi
 
   assert.match(
     source,
-    /const isTextRunning = phase === "running" && !isPaused;[\s\S]*?const isTaskRunning = isEducationProgramMode && taskStartedAtRef\.current !== null && phase !== "result";[\s\S]*?setTaskElapsedSeconds\(nextElapsedSeconds\);[\s\S]*?handleTextEnd\(false\);/,
+    /const isTextRunning = phase === "running" && !isPaused;[\s\S]*?setElapsedSeconds\(\(previous\) => previous \+ 1\);[\s\S]*?const nextTaskElapsedSeconds = calculateTotalActiveSeconds\([\s\S]*?setTaskElapsedSeconds\(nextTaskElapsedSeconds\);[\s\S]*?handleTextEnd\(false\);/,
   );
 });
 
-test("34a) Egitim Programi gorev baslangici metin degisiminde korunur ve kalan sure gorevden hesaplanir", async () => {
+test("34a) active elapsed gorev suresi metin degisiminde korunur ve kalan sure gorevden hesaplanir", async () => {
   const source = await read(CLIENT_PATH);
 
-  assert.match(source, /const taskStartedAtRef = useRef<number \| null>\(null\);/);
-  assert.match(source, /taskStartedAtRef\.current === null/);
+  assert.doesNotMatch(source, /taskStartedAtRef/);
+  assert.doesNotMatch(source, /Date\.now\(\) - task/);
   assert.match(source, /const taskRemainingSeconds = isEducationProgramMode/);
   assert.match(source, /Math\.max\(0, assignedDurationSeconds - taskElapsedSeconds\)/);
 });
@@ -454,7 +454,7 @@ test("55) navigasyon butonlari (Yeniden Baslat / Ortak Sonuc Ekrani) saveStatus 
 test("56) dark mode'da çalışma alanı metinleri açık zeminde okunabilir koyu renkte kalır", async () => {
   const themeSource = await read("src/components/exercises/block-reading-theme.module.css");
 
-  assert.match(themeSource, /\.darkTheme \.helperText \{\s*color: #334155 !important;/);
+  assert.match(themeSource, /\.darkTheme :global\(\.text-slate-500\) \{ color: #94a3b8 !important; \}/);
   assert.match(themeSource, /\.darkTheme \.runningWord \{\s*color: #0f172a !important;/);
   assert.match(themeSource, /\.lightTheme \.helperText \{\s*color: var\(--br-muted\) !important;/);
   assert.match(themeSource, /\.lightTheme \.runningWord \{\s*color: var\(--br-text\) !important;/);

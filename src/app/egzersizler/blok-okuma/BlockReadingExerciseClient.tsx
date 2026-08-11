@@ -18,6 +18,7 @@ import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import {
   pickEducationProgramRangeSettingOption,
@@ -120,7 +121,6 @@ export function BlockReadingExerciseClient({
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
-  const taskStartedAtRef = useRef<number | null>(null);
   const taskFinishedRef = useRef(false);
   // Egitim Programi coklu-metin biriken sure modeli: bu iki ref, ayni client
   // yasam dongusu icinde onceki metinlerde biriken aktif saniyeyi ve
@@ -176,6 +176,7 @@ export function BlockReadingExerciseClient({
 
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  useEducationProgramExerciseRunning(isEducationProgramMode && phase === "running" && !isPaused);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [taskElapsedSeconds, setTaskElapsedSeconds] = useState(0);
   const [result, setResult] = useState<BlockReadingResult | null>(null);
@@ -369,11 +370,8 @@ export function BlockReadingExerciseClient({
     // yalniz-aktif-calisirken-artan toplam saniyeden gelir - Date.now() farki
     // KULLANILMAZ (pause suresini de icerebilir). Standalone modda mevcut
     // davranis (Date.now() farki, yoksa elapsedSeconds) aynen korunur.
-    const taskElapsedAtFinish = taskStartedAtRef.current
-      ? Math.max(0, Math.floor((Date.now() - taskStartedAtRef.current) / 1000))
-      : taskElapsedSeconds;
     const durationSeconds = isEducationProgramMode
-      ? Math.max(1, taskElapsedAtFinish)
+      ? Math.max(1, cumulativeActiveSecondsRef.current)
       : Math.max(1, startedAt ? Math.round((Date.now() - startedAt) / 1000) : elapsedSeconds);
 
     const payload = {
@@ -431,7 +429,6 @@ export function BlockReadingExerciseClient({
     isEducationProgramMode,
     persistResult,
     selectedText,
-    taskElapsedSeconds,
     speedMode,
     totalBlocks,
     totalWords,
@@ -458,7 +455,6 @@ export function BlockReadingExerciseClient({
   const handleStart = () => {
     saveLockRef.current = false;
     startedAtRef.current = null;
-    taskStartedAtRef.current = null;
     taskFinishedRef.current = false;
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
@@ -481,10 +477,8 @@ export function BlockReadingExerciseClient({
     saveLockRef.current = false;
     if (!isEducationProgramMode) {
       startedAtRef.current = Date.now();
-    } else if (taskStartedAtRef.current === null) {
-      taskStartedAtRef.current = Date.now();
+    } else {
       taskFinishedRef.current = false;
-      setTaskElapsedSeconds(0);
     }
     setCurrentBlockIndex(0);
     setElapsedSeconds(0);
@@ -503,7 +497,6 @@ export function BlockReadingExerciseClient({
     cumulativeActiveSecondsRef.current = 0;
     completedTextCountRef.current = 0;
     textEndInFlightRef.current = false;
-    taskStartedAtRef.current = null;
     taskFinishedRef.current = false;
     setTaskElapsedSeconds(0);
     setNewTextNotice(null);
@@ -528,9 +521,7 @@ export function BlockReadingExerciseClient({
       );
       cumulativeActiveSecondsRef.current = nextTotalActiveSeconds;
 
-      const currentTaskElapsedSeconds = taskStartedAtRef.current
-        ? Math.max(0, Math.floor((Date.now() - taskStartedAtRef.current) / 1000))
-        : taskElapsedSeconds;
+      const currentTaskElapsedSeconds = nextTotalActiveSeconds;
       setTaskElapsedSeconds(currentTaskElapsedSeconds);
 
       if (completedText) {
@@ -550,7 +541,7 @@ export function BlockReadingExerciseClient({
       });
       resetFlowToReady();
     },
-    [assignedDurationSeconds, elapsedSeconds, finalizeExercise, isEducationProgramMode, resetFlowToReady, taskElapsedSeconds],
+    [assignedDurationSeconds, elapsedSeconds, finalizeExercise, isEducationProgramMode, resetFlowToReady],
   );
 
   const handleFinishEarly = () => {
@@ -573,37 +564,34 @@ export function BlockReadingExerciseClient({
     onTick: advanceBlock,
   });
 
-  // Tek interval iki farkli kavrami gunceller: metin ici elapsedSeconds ve
-  // Egitim Programi gorev saati. Gorev saati metin secimi/ready ekraninda da
-  // devam eder ve elapsedSeconds state'inden bagimsizdir.
   useEffect(() => {
     const isTextRunning = phase === "running" && !isPaused;
-    const isTaskRunning = isEducationProgramMode && taskStartedAtRef.current !== null && phase !== "result";
-    if (!isTextRunning && !isTaskRunning) {
+    if (!isTextRunning) {
       return;
     }
 
     const updateClocks = () => {
-      if (isTextRunning) {
-        setElapsedSeconds((previous) => previous + 1);
-      }
-
-      if (isTaskRunning) {
-        const startedAt = taskStartedAtRef.current;
-        if (startedAt === null) return;
-        const nextElapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-        setTaskElapsedSeconds(nextElapsedSeconds);
-        if (hasReachedAssignedDuration(assignedDurationSeconds, nextElapsedSeconds, 0) && !taskFinishedRef.current) {
-          taskFinishedRef.current = true;
-          saveLockRef.current = false;
-          handleTextEnd(false);
-        }
-      }
+      setElapsedSeconds((previous) => previous + 1);
     };
 
     const timerId = window.setInterval(updateClocks, 1000);
     return () => window.clearInterval(timerId);
-  }, [assignedDurationSeconds, handleTextEnd, isEducationProgramMode, isPaused, phase]);
+  }, [isPaused, phase]);
+
+  useEffect(() => {
+    if (!isEducationProgramMode || phase !== "running" || isPaused) return;
+
+    const nextTaskElapsedSeconds = calculateTotalActiveSeconds(
+      cumulativeActiveSecondsRef.current,
+      elapsedSeconds,
+    );
+    setTaskElapsedSeconds(nextTaskElapsedSeconds);
+    if (hasReachedAssignedDuration(assignedDurationSeconds, cumulativeActiveSecondsRef.current, elapsedSeconds) && !taskFinishedRef.current) {
+      taskFinishedRef.current = true;
+      saveLockRef.current = false;
+      handleTextEnd(false);
+    }
+  }, [assignedDurationSeconds, elapsedSeconds, handleTextEnd, isEducationProgramMode, isPaused, phase]);
 
   const completedBlocks = phase === "running" ? Math.min(currentBlockIndex + 1, totalBlocks) : 0;
   const progressPercent = totalBlocks === 0 ? 0 : Math.round((completedBlocks / totalBlocks) * 100);

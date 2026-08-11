@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useExerciseTimer } from "@/hooks/useExerciseTimer";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { calculateCharacterCount, formatDuration, splitTextIntoWords } from "@/lib/exercise-engine/shadowReading";
 import {
   calculateGroupingReadingRemainingActiveSeconds,
@@ -154,6 +155,7 @@ export function GroupingExerciseClient({
 
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  useEducationProgramExerciseRunning(isEducationProgramMode && phase === "running" && !paused);
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

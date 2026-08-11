@@ -30,6 +30,11 @@
   --br-amber: #fbbf24;
 }
 
+/* Shared Tailwind slate utilities are too dim against the exercise dark panels. */
+.darkTheme :global(.text-slate-500) { color: #94a3b8 !important; }
+.darkTheme :global(.text-slate-700) { color: #cbd5e1 !important; }
+.darkTheme :global(.text-slate-900) { color: #f8fafc !important; }
+
 .darkTheme > div {
   background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
 }
