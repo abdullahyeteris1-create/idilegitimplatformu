@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { StudentExerciseRecommendation, StudentSkillAnalysis } from "@/lib/recommendations/studentExerciseRecommendations";
 import styles from "./student-panel-preview.module.css";
 
 type TodayProgramTask = {
@@ -33,6 +34,7 @@ type LoadState =
   | { status: "no-program" }
   | { status: "program-completed" }
   | { status: "ready"; dayNumber: number; tasks: TodayProgramTask[]; dayCompleted: boolean };
+type RecommendationsState = { status: "loading" | "ready" | "error"; analysis: StudentSkillAnalysis[]; recommendations: StudentExerciseRecommendation[] };
 
 const STATUS_LABELS: Record<string, string> = {
   locked: "Kilitli",
@@ -119,11 +121,29 @@ export function TodaysProgramTasksCard() {
     };
   }, []);
 
+  const [recommendations, setRecommendations] = useState<RecommendationsState>({ status: "loading", analysis: [], recommendations: [] });
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/student/recommendations", { credentials: "same-origin", cache: "no-store", signal: controller.signal });
+        const payload = await response.json() as { analysis?: StudentSkillAnalysis[]; recommendations?: StudentExerciseRecommendation[] };
+        if (!response.ok || !Array.isArray(payload.analysis) || !Array.isArray(payload.recommendations)) throw new Error("recommendations");
+        if (!cancelled) setRecommendations({ status: "ready", analysis: payload.analysis, recommendations: payload.recommendations });
+      } catch (error) {
+        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) setRecommendations({ status: "error", analysis: [], recommendations: [] });
+      }
+    })();
+    return () => { cancelled = true; controller.abort(); };
+  }, []);
+
   const title =
     state.status === "ready" ? `${state.dayNumber}. Gün • Bugünkü Ödevlerim` : "Bugünkü Ödevlerim";
   const subtitle = state.status === "ready" ? `${state.tasks.length} görev` : null;
 
-  return (
+  return (<>
+    <SmartRecommendationsCard state={recommendations} />
     <section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>
       <div className={styles.todaysProgramHead}>
         <h2 id="todays-program-tasks-title">{title}</h2>
@@ -208,5 +228,12 @@ export function TodaysProgramTasksCard() {
         </>
       )}
     </section>
-  );
+  </>);
+}
+
+function SmartRecommendationsCard({ state }: { state: RecommendationsState }) {
+  return <section className={styles.smartRecommendations} aria-labelledby="smart-recommendations-title">
+    <div className={styles.smartRecommendationsHead}><div><span className={styles.smartEyebrow}>AKILLI ÇALIŞMA V1</span><h2 id="smart-recommendations-title">✨ Sana Özel Çalışma Önerileri</h2><p>Son çalışmalarına göre bugün gelişimini destekleyebilecek alanlar.</p></div><span className={styles.smartTarget}>🎯</span></div>
+    {state.status === "loading" ? <p className={styles.smartEmpty}>Önerilerin hazırlanıyor…</p> : state.status === "error" ? <p className={styles.smartEmpty}>Öneriler şu anda yüklenemiyor.</p> : state.recommendations.length === 0 ? <p className={styles.smartEmpty}>Henüz seni tanımaya çalışıyorum. Birkaç çalışma daha tamamladığında sana özel öneriler oluşturacağım.</p> : <div className={styles.smartRecommendationGrid}>{state.recommendations.map((recommendation) => <article className={styles.smartRecommendation} key={`${recommendation.categoryId}-${recommendation.exerciseSlug}`}><div className={styles.smartRecommendationIcon}>✦</div><div className={styles.smartRecommendationBody}><span>{recommendation.categoryTitle}</span><h3>{recommendation.exerciseTitle}</h3><p>{recommendation.reasonText}</p><Link href={`/egzersizler/${recommendation.exerciseSlug}`}>Çalışmaya Başla</Link></div></article>)}</div>}
+  </section>;
 }
