@@ -159,7 +159,7 @@
 }
 
 .darkTheme .helperText {
-  color: #334155 !important;
+  color: var(--br-muted) !important;
 }
 
 .darkTheme .warnText {

@@ -456,6 +456,7 @@ test("56) dark mode'da çalışma alanı metinleri açık zeminde okunabilir koy
 
   assert.match(themeSource, /\.darkTheme :global\(\.text-slate-500\) \{ color: #94a3b8 !important; \}/);
   assert.match(themeSource, /\.darkTheme \.runningWord \{\s*color: #0f172a !important;/);
+  assert.match(themeSource, /\.darkTheme \.helperText \{\s*color: var\(--br-muted\) !important;/);
   assert.match(themeSource, /\.lightTheme \.helperText \{\s*color: var\(--br-muted\) !important;/);
   assert.match(themeSource, /\.lightTheme \.runningWord \{\s*color: var\(--br-text\) !important;/);
 });
