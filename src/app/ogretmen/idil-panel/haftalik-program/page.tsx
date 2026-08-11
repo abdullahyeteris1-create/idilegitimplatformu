@@ -714,8 +714,8 @@ export default function WeeklyProgramPage() {
 
   return (
     <AppShell
-      title="Haftalik Program"
-      subtitle="Pazartesiden pazara ders planini gor, duzenle ve takip et."
+      title="Haftalık Ders Programı"
+      subtitle="Öğrencilerin haftalık ders akışını planla ve takip et."
       navItems={TEACHER_NAV_ITEMS}
       wide
     >
@@ -730,14 +730,9 @@ export default function WeeklyProgramPage() {
               >
                 ← İdil Yönetim Paneli
               </Link>
-
-              <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-                Haftalık Ders Programı
-              </h1>
-
-              <p className="mt-1 text-sm font-medium text-slate-600">
-                Öğrencilerin haftalık ders akışını planla ve takip et.
-              </p>
+              {/* Başlık ve alt başlık AppShell tarafından render ediliyor;
+                  burada tekrarlanınca ekranda üst üste iki başlık çıkıyordu
+                  (ve sayfada ikinci bir <h1> oluşuyordu). */}
             </div>
 
             <div className="flex flex-wrap gap-2">

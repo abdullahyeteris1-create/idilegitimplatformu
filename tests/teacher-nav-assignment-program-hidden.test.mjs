@@ -73,8 +73,12 @@ test("MODULE_CARDS statik dizisinde 'Odev Programi' objesi SILINMEDI - yalniz re
   const cardsEnd = source.indexOf("\n];", cardsStart);
   const cardsBlock = source.slice(cardsStart, cardsEnd);
 
-  assert.match(cardsBlock, /title: "Odev Programi",/);
+  // Kartin varligini href uzerinden dogruluyoruz: baslik kullaniciya gorunen
+  // metin oldugu icin degisebilir (ASCII "Odev Programi" -> "Odev Programi"
+  // duzeltmesinde oldugu gibi), href ise kararli kimliktir. Bu testin amaci
+  // objenin SILINMEDIGINI dogrulamak, yazimini sabitlemek degil.
   assert.match(cardsBlock, /href: "\/ogretmen\/idil-panel\/odev-programi",/);
+  assert.match(cardsBlock, /title: "Ödev Programı",/);
 });
 
 test("dashboard sayfasi SHOW_ASSIGNMENT_PROGRAM/ASSIGNMENT_PROGRAM_HREF'i teacherNavigation.ts'ten import ediyor (tekrar hardcode etmiyor)", async () => {

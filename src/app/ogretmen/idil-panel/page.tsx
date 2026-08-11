@@ -10,13 +10,43 @@ import {
   SHOW_ASSIGNMENT_PROGRAM,
   TEACHER_NAV_ITEMS,
 } from "@/lib/constants/teacherNavigation";
-import { getIdilPanelSummary } from "@/lib/idil-panel/summaryStorage";
+import { getIdilPanelSummary, type IdilPanelSummary } from "@/lib/idil-panel/summaryStorage";
 
 type SummaryStat = {
   key: string;
   label: string;
   value: number | string;
 };
+
+/**
+ * Metrik anahtarı + etiketi + özetten hangi alanı okuduğu tek yerde tanımlı.
+ * Daha önce bu dokuz etiket üç ayrı dizide (başlangıç / başarı / hata) birebir
+ * tekrarlanıyordu; bir etiketi değiştirmek üç yeri birden düzeltmeyi
+ * gerektiriyordu.
+ */
+const SUMMARY_METRICS: ReadonlyArray<{
+  key: string;
+  label: string;
+  read: (summary: IdilPanelSummary) => number;
+}> = [
+  { key: "students-total", label: "Toplam Öğrenci", read: (s) => s.totalStudents },
+  { key: "students-active", label: "Aktif Öğrenci", read: (s) => s.activeStudents },
+  { key: "active-courses", label: "Aktif Kur", read: (s) => s.activeCourses },
+  { key: "planned-lessons", label: "Bu Haftaki Planlı Ders", read: (s) => s.plannedLessonsThisWeek },
+  { key: "completed-lessons", label: "Tamamlanan Ders", read: (s) => s.completedLessons },
+  { key: "report-count", label: "Rapor Sayısı", read: (s) => s.reportCount },
+  { key: "text-count", label: "Metin Sayısı", read: (s) => s.textCount },
+  { key: "exercise-results", label: "Egzersiz Sonucu", read: (s) => s.exerciseResultCount },
+  { key: "reading-tests", label: "Okuma Testi Sonucu", read: (s) => s.readingTestCount },
+];
+
+function buildStats(value: (metric: (typeof SUMMARY_METRICS)[number]) => number | string): SummaryStat[] {
+  return SUMMARY_METRICS.map((metric) => ({
+    key: metric.key,
+    label: metric.label,
+    value: value(metric),
+  }));
+}
 
 type ModuleCard = {
   title: string;
@@ -25,69 +55,59 @@ type ModuleCard = {
   href?: string;
 };
 
-const INITIAL_STATS: SummaryStat[] = [
-  { key: "students-total", label: "Toplam Ogrenci", value: "Hazirlaniyor" },
-  { key: "students-active", label: "Aktif Ogrenci", value: "Hazirlaniyor" },
-  { key: "active-courses", label: "Aktif Kur", value: "Hazirlaniyor" },
-  { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: "Hazirlaniyor" },
-  { key: "completed-lessons", label: "Tamamlanan Ders", value: "Hazirlaniyor" },
-  { key: "report-count", label: "Rapor Sayisi", value: "Hazirlaniyor" },
-  { key: "text-count", label: "Metin Sayisi", value: "Hazirlaniyor" },
-  { key: "exercise-results", label: "Egzersiz Sonucu", value: "Hazirlaniyor" },
-  { key: "reading-tests", label: "Okuma Testi Sonucu", value: "Hazirlaniyor" },
-];
+const INITIAL_STATS: SummaryStat[] = buildStats(() => "Hazırlanıyor");
 
 const MODULE_CARDS: ModuleCard[] = [
   {
-    title: "Ogrenci Takip",
-    description: "Ogrenci bilgileri, durum ve gelisim takibi.",
+    title: "Öğrenci Takip",
+    description: "Öğrenci bilgileri, durum ve gelişim takibi.",
     status: "Aktif",
     href: "/ogretmen/idil-panel/ogrenci-takip",
   },
   {
-    title: "Haftalik Ders Programi",
-    description: "Gunluk ve haftalik dersleri planla.",
+    title: "Haftalık Ders Programı",
+    description: "Günlük ve haftalık dersleri planla.",
     status: "Aktif",
     href: "/ogretmen/idil-panel/haftalik-program",
   },
   {
-    title: "Toplu Ogrenci Aktar",
-    description: "CSV dosyasiyla ogrenci listesini toplu olarak sisteme ekle.",
+    title: "Toplu Öğrenci Aktar",
+    description: "CSV dosyasıyla öğrenci listesini toplu olarak sisteme ekle.",
     status: "Aktif",
     href: "/ogretmen/idil-panel/toplu-ogrenci-aktar",
   },
   {
-    title: "Ders Kayitlari",
-    description: "Yapilan dersleri ve olcumleri takip et.",
+    title: "Ders Kayıtları",
+    description: "Yapılan dersleri ve ölçümleri takip et.",
     status: "Aktif",
     href: "/ogretmen/idil-panel/ders-kayitlari",
   },
   {
-    title: "Odev Programi",
-    description: "Sinif gruplarina gore 20 gunluk odev sablonu ayarlari ve program onizlemesi.",
+    title: "Ödev Programı",
+    description: "Sınıf gruplarına göre 20 günlük ödev şablonu ayarları ve program önizlemesi.",
     status: "Aktif",
     href: "/ogretmen/idil-panel/odev-programi",
   },
   {
-    title: "Egitim Programlari",
-    description: "Yeniden kullanilabilir, gun gun duzenlenen bagimsiz egitim programi sablonlari.",
+    title: "Eğitim Programları",
+    description: "Yeniden kullanılabilir, gün gün düzenlenen bağımsız eğitim programı şablonları.",
     status: "Faz 1",
     href: "/ogretmen/idil-panel/egitim-programlari",
   },
   {
-    title: "Gelisim Raporu",
-    description: "Ogrenci bazli okuma hizi ve anlama gelisimi.",
-    status: "Sonraki adim",
+    title: "Gelişim Raporu",
+    description: "Öğrenci bazlı okuma hızı ve anlama gelişimi.",
+    status: "Sonraki adım",
   },
   {
     title: "Veli Raporu",
-    description: "Yazdirmaya uygun veli bilgilendirme raporu.",
-    status: "Sonraki adim",
+    description: "Yazdırmaya uygun veli bilgilendirme raporu.",
+    status: "Sonraki adım",
   },
   {
-    title: "Icerik Yonetimi",
-    description: "Metin kutuphanesi ve anlama testi sorulari.",
-    status: "Hazir",
+    title: "İçerik Yönetimi",
+    description: "Metin kütüphanesi ve anlama testi soruları.",
+    status: "Hazır",
     href: "/ogretmen/icerik-yonetimi",
   },
 ];
@@ -109,37 +129,15 @@ export default function IdilPanelPage() {
           return;
         }
 
-        const nextStats: SummaryStat[] = [
-          { key: "students-total", label: "Toplam Ogrenci", value: summary.totalStudents },
-          { key: "students-active", label: "Aktif Ogrenci", value: summary.activeStudents },
-          { key: "active-courses", label: "Aktif Kur", value: summary.activeCourses },
-          { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: summary.plannedLessonsThisWeek },
-          { key: "completed-lessons", label: "Tamamlanan Ders", value: summary.completedLessons },
-          { key: "report-count", label: "Rapor Sayisi", value: summary.reportCount },
-          { key: "text-count", label: "Metin Sayisi", value: summary.textCount },
-          { key: "exercise-results", label: "Egzersiz Sonucu", value: summary.exerciseResultCount },
-          { key: "reading-tests", label: "Okuma Testi Sonucu", value: summary.readingTestCount },
-        ];
-
-        setStats(nextStats);
+        setStats(buildStats((metric) => metric.read(summary)));
       } catch {
         if (!isMounted) {
           return;
         }
 
-        const fallbackStats: SummaryStat[] = [
-          { key: "students-total", label: "Toplam Ogrenci", value: 0 },
-          { key: "students-active", label: "Aktif Ogrenci", value: 0 },
-          { key: "active-courses", label: "Aktif Kur", value: 0 },
-          { key: "planned-lessons", label: "Bu Haftaki Planli Ders", value: 0 },
-          { key: "completed-lessons", label: "Tamamlanan Ders", value: 0 },
-          { key: "report-count", label: "Rapor Sayisi", value: 0 },
-          { key: "text-count", label: "Metin Sayisi", value: 0 },
-          { key: "exercise-results", label: "Egzersiz Sonucu", value: 0 },
-          { key: "reading-tests", label: "Okuma Testi Sonucu", value: 0 },
-        ];
-
-        setStats(fallbackStats);
+        // TODO: "okunamadı" ile "gerçekten 0" ayrımı henüz yok; ikisi de 0
+        // görünüyor. Sonraki adımda hata durumu ayrı gösterilecek.
+        setStats(buildStats(() => 0));
       }
     };
 
@@ -152,29 +150,26 @@ export default function IdilPanelPage() {
 
   return (
     <AppShell
-      title="Idil Yonetim Paneli"
-      subtitle="Ogrenci takip, ders programi ve rapor yonetimi icin yonetici alani."
+      title="İdil Yönetim Paneli"
+      subtitle="Öğrenci takip, ders programı ve rapor yönetimi için yönetici alanı."
       navItems={TEACHER_NAV_ITEMS}
     >
       <TeacherOnly>
+        {/* Başlık/alt başlık AppShell'de zaten render ediliyor; burada
+            tekrarlanınca ekranda üst üste iki kez görünüyordu. Yalnızca
+            geri dönüş bağlantısı bırakıldı. */}
         <PanelCard>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-[24px] font-semibold tracking-tight text-slate-950">Idil Yonetim Paneli</h2>
-              <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
-                Ogrenci takip, ders programi ve rapor yonetimi icin yonetici alani.
-              </p>
-            </div>
+          <div className="flex justify-end">
             <Link
               href="/ogretmen"
               className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition duration-200 hover:border-red-200 hover:bg-red-50 hover:text-red-800"
             >
-              Geri Don
+              Geri Dön
             </Link>
           </div>
         </PanelCard>
 
-        <PanelCard title="Yonetim Ozetleri" subtitle="Temel metrikler">
+        <PanelCard title="Yönetim Özetleri" subtitle="Temel metrikler">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {stats.map((stat) => (
               <article key={stat.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-[18px]">
@@ -185,7 +180,7 @@ export default function IdilPanelPage() {
           </div>
         </PanelCard>
 
-        <PanelCard title="Yonetim Modulleri" subtitle="Masaustu Idilpanel akisi icin web modulleri">
+        <PanelCard title="Yönetim Modülleri" subtitle="Masaüstü İdilpanel akışı için web modülleri">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {visibleModuleCards.map((module) => (
               <article key={module.title} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-[18px]">
@@ -200,11 +195,11 @@ export default function IdilPanelPage() {
                       href={module.href}
                       className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 transition duration-200 hover:bg-red-100"
                     >
-                      Modulu Ac
+                      Modülü Aç
                     </Link>
                   ) : (
                     <span className="inline-flex min-h-[38px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
-                      Yakinda
+                      Yakında
                     </span>
                   )}
                 </div>
@@ -214,7 +209,7 @@ export default function IdilPanelPage() {
         </PanelCard>
 
         <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm leading-6 text-rose-900 shadow-sm">
-          Masaustu Idilpanel ozellikleri bu alana kademeli olarak tasinacaktir.
+          Masaüstü İdilpanel özellikleri bu alana kademeli olarak taşınacaktır.
         </section>
       </TeacherOnly>
     </AppShell>

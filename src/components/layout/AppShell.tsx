@@ -2,11 +2,43 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { RoleAwareNav } from "@/components/auth/RoleAwareNav";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { IdilThemeProvider } from "@/components/theme/IdilThemeProvider";
 import { clearCurrentUser, getResolvedCurrentUser } from "@/lib/auth/auth";
+
+/** Sunucu render'inda kullanici bilinmedigi icin gosterilen guvenli baslangic. */
+const TEACHER_USERNAME_FALLBACK = "Öğretmen";
+
+/**
+ * Ogretmen adi localStorage'da tutuluyor - yani React'in disinda bir kaynakta.
+ * Render sirasinda dogrudan okunursa sunucu her zaman fallback'i, tarayici ise
+ * gercek adi uretir ve ilk render'lar uyusmadigi icin React hydration hatasi
+ * firlatir. `useSyncExternalStore` tam bu durum icin var: `getServerSnapshot`
+ * hem SSR'da hem de hydration'in ilk render'inda kullanilir, gercek deger ancak
+ * hydration bittikten sonra devreye girer.
+ *
+ * Not: snapshot bir string (primitive) donuyor; her cagrida yeni referans
+ * uretmedigi icin sonsuz render dongusu riski yok.
+ */
+function subscribeToStoredUser(onStoreChange: () => void): () => void {
+  window.addEventListener("storage", onStoreChange);
+  return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function readTeacherUsername(): string {
+  const user = getResolvedCurrentUser();
+  if (user?.role === "teacher" && user.username.trim()) {
+    return user.username.trim();
+  }
+
+  return TEACHER_USERNAME_FALLBACK;
+}
+
+function readTeacherUsernameOnServer(): string {
+  return TEACHER_USERNAME_FALLBACK;
+}
 
 type NavItem = {
   href: string;
@@ -36,14 +68,11 @@ export function AppShell({
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const hasTeacherNavigation = navItems.some((item) => item.href.startsWith("/ogretmen"));
-  const teacherUsername = useMemo(() => {
-    const user = getResolvedCurrentUser();
-    if (user?.role === "teacher" && user.username.trim()) {
-      return user.username.trim();
-    }
-
-    return "Ogretmen";
-  }, []);
+  const teacherUsername = useSyncExternalStore(
+    subscribeToStoredUser,
+    readTeacherUsername,
+    readTeacherUsernameOnServer,
+  );
 
   const isTeacherItemActive = (href: string): boolean => {
     const baseHref = href.split(/[?#]/)[0];
@@ -69,7 +98,7 @@ export function AppShell({
     return "/ogretmen/idil-panel/ders-kayitlari";
   }, [pathname]);
 
-  const quickActionLabel = pathname === "/ogretmen/idil-panel/ders-kayitlari" ? "Ogrenciler" : "Ders Kaydi";
+  const quickActionLabel = pathname === "/ogretmen/idil-panel/ders-kayitlari" ? "Öğrenciler" : "Ders Kaydı";
 
   if (hasTeacherNavigation) {
     return (
@@ -78,11 +107,11 @@ export function AppShell({
           <div className="mx-auto flex w-full max-w-[1900px] gap-3 p-3 md:gap-4 md:p-4">
             <aside className="sticky top-4 hidden h-[calc(100vh-32px)] w-[248px] shrink-0 overflow-hidden rounded-[22px] border border-slate-800 bg-[linear-gradient(180deg,#0b1220_0%,#0f172a_56%,#111827_100%)] p-3 text-slate-100 shadow-xl lg:flex lg:flex-col">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">Idil</p>
-                <h2 className="mt-1 text-lg font-semibold text-white">Egitim Platformu</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">İdil</p>
+                <h2 className="mt-1 text-lg font-semibold text-white">Eğitim Platformu</h2>
               </div>
 
-              <nav className="mt-3 flex-1 overflow-y-auto pr-1" aria-label="Ogretmen menusu">
+              <nav className="mt-3 flex-1 overflow-y-auto pr-1" aria-label="Öğretmen menüsü">
                 <ul className="space-y-1.5">
                   {navItems.map((item) => {
                     const isActive = isTeacherItemActive(item.href);
@@ -114,7 +143,7 @@ export function AppShell({
                   onClick={() => void handleTeacherLogout()}
                   className="flex min-h-11 w-full items-center justify-center rounded-xl border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/30"
                 >
-                  Cikis Yap
+                  Çıkış Yap
                 </button>
               </div>
             </aside>
@@ -131,14 +160,14 @@ export function AppShell({
               className={`fixed inset-y-0 left-0 z-50 w-[248px] border-r border-slate-800 bg-[linear-gradient(180deg,#0b1220_0%,#0f172a_56%,#111827_100%)] p-3 text-slate-100 shadow-2xl transition-transform lg:hidden ${
                 isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
               }`}
-              aria-label="Mobil ogretmen menusu"
+              aria-label="Mobil öğretmen menüsü"
             >
               <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">Idil</p>
-                <h2 className="mt-1 text-lg font-semibold text-white">Egitim Platformu</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">İdil</p>
+                <h2 className="mt-1 text-lg font-semibold text-white">Eğitim Platformu</h2>
               </div>
 
-              <nav className="mt-3 overflow-y-auto" aria-label="Ogretmen menusu mobil">
+              <nav className="mt-3 overflow-y-auto" aria-label="Öğretmen menüsü (mobil)">
                 <ul className="space-y-1.5">
                   {navItems.map((item) => {
                     const isActive = isTeacherItemActive(item.href);
@@ -168,7 +197,7 @@ export function AppShell({
                   onClick={() => void handleTeacherLogout()}
                   className="flex min-h-11 w-full items-center justify-center rounded-xl border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm font-semibold text-red-100"
                 >
-                  Cikis Yap
+                  Çıkış Yap
                 </button>
               </div>
             </aside>
@@ -182,11 +211,14 @@ export function AppShell({
                         type="button"
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 lg:hidden [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100"
-                        aria-label="Menuyu ac"
+                        aria-label="Menüyü aç"
                       >
                         <span aria-hidden="true">☰</span>
                       </button>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Ogretmen Alani</p>
+                      {/* `uppercase` + <html lang="tr"> Türkçe büyütme kuralını uygular:
+                          ASCII "Alani" ekranda "ALANİ" olarak çıkıyordu. Doğru
+                          yazımla ("Alanı") büyütme de doğru sonucu veriyor: "ALANI". */}
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">Öğretmen Alanı</p>
                     </div>
                     <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50 md:text-[30px]">{title}</h1>
                     <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">{subtitle}</p>
@@ -254,7 +286,7 @@ export function AppShell({
                     : "text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand)]"
                 }
               >
-                {hasVibrantStudentHeader ? "İdil Hızlı Okuma" : "Idil Hizli Okuma"}
+                İdil Hızlı Okuma
               </p>
               <h1
                 className={

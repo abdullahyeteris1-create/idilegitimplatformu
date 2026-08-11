@@ -335,6 +335,45 @@ async function listTable(tableName: string): Promise<SupabaseRow[]> {
   }
 }
 
+/**
+ * Yalnızca satır SAYISI gereken yerler için. `listTable` ile sayım yapmak iki
+ * soruna yol açıyordu:
+ *   1) Supabase varsayılan olarak en fazla 1000 satır döndürdüğü için, 1000'den
+ *      fazla kaydı olan tablolarda `.length` gerçek sayıyı değil tavanı
+ *      gösteriyordu (panelde "Egzersiz Sonucu: 1000" bunun sonucuydu).
+ *   2) Sadece saymak için tablonun tamamı tarayıcıya indiriliyordu.
+ * `head: true` ile tek satır bile taşınmaz, sunucu yalnızca sayıyı döner.
+ *
+ * Okuma başarısızsa (ör. RLS reddi) `null` döner — bu, "gerçekten 0 kayıt var"
+ * durumundan ayrıdır ve çağıranın ikisini ayırt etmesine imkân verir.
+ */
+async function countTable(tableName: string): Promise<number | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { count, error } = await supabase
+      .from(tableName)
+      .select("*", { count: "exact", head: true });
+
+    if (error) {
+      console.error(`Supabase ${tableName} count failed`, {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      return null;
+    }
+
+    return typeof count === "number" ? count : null;
+  } catch (error) {
+    console.error(`Supabase ${tableName} count threw`, error);
+    return null;
+  }
+}
+
 function toScheduleItem(row: SupabaseRow): ScheduleItem {
   return {
     id: String(row.id ?? ""),
@@ -722,16 +761,21 @@ export async function deleteSchedule(id: string): Promise<void> {
 export async function getIdilPanelSummary(): Promise<IdilPanelSummary> {
   const now = new Date();
 
-  const [students, courses, schedules, lessons, reports, textLibrary, exerciseResults, readingTests] = await Promise.all([
-    listTable(STUDENTS_TABLE),
-    listCourses(),
-    listSchedules(),
-    listLessons(),
-    listReports(),
-    listTable(TEXT_LIBRARY_TABLE),
-    listTable(EXERCISE_RESULTS_TABLE),
-    listTable(READING_TESTS_TABLE),
-  ]);
+  // Not: ilk dört sorgu satırların kendisini kullanıyor (aktiflik / tarih
+  // filtreleri), bu yüzden tam kayıt çekmeleri gerekiyor. Son dördü yalnızca
+  // sayıya ihtiyaç duyduğu için `countTable` ile sunucu tarafında sayılıyor —
+  // aksi halde 1000 satır tavanına takılıyor ve boşuna veri indiriliyordu.
+  const [students, courses, schedules, lessons, reportCount, textCount, exerciseResultCount, readingTestCount] =
+    await Promise.all([
+      listTable(STUDENTS_TABLE),
+      listCourses(),
+      listSchedules(),
+      listLessons(),
+      countTable(REPORTS_TABLE),
+      countTable(TEXT_LIBRARY_TABLE),
+      countTable(EXERCISE_RESULTS_TABLE),
+      countTable(READING_TESTS_TABLE),
+    ]);
 
   const plannedLessonsFromLessons = lessons.filter((lesson) => isPlannedThisWeek(lesson, now)).length;
   const plannedLessonsFromSchedules = schedules.filter((schedule) => isPlannedThisWeek(schedule, now)).length;
@@ -742,9 +786,11 @@ export async function getIdilPanelSummary(): Promise<IdilPanelSummary> {
     activeCourses: courses.filter((course) => isRowActive(course)).length,
     plannedLessonsThisWeek: plannedLessonsFromLessons > 0 ? plannedLessonsFromLessons : plannedLessonsFromSchedules,
     completedLessons: lessons.filter((lesson) => isLessonCompleted(lesson)).length,
-    reportCount: reports.length,
-    textCount: textLibrary.length,
-    exerciseResultCount: exerciseResults.length,
-    readingTestCount: readingTests.length,
+    // `countTable` okuma başarısızsa null döner. Şimdilik 0'a düşürülüyor;
+    // "okunamadı" durumunu panelde "—" olarak ayrı göstermek sıradaki adım.
+    reportCount: reportCount ?? 0,
+    textCount: textCount ?? 0,
+    exerciseResultCount: exerciseResultCount ?? 0,
+    readingTestCount: readingTestCount ?? 0,
   };
 }
