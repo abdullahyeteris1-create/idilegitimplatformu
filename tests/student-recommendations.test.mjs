@@ -272,3 +272,66 @@ test("recommendation response summary alanlarini raw result veya PII olmadan don
   assert.doesNotMatch(source, /email|phone|username|full_name/i);
   assert.doesNotMatch(source, /success_rate.*student_id|student_id.*success_rate/);
 });
+
+test("coach mesajÄ± improving alanÄ± iÃ§in progress tonunu kullanÄ±r", () => {
+  const input = [
+    ...[50, 50, 50, 50, 50].map((score, i) => result("two-side-focus", score, i)),
+    ...[58, 58, 58, 58, 58].map((score, i) => result("two-side-focus", score, i + 5)),
+  ];
+  const coach = getStudentExerciseRecommendations(input).summary.coachMessage;
+  assert.equal(coach.tone, "progress");
+  assert.equal(coach.highlightedCategory, "Dikkat");
+});
+
+test("coach mesajÄ± strong ve development iÃ§in balanced tonunu kullanÄ±r", () => {
+  const coach = getStudentExerciseRecommendations([
+    ...[88, 88, 88].map((score, i) => result("memory-game", score, i)),
+    ...[54, 54, 54].map((score, i) => result("two-side-focus", score, i + 3)),
+  ]).summary.coachMessage;
+  assert.equal(coach.tone, "balanced");
+  assert.equal(coach.highlightedCategory, "Dikkat");
+});
+
+test("coach mesajÄ± development iÃ§in focus, strong iÃ§in encouraging tonunu kullanÄ±r", () => {
+  const development = getStudentExerciseRecommendations([1, 2, 3].map((i) => result("two-side-focus", 54, i))).summary.coachMessage;
+  const strong = getStudentExerciseRecommendations([1, 2, 3].map((i) => result("memory-game", 88, i))).summary.coachMessage;
+  assert.equal(development.tone, "focus");
+  assert.equal(strong.tone, "encouraging");
+});
+
+test("coach mesajÄ± yetersiz veride getting_started olur", () => {
+  const coach = getStudentExerciseRecommendations([result("memory-game", 88, 1), result("memory-game", 88, 2)]).summary.coachMessage;
+  assert.equal(coach.tone, "getting_started");
+  assert.equal(coach.highlightedCategory, undefined);
+  assert.equal(coach.recommendedExerciseSlug, undefined);
+});
+
+test("declining coach mesajÄ± yapÄ±cÄ± ve deterministiktir", () => {
+  const coach = getStudentExerciseRecommendations([
+    ...[90, 90, 90, 90, 90].map((score, i) => result("two-side-focus", score, i)),
+    ...[80, 80, 80, 80, 80].map((score, i) => result("two-side-focus", score, i + 5)),
+  ]).summary.coachMessage;
+  assert.equal(coach.tone, "focus");
+  assert.match(coach.message, /dalgalan/);
+  assert.doesNotMatch(coach.message, /baÅŸarÄ±sÄ±z|zayÄ±f|kÃ¶tÃ¼|geridesin|yetersizsin/i);
+});
+
+test("coach CTA'sÄ± recommendation listesindeki slug'dan gelir", () => {
+  const output = getStudentExerciseRecommendations([1, 2, 3].map((i) => result("two-side-focus", 54, i)));
+  assert.ok(output.recommendations.some((item) => item.exerciseSlug === output.summary.coachMessage.recommendedExerciseSlug));
+});
+
+test("word-games coach mesajÄ±nda oyun veya PII bulunmaz", () => {
+  const output = getStudentExerciseRecommendations([1, 2, 3, 4].map((i) => result("word-race", 10, i)));
+  const serialized = JSON.stringify(output.summary.coachMessage);
+  assert.equal(output.summary.coachMessage.tone, "getting_started");
+  assert.doesNotMatch(serialized, /word-games|kelime-yarisi|AkÄ±l|Zeka|email|phone|username|student/i);
+});
+
+test("coach mesajÄ± aynÄ± girdide aynÄ± ve makul uzunluktadÄ±r", () => {
+  const input = [1, 2, 3].map((i) => result("memory-game", 88, i));
+  const first = getStudentExerciseRecommendations(input).summary.coachMessage;
+  const second = getStudentExerciseRecommendations(input).summary.coachMessage;
+  assert.deepEqual(first, second);
+  assert.ok(first.message.length >= 100 && first.message.length <= 220);
+});

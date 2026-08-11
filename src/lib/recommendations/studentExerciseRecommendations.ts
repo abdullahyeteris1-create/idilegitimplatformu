@@ -46,13 +46,24 @@ export type ImprovingRecommendationArea = RecommendationArea & {
   trendDelta: number;
 };
 
+export type StudentCoachTone = "encouraging" | "progress" | "focus" | "balanced" | "getting_started";
+
+export type StudentCoachMessage = {
+  title: string;
+  message: string;
+  tone: StudentCoachTone;
+  highlightedCategory?: string;
+  recommendedExerciseSlug?: string;
+};
+
 export type RecommendationSummary = {
   strengths: RecommendationArea[];
   developmentAreas: RecommendationArea[];
   improvingAreas: ImprovingRecommendationArea[];
   strongestArea: RecommendationArea | null;
   coachSummary: string | null;
-  trends: Array<{ categoryId: string; trend: RecommendationTrend; trendDelta: number | null }>;
+  coachMessage: StudentCoachMessage;
+  trends: Array<{ categoryId: string; categoryTitle: string; trend: RecommendationTrend; trendDelta: number | null }>;
   recommendedExercises: Array<{ slug: string; categoryId: string }>;
 };
 
@@ -171,6 +182,93 @@ export function buildStudentCoachSummary(strongestArea: RecommendationArea | nul
   return `${strongestArea.categoryTitle} alanındaki güçlü performansını korurken, ${developmentArea.categoryTitle} çalışmalarına biraz daha ağırlık verebilirsin.`;
 }
 
+type StudentCoachMessageInput = {
+  strengths: RecommendationArea[];
+  developmentAreas: RecommendationArea[];
+  improvingAreas: ImprovingRecommendationArea[];
+  strongestArea: RecommendationArea | null;
+  trends: Array<{ categoryId: string; categoryTitle: string; trend: RecommendationTrend; trendDelta: number | null }>;
+  recommendations: Array<Pick<StudentExerciseRecommendation, "exerciseSlug" | "exerciseTitle" | "categoryId">>;
+};
+
+function stableRecommendationFor(
+  recommendations: StudentCoachMessageInput["recommendations"],
+  categoryId?: string,
+): StudentCoachMessageInput["recommendations"][number] | null {
+  return recommendations.find((item) => (!categoryId || item.categoryId === categoryId) && !AKIL_VE_ZEKA_OYUNLARI_SLUG_SET.has(item.exerciseSlug)) ?? null;
+}
+
+export function buildStudentCoachMessage(input: StudentCoachMessageInput): StudentCoachMessage {
+  const recommendations = input.recommendations.filter((item) => !AKIL_VE_ZEKA_OYUNLARI_SLUG_SET.has(item.exerciseSlug));
+  const improving = input.improvingAreas[0];
+  const declining = input.trends.find((item) => item.trend === "declining");
+  const development = input.developmentAreas[0];
+  const strong = input.strengths[0] ?? null;
+  const recommendation = stableRecommendationFor(recommendations, improving?.categoryId ?? declining?.categoryId ?? development?.categoryId ?? strong?.categoryId);
+  const fallbackRecommendation = recommendation ?? stableRecommendationFor(recommendations);
+  const title = "🧠 Akıllı Koç";
+
+  if (improving) {
+    const sameAsStrong = strong?.categoryId === improving.categoryId;
+    return {
+      title,
+      tone: "progress",
+      message: sameAsStrong
+        ? `${improving.categoryTitle} alanında güçlü sonuçlar alıyor ve gelişmeye devam ediyorsun. Bugün ${fallbackRecommendation?.exerciseTitle ?? "kısa bir tekrar"} ile bu güzel ilerlemeyi sürdürebilirsin.`
+        : `${improving.categoryTitle} alanında son çalışmalarında +${Math.round(improving.trendDelta)} puanlık güzel bir yükseliş var. Bugün ${fallbackRecommendation?.exerciseTitle ?? "kısa bir tekrar"} ile bu gelişimi sürdürebilirsin.`,
+      highlightedCategory: improving.categoryTitle,
+      ...(fallbackRecommendation ? { recommendedExerciseSlug: fallbackRecommendation.exerciseSlug } : {}),
+    };
+  }
+
+  if (declining) {
+    return {
+      title,
+      tone: "focus",
+      message: `${declining.categoryTitle} alanındaki son sonuçların biraz dalgalanmış. Bugün ${fallbackRecommendation?.exerciseTitle ?? "kısa ve sakin bir tekrar"} iyi bir seçim olabilir.`,
+      highlightedCategory: declining.categoryTitle,
+      ...(fallbackRecommendation ? { recommendedExerciseSlug: fallbackRecommendation.exerciseSlug } : {}),
+    };
+  }
+
+  if (strong && development) {
+    const developmentRecommendation = stableRecommendationFor(recommendations, development.categoryId) ?? fallbackRecommendation;
+    return {
+      title,
+      tone: "balanced",
+      message: `${strong.categoryTitle} alanındaki güçlü performansını korurken, ${development.categoryTitle} çalışmalarına biraz daha ağırlık verebilirsin. Bugün ${developmentRecommendation?.exerciseTitle ?? "kısa bir tekrar"} iyi bir seçim olabilir.`,
+      highlightedCategory: development.categoryTitle,
+      ...(developmentRecommendation ? { recommendedExerciseSlug: developmentRecommendation.exerciseSlug } : {}),
+    };
+  }
+
+  if (development) {
+    return {
+      title,
+      tone: "focus",
+      message: `${development.categoryTitle} çalışmalarına bugün biraz daha ağırlık vermek gelişimini destekleyebilir. ${fallbackRecommendation?.exerciseTitle ?? "Kısa bir tekrar"} ile düzenli pratik yapabilirsin.`,
+      highlightedCategory: development.categoryTitle,
+      ...(fallbackRecommendation ? { recommendedExerciseSlug: fallbackRecommendation.exerciseSlug } : {}),
+    };
+  }
+
+  if (strong) {
+    return {
+      title,
+      tone: "encouraging",
+      message: `${strong.categoryTitle} alanında güçlü ve istikrarlı sonuçlar alıyorsun. Bu başarını korurken bugün ${fallbackRecommendation?.exerciseTitle ?? "dengeli bir tekrar"} ile çalışabilirsin.`,
+      highlightedCategory: strong.categoryTitle,
+      ...(fallbackRecommendation ? { recommendedExerciseSlug: fallbackRecommendation.exerciseSlug } : {}),
+    };
+  }
+
+  return {
+    title,
+    tone: "getting_started",
+    message: "Seni daha iyi tanımam için birkaç çalışma daha tamamlaman yeterli. Sonuçlarına göre sana daha kişisel öneriler sunacağım.",
+  };
+}
+
 export function analyzeStudentSkills(input: RecommendationResultInput[], now = new Date()): StudentSkillAnalysis[] {
   const meaningful = input
     .map((result) => ({ ...result, score: finitePercentage(result.successRate), at: result.completedAt ?? result.date ?? null }))
@@ -261,8 +359,16 @@ export function getStudentExerciseRecommendations(input: RecommendationResultInp
     improvingAreas,
     strongestArea: strongest,
     coachSummary: buildStudentCoachSummary(strongest, developmentAreas),
-    trends: analysis.map((item) => ({ categoryId: item.categoryId, trend: item.trend, trendDelta: item.previousAverageSuccessRate === null || item.recentAverageSuccessRate === null ? null : round(item.recentAverageSuccessRate - item.previousAverageSuccessRate) })),
+    trends: analysis.map((item) => ({ categoryId: item.categoryId, categoryTitle: item.categoryTitle, trend: item.trend, trendDelta: item.previousAverageSuccessRate === null || item.recentAverageSuccessRate === null ? null : round(item.recentAverageSuccessRate - item.previousAverageSuccessRate) })),
     recommendedExercises: recommendations.map((item) => ({ slug: item.exerciseSlug, categoryId: item.categoryId })),
+    coachMessage: buildStudentCoachMessage({
+      strengths: strongAreas,
+      developmentAreas,
+      improvingAreas,
+      strongestArea: strongest,
+      trends: analysis.map((item) => ({ categoryId: item.categoryId, categoryTitle: item.categoryTitle, trend: item.trend, trendDelta: item.previousAverageSuccessRate === null || item.recentAverageSuccessRate === null ? null : round(item.recentAverageSuccessRate - item.previousAverageSuccessRate) })),
+      recommendations,
+    }),
   } satisfies RecommendationSummary;
   return { analysis, recommendations, summary };
 }

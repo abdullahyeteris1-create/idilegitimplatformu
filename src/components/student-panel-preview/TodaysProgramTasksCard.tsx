@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { RecommendationArea, ImprovingRecommendationArea, StudentExerciseRecommendation, StudentSkillAnalysis } from "@/lib/recommendations/studentExerciseRecommendations";
+import type { RecommendationArea, ImprovingRecommendationArea, StudentCoachMessage, StudentExerciseRecommendation, StudentSkillAnalysis } from "@/lib/recommendations/studentExerciseRecommendations";
 import styles from "./student-panel-preview.module.css";
 
 type TodayProgramTask = {
@@ -44,6 +44,7 @@ type RecommendationsState = {
   improvingAreas: ImprovingRecommendationArea[];
   strongestArea: RecommendationArea | null;
   coachSummary: string | null;
+  coachMessage: StudentCoachMessage | null;
 };
 
 const EMPTY_RECOMMENDATION_SUMMARY = {
@@ -52,6 +53,7 @@ const EMPTY_RECOMMENDATION_SUMMARY = {
   improvingAreas: [],
   strongestArea: null,
   coachSummary: null,
+  coachMessage: null,
 } satisfies Omit<RecommendationsState, "status" | "analysis" | "recommendations">;
 
 const STATUS_LABELS: Record<string, string> = {
@@ -157,6 +159,7 @@ export function TodaysProgramTasksCard() {
           improvingAreas: payload.improvingAreas,
           strongestArea: payload.strongestArea ?? null,
           coachSummary: payload.coachSummary ?? null,
+          coachMessage: payload.coachMessage ?? null,
         });
       } catch (error) {
         if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) setRecommendations({ status: "error", analysis: [], recommendations: [], ...EMPTY_RECOMMENDATION_SUMMARY });
@@ -262,10 +265,27 @@ function SmartRecommendationsCard({ state }: { state: RecommendationsState }) {
   return <section className={styles.smartRecommendations} aria-labelledby="smart-recommendations-title">
     <div className={styles.smartRecommendationsHead}><div><span className={styles.smartEyebrow}>AKILLI ÇALIŞMA</span><h2 id="smart-recommendations-title">✨ Sana Özel Çalışma Önerileri</h2><p>Son çalışmalarına göre bugün gelişimini destekleyebilecek alanlar.</p></div><span className={styles.smartTarget}>🎯</span></div>
     {state.status === "loading" ? <p className={styles.smartEmpty}>Önerilerin hazırlanıyor…</p> : state.status === "error" ? <p className={styles.smartEmpty}>Öneriler şu anda yüklenemiyor.</p> : <>
+      {state.coachMessage ? <StudentCoachMessageCard state={state} /> : null}
       {state.recommendations.length === 0 ? <p className={styles.smartEmpty}>Henüz seni tanımaya çalışıyorum. Birkaç çalışma daha tamamladığında sana özel öneriler oluşturacağım.</p> : <div className={styles.smartRecommendationGrid}>{state.recommendations.map((recommendation) => <article className={styles.smartRecommendation} key={`${recommendation.categoryId}-${recommendation.exerciseSlug}`}><div className={styles.smartRecommendationIcon}>✦</div><div className={styles.smartRecommendationBody}><span>{recommendation.categoryTitle}</span><h3>{recommendation.exerciseTitle}</h3><p>{recommendation.reasonText}</p><Link href={`/egzersizler/${recommendation.exerciseSlug}`}>Çalışmaya Başla</Link></div></article>)}</div>}
       <RecommendationInsights state={state} />
     </>}
   </section>;
+}
+
+function StudentCoachMessageCard({ state }: { state: RecommendationsState }) {
+  if (!state.coachMessage) return null;
+  const linkedRecommendation = state.coachMessage.recommendedExerciseSlug
+    ? state.recommendations.find((item) => item.exerciseSlug === state.coachMessage?.recommendedExerciseSlug)
+    : null;
+
+  return <aside className={styles.coachMessageCard} data-coach-tone={state.coachMessage.tone} aria-label="Akıllı Koç">
+    <div className={styles.coachMessageContent}>
+      <span className={styles.coachMessageEyebrow}>🧠 AKILLI KOÇ</span>
+      <h3>{state.coachMessage.title}</h3>
+      <p>{state.coachMessage.message}</p>
+    </div>
+    {linkedRecommendation ? <Link className={styles.coachMessageAction} href={`/egzersizler/${linkedRecommendation.exerciseSlug}`}>Önerilen çalışmaya başla</Link> : null}
+  </aside>;
 }
 
 function formatAreaScore(score: number): string {
