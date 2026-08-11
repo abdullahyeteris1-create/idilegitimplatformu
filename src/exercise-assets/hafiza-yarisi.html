@@ -116,6 +116,7 @@
   .name-field.p1 input:focus { border-color: var(--accent1); }
   .name-field.p2 input:focus { border-color: var(--accent4); }
   .name-field.p3 input:focus { border-color: var(--accent5); }
+  .name-field.p4 input:focus { border-color: var(--gold); }
 
   .level-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -142,6 +143,7 @@
   .level-btn.l3 { background: linear-gradient(135deg, #3a0ca3, #4361ee); box-shadow: 0 8px 25px rgba(66,97,238,0.4); }
   .level-btn.l4 { background: linear-gradient(135deg, #4cc9f0, #4895ef); box-shadow: 0 8px 25px rgba(76,201,240,0.4); }
   .level-btn.l5 { background: linear-gradient(135deg, #f77f00, #fcbf49); box-shadow: 0 8px 25px rgba(247,127,0,0.4); color: #1a1a2e; }
+  .level-btn.l6 { background: linear-gradient(135deg, #ff9f1c, #ffd166); box-shadow: 0 8px 25px rgba(255,159,28,0.4); color: #1a1a2e; }
 
   .level-btn .card-count { font-size: 2rem; display: block; margin-bottom: 0.3rem; }
   .level-btn .label { font-size: 0.85rem; opacity: 0.85; }
@@ -165,6 +167,7 @@
     width: 100%; max-width: 1100px; flex-wrap: wrap; margin-bottom: 0.5rem;
   }
   .game-info.players-3 { gap: 0.6rem; }
+  .game-info.players-4 { gap: 0.45rem; }
   .player-score {
     padding: 0.7rem 1.5rem; border-radius: 15px; font-weight: 700; font-size: 1rem;
     transition: all 0.4s ease; position: relative; overflow: hidden; text-align: center;
@@ -176,6 +179,7 @@
   .player-score.p1 { background: linear-gradient(135deg, rgba(247,37,133,0.3), rgba(181,23,158,0.3)); border: 2px solid var(--accent1); }
   .player-score.p2 { background: linear-gradient(135deg, rgba(76,201,240,0.3), rgba(72,9,183,0.3)); border: 2px solid var(--accent4); }
   .player-score.p3 { background: linear-gradient(135deg, rgba(74,222,128,0.3), rgba(22,163,74,0.3)); border: 2px solid var(--accent5); }
+  .player-score.p4 { background: linear-gradient(135deg, rgba(255,214,10,0.3), rgba(255,159,28,0.3)); border: 2px solid var(--gold); }
   /* Uzun isimler layout'u bozmaz: kutu genisligi sinirli, tasan ad "..." olur. */
   .player-score { max-width: 220px; }
   .player-score .p-name {
@@ -218,6 +222,7 @@
   .card-grid.count-24 { grid-template-columns: repeat(6, 1fr); max-width: 800px; }
   .card-grid.count-32 { grid-template-columns: repeat(8, 1fr); max-width: 950px; }
   .card-grid.count-40 { grid-template-columns: repeat(10, 1fr); max-width: 1100px; }
+  .card-grid.count-60 { grid-template-columns: repeat(10, 1fr); max-width: 1100px; }
 
   /* ===== CARD ===== */
   .card {
@@ -363,6 +368,7 @@
     .card-face { font-size: 1.5rem; border-radius: 10px; }
     .card-grid { gap: 0.5rem; }
     .card-grid.count-40 { grid-template-columns: repeat(8, 1fr); }
+    .card-grid.count-60 { grid-template-columns: repeat(8, 1fr); }
     .game-header { flex-direction: column; align-items: stretch; text-align: center; }
     .game-title { font-size: 1.4rem; }
     .game-info { gap: 0.5rem; flex-wrap: nowrap; }
@@ -376,10 +382,12 @@
 
   @media (max-width: 380px) {
     .player-score .p-name { font-size: 0.6rem; }
+    .card-grid.count-60 { grid-template-columns: repeat(6, 1fr); }
   }
 
   /* ===== CARD SIZE ADJUSTMENTS FOR DIFFERENT COUNTS ===== */
   .card-grid.count-40 .card-face { font-size: 1.6rem; }
+  .card-grid.count-60 .card-face { font-size: 1.45rem; }
   .card-grid.count-32 .card-face { font-size: 1.8rem; }
   .card-grid.count-24 .card-face { font-size: 2rem; }
 
@@ -439,6 +447,7 @@
     <div class="pc-options" id="pc-options" role="group" aria-label="Oyuncu Sayısı">
       <button type="button" class="pc-btn selected" data-players="2" aria-pressed="true">👥 2 Oyuncu</button>
       <button type="button" class="pc-btn" data-players="3" aria-pressed="false">👥 3 Oyuncu</button>
+      <button type="button" class="pc-btn" data-players="4" aria-pressed="false">🟡 4 Oyuncu</button>
     </div>
 
     <div class="name-fields" id="name-fields">
@@ -456,6 +465,11 @@
         <span class="nf-emoji" aria-hidden="true">🟢</span>
         <input type="text" id="name-input-3" maxlength="20" placeholder="Oyuncu 3"
                aria-label="Oyuncu 3 adı" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="name-field p4 hidden" id="name-field-4">
+        <span class="nf-emoji" aria-hidden="true">🟡</span>
+        <input type="text" id="name-input-4" maxlength="20" placeholder="Oyuncu 4"
+               aria-label="Oyuncu 4 adı" autocomplete="off" spellcheck="false">
       </div>
     </div>
   </div>
@@ -480,6 +494,10 @@
     <button class="level-btn l5" onclick="startGame(5)">
       <span class="card-count">40</span>
       <span class="label">Seviye 5 — Efsane</span>
+    </button>
+    <button class="level-btn l6" onclick="startGame(6)">
+      <span class="card-count">60</span>
+      <span class="label">Seviye 6 — Efsane</span>
     </button>
   </div>
   <p style="color: rgba(255,255,255,0.3); font-size: 0.85rem; text-align: center;">Doğru eşleşmede oyun hakkın devam eder, yanlışta sıra karşıya geçer!</p>
@@ -528,21 +546,23 @@ const emojiSets = {
   2: ['🍎','🍋','🍇','🍊','🍓','🍒','🥝','🍑','🍌','🫐'],
   3: ['⚽','🏀','🎾','🏈','⚾','🎱','🏐','🏉','🎿','⛷️','🏒','🥊'],
   4: ['🦁','🐯','🐻‍❄️','🐺','🦊','🐗','🦬','🦣','🐘','🦒','🐴','🦧','🐮','🦬','🐑','🐐'],
-  5: ['🌹','🌻','🌺','🌸','💐','🌷','🪻','🌼','🏵️','🪷','🌿','🍀','🍁','🍂','🍃','🌾','🪴','🌵','🎄','🪹']
+  5: ['🌹','🌻','🌺','🌸','💐','🌷','🪻','🌼','🏵️','🪷','🌿','🍀','🍁','🍂','🍃','🌾','🪴','🌵','🎄','🪹'],
+  6: ['🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐵','🐙','🦄','🐝','🦋','🌈','⭐','🌙','☀️','🍎','🍋','🍉','🍇','🍓','⚽','🏀','🎯','🚀','🎸','💎','🔥']
 };
 
 // ===== PLAYER DEFINITIONS =====
-// Oyuncu sayisi 2 veya 3 olabilir; asagidaki liste TEK kaynaktir. Kodun hicbir
+// Oyuncu sayisi 2 ile 4 arasinda olabilir; asagidaki liste TEK kaynaktir. Kodun hicbir
 // yerinde "player 1 else player 2" gibi sabit dallanma yoktur - sira, skor
 // paneli ve kazanan hesabi hep gameState.playerCount uzerinden calisir.
 const PLAYERS = [
   { id: 1, emoji: '🔴', defaultName: 'Oyuncu 1', cssClass: 'p1', color: 'var(--accent1)' },
   { id: 2, emoji: '🔵', defaultName: 'Oyuncu 2', cssClass: 'p2', color: 'var(--accent4)' },
-  { id: 3, emoji: '🟢', defaultName: 'Oyuncu 3', cssClass: 'p3', color: 'var(--accent5)' }
+  { id: 3, emoji: '🟢', defaultName: 'Oyuncu 3', cssClass: 'p3', color: 'var(--accent5)' },
+  { id: 4, emoji: '🟡', defaultName: 'Oyuncu 4', cssClass: 'p4', color: 'var(--gold)' }
 ];
 
 const MIN_PLAYERS = 2;
-const MAX_PLAYERS = 3;
+const MAX_PLAYERS = 4;
 const MAX_NAME_LENGTH = 20;
 
 function playerAt(playerId) {
@@ -791,7 +811,8 @@ const levelConfig = {
   2: { cards: 20, pairs: 10, name: 'Seviye 2 — Orta' },
   3: { cards: 24, pairs: 12, name: 'Seviye 3 — Zor' },
   4: { cards: 32, pairs: 16, name: 'Seviye 4 — Uzman' },
-  5: { cards: 40, pairs: 20, name: 'Seviye 5 — Efsane' }
+  5: { cards: 40, pairs: 20, name: 'Seviye 5 — Efsane' },
+  6: { cards: 60, pairs: 30, name: 'Seviye 6 — Efsane' }
 };
 
 // ===== START GAME =====
@@ -837,6 +858,7 @@ function buildScoreboard() {
   turnRow.textContent = '';
 
   info.classList.toggle('players-3', gameState.playerCount === 3);
+  info.classList.toggle('players-4', gameState.playerCount === 4);
 
   const turnIndicator = document.createElement('div');
   turnIndicator.className = 'turn-indicator';

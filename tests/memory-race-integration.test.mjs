@@ -127,10 +127,10 @@ function readNamesWith(inputValues) {
 
 /** `setPlayerCount` fonksiyonunu sahte DOM ile calistirir. */
 function createPlayerCountSandbox() {
-  const fieldStates = { 1: { hidden: false }, 2: { hidden: false }, 3: { hidden: true } };
-  const buttonStates = { 2: {}, 3: {} };
+  const fieldStates = { 1: { hidden: false }, 2: { hidden: false }, 3: { hidden: true }, 4: { hidden: true } };
+  const buttonStates = { 2: {}, 3: {}, 4: {} };
 
-  const buttons = [2, 3].map((count) =>
+  const buttons = [2, 3, 4].map((count) =>
     makeFakeElement(buttonStates[count], { players: String(count) }),
   );
 
@@ -149,7 +149,7 @@ function createPlayerCountSandbox() {
     "document",
     `
     const MIN_PLAYERS = 2;
-    const MAX_PLAYERS = 3;
+    const MAX_PLAYERS = 4;
     let selectedPlayerCount = 2;
     ${extractFunction(html, "setPlayerCount")}
     return Object.assign(setPlayerCount, { getSelected: () => selectedPlayerCount });
@@ -456,9 +456,10 @@ test("menude oyuncu sayisi secimi var, varsayilan 2 ve tek kisilik mod YOK", () 
   assert.match(html, /Oyuncu Sayısı/);
   assert.match(html, /data-players="2"/);
   assert.match(html, /data-players="3"/);
+  assert.match(html, /data-players="4"/);
   assert.doesNotMatch(html, /data-players="1"/);
   assert.match(html, /const MIN_PLAYERS = 2;/);
-  assert.match(html, /const MAX_PLAYERS = 3;/);
+  assert.match(html, /const MAX_PLAYERS = 4;/);
   assert.match(html, /let selectedPlayerCount = 2;/);
   assert.match(html, /class="pc-btn selected" data-players="2"/);
 });
@@ -474,12 +475,15 @@ test("state hardcoded iki oyuncudan cikarildi", () => {
   assert.doesNotMatch(html, /getElementById\('p1-points'\)|getElementById\('p2-points'\)/);
 });
 
-test("uc oyuncu tanimli ve renkleri kirmizi/mavi/yesil", () => {
+test("dort oyuncu tanimli ve dorduncu oyuncu sari temayi kullanir", () => {
   assert.match(html, /id: 1, emoji: '🔴', defaultName: 'Oyuncu 1'/);
   assert.match(html, /id: 2, emoji: '🔵', defaultName: 'Oyuncu 2'/);
   assert.match(html, /id: 3, emoji: '🟢', defaultName: 'Oyuncu 3'/);
   assert.match(html, /--accent5: #4ade80;/);
   assert.match(html, /\.player-score\.p3 \{/);
+  assert.match(html, /id: 4, emoji: '🟡', defaultName: 'Oyuncu 4'/);
+  assert.match(html, /\.player-score\.p4 \{/);
+  assert.match(html, /\.name-field\.p4 input:focus/);
 });
 
 /* ---------------- oyun mantigi: sira rotasyonu ---------------- */
@@ -499,6 +503,16 @@ test("3 oyuncu sira rotasyonu: 1 -> 2 -> 3 -> 1", () => {
   game.setState({ playerCount: 3, currentPlayer: 1, scores: [0, 0, 0] });
 
   for (const expected of [2, 3, 1, 2, 3, 1]) {
+    game.advanceToNextPlayer();
+    assert.equal(game.getCurrentPlayer(), expected);
+  }
+});
+
+test("4 oyuncu sira rotasyonu: 1 -> 2 -> 3 -> 4 -> 1", () => {
+  const game = createLogicSandbox();
+  game.setState({ playerCount: 4, currentPlayer: 1, scores: [0, 0, 0, 0] });
+
+  for (const expected of [2, 3, 4, 1, 2, 3, 4, 1]) {
     game.advanceToNextPlayer();
     assert.equal(game.getCurrentPlayer(), expected);
   }
@@ -577,8 +591,8 @@ test("kazanan hesabi sabit Oyuncu 1/2 karsilastirmasi ICERMEZ", () => {
 
 /* ---------------- oyuncu isimleri ---------------- */
 
-test("menude uc isim input'u var, 3. alan varsayilan olarak gizli", () => {
-  for (const playerId of [1, 2, 3]) {
+test("menude dort isim input'u var, 3. ve 4. alan varsayilan olarak gizli", () => {
+  for (const playerId of [1, 2, 3, 4]) {
     assert.ok(
       html.includes(`id="name-input-${playerId}" maxlength="20" placeholder="Oyuncu ${playerId}"`),
       `Oyuncu ${playerId} input'u placeholder ve 20 karakter siniriyla olmali`,
@@ -587,11 +601,12 @@ test("menude uc isim input'u var, 3. alan varsayilan olarak gizli", () => {
 
   // 2 oyuncu varsayilan oldugu icin 3. alan baslangicta gizli.
   assert.match(html, /<div class="name-field p3 hidden" id="name-field-3">/);
+  assert.match(html, /<div class="name-field p4 hidden" id="name-field-4">/);
   assert.match(html, /<div class="name-field p1" id="name-field-1">/);
   assert.match(html, /<div class="name-field p2" id="name-field-2">/);
 });
 
-test("2 oyuncuda iki, 3 oyuncuda uc isim alani gorunur", () => {
+test("2, 3 ve 4 oyuncuda isim alanlari dogru gorunur", () => {
   const { setPlayerCount, fieldStates, buttonStates } = createPlayerCountSandbox();
 
   setPlayerCount(3);
@@ -601,9 +616,15 @@ test("2 oyuncuda iki, 3 oyuncuda uc isim alani gorunur", () => {
   assert.equal(setPlayerCount.getSelected(), 3);
   assert.equal(buttonStates[3].selected, true);
 
-  // 3 -> 2 donusu: ucuncu alan tekrar gizlenir.
+  setPlayerCount(4);
+  assert.equal(fieldStates[4].hidden, false, "4 oyuncuda dorduncu alan gorunmeli");
+  assert.equal(setPlayerCount.getSelected(), 4);
+  assert.equal(buttonStates[4].selected, true);
+
+  // 4 -> 2 donusu: ek alanlar tekrar gizlenir.
   setPlayerCount(2);
   assert.equal(fieldStates[3].hidden, true, "2 oyuncuda ucuncu alan gizlenmeli");
+  assert.equal(fieldStates[4].hidden, true, "2 oyuncuda dorduncu alan gizlenmeli");
   assert.equal(setPlayerCount.getSelected(), 2);
   assert.equal(buttonStates[2].selected, true);
 
@@ -611,7 +632,7 @@ test("2 oyuncuda iki, 3 oyuncuda uc isim alani gorunur", () => {
   setPlayerCount(1);
   assert.equal(setPlayerCount.getSelected(), 2);
   setPlayerCount(9);
-  assert.equal(setPlayerCount.getSelected(), 3);
+  assert.equal(setPlayerCount.getSelected(), 4);
 });
 
 test("3 -> 2 degisiminde ucuncu oyuncu oyuna DAHIL EDILMEZ", () => {
@@ -621,6 +642,18 @@ test("3 -> 2 degisiminde ucuncu oyuncu oyuna DAHIL EDILMEZ", () => {
 
   const readThree = readNamesWith(["Ayşe", "Mehmet", "Ece"]);
   assert.deepEqual(readThree(3), ["Ayşe", "Mehmet", "Ece"]);
+
+  const readFour = readNamesWith(["Ayşe", "Mehmet", "Ece", "Duru"]);
+  assert.deepEqual(readFour(4), ["Ayşe", "Mehmet", "Ece", "Duru"]);
+});
+
+test("4 oyuncu kazanan hesabi tum oyunculari kapsar", () => {
+  const game = createLogicSandbox();
+  game.setState({ playerCount: 4, currentPlayer: 1, scores: [4, 7, 7, 2] });
+
+  const outcome = game.resolveWinners();
+  assert.deepEqual(outcome, { topScore: 7, winners: [2, 3], isDraw: true });
+  assert.equal(game.buildWinnerText(outcome), "🤝 Oyuncu 2 ve Oyuncu 3 Berabere!");
 });
 
 test("bos isim varsayilana duser, isim zorunlu degil", () => {
@@ -810,13 +843,14 @@ test("ses toggle butonu var, varsayilan acik ve tercih KAYDEDILMEZ", () => {
 
 /* ---------------- prototip davranisi korundu ---------------- */
 
-test("5 seviye, kart sayilari ve emoji temalari korundu", () => {
+test("6 seviye, kart sayilari ve emoji temalari korundu", () => {
   for (const [level, cards, pairs] of [
     [1, 16, 8],
     [2, 20, 10],
     [3, 24, 12],
     [4, 32, 16],
     [5, 40, 20],
+    [6, 60, 30],
   ]) {
     assert.ok(
       html.includes(`${level}: { cards: ${cards}, pairs: ${pairs}`),
@@ -829,6 +863,10 @@ test("5 seviye, kart sayilari ve emoji temalari korundu", () => {
   assert.match(html, /3: \['⚽','🏀'/);
   assert.match(html, /4: \['🦁','🐯'/);
   assert.match(html, /5: \['🌹','🌻'/);
+
+  const levelSixEmojis = html.match(/6: \[([^\]]+)\]/)?.[1]?.split(",") ?? [];
+  assert.equal(levelSixEmojis.length, 30, "seviye 6 tam 30 cift sembolu icermeli");
+  assert.match(html, /\.card-grid\.count-60/);
 });
 
 test("Yeni Oyun, Escape ve sonuc modali davranisi korundu", () => {
@@ -841,10 +879,11 @@ test("Yeni Oyun, Escape ve sonuc modali davranisi korundu", () => {
   assert.match(html, /card dealing/);
 });
 
-test("mobil duzen korundu ve 3 oyuncu paneli tasmayi onluyor", () => {
+test("mobil duzen korundu ve 4 oyuncu paneli tasmayi onluyor", () => {
   assert.match(html, /@media \(max-width: 768px\)/);
   assert.match(html, /overflow-x: hidden/);
   // Mobilde uc skor kutusu esit paylasir, isim kesilmez.
   assert.match(html, /\.player-score \{ padding: 0\.45rem 0\.5rem; flex: 1 1 0; min-width: 0; \}/);
   assert.match(html, /@media \(max-width: 380px\)/);
+  assert.match(html, /\.card-grid\.count-60 \{ grid-template-columns: repeat\(8, 1fr\); \}/);
 });
