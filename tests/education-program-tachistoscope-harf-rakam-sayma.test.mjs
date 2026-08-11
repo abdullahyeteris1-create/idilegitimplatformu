@@ -176,6 +176,17 @@ test("TachistoscopeExerciseClient: gorev suresi useAssignedDurationSeconds ile u
   assert.match(source, /Number\.isFinite\(totalDurationSeconds\)/);
 });
 
+test("TachistoscopeExerciseClient: ortak education countdown gercek play state'ine baglidir", async () => {
+  const source = await read(TACHISTOSCOPE_CLIENT_PATH);
+
+  assert.match(
+    source,
+    /import \{ useEducationProgramExerciseRunning \} from "@\/components\/education-programs\/EducationProgramExerciseChrome"/,
+  );
+  assert.match(source, /useEducationProgramExerciseRunning\(isEducationProgramMode && phase === "play"\)/);
+  assert.match(source, /const \[phase, setPhase\] = useState<ExercisePhase>\("ready"\)/);
+});
+
 test("TachistoscopeExerciseClient: sonuc kaydi + gorev tamamlama akisi kablolanmis", async () => {
   const source = await read(TACHISTOSCOPE_CLIENT_PATH);
 
@@ -221,13 +232,15 @@ test("TachistoscopeExerciseClient: retryTaskCompletion (completeTaskAfterResultS
   assert.doesNotMatch(source, /onClick=\{\(\) => \{\s*void retryTaskCompletion\(\);\s*void saveExerciseResultSecure/);
 });
 
-test("TachistoscopeExerciseClient: Egitim Programi modunda gorev basarili tamamlaninca mevcut guvenli yonlendirme akisi calisir", async () => {
+test("TachistoscopeExerciseClient: Egitim Programi completion sonrasinda result ekraninda kalir ve Chrome CTA gorunur", async () => {
   const source = await read(TACHISTOSCOPE_CLIENT_PATH);
   const persistStart = source.indexOf("const persistPendingResult = useCallback(");
   const persistBlock = source.slice(persistStart, source.indexOf("const finishExercise", persistStart));
 
   assert.match(persistBlock, /setSaveMessage\("Sonuç kaydedildi\."\);/);
-  assert.match(persistBlock, /router\.push\(pending\.resultUrl\);/);
+  assert.match(persistBlock, /if \(educationProgramTaskId\) \{\s*setPhase\("result"\);/);
+  assert.match(source, /if \(phase === "result"\) \{/);
+  assert.match(source, /Eğitim Programı görevi tamamlandı/);
 });
 
 test("TachistoscopeExerciseClient: standalone/Assignment V2 modunda (educationProgramTaskId yok) mevcut yonlendirme davranisi degismez", async () => {

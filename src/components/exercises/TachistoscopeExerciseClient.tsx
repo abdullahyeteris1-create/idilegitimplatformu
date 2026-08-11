@@ -11,11 +11,12 @@ import { useAssignedDurationSeconds, useIsAssignmentMode } from "@/components/as
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { pickEducationProgramSettingOption } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { TachistoscopeWords } from "@/lib/tachistoscope/tachistoscopeShared";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
 import tkStyles from "@/components/exercises/tachistoscope-theme.module.css";
 
-type ExercisePhase = "ready" | "play";
+type ExercisePhase = "ready" | "play" | "result";
 type ResponsePhase = "show" | "answer" | "feedback";
 type SpeedMs = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
 type Level = TachistoscopeLevel;
@@ -136,6 +137,7 @@ export function TachistoscopeExerciseClient({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
   const [savedResultUrl, setSavedResultUrl] = useState("");
+  useEducationProgramExerciseRunning(isEducationProgramMode && phase === "play");
 
   const latestSettingsRef = useRef<RoundSettings>({
     level: 1,
@@ -340,7 +342,11 @@ export function TachistoscopeExerciseClient({
         if (!completionOk) {
           return;
         }
-        router.push(pending.resultUrl);
+        if (educationProgramTaskId) {
+          setPhase("result");
+        } else {
+          router.push(pending.resultUrl);
+        }
       } catch {
         setSaveStatus("error");
         setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
@@ -348,7 +354,7 @@ export function TachistoscopeExerciseClient({
         saveInFlightRef.current = false;
       }
     },
-    [completeTaskAfterResultSave, router],
+    [completeTaskAfterResultSave, educationProgramTaskId, router],
   );
 
   const finishExercise = useCallback(() => {
@@ -646,12 +652,54 @@ export function TachistoscopeExerciseClient({
     <div className={`mx-auto grid w-full max-w-xl gap-2 rounded-xl border px-3 py-2 text-center text-sm font-semibold ${completionStatus.state === "error" ? tkStyles.noticeError : tkStyles.noticeInfo}`}>
       <p>{completionStatus.message}</p>
       {completionStatus.state === "error" && completionStatus.canRetry ? (
-        <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={() => void retryTaskCompletion()}>
+        <button
+          type="button"
+          className={tkStyles.primaryButton}
+          style={FULLSCREEN_TOUCH_STYLE}
+          onClick={() => {
+            void retryTaskCompletion().then((ok) => {
+              if (ok && isEducationProgramMode && savedResultUrl) setPhase("result");
+            });
+          }}
+        >
           Program ilerlemesini yeniden dene
         </button>
       ) : null}
     </div>
   );
+
+  if (phase === "result") {
+    return (
+      <div className={themeRootClassName}>
+        <FixedExerciseStage
+          title="Takistoskop Sonucu"
+          subtitle="Eğitim Programı görevi tamamlandı"
+          topStats={topStats}
+          bottomSettings={null}
+          controls={
+            <div className="grid gap-2">
+              {saveNotice}
+              {completionNotice}
+              {savedResultUrl ? (
+                <button type="button" className={tkStyles.primaryButton} style={FULLSCREEN_TOUCH_STYLE} onClick={() => router.push(savedResultUrl)}>
+                  Sonuç Ekranına Devam Et
+                </button>
+              ) : null}
+            </div>
+          }
+          onExit={() => router.push("/egzersizler")}
+        >
+          <div className={`mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center rounded-2xl border px-5 py-8 text-center ${tkStyles.introCard}`}>
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${tkStyles.introEyebrow}`}>Tamamlandı</p>
+            <h2 className={`mt-2 text-2xl font-black md:text-4xl ${tkStyles.introTitle}`}>Takistoskop çalışması tamamlandı.</h2>
+            <p className={`mt-3 max-w-xl text-sm leading-6 ${tkStyles.introBody}`}>
+              Sonucunuz kaydedildi. Eğitim Programı ilerlemeniz güncellendi.
+            </p>
+          </div>
+        </FixedExerciseStage>
+      </div>
+    );
+  }
 
   if (phase === "ready") {
     return (
