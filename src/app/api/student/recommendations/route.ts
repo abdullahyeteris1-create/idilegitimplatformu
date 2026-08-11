@@ -37,5 +37,10 @@ export async function GET(request: NextRequest) {
     successRate: typeof row.success_rate === "number" ? row.success_rate : Number(row.success_rate),
     completedAt: typeof row.completed_at === "string" ? row.completed_at : typeof row.created_at === "string" ? row.created_at : null,
   })));
-  return NextResponse.json({ ...result, generatedAt: new Date().toISOString() }, { headers: { "Cache-Control": "private, max-age=60" } });
+  return NextResponse.json({
+    analysis: result.analysis,
+    recommendations: result.recommendations,
+    ...result.summary,
+    generatedAt: new Date().toISOString(),
+  }, { headers: { "Cache-Control": "private, max-age=60" } });
 }

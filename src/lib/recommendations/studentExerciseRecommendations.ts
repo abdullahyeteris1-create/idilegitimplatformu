@@ -36,10 +36,23 @@ export type StudentExerciseRecommendation = {
   priorityScore: number;
 };
 
+export type RecommendationArea = {
+  categoryId: string;
+  categoryTitle: string;
+  score: number;
+};
+
+export type ImprovingRecommendationArea = RecommendationArea & {
+  trendDelta: number;
+};
+
 export type RecommendationSummary = {
-  strengths: Array<{ categoryId: string; categoryTitle: string; score: number }>;
-  developmentAreas: Array<{ categoryId: string; categoryTitle: string; score: number }>;
-  trends: Array<{ categoryId: string; trend: RecommendationTrend; difference: number | null }>;
+  strengths: RecommendationArea[];
+  developmentAreas: RecommendationArea[];
+  improvingAreas: ImprovingRecommendationArea[];
+  strongestArea: RecommendationArea | null;
+  coachSummary: string | null;
+  trends: Array<{ categoryId: string; trend: RecommendationTrend; trendDelta: number | null }>;
   recommendedExercises: Array<{ slug: string; categoryId: string }>;
 };
 
@@ -51,6 +64,8 @@ export const RECOMMENDATION_CONFIG = {
   trendThreshold: 5,
   staleAfterDays: 7,
   maximumRecommendations: 3,
+  strongAreaThreshold: 80,
+  developmentAreaThreshold: 70,
 } as const;
 
 export const RECOMMENDATION_REASON_WEIGHT: Readonly<Record<RecommendationReasonCode, number>> = {
@@ -146,6 +161,16 @@ export function getRecommendationRankingScore(recommendation: Pick<StudentExerci
   return RECOMMENDATION_REASON_WEIGHT[recommendation.reasonCode] * 1_000 + recommendation.priorityScore;
 }
 
+function areaFromAnalysis(item: StudentSkillAnalysis): RecommendationArea {
+  return { categoryId: item.categoryId, categoryTitle: item.categoryTitle, score: item.score! };
+}
+
+export function buildStudentCoachSummary(strongestArea: RecommendationArea | null, developmentAreas: RecommendationArea[]): string | null {
+  const developmentArea = developmentAreas[0];
+  if (!strongestArea || !developmentArea) return null;
+  return `${strongestArea.categoryTitle} alanındaki güçlü performansını korurken, ${developmentArea.categoryTitle} çalışmalarına biraz daha ağırlık verebilirsin.`;
+}
+
 export function analyzeStudentSkills(input: RecommendationResultInput[], now = new Date()): StudentSkillAnalysis[] {
   const meaningful = input
     .map((result) => ({ ...result, score: finitePercentage(result.successRate), at: result.completedAt ?? result.date ?? null }))
@@ -211,10 +236,32 @@ export function getStudentExerciseRecommendations(input: RecommendationResultInp
     .sort((left, right) => getRecommendationRankingScore(right) - getRecommendationRankingScore(left))
     .filter((item, index, list) => index === list.findIndex((other) => other.categoryId === item.categoryId))
     .slice(0, RECOMMENDATION_CONFIG.maximumRecommendations);
+  const strongAreas = sufficient
+    .filter((item) => (item.score ?? 0) >= RECOMMENDATION_CONFIG.strongAreaThreshold)
+    .sort((left, right) => (right.score ?? 0) - (left.score ?? 0) || left.categoryId.localeCompare(right.categoryId))
+    .slice(0, 2)
+    .map(areaFromAnalysis);
+  const developmentAreas = sufficient
+    .filter((item) => (item.score ?? 100) < RECOMMENDATION_CONFIG.developmentAreaThreshold)
+    .sort((left, right) => (left.score ?? 100) - (right.score ?? 100) || left.categoryId.localeCompare(right.categoryId))
+    .slice(0, 2)
+    .map(areaFromAnalysis);
+  const strongestArea = sufficient
+    .slice()
+    .sort((left, right) => (right.score ?? 0) - (left.score ?? 0) || left.categoryId.localeCompare(right.categoryId))[0];
+  const improvingAreas = analysis
+    .filter((item) => item.trend === "improving" && item.previousAverageSuccessRate !== null && item.recentAverageSuccessRate !== null)
+    .map((item) => ({ ...areaFromAnalysis(item), trendDelta: round(item.recentAverageSuccessRate! - item.previousAverageSuccessRate!) }))
+    .sort((left, right) => right.trendDelta - left.trendDelta || left.categoryId.localeCompare(right.categoryId))
+    .slice(0, 2);
+  const strongest = strongestArea ? areaFromAnalysis(strongestArea) : null;
   const summary = {
-    strengths: sufficient.filter((item) => (item.score ?? 0) >= 75).sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).map((item) => ({ categoryId: item.categoryId, categoryTitle: item.categoryTitle, score: item.score! })),
-    developmentAreas: sufficient.filter((item) => (item.score ?? 100) < 70).sort((a, b) => (a.score ?? 100) - (b.score ?? 100)).map((item) => ({ categoryId: item.categoryId, categoryTitle: item.categoryTitle, score: item.score! })),
-    trends: analysis.map((item) => ({ categoryId: item.categoryId, trend: item.trend, difference: item.previousAverageSuccessRate === null || item.recentAverageSuccessRate === null ? null : round(item.recentAverageSuccessRate - item.previousAverageSuccessRate) })),
+    strengths: strongAreas,
+    developmentAreas,
+    improvingAreas,
+    strongestArea: strongest,
+    coachSummary: buildStudentCoachSummary(strongest, developmentAreas),
+    trends: analysis.map((item) => ({ categoryId: item.categoryId, trend: item.trend, trendDelta: item.previousAverageSuccessRate === null || item.recentAverageSuccessRate === null ? null : round(item.recentAverageSuccessRate - item.previousAverageSuccessRate) })),
     recommendedExercises: recommendations.map((item) => ({ slug: item.exerciseSlug, categoryId: item.categoryId })),
   } satisfies RecommendationSummary;
   return { analysis, recommendations, summary };

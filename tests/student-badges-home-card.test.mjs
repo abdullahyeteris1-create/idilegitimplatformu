@@ -12,12 +12,9 @@ const badgesPageSource = await readFile(
 );
 
 test("ana sayfa Rozetlerim kartı yalnızca ilk 3 rozeti gösterir", () => {
-  assert.match(homeCardSource, /const badgeStates = getStudentXpBadges\(xpSnapshot\)/);
-  assert.match(homeCardSource, /const earnedCount = badgeStates\.filter\(\(badge\) => badge\.isEarned\)\.length/);
-  assert.match(homeCardSource, /const totalCount = badgeStates\.length/);
-  assert.match(homeCardSource, /const visibleBadges = badgeStates\.slice\(0, 3\)/);
-  assert.match(homeCardSource, /visibleBadges\.map\(\(badge\)/);
-  assert.match(homeCardSource, /Link href="\/ogrenci\/rozetlerim"/);
+  assert.match(homeCardSource, /TodaysProgramTasksCard/);
+  assert.match(homeCardSource, /const recentResults = useMemo\(\(\) => resultsState\.results\.slice\(0, 3\)/);
+  assert.doesNotMatch(homeCardSource, /getStudentXpBadges|const badgeStates/);
 });
 
 test("Rozetlerim sayfası tam badge listesini korur", () => {

@@ -11,6 +11,68 @@ const result = (exerciseType, successRate, index) => ({
   completedAt: new Date(Date.UTC(2026, 7, 11, 12, index)).toISOString(),
 });
 
+test("sample 2 ve yuksek skor strong area uretmez", () => {
+  const output = getStudentExerciseRecommendations([
+    result("memory-game", 95, 1),
+    result("memory-game", 95, 2),
+  ]);
+  assert.deepEqual(output.summary.strengths, []);
+  assert.equal(output.summary.strongestArea, null);
+});
+
+test("sample 4 ve score 88 strong area uretir", () => {
+  const output = getStudentExerciseRecommendations([1, 2, 3, 4].map((i) => result("memory-game", 88, i)));
+  assert.deepEqual(output.summary.strengths.map((area) => area.categoryId), ["memory"]);
+  assert.deepEqual(output.summary.strongestArea, { categoryId: "memory", categoryTitle: "Hafıza", score: 88 });
+});
+
+test("iki strong kategori score DESC ve deterministik siralanir", () => {
+  const output = getStudentExerciseRecommendations([
+    ...[84, 84, 84].map((score, i) => result("eye-brain", score, i)),
+    ...[92, 92, 92].map((score, i) => result("memory-game", score, i + 3)),
+  ]);
+  assert.deepEqual(output.summary.strengths.map((area) => area.categoryId), ["memory", "eye"]);
+});
+
+test("dusuk performans yeterli sample ile development area olur", () => {
+  const output = getStudentExerciseRecommendations([1, 2, 3].map((i) => result("two-side-focus", 54, i)));
+  assert.deepEqual(output.summary.developmentAreas.map((area) => area.categoryId), ["attention"]);
+  assert.equal(output.summary.developmentAreas[0].score, 54);
+});
+
+test("improving trend +8 improvingAreas icinde trendDelta olarak doner", () => {
+  const input = [
+    ...[50, 50, 50, 50, 50].map((score, i) => result("two-side-focus", score, i)),
+    ...[58, 58, 58, 58, 58].map((score, i) => result("two-side-focus", score, i + 5)),
+  ];
+  const output = getStudentExerciseRecommendations(input);
+  assert.deepEqual(output.summary.improvingAreas.map((area) => ({ categoryId: area.categoryId, trendDelta: area.trendDelta })), [{ categoryId: "attention", trendDelta: 8 }]);
+});
+
+test("stable trend improvingAreas icinde gorunmez", () => {
+  const input = [
+    ...[70, 70, 70, 70, 70].map((score, i) => result("two-side-focus", score, i)),
+    ...[72, 72, 72, 72, 72].map((score, i) => result("two-side-focus", score, i + 5)),
+  ];
+  assert.deepEqual(getStudentExerciseRecommendations(input).summary.improvingAreas, []);
+});
+
+test("declining trend improvingAreas icinde gorunmez", () => {
+  const input = [
+    ...[80, 80, 80, 80, 80].map((score, i) => result("two-side-focus", score, i)),
+    ...[72, 72, 72, 72, 72].map((score, i) => result("two-side-focus", score, i + 5)),
+  ];
+  assert.deepEqual(getStudentExerciseRecommendations(input).summary.improvingAreas, []);
+});
+
+test("strong ve development alanlari coach summary uretir", () => {
+  const output = getStudentExerciseRecommendations([
+    ...[88, 88, 88].map((score, i) => result("memory-game", score, i)),
+    ...[54, 54, 54].map((score, i) => result("two-side-focus", score, i + 3)),
+  ]);
+  assert.equal(output.summary.coachSummary, "Hafıza alanındaki güçlü performansını korurken, Dikkat çalışmalarına biraz daha ağırlık verebilirsin.");
+});
+
 test("Akil ve Zeka Oyunu dusuk basariyla bile onerilmez", () => {
   const input = [
     ...[10, 10, 10].map((score, i) => result("word-race", score, i)),
@@ -193,6 +255,7 @@ test("dashboard recommendation fetch'i loading/empty/error durumlarını izole e
   assert.match(source, /status: \"error\"/);
   assert.match(source, /catch \(error\)/);
   assert.match(source, /<SmartRecommendationsCard[\s\S]*<section className=\{styles\.todaysProgramSection\}/);
+  assert.match(source, /RecommendationInsights/);
 });
 
 test("recommendation endpoint kimliği client parametresinden değil session'dan ve service role'dan alır", async () => {
@@ -201,4 +264,11 @@ test("recommendation endpoint kimliği client parametresinden değil session'dan
   assert.match(source, /getSupabaseServiceRoleClient\(\)/);
   assert.match(source, /eq\("student_id", access\.studentId\)/);
   assert.doesNotMatch(source, /NEXT_PUBLIC_SUPABASE_ANON_KEY|createClient|request\.nextUrl\.searchParams\.get\(['"]student/);
+});
+
+test("recommendation response summary alanlarini raw result veya PII olmadan dondurur", async () => {
+  const source = await fs.readFile(new URL("../src/app/api/student/recommendations/route.ts", import.meta.url), "utf8");
+  assert.match(source, /\.\.\.result\.summary/);
+  assert.doesNotMatch(source, /email|phone|username|full_name/i);
+  assert.doesNotMatch(source, /success_rate.*student_id|student_id.*success_rate/);
 });
