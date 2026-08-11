@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import panelStyles from "@/components/student-panel-preview/student-panel-preview.module.css";
 
@@ -8,12 +7,13 @@ type PreviewHeaderProps = {
   light: boolean;
   onToggleTheme: () => void;
   onNotify: () => void;
-  profileHref: string;
+  profileOpen: boolean;
+  onProfileMenu: () => void;
   studentName: string;
   classLabel: string;
 };
 
-export function PreviewHeader({ light, onToggleTheme, onNotify, profileHref, studentName, classLabel }: PreviewHeaderProps) {
+export function PreviewHeader({ light, onToggleTheme, onNotify, profileOpen, onProfileMenu, studentName, classLabel }: PreviewHeaderProps) {
   return (
     <header className={panelStyles.header}>
       <div>
@@ -36,14 +36,14 @@ export function PreviewHeader({ light, onToggleTheme, onNotify, profileHref, stu
           <Icon name="bell" />
           <span>3</span>
         </button>
-        <Link href={profileHref} className={panelStyles.profile} aria-label="Profil sayfasını aç">
+        <button type="button" className={panelStyles.profile} aria-label="Profil menüsünü aç" aria-expanded={profileOpen} aria-haspopup="menu" onClick={onProfileMenu}>
           <span>👨‍🚀</span>
           <div>
             <strong>{studentName}</strong>
             <small>{classLabel}</small>
           </div>
           <Icon name="arrow" />
-        </Link>
+        </button>
       </div>
     </header>
   );

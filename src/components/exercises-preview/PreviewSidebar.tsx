@@ -15,9 +15,9 @@ const HREF_OVERRIDES: Record<string, string> = {
   "Öğrenci Paneli": "/ogrenci",
 };
 
-type NavListProps = { onDemo: (message: string) => void; onNavigate?: () => void };
+type NavListProps = { onDemo: (message: string) => void; onNavigate?: () => void; onAccountMenu?: () => void; accountMenuOpen?: boolean };
 
-export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
+export function PreviewNavLinks({ onDemo, onNavigate, onAccountMenu, accountMenuOpen = false }: NavListProps) {
   return (
     <>
       {navItems.map((item) => {
@@ -29,6 +29,10 @@ export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
             <span>{item.label}</span>
           </>
         );
+
+        if (item.icon === "settings" && onAccountMenu) {
+          return <button key={item.label} type="button" aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={() => { onAccountMenu(); onNavigate?.(); }}>{content}</button>;
+        }
 
         if (href) {
           return (
@@ -55,7 +59,7 @@ export function PreviewNavLinks({ onDemo, onNavigate }: NavListProps) {
   );
 }
 
-export function PreviewSidebar({ onDemo }: { onDemo: (message: string) => void }) {
+export function PreviewSidebar({ onDemo, onAccountMenu, accountMenuOpen = false }: { onDemo: (message: string) => void; onAccountMenu?: () => void; accountMenuOpen?: boolean }) {
   return (
     <aside className={panelStyles.sidebar}>
       <div className={panelStyles.brand}>
@@ -69,7 +73,7 @@ export function PreviewSidebar({ onDemo }: { onDemo: (message: string) => void }
       </div>
 
       <nav aria-label="Ana menü">
-        <PreviewNavLinks onDemo={onDemo} />
+        <PreviewNavLinks onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen} />
       </nav>
 
       <section className={`${panelStyles.levelCard} ${panelStyles.levelCompact}`} aria-label="Seviye sistemi hazırlanıyor">

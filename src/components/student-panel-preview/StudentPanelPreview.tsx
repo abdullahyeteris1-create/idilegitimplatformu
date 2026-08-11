@@ -17,6 +17,7 @@ import { HeroBanner, type HeroProgressSummary } from "./hero/HeroBanner";
 import { HeroThemeProvider } from "./hero/HeroThemeEngine";
 import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
+import { StudentAccountMenu } from "./StudentAccountMenu";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
@@ -247,11 +248,15 @@ function Brand() {
   return <div className={styles.brand}><span className={styles.brandMark}><Icon name="rocket" /></span><span><strong>İDİL</strong><small>HIZLI OKUMA</small></span></div>;
 }
 
-function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void }) {
+function NavAction({ item, active = false, onDemo, onNavigate, onAccountMenu, accountMenuOpen = false }: { item: NavItem; active?: boolean; onDemo: (message: string) => void; onNavigate?: () => void; onAccountMenu?: () => void; accountMenuOpen?: boolean }) {
   const pathname = usePathname();
 
   const content = <><Icon name={item.icon}/><span>{item.label}</span></>;
   const className = item.href === pathname || (active && !pathname) ? styles.activeNav : undefined;
+
+  if (item.icon === "settings" && onAccountMenu) {
+    return <button type="button" className={className} aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={onAccountMenu}>{content}</button>;
+  }
 
   if (item.href) {
     return <Link href={item.href} className={className} onClick={onNavigate}>{content}</Link>;
@@ -262,16 +267,20 @@ function NavAction({ item, active = false, onDemo, onNavigate }: { item: NavItem
 
 function Sidebar({
   onDemo,
+  onAccountMenu,
+  accountMenuOpen,
   streakValue,
   streakNote,
   xpSnapshot,
 }: {
   onDemo: (message: string) => void;
+  onAccountMenu: () => void;
+  accountMenuOpen: boolean;
   streakValue: string;
   streakNote: string;
   xpSnapshot: StudentXpSnapshot;
 }) {
-  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
+  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
 }
 
 function LevelCard({
@@ -381,6 +390,7 @@ function Header({
           className={styles.profile}
           aria-label="Profil menüsünü aç"
           aria-expanded={panel === "profile"}
+          aria-haspopup="menu"
           aria-controls="preview-demo-panel"
           onClick={() => onTogglePanel("profile")}
           title={studentName}
@@ -601,15 +611,18 @@ const mobileItems: NavItem[] = [
   { icon: "chart", label: "Sonuçlar", href: "/sonuc" },
 ];
 
-function MobileNav({ onDemo, onProfile }: { onDemo: (message: string) => void; onProfile: () => void }) {
-  return <nav className={styles.mobileNav} aria-label="Mobil menü">{mobileItems.map((item, index) => item.href ? <Link href={item.href} key={item.label} className={index === 0 ? styles.mobileActive : undefined} aria-label={item.label}><Icon name={item.icon}/></Link> : <button type="button" key={item.label} aria-label={item.label} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name={item.icon}/></button>)}<button type="button" aria-label="Profil" onClick={onProfile}><Icon name="user"/></button></nav>;
+function MobileNav({ onDemo, onProfile, profileOpen }: { onDemo: (message: string) => void; onProfile: () => void; profileOpen: boolean }) {
+  return <nav className={styles.mobileNav} aria-label="Mobil menü">{mobileItems.map((item, index) => item.href ? <Link href={item.href} key={item.label} className={index === 0 ? styles.mobileActive : undefined} aria-label={item.label}><Icon name={item.icon}/></Link> : <button type="button" key={item.label} aria-label={item.label} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name={item.icon}/></button>)}<button type="button" aria-label="Profil menüsünü aç" aria-haspopup="menu" aria-expanded={profileOpen} onClick={onProfile}><Icon name="user"/></button></nav>;
 }
 
-function MobileMenu({ onDemo, onClose }: { onDemo: (message: string) => void; onClose: () => void }) {
-  return <nav className={styles.mobileMenuPanel} aria-label="Mobil ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onNavigate={onClose}/>)}</nav>;
+function MobileMenu({ onDemo, onClose, onAccountMenu, accountMenuOpen }: { onDemo: (message: string) => void; onClose: () => void; onAccountMenu: () => void; accountMenuOpen: boolean }) {
+  return <nav className={styles.mobileMenuPanel} aria-label="Mobil ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onNavigate={onClose} onAccountMenu={() => { onClose(); onAccountMenu(); }} accountMenuOpen={accountMenuOpen}/>)}</nav>;
 }
 
 function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentName, classLabel, popoverRef }: { panel: Exclude<DemoPanel, "menu" | null>; onDemo: (message: string) => void; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; studentName: string; classLabel: string; popoverRef?: RefObject<HTMLElement | null> }) {
+  void onLogout;
+  void isLoggingOut;
+  void classLabel;
   if (panel === "profile") {
     return <AccountMenuPopover studentName={studentName} classLabel={classLabel} onClose={onClose} onLogout={onLogout} isLoggingOut={isLoggingOut} popoverRef={popoverRef} />;
   }
@@ -620,31 +633,16 @@ function DemoPopover({ panel, onDemo, onClose, onLogout, isLoggingOut, studentNa
         <div><small>ÖNİZLEME</small><h2 id="preview-demo-panel-title">{panel === "notifications" ? "Bildirimler" : studentName}</h2></div>
         <button type="button" onClick={onClose} aria-label="Paneli kapat">×</button>
       </div>
-      {panel === "notifications" ? (
-        <div className={styles.notificationList}>
-          <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>🚀</span><div><strong>Günlük görevin hazır</strong><small>15 dakikalık odak çalışması</small></div></button>
-          <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>⭐</span><div><strong>Çalışma serin güncellendi</strong><small>Güncel serini panelden takip edebilirsin</small></div></button>
-        </div>
-      ) : (
-        <div className={styles.profileMenu}>
-          <div className={styles.profileSummary}><span>👨‍🚀</span><div><strong>{studentName}</strong><small>{classLabel}</small></div></div>
-          <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="user"/> Profili Gör</button>
-          <Link href="/ogrenci/profil" className={styles.profileMenuLink}><Icon name="settings"/> Ayarlar</Link>
-          <button type="button" className={styles.profileLogout} onClick={onLogout} disabled={isLoggingOut}><Icon name="arrow"/> {isLoggingOut ? "Çıkış yapılıyor..." : "Çıkış Yap"}</button>
-        </div>
-      )}
+      <div className={styles.notificationList}>
+        <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>🚀</span><div><strong>Günlük görevin hazır</strong><small>15 dakikalık odak çalışması</small></div></button>
+        <button type="button" onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><span>⭐</span><div><strong>Çalışma serin güncellendi</strong><small>Güncel serini panelden takip edebilirsin</small></div></button>
+      </div>
     </section>
   );
 }
 
 function AccountMenuPopover({ studentName, classLabel, onClose, onLogout, isLoggingOut, popoverRef }: { studentName: string; classLabel: string; onClose: () => void; onLogout: () => void; isLoggingOut: boolean; popoverRef?: RefObject<HTMLElement | null> }) {
-  return <section id="student-account-menu" ref={popoverRef} className={styles.demoPopover} role="menu" aria-label="Hesap menüsü">
-    <div className={styles.popoverTitle}><div><small>HESAP</small><h2>{studentName}</h2><span className={styles.accountClassLabel}>{classLabel}</span></div><button type="button" onClick={onClose} aria-label="Hesap menüsünü kapat">×</button></div>
-    <div className={styles.profileMenu}>
-      <Link href="/ogrenci/profil" className={styles.profileMenuLink} role="menuitem"><Icon name="user"/> Profilim</Link>
-      <button type="button" className={styles.profileLogout} role="menuitem" onClick={onLogout} disabled={isLoggingOut}><Icon name="arrow"/> {isLoggingOut ? "Çıkış yapılıyor..." : "Çıkış Yap"}</button>
-    </div>
-  </section>;
+  return <StudentAccountMenu studentName={studentName} classLabel={classLabel} onClose={onClose} onLogout={onLogout} isLoggingOut={isLoggingOut} popoverRef={popoverRef}/>;
 }
 
 export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard = false, showStatisticsCard = false, xpSnapshot }: StudentPanelPreviewProps) {
@@ -684,6 +682,8 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
   }, [panel]);
 
   const togglePanel = useCallback((nextPanel: Exclude<DemoPanel, null>) => setPanel((current) => current === nextPanel ? null : nextPanel), []);
+  const openAccountMenu = useCallback(() => setPanel("profile"), []);
+  const pathname = usePathname();
   useEffect(() => {
     const closePanelOnRestore = () => setPanel(null);
     const handleVisibilityChange = () => {
@@ -693,13 +693,15 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
     window.addEventListener("pageshow", closePanelOnRestore);
     window.addEventListener("focus", closePanelOnRestore);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    const closeOnRouteChange = window.setTimeout(closePanelOnRestore, 0);
 
     return () => {
+      window.clearTimeout(closeOnRouteChange);
       window.removeEventListener("pageshow", closePanelOnRestore);
       window.removeEventListener("focus", closePanelOnRestore);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [pathname]);
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
@@ -910,5 +912,5 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
     return { ...xp, status: "ready", taskLabel: selectedItem?.exerciseTitle ?? "Günün görevleri tamamlandı", completedCount, totalCount, progress: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0 };
   }, [dailyTaskState, safeXpSnapshot]);
 
-  return <HeroThemeProvider><main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget} progressSummary={heroProgressSummary}/><LevelCard xpSnapshot={safeXpSnapshot} lastReward={lastReward}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><TodaysProgramTasksCard/><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getirir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={() => togglePanel("profile")}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main></HeroThemeProvider>;
+  return <HeroThemeProvider><main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} onAccountMenu={openAccountMenu} accountMenuOpen={panel === "profile"} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget} progressSummary={heroProgressSummary}/><LevelCard xpSnapshot={safeXpSnapshot} lastReward={lastReward}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><TodaysProgramTasksCard/><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={openAccountMenu} profileOpen={panel === "profile"}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)} onAccountMenu={openAccountMenu} accountMenuOpen={false}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main></HeroThemeProvider>;
 }

@@ -10,6 +10,8 @@ import { CategoryCards } from "./CategoryCards";
 import { ExerciseGroupPanel } from "./ExerciseGroupPanel";
 import { PreviewHeader } from "./PreviewHeader";
 import { PreviewNavLinks, PreviewSidebar } from "./PreviewSidebar";
+import { StudentAccountMenu } from "@/components/student-panel-preview/StudentAccountMenu";
+import { logoutCurrentStudent } from "@/lib/auth/auth";
 import { PREVIEW_EXERCISE_GROUPS, resolvePreviewGroupId } from "./exercisePreviewGroups";
 import previewStyles from "./exercises-preview.module.css";
 
@@ -26,6 +28,9 @@ export function ExercisesCenterShell() {
   const light = theme === "light";
   const [toast, setToast] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
   const toastTimer = useRef<number | null>(null);
 
   const activeGroupId = useMemo(
@@ -39,9 +44,22 @@ export function ExercisesCenterShell() {
   const searchParamsKey = searchParams.toString();
 
   useEffect(() => {
-    const closeId = window.setTimeout(() => setMobileMenuOpen(false), 0);
+    const closeId = window.setTimeout(() => { setMobileMenuOpen(false); setAccountMenuOpen(false); }, 0);
     return () => window.clearTimeout(closeId);
   }, [pathname, searchParamsKey]);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setLogoutError("");
+    setIsLoggingOut(true);
+    try {
+      await logoutCurrentStudent();
+      window.location.replace("/giris");
+    } catch {
+      setLogoutError("Çıkış şu anda tamamlanamadı. Lütfen tekrar dene.");
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     const closeMenu = () => setMobileMenuOpen(false);
@@ -78,7 +96,7 @@ export function ExercisesCenterShell() {
   return (
     <main className={`${panelStyles.preview} ${light ? `${panelStyles.light} ${previewStyles.light}` : ""}`}>
       <div className={panelStyles.shell}>
-        <PreviewSidebar onDemo={showToast} />
+        <PreviewSidebar onDemo={showToast} onAccountMenu={() => setAccountMenuOpen(true)} accountMenuOpen={accountMenuOpen} />
 
         <div className={panelStyles.content}>
           <div className={panelStyles.mobileHeader}>
@@ -108,7 +126,8 @@ export function ExercisesCenterShell() {
             light={light}
             onToggleTheme={() => setTheme(light ? "dark" : "light")}
             onNotify={() => showToast(COMING_SOON_MESSAGE)}
-            profileHref="/ogrenci/profil"
+            profileOpen={accountMenuOpen}
+            onProfileMenu={() => setAccountMenuOpen((value) => !value)}
             studentName={STUDENT_NAME}
             classLabel={CLASS_LABEL}
           />
@@ -154,10 +173,19 @@ export function ExercisesCenterShell() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <nav className={panelStyles.mobileMenuPanel} aria-label="Mobil ana menü">
-            <PreviewNavLinks onDemo={showToast} onNavigate={() => setMobileMenuOpen(false)} />
+            <PreviewNavLinks onDemo={showToast} onNavigate={() => setMobileMenuOpen(false)} onAccountMenu={() => setAccountMenuOpen(true)} accountMenuOpen={accountMenuOpen} />
           </nav>
         </>
       )}
+
+      {accountMenuOpen && (
+        <>
+          <button type="button" className={`${panelStyles.panelBackdrop} ${panelStyles.panelBackdropOpen}`} aria-label="Hesap menüsünü kapat" onClick={() => setAccountMenuOpen(false)} />
+          <StudentAccountMenu studentName={STUDENT_NAME} classLabel={CLASS_LABEL} onClose={() => setAccountMenuOpen(false)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut} />
+        </>
+      )}
+
+      {logoutError && <div className={panelStyles.logoutError} role="alert">{logoutError}</div>}
 
       {toast && (
         <div className={panelStyles.toast} role="status" aria-live="polite">

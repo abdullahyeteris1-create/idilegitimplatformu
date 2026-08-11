@@ -10,6 +10,10 @@ const panelSource = fs.readFileSync(
   "src/components/student-panel-preview/StudentPanelPreview.tsx",
   "utf8",
 );
+const menuSource = fs.readFileSync(
+  "src/components/student-panel-preview/StudentAccountMenu.tsx",
+  "utf8",
+);
 
 test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
   assert.match(
@@ -29,8 +33,9 @@ test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
     /function AccountMenuPopover/,
   );
   assert.match(panelSource, /href=\{item\.href\}/);
-  assert.match(panelSource, /<Link href="\/ogrenci\/profil" className=\{styles\.profileMenuLink\}[^>]*>[\s\S]*Profilim<\/Link>/);
-  assert.match(panelSource, /profileLogout/);
+  assert.match(panelSource, /StudentAccountMenu/);
+  assert.match(panelSource, /item\.icon === "settings" && onAccountMenu/);
+  assert.match(menuSource, /profileLogout/);
   assert.match(panelSource, /navItems\.map/);
   assert.doesNotMatch(panelSource, /if \(item\.label === "Ayarlar"\)/);
 });
@@ -38,5 +43,5 @@ test("öğrenci Ayarlar bağlantısı profil sayfasına gider", () => {
 test("profil menü bağlantısı mevcut profil akışını korur", () => {
   assert.match(panelSource, /StudentPanelPreview/);
   assert.match(panelSource, /onLogout/);
-  assert.match(panelSource, /href="\/ogrenci\/profil"/);
+  assert.match(menuSource, /href="\/ogrenci\/profil"/);
 });

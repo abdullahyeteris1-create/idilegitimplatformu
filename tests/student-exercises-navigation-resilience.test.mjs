@@ -22,8 +22,10 @@ test("egzersiz merkezi idle/BFCache dönüşünde menüyü kapatır", () => {
 
 test("Ayarlar tüm öğrenci navigation kaynaklarında profil route'una gider", () => {
   assert.match(dataSource, /label: "Ayarlar", icon: "settings", href: "\/ogrenci\/profil"/);
-  assert.match(shellSource, /profileHref="\/ogrenci\/profil"/);
+  assert.match(shellSource, /profileOpen=\{accountMenuOpen\}/);
+  assert.match(shellSource, /onProfileMenu=\{\(\) => setAccountMenuOpen/);
   assert.match(shellSource, /<Link href="\/ogrenci\/profil" aria-label="Profil">/);
-  assert.match(headerSource, /<Link href=\{profileHref\}/);
+  assert.match(headerSource, /aria-haspopup="menu"/);
+  assert.match(headerSource, /onClick=\{onProfileMenu\}/);
   assert.match(sidebarSource, /if \(href\)/);
 });
