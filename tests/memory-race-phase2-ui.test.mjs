@@ -95,3 +95,23 @@ test("responsive card grid and standalone files remain untouched by Phase 2", as
   assert.ok(standalone.includes("<!DOCTYPE html>"));
   assert.ok(page.length > 0 && route.length > 0);
 });
+
+test("move pending iken ayni frame pressed feedback ve ref guard kullanilir", async () => {
+  assert.match(client, /pendingMoveRef/);
+  assert.match(client, /setPressedCardIndex\(cardIndex\)/);
+  assert.match(client, /styles\.pressed/);
+  assert.match(client, /expectedVersion: game\.version/);
+  assert.match(client, /await requestRefresh\(\)/);
+});
+
+test("standalone kart parity, feedback ve sesleri React katmaninda vardir", async () => {
+  assert.match(client, /cardInner/);
+  assert.match(client, /styles\.matched/);
+  assert.match(client, /styles\.wrong/);
+  assert.match(client, /playTone\("match"\)/);
+  assert.match(client, /playTone\("wrong"\)/);
+  assert.match(client, /playTone\("finish"\)/);
+  assert.match(client, /Ses Açık/);
+  assert.match(await read("src/components/memory-race/MemoryRaceMultiplayerClient.module.css"), /matchGlow/);
+  assert.match(await read("src/components/memory-race/MemoryRaceMultiplayerClient.module.css"), /wrongShake/);
+});

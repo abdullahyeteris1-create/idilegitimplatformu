@@ -1,0 +1,76 @@
+:root {
+  --mr-bg1: #0f0c29;
+  --mr-bg2: #302b63;
+  --mr-bg3: #24243e;
+  --mr-pink: #f72585;
+  --mr-purple: #7209b7;
+  --mr-blue: #4cc9f0;
+  --mr-gold: #ffd60a;
+}
+
+.shell { position: relative; min-height: 100vh; overflow: hidden; padding: 1rem; color: #fff; font-family: Poppins, system-ui, sans-serif; background: linear-gradient(135deg, var(--mr-bg1), var(--mr-bg2), var(--mr-bg3)); }
+.shell::before, .shell::after { content: ""; position: fixed; width: 18rem; height: 18rem; border-radius: 50%; pointer-events: none; filter: blur(55px); opacity: .22; }
+.shell::before { top: -6rem; left: -5rem; background: var(--mr-pink); }
+.shell::after { right: -5rem; bottom: -6rem; background: var(--mr-blue); }
+.content { position: relative; z-index: 1; width: 100%; max-width: 1100px; margin: 0 auto; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.eyebrow { margin: 0; color: #a5f3fc; font-size: .72rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+.title { margin: .25rem 0 0; color: transparent; font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 900; background: linear-gradient(135deg, var(--mr-blue), var(--mr-gold)); background-clip: text; -webkit-background-clip: text; animation: titlePulse 3s ease-in-out infinite; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.action, .sound { min-height: 2.5rem; padding: .6rem 1.1rem; border: 2px solid rgba(255,255,255,.3); border-radius: 12px; color: #fff; font-weight: 800; background: rgba(255,255,255,.08); transition: transform .2s, background .2s; }
+.action:hover, .sound:hover { transform: translateY(-2px); background: rgba(255,255,255,.16); }
+.action:disabled { opacity: .5; }
+.danger { border-color: rgba(252,165,165,.5); background: rgba(239,68,68,.2); }
+.turnRow { display: flex; justify-content: center; margin: .75rem 0; }
+.turn { width: fit-content; max-width: 100%; padding: .6rem 1.8rem; overflow: hidden; border: 2px solid var(--mr-gold); border-radius: 50px; color: var(--mr-gold); font-weight: 900; text-overflow: ellipsis; white-space: nowrap; background: linear-gradient(135deg, rgba(255,214,10,.22), rgba(247,37,133,.18)); animation: turnPulse 1.5s infinite; }
+.progress { height: 6px; margin: 0 auto 1rem; overflow: hidden; border-radius: 3px; background: rgba(255,255,255,.1); }
+.progressFill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--mr-pink), var(--mr-gold), var(--mr-blue)); transition: width .5s ease; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 1rem; }
+.boardPanel, .scorePanel { border: 1px solid rgba(255,255,255,.14); border-radius: 24px; background: rgba(0,0,0,.16); backdrop-filter: blur(8px); }
+.boardPanel { padding: .8rem; }
+.cardGrid { display: grid; width: 100%; gap: .8rem; margin: 0 auto; justify-content: center; perspective: 1200px; }
+.count16 { grid-template-columns: repeat(4, 1fr); max-width: 520px; }
+.count20 { grid-template-columns: repeat(5, 1fr); max-width: 650px; }
+.count24 { grid-template-columns: repeat(6, 1fr); max-width: 800px; }
+.count32 { grid-template-columns: repeat(8, 1fr); max-width: 950px; }
+.count40, .count60 { grid-template-columns: repeat(10, 1fr); max-width: 1100px; }
+.card { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; cursor: pointer; background: transparent; perspective: 600px; }
+.card:disabled { cursor: default; }
+.cardInner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.4,0,.2,1); }
+.card:hover:not(:disabled):not(.pressed) .cardInner { transform: rotateY(8deg) scale(1.05); }
+.pressed .cardInner { transform: rotateY(5deg) scale(.94); transition-duration: .12s; }
+.flipped .cardInner, .matched .cardInner { transform: rotateY(180deg); }
+.cardFace { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 16px; backface-visibility: hidden; font-size: 2.5rem; }
+.front { border: 1px solid rgba(255,255,255,.18); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 15px rgba(102,126,234,.3), inset 0 1px rgba(255,255,255,.25); }
+.front::after { content: "?"; color: rgba(255,255,255,.35); font-size: 2rem; font-weight: 900; }
+.back { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,.1); background: linear-gradient(135deg, #1a1a2e, #16213e); box-shadow: 0 4px 15px rgba(0,0,0,.3); }
+.matched .back { border-color: var(--mr-gold); background: linear-gradient(135deg, #4cc9f0, #7209b7); animation: matchGlow .6s ease-out; }
+.wrong .cardInner { animation: wrongShake .5s ease-out; }
+.scorePanel { padding: 1rem; background: rgba(255,255,255,.1); }
+.scoreTitle { margin: 0; font-size: 1.1rem; font-weight: 900; }
+.scoreList { display: grid; gap: .5rem; margin: .75rem 0 0; padding: 0; list-style: none; }
+.scoreItem { display: flex; justify-content: space-between; gap: .5rem; padding: .6rem .75rem; border-radius: 12px; background: rgba(0,0,0,.12); font-weight: 800; }
+.activeScore { background: rgba(247,37,133,.2); box-shadow: 0 0 18px rgba(255,214,10,.28); transform: scale(1.04); }
+.scorePulse { color: var(--mr-gold); animation: scoreFloat 1s ease-out forwards; text-shadow: 0 0 10px rgba(255,214,10,.5); }
+.remaining { margin: 1rem 0 0; color: rgba(255,255,255,.65); text-align: center; font-size: .9rem; font-weight: 800; }
+.notice { margin: 1rem 0; padding: .75rem; border: 1px solid rgba(253,230,138,.3); border-radius: 12px; color: #fef3c7; text-align: center; font-size: .85rem; font-weight: 800; background: rgba(253,230,138,.1); }
+.spectator { margin: 1rem 0 0; color: #c4b5fd; text-align: center; font-size: .75rem; font-weight: 800; }
+.finish { position: relative; margin-top: 1.5rem; padding: 2rem 1.5rem; overflow: hidden; border: 2px solid rgba(255,214,10,.3); border-radius: 30px; text-align: center; background: linear-gradient(135deg, #1a1a2e, #16213e); animation: modalPop .5s cubic-bezier(.175,.885,.32,1.275); }
+.trophy { font-size: 4rem; animation: trophyBounce 1s ease-in-out infinite; }
+.winner { margin-top: .5rem; color: var(--mr-gold); font-weight: 900; }
+.confetti { position: absolute; top: -10px; width: 10px; height: 10px; animation: confettiFall 3s linear forwards; }
+.confetti:nth-child(3n) { background: var(--mr-pink); }
+.confetti:nth-child(3n+1) { background: var(--mr-blue); }
+.confetti:nth-child(3n+2) { background: var(--mr-gold); }
+@keyframes titlePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes turnPulse { 0%,100% { box-shadow: 0 0 10px rgba(255,214,10,.3); } 50% { box-shadow: 0 0 25px rgba(255,214,10,.6); } }
+@keyframes matchGlow { 0% { box-shadow: 0 0 rgba(255,214,10,0); transform: rotateY(180deg) scale(1); } 50% { box-shadow: 0 0 40px rgba(255,214,10,.8); transform: rotateY(180deg) scale(1.15); } 100% { box-shadow: 0 0 15px rgba(255,214,10,.3); transform: rotateY(180deg) scale(1); } }
+@keyframes wrongShake { 0%,100% { transform: rotateY(180deg) translateX(0); } 20% { transform: rotateY(180deg) translateX(-8px); } 40% { transform: rotateY(180deg) translateX(8px); } 60% { transform: rotateY(180deg) translateX(-5px); } 80% { transform: rotateY(180deg) translateX(5px); } }
+@keyframes scoreFloat { 0% { transform: translateY(0) scale(.5); opacity: 1; } 100% { transform: translateY(-35px) scale(1.3); opacity: 0; } }
+@keyframes modalPop { 0% { transform: scale(.5) rotate(-5deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes trophyBounce { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-10px) rotate(-5deg); } 75% { transform: translateY(-10px) rotate(5deg); } }
+@keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } .scorePanel { order: -1; } }
+@media (max-width: 768px) { .shell { padding: .6rem; } .cardGrid { gap: .5rem; } .count40, .count60 { grid-template-columns: repeat(8, 1fr); } .cardFace { border-radius: 10px; font-size: 1.5rem; } .count24 .cardFace { font-size: 2rem; } .count32 .cardFace { font-size: 1.8rem; } .count40 .cardFace { font-size: 1.6rem; } .count60 .cardFace { font-size: 1.45rem; } }
+@media (max-width: 380px) { .count60 { grid-template-columns: repeat(6, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .shell *, .shell *::before, .shell *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
