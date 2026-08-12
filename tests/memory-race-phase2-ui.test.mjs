@@ -115,3 +115,12 @@ test("standalone kart parity, feedback ve sesleri React katmaninda vardir", asyn
   assert.match(await read("src/components/memory-race/MemoryRaceMultiplayerClient.module.css"), /matchGlow/);
   assert.match(await read("src/components/memory-race/MemoryRaceMultiplayerClient.module.css"), /wrongShake/);
 });
+
+test("kart grid boyutu implicit auto row'a birakilmaz", async () => {
+  const css = await read("src/components/memory-race/MemoryRaceMultiplayerClient.module.css");
+  assert.match(css, /\.card \{[^}]*display: block/);
+  assert.match(css, /\.card \{[^}]*width: 100%/);
+  assert.match(css, /\.card \{[^}]*min-height: 2\.7rem/);
+  assert.match(css, /\.cardInner \{[^}]*aspect-ratio: 1/);
+  assert.match(client, /game\.cards\.map/);
+});

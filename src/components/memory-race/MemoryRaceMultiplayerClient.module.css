@@ -34,9 +34,9 @@
 .count24 { grid-template-columns: repeat(6, 1fr); max-width: 800px; }
 .count32 { grid-template-columns: repeat(8, 1fr); max-width: 950px; }
 .count40, .count60 { grid-template-columns: repeat(10, 1fr); max-width: 1100px; }
-.card { position: relative; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; cursor: pointer; background: transparent; perspective: 600px; }
+.card { display: block; position: relative; width: 100%; min-width: 0; min-height: 2.7rem; aspect-ratio: 1; padding: 0; border: 0; cursor: pointer; background: transparent; perspective: 600px; }
 .card:disabled { cursor: default; }
-.cardInner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.4,0,.2,1); }
+.cardInner { display: block; position: relative; width: 100%; min-height: 2.7rem; aspect-ratio: 1; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.4,0,.2,1); }
 .card:hover:not(:disabled):not(.pressed) .cardInner { transform: rotateY(8deg) scale(1.05); }
 .pressed .cardInner { transform: rotateY(5deg) scale(.94); transition-duration: .12s; }
 .flipped .cardInner, .matched .cardInner { transform: rotateY(180deg); }
