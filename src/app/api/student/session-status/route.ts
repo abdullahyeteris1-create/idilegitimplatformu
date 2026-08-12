@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     { status: access.status, headers: NO_STORE_HEADERS },
   );
 
+  if (access.status === 401) {
+    console.warn(`[student-session-status] unauthorized reason=${access.reason}`);
+  }
+
   // This endpoint is polled by the client watcher. Do not clear the cookie here:
   // a stale response from a request started before a successful login could erase
   // the newly-issued student session cookie.
