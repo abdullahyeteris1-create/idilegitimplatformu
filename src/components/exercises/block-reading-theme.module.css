@@ -33,7 +33,10 @@
 /* Shared Tailwind slate utilities are too dim against the exercise dark panels. */
 .darkTheme :global(.text-slate-500) { color: #94a3b8 !important; }
 .darkTheme :global(.text-slate-700) { color: #cbd5e1 !important; }
+.darkTheme :global(.text-slate-800) { color: #dbe5f3 !important; }
 .darkTheme :global(.text-slate-900) { color: #f8fafc !important; }
+.darkTheme :global(.text-slate-950) { color: #f8fafc !important; }
+.darkTheme :global(.text-slate-300) { color: #94a3b8 !important; }
 
 .darkTheme > div {
   background: radial-gradient(circle at 80% 0, #101a38 0, transparent 32%), linear-gradient(150deg, #060d1b, #030814) !important;
@@ -106,6 +109,10 @@
   background: linear-gradient(150deg, var(--br-panel), var(--br-bg)) !important;
   border-color: var(--br-border) !important;
   box-shadow: 0 18px 50px rgba(2, 6, 23, 0.4) !important;
+}
+
+.darkTheme :global(.exercise-theme-content) {
+  color: var(--br-text) !important;
 }
 
 .darkTheme .settingsLabel {
@@ -288,6 +295,10 @@
   background: linear-gradient(150deg, var(--br-panel), var(--br-bg)) !important;
   border-color: var(--br-border) !important;
   box-shadow: 0 14px 36px rgba(23, 32, 51, 0.08) !important;
+}
+
+.lightTheme :global(.exercise-theme-content) {
+  color: var(--br-text) !important;
 }
 
 .lightTheme .settingsLabel {

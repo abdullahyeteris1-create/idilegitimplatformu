@@ -114,7 +114,7 @@ export function FullscreenExerciseIntro({
         </div>
       )}
     >
-      <div className="fx-slide-up flex max-h-full w-full max-w-2xl flex-col items-center overflow-auto rounded-[28px] border border-white/75 bg-white/90 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-7 md:py-8">
+      <div className="exercise-intro-card fx-slide-up flex max-h-full w-full max-w-2xl flex-col items-center overflow-auto rounded-[28px] border border-white/75 bg-white/90 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-7 md:py-8">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-700">Egzersiz</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
@@ -160,7 +160,7 @@ export function FullscreenExerciseShell({
       className={`${backgroundClassName ?? ""} ${compactHeader ? "[&_.fixed-exercise-stage__topbar]:md:py-1" : ""}`}
     >
       <div className={`${mainClassName ?? "flex items-center justify-center"} h-full min-h-0 min-w-0 w-full max-w-6xl flex-col text-center`}>
-        <div className={`${stageClassName ?? FULLSCREEN_STAGE_CLASS} exercise-stage-fit min-w-0 max-w-full`}>{children}</div>
+        <div className={`${stageClassName ?? FULLSCREEN_STAGE_CLASS} exercise-theme-content exercise-stage-fit min-w-0 max-w-full`}>{children}</div>
       </div>
     </FixedExerciseStage>
   );

@@ -829,7 +829,7 @@ export function ShadowReadingExerciseClient({
           { label: "Blok", value: totalBlocks },
           { label: "Font", value: `${fontSize}px` },
         ]}
-        stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 overflow-y-auto rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur"
+        stageClassName={`fx-slide-up flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 overflow-y-auto rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-4 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur ${styles.stageOverride}`}
         footer={footerControls}
       >
         {isEducationProgramMode && newTextNotice ? (
@@ -1030,13 +1030,13 @@ export function ShadowReadingExerciseClient({
       }
       backgroundClassName="flex min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900 [&>div]:min-h-0 [&>div]:flex-1 [&>div>footer]:shrink-0 [&>div>header]:shrink-0"
       mainClassName="flex flex-1 min-h-0 overflow-hidden items-stretch justify-center px-2 py-2 md:px-4 md:py-3 [&>div]:min-h-0 [&>div]:flex-1"
-      stageClassName="fx-slide-up flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:px-5"
+      stageClassName={`fx-slide-up flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-3 py-3 text-center shadow-[0_14px_42px_rgba(185,28,28,0.10)] backdrop-blur md:px-5 ${styles.stageOverride}`}
       footer={footerControls}
     >
       <div className="fx-fade-in flex h-full min-h-0 w-full max-w-6xl flex-col gap-3 text-left">
         <div className="w-full max-w-3xl shrink-0 self-center">{textInfo}</div>
 
-        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-[26px] border border-red-100 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(185,28,28,0.10)] md:px-6">
+        <div className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-[26px] border border-red-100 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(185,28,28,0.10)] md:px-6 ${styles.readingArea}`}>
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Gölgeleme metni</p>
           <div
             ref={readingAreaRef}

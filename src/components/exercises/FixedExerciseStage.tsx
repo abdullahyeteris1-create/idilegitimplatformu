@@ -33,7 +33,7 @@ export function FixedExerciseStat({
         : "border-slate-200 bg-white text-slate-700";
 
   return (
-    <span className={`inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-[10px] font-bold leading-none shadow-sm md:text-xs ${toneClass}`}>
+    <span className={`fixed-exercise-stat fixed-exercise-stat--${tone} inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-[10px] font-bold leading-none shadow-sm md:text-xs ${toneClass}`}>
       {label}: {value}
     </span>
   );
@@ -87,12 +87,12 @@ export function FixedExerciseStage({
   };
 
   return (
-    <div className="fixed inset-0 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900">
+    <div className="exercise-theme-root fixed inset-0 flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#ffd4da_0%,#fff8f5_38%,#f7eee8_100%)] text-slate-900">
       <div
         ref={stageRef}
-        className={`fixed-exercise-stage relative isolate mx-auto flex h-[calc(100dvh-8px)] w-[calc(100vw-8px)] max-h-[760px] max-w-[1280px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-xl sm:h-[calc(100dvh-20px)] sm:w-[calc(100vw-20px)] lg:h-[min(760px,calc(100dvh-32px))] lg:w-[min(1280px,calc(100vw-32px))] ${isFullscreen ? "h-[100dvh]! w-screen! max-h-none! max-w-none! rounded-none! border-0!" : ""} ${className}`}
+        className={`exercise-theme-stage fixed-exercise-stage relative isolate mx-auto flex h-[calc(100dvh-8px)] w-[calc(100vw-8px)] max-h-[760px] max-w-[1280px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-xl sm:h-[calc(100dvh-20px)] sm:w-[calc(100vw-20px)] lg:h-[min(760px,calc(100dvh-32px))] lg:w-[min(1280px,calc(100vw-32px))] ${isFullscreen ? "h-[100dvh]! w-screen! max-h-none! max-w-none! rounded-none! border-0!" : ""} ${className}`}
       >
-        <header className="fixed-exercise-stage__topbar flex min-h-16 shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm md:px-4 md:py-2">
+        <header className="exercise-theme-topbar fixed-exercise-stage__topbar flex min-h-16 shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 px-2 py-1.5 shadow-sm md:px-4 md:py-2">
           <div className="mr-auto min-w-0 flex-1 basis-36">
             <h1 className="truncate text-sm font-black text-slate-950 md:text-base">{title}</h1>
             {subtitle ? <p className="truncate text-[10px] text-slate-500 md:text-xs">{subtitle}</p> : null}
@@ -114,14 +114,14 @@ export function FixedExerciseStage({
           </div>
         </header>
 
-        <main className="fixed-exercise-stage__area relative flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-slate-50 p-1.5 md:p-3">
+        <main className="exercise-theme-area fixed-exercise-stage__area relative flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-hidden bg-slate-50 p-1.5 md:p-3">
           <div className="flex h-full min-h-0 min-w-0 w-full max-h-full max-w-full items-center justify-center overflow-hidden">
             {children}
           </div>
         </main>
 
         {bottomSettings || controls ? (
-          <footer ref={bottomBarRef} className="fixed-exercise-stage__bottom flex max-h-[42dvh] shrink-0 flex-col gap-2 overflow-y-auto overscroll-contain border-t border-slate-200 bg-white px-2 py-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] md:max-h-[34dvh] md:px-4 landscape:max-h-[38dvh] landscape:gap-1 landscape:py-1.5">
+          <footer ref={bottomBarRef} className="exercise-theme-footer fixed-exercise-stage__bottom flex max-h-[42dvh] shrink-0 flex-col gap-2 overflow-y-auto overscroll-contain border-t border-slate-200 bg-white px-2 py-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] md:max-h-[34dvh] md:px-4 landscape:max-h-[38dvh] landscape:gap-1 landscape:py-1.5">
             {bottomSettings ? <div className="min-w-0">{bottomSettings}</div> : null}
             {controls ? <div className="min-w-0">{controls}</div> : null}
           </footer>

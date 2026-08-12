@@ -873,7 +873,7 @@ export function GroupingExerciseClient({
         { label: "Font", value: `${fontSize}px` },
       ]}
       footer={controls}
-      stageClassName="exercise-stage-fit flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border border-white/80 bg-white p-2 shadow-lg md:rounded-[28px] md:p-4"
+      stageClassName={`exercise-stage-fit flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden rounded-[20px] border border-white/80 bg-white p-2 shadow-lg md:rounded-[28px] md:p-4 ${styles.stageOverride}`}
     >
       {loading ? (
         <p className="font-bold">Metinler yukleniyor...</p>
@@ -898,7 +898,7 @@ export function GroupingExerciseClient({
       ) : phase === "ready" ? (
         <div className="text-center">
           {isEducationProgramMode && newTextNotice ? (
-            <div className="mx-auto mb-4 flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm">
+            <div className={`mx-auto mb-4 flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center shadow-sm ${styles.noticeInfo}`}>
               <p className="text-sm font-bold text-slate-900">Görev süreniz henüz dolmadı</p>
               <p className="text-xs text-slate-700">
                 Bu metni tamamladınız. Görevi tamamlamak için yeni bir metin seçerek devam etmelisiniz.
@@ -928,7 +928,7 @@ export function GroupingExerciseClient({
         <div className="flex h-full min-h-0 w-full max-w-6xl flex-col gap-1.5 md:gap-3">
           <div
             ref={areaRef}
-            className="min-h-0 flex-1 overflow-y-auto rounded-[18px] border border-red-100 bg-white p-2 md:rounded-[24px] md:p-4"
+            className={`min-h-0 flex-1 overflow-y-auto rounded-[18px] border border-red-100 bg-white p-2 md:rounded-[24px] md:p-4 ${styles.readingArea}`}
             style={{ fontSize: `${fontSize}px`, lineHeight: 2 }}
           >
             {groups.map((group, groupIndex) => {
