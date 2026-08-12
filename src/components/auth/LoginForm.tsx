@@ -7,6 +7,8 @@ import type { Student } from "@/lib/students/types";
 
 type LoginMode = "student" | "teacher";
 
+export const STUDENT_LOGIN_GENERATION_KEY = "idil_student_login_generation";
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,6 +61,11 @@ export function LoginForm() {
     }
     setCurrentStudent(payload.student);
     setCurrentUser({ role: "student", username: payload.student.username, studentId: payload.student.id, studentName: payload.student.name });
+    try {
+      window.sessionStorage.setItem(STUDENT_LOGIN_GENERATION_KEY, String(Date.now()));
+    } catch {
+      // Session storage is an optimization for suppressing stale watcher races.
+    }
     router.replace("/ogrenci");
   };
 

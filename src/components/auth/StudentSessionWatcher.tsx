@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { STUDENT_LOGIN_GENERATION_KEY } from "./LoginForm";
 
 const SESSION_CHECK_INTERVAL_MS = 30_000;
 const SESSION_CHECK_TIMEOUT_MS = 10_000;
@@ -50,6 +51,12 @@ export function StudentSessionWatcher() {
       }
 
       checking = true;
+      let loginGenerationAtStart: string | null = null;
+      try {
+        loginGenerationAtStart = window.sessionStorage.getItem(STUDENT_LOGIN_GENERATION_KEY);
+      } catch {
+        // Session storage is optional; the server response remains authoritative.
+      }
       const controller = new AbortController();
       activeController = controller;
       const timeoutId = window.setTimeout(() => controller.abort(), SESSION_CHECK_TIMEOUT_MS);
@@ -65,6 +72,11 @@ export function StudentSessionWatcher() {
 
         if (response.status === 401 || response.status === 403) {
           try {
+            if (window.sessionStorage.getItem(STUDENT_LOGIN_GENERATION_KEY) !== loginGenerationAtStart) return;
+          } catch {
+            // Continue with the normal retry when session storage is unavailable.
+          }
+          try {
             const body = (await response.clone().json()) as { reason?: unknown };
             if (typeof body.reason === "string" && body.reason.trim()) reason = body.reason;
           } catch {
@@ -76,6 +88,11 @@ export function StudentSessionWatcher() {
           response = await request();
 
           if (response.status === 401 || response.status === 403) {
+            try {
+              if (window.sessionStorage.getItem(STUDENT_LOGIN_GENERATION_KEY) !== loginGenerationAtStart) return;
+            } catch {
+              // Continue with the normal redirect when session storage is unavailable.
+            }
             try {
               const body = (await response.clone().json()) as { reason?: unknown };
               if (typeof body.reason === "string" && body.reason.trim()) reason = body.reason;

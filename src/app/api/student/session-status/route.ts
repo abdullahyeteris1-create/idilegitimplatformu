@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 
 const NO_STORE_HEADERS = {
@@ -18,9 +17,8 @@ export async function GET(request: NextRequest) {
     { status: access.status, headers: NO_STORE_HEADERS },
   );
 
-  if (access.status === 401 || access.status === 403) {
-    clearStudentSessionCookie(response);
-  }
-
+  // This endpoint is polled by the client watcher. Do not clear the cookie here:
+  // a stale response from a request started before a successful login could erase
+  // the newly-issued student session cookie.
   return response;
 }
