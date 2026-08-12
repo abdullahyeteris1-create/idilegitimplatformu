@@ -260,6 +260,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["difficulty"],
   },
   {
+    slug: "saray-dedektifi",
+    title: "Saray Dedektifi",
+    route: "/egzersizler/saray-dedektifi",
+    resultExerciseType: "saray-dedektifi",
+    category: "attention",
+    assignmentEnabled: true,
+    supportedSettings: ["mode", "speed"],
+  },
+  {
     slug: "parcali-resim-kelime",
     title: "Parçalı Resim Kelime",
     route: "/egzersizler/parcali-resim-kelime",

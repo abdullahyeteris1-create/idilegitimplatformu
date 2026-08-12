@@ -232,6 +232,7 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "thirteen-point-emoji-tracking": { categoryId: "eye", route: "/egzersizler/13-nokta-emoji-takip" },
   "growing-shapes-hexagon": { categoryId: "eye", route: "/egzersizler/buyuyen-sekiller-altigen" },
   "kayip-nesne": { categoryId: "word-games", route: "/egzersizler/kayip-nesne" },
+  "saray-dedektifi": { categoryId: "attention", route: "/egzersizler/saray-dedektifi" },
 };
 
 const OTHER_CATEGORY_ID = "other";

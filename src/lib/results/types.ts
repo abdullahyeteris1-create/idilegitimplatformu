@@ -25,7 +25,8 @@
   | "reading-speed-test"
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"
-  | "kayip-nesne";
+  | "kayip-nesne"
+  | "saray-dedektifi";
 
 export type ExerciseResult = {
   id: string;

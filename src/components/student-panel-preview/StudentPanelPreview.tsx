@@ -94,6 +94,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "thirteen-point-emoji-tracking": "/egzersizler/13-nokta-emoji-takip",
   "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",
   "kayip-nesne": "/egzersizler/kayip-nesne",
+  "saray-dedektifi": "/egzersizler/saray-dedektifi",
 };
 
 function toTimestamp(value: string): number {

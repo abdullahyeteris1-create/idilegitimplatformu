@@ -291,6 +291,15 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     livesRemaining: { type: "integer", min: 0, max: 3 },
     completionReason: { type: "string", values: ["game-over", "manual"] },
   },
+  "saray-dedektifi": {
+    mode: { type: "string", values: ["baslangic", "gelisen", "ileri", "usta", "uzman"] },
+    speed: { type: "string", values: ["rahat", "normal", "hizli", "cokhizli"] },
+    completedCases: { type: "integer", min: 0, max: 1000 },
+    totalQuestions: { type: "integer", min: 1, max: 100000 },
+    totalCorrect: { type: "integer", min: 0, max: 100000 },
+    livesRemaining: { type: "integer", min: 0, max: 10 },
+    completionReason: { type: "string", values: ["game-over", "completed"] },
+  },
   "block-reading": {
     category: { type: "string", maxLength: 80 },
     textTitle: { type: "string", maxLength: 160 },

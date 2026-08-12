@@ -288,6 +288,18 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     defaultSettings: { difficulty: "easy" },
   },
   {
+    exerciseSlug: "saray-dedektifi",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: false,
+    supportsSpeed: false,
+    settingsSchema: {
+      mode: { kind: "enum", values: ["baslangic", "gelisen", "ileri", "usta", "uzman"] },
+      speed: { kind: "enum", values: ["rahat", "normal", "hizli", "cokhizli"] },
+    },
+    defaultSettings: { mode: "baslangic", speed: "normal" },
+  },
+  {
     exerciseSlug: "goz-beyin",
     assignmentEligible: true,
     // Faz 2.5: Egzersiz platform katalogunda gorunmeye devam eder; ancak

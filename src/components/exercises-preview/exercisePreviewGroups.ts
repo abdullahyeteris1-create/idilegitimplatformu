@@ -46,7 +46,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 
 export const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   eye: ["goz-beyin", "goz-kaslari", "13-nokta-emoji-takip", "buyuyen-sekiller-altigen"],
-  attention: ["takistoskop", "benzer-kelimeler", "kelime-bulma", "goz-egzersizleri-kolonlar", "kare-gorme-alani"],
+  attention: ["takistoskop", "benzer-kelimeler", "kelime-bulma", "goz-egzersizleri-kolonlar", "kare-gorme-alani", "saray-dedektifi"],
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
@@ -90,6 +90,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "parcali-resim-kelime": { description: "Parçalı görseli tamamlayarak kelime ve görsel hafızanı birlikte çalıştır.", tags: ["Hafıza", "Görsel"] },
   "tatli-dukkani": { description: "Müşteri siparişlerini aklında tut ve doğru tatlıları seç.", tags: ["Hafıza", "Akıl ve Zeka"] },
   "kayip-nesne": { description: "Sahnedeki nesnelerin yerlerini hatırla ve hedef nesnenin kutusunu bul.", tags: ["Hafıza", "Akıl ve Zeka"] },
+  "saray-dedektifi": { description: "Kısa süre görünen saray dosyasını oku, ayrıntıları hatırla ve soruları yanıtla.", tags: ["Algı", "Dikkat"] },
 };
 
 const FALLBACK_ROUTE_BY_SLUG: Record<string, { title: string; route: string }> = {

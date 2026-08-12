@@ -42,6 +42,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "thirteen-point-emoji-tracking": "13 Nokta Emoji Takip Egzersizi",
   "growing-shapes-hexagon": "Büyüyen Şekiller",
   "kayip-nesne": "Kayıp Nesne",
+  "saray-dedektifi": "Saray Dedektifi",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);
