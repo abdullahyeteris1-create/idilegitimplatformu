@@ -28,6 +28,7 @@ const READY_EXERCISE_COMPONENTS = {
   // Oyun motoru iframe'deki prototip; bu bilesen sonuc koprusu olarak calisir
   // ve kaydi ayni guvenli akistan yapar.
   "kelime-yarisi": "../src/app/egzersizler/kelime-yarisi/WordRaceExerciseClient.tsx",
+  "kayip-nesne": "../src/app/egzersizler/kayip-nesne/KayipNesneExerciseClient.tsx",
   takistoskop: "../src/components/exercises/TachistoscopeExerciseClient.tsx",
 };
 

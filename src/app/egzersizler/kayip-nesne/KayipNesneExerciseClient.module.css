@@ -1,0 +1,66 @@
+.page { min-height: 100vh; padding: 20px; background: linear-gradient(135deg,#667eea,#764ba2); font-family: Nunito,ui-sans-serif,sans-serif; color: #fff; }
+.intro,.gameover,.feedback { max-width: 900px; margin: auto; min-height: calc(100vh - 40px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.intro { gap: 18px; }
+.heroEmoji { font-size: clamp(4rem,12vw,8rem); filter: drop-shadow(2px 3px 3px #0004); }
+.intro h1,.gameover h1 { font-size: clamp(2rem,6vw,4rem); margin: 0; text-shadow: 3px 3px 6px #0005; }
+.howTo h2,.phase h2,.feedback h2 { font-size: clamp(1.2rem,3.5vw,2rem); }
+.intro > p,.phase > p,.feedback > p { line-height: 1.6; }
+.howTo { max-width: 520px; background: #ffffff18; padding: 16px 24px; border-radius: 18px; text-align: left; }
+.howTo li { margin: 8px 0; }
+.primary,.difficulties button { border: 0; border-radius: 50px; padding: 13px 28px; font: 800 1rem Nunito,sans-serif; cursor: pointer; transition: transform .2s,filter .2s; }
+.primary { background: linear-gradient(135deg,#f093fb,#f5576c); color: #fff; box-shadow: 0 8px 25px #f5576c66; }
+.primary:hover,.difficulties button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.difficulties { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.difficulties button { background: #ffffff1c; color: #fff; border: 2px solid #fff8; }
+.difficulties .activeDifficulty { background: #ffffff4d; border-color: #fff; }
+.game { width: 100%; max-width: 900px; margin: auto; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; font-weight: 800; }
+.header > span { background: #ffffff2e; padding: 8px 15px; border-radius: 20px; }
+.header .level { background: linear-gradient(135deg,#f093fb,#f5576c); }
+.streak { background: linear-gradient(135deg,#f6d365,#fda085)!important; }
+.progress,.timer { height: 8px; background: #ffffff4d; border-radius: 10px; overflow: hidden; margin: 8px auto 22px; }
+.progress i,.timer i { display: block; height: 100%; background: linear-gradient(90deg,#f093fb,#f5576c); border-radius: inherit; }
+.phase { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.timer { width: min(400px,100%); }
+.timer i { width: 100%; animation: drain linear forwards; }
+.countdown { font-weight: 800; font-size: 1.1rem; }
+.scene { width: 100%; aspect-ratio: 4/3; max-height: 55vh; position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 50px #0005; animation: fadeInUp .6s ease; }
+.kidsRoom { background: linear-gradient(180deg,#e1f5fe 0%,#b3e5fc 30%,#fff9c4 70%,#fff176); }
+.garden { background: linear-gradient(180deg,#87ceeb 0%,#98e4ff 30%,#4caf50 60%,#388e3c); }
+.park { background: linear-gradient(180deg,#b3e5fc 0%,#81d4fa 25%,#aed581 55%,#7cb342); }
+.classroom { background: linear-gradient(180deg,#f8f9fa 0%,#ffe0b2 45%,#dee2e6); }
+.livingRoom { background: linear-gradient(180deg,#fdf6e3 0%,#f0ddb8 45%,#d4a574); }
+.sceneItems { position: absolute; inset: 0; }
+.wallPanel { position: absolute; inset: 0 0 38% 0; background: linear-gradient(180deg,#fff8e8aa,#f0ddb888); opacity: .72; }
+.sun { position: absolute; top: 8%; right: 9%; width: clamp(28px,6vw,62px); aspect-ratio: 1; border-radius: 50%; background: #ffe082; box-shadow: 0 0 28px #fff4a8; }
+.ground { position: absolute; left: 0; right: 0; bottom: 0; height: 42%; background: linear-gradient(180deg,#86c85b88,#388e3c99); }
+.decorWindow { position: absolute; left: 5%; top: 5%; width: 14%; height: 20%; min-width: 48px; background: linear-gradient(180deg,#e3f2fd,#90caf9); border: clamp(3px,.7vw,6px) solid #fff; box-shadow: inset 0 0 14px #0002,0 3px 10px #0003; }
+.decorWindow::before,.decorWindow::after { content: ""; position: absolute; background: #fff; }
+.decorWindow::before { top: 0; bottom: 0; left: 50%; width: 4px; transform: translateX(-50%); }.decorWindow::after { left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); }
+.decorSofa { position: absolute; left: 5%; bottom: 10%; width: 28%; height: 18%; min-height: 42px; background: linear-gradient(180deg,#e74c3c,#a93226); border-radius: 15px 15px 5px 5px; box-shadow: 0 5px 15px #0003,inset 0 3px 6px #fff3; }
+.decorSofa::before { content: ""; position: absolute; left: 5%; right: 5%; top: -17%; height: 24%; background: #c0392b; border-radius: 10px 10px 0 0; }
+.decorTable { position: absolute; right: 8%; bottom: 11%; width: 15%; height: 10%; min-height: 28px; background: linear-gradient(180deg,#a0782c,#6b4f1d); border-radius: 5px; box-shadow: 0 5px 15px #0003; }
+.decorShelf { position: absolute; right: 8%; bottom: 29%; width: 11%; height: 27%; min-width: 38px; background: linear-gradient(180deg,#6d4c41,#3e2723); border-radius: 5px; box-shadow: 0 5px 15px #0003; }
+.decorShelf::before { content: ""; position: absolute; left: 3px; right: 3px; top: 25%; height: 3px; background: #8d6e63; box-shadow: 0 20px #8d6e63,0 40px #8d6e63; }
+.decorPlant { position: absolute; right: 3%; bottom: 13%; width: 9%; height: 25%; }.decorPlant::before { content: ""; position: absolute; bottom: 0; left: 25%; width: 50%; height: 32%; background: #bf360c; border-radius: 3px 3px 8px 8px; }.decorPlant i,.decorPlant b { position: absolute; bottom: 25%; width: 58%; height: 58%; border-radius: 50% 50% 30% 30%; background: linear-gradient(180deg,#66bb6a,#2e7d32); }.decorPlant i { left: 0; }.decorPlant b { right: 0; }
+.decorLamp { position: absolute; left: 30%; bottom: 18%; width: 6%; height: 15%; border-left: 4px solid #795548; }.decorLamp::before { content: ""; position: absolute; left: 50%; top: -18%; transform: translateX(-50%); width: 170%; height: 35%; background: #ffd54f; border-radius: 50% 50% 12% 12%; box-shadow: 0 0 20px #ffd54f99; }
+.decorTree { position: absolute; left: 62%; bottom: 20%; width: 16%; height: 62%; }.decorTree i { position: absolute; bottom: 0; left: 42%; width: 16%; height: 45%; background: linear-gradient(90deg,#5d4037,#795548,#5d4037); }.decorTree b { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(135deg,#4caf50,#2e7d32); box-shadow: 24px 16px 0 -8px #43a047; }
+.decorBench { position: absolute; left: 28%; bottom: 24%; width: 20%; height: 7%; background: linear-gradient(180deg,#795548,#5d4037); border-radius: 3px; box-shadow: 0 4px 8px #0003; }.decorBench::before { content: ""; position: absolute; left: 5%; right: 5%; top: -85%; height: 85%; background: #6d4c41; border-radius: 5px; }
+.blackboard { position: absolute; top: 6%; left: 35%; width: 30%; height: 18%; background: #2e7d32; border: 8px solid #795548; border-radius: 4px; box-shadow: 0 4px 10px #0003; }.decorDesk,.decorDeskTwo { position: absolute; bottom: 21%; width: 21%; height: 13%; background: linear-gradient(180deg,#a0782c,#6b4f1d); border-radius: 4px; box-shadow: 0 5px 12px #0003; }.decorDesk { left: 14%; }.decorDeskTwo { left: 48%; }.classroom .decorShelf { right: 8%; bottom: 23%; }
+.object,.box { position: absolute; width: 72px; height: 72px; transform: translate(-50%,-50%); display: flex; align-items: center; justify-content: center; }
+.object { font-size: clamp(26px,5vw,50px); filter: drop-shadow(2px 3px 3px #0004); z-index: 2; animation: objectPop .35s ease both; }
+.box { min-width: 72px; border: 3px dashed #ffff; border-radius: 14px; background: #fff5; color: #fff; font: 900 clamp(18px,3vw,28px) Nunito,sans-serif; cursor: pointer; z-index: 3; backdrop-filter: blur(3px); box-shadow: 0 5px 16px #0003; transition: transform .2s,background .2s; }
+.box:hover { transform: translate(-50%,-50%) scale(1.08); background: #ffffff66; }
+.correctBox { background: #4caf50dd!important; border-color: #fff!important; animation: correctPulse .6s ease both; }.wrongBox { background: #f44336dd!important; border-color: #fff!important; animation: wrongShake .45s ease both; }.revealBox { box-shadow: 0 0 0 4px #ffd54f99,0 5px 16px #0003; }
+.sceneLabel { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: #0006; color: #fff; padding: 5px 20px; border-radius: 15px; white-space: nowrap; font-size: .9rem; }
+.targetPanel { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; padding: 10px 22px; border-radius: 18px; background: #ffffff2e; border: 2px solid #ffffff80; box-shadow: 0 8px 24px #0002; font-size: clamp(1rem,3vw,1.35rem); }.targetPanel div { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }.targetEmoji { font-size: clamp(2.8rem,8vw,5rem); filter: drop-shadow(2px 3px 3px #0004); animation: objectPop .35s ease both; }
+.feedback { min-height: 60vh; gap: 10px; }
+.finalStats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; width: min(500px,100%); margin: 20px 0; }
+.finalStats span { background: #ffffff1c; border-radius: 12px; padding: 10px; }
+.saveStatus { min-height: 24px; }
+@keyframes drain { from { width: 100%; } to { width: 0; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes objectPop { from { opacity: 0; transform: translate(-50%,-50%) scale(.7); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+@keyframes correctPulse { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.12); } }
+@keyframes wrongShake { 0%,100% { transform: translate(-50%,-50%); } 25% { transform: translate(calc(-50% - 5px),-50%); } 75% { transform: translate(calc(-50% + 5px),-50%); } }
+@media (max-width:600px) { .page { padding: 12px; } .object,.box { width: 58px; height: 58px; min-width: 58px; } .box { font-size: 18px; } .scene { max-height: none; } .finalStats { grid-template-columns: 1fr; } .header { font-size: .85rem; } .header > span { padding: 7px 9px; } }

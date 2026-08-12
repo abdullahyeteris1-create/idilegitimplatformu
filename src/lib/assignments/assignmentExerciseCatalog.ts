@@ -276,6 +276,17 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     defaultSettings: { previewDurationMs: 4000, flipBackDelayMs: 1000 },
   },
   {
+    exerciseSlug: "kayip-nesne",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 20,
+    supportsSpeed: false,
+    settingsSchema: { difficulty: { kind: "enum", values: ["easy", "medium", "hard"] } },
+    defaultSettings: { difficulty: "easy" },
+  },
+  {
     exerciseSlug: "goz-beyin",
     assignmentEligible: true,
     // Faz 2.5: Egzersiz platform katalogunda gorunmeye devam eder; ancak

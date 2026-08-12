@@ -50,7 +50,7 @@ export const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
-  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi", "hafiza-yarisi", "tatli-dukkani"],
+  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi", "hafiza-yarisi", "tatli-dukkani", "kayip-nesne"],
   assessment: ["anlama-testi", "okuma-hizi-testi"],
   memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme"],
 };
@@ -89,6 +89,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "kart-eslestirme": { description: "Aynı görselleri bularak görsel hafızanı güçlendir.", tags: ["Eşleştirme", "Hafıza"] },
   "parcali-resim-kelime": { description: "Parçalı görseli tamamlayarak kelime ve görsel hafızanı birlikte çalıştır.", tags: ["Hafıza", "Görsel"] },
   "tatli-dukkani": { description: "Müşteri siparişlerini aklında tut ve doğru tatlıları seç.", tags: ["Hafıza", "Akıl ve Zeka"] },
+  "kayip-nesne": { description: "Sahnedeki nesnelerin yerlerini hatırla ve hedef nesnenin kutusunu bul.", tags: ["Hafıza", "Akıl ve Zeka"] },
 };
 
 const FALLBACK_ROUTE_BY_SLUG: Record<string, { title: string; route: string }> = {

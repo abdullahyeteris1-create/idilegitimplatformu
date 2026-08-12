@@ -251,6 +251,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["durationMinutes"],
   },
   {
+    slug: "kayip-nesne",
+    title: "Kayıp Nesne",
+    route: "/egzersizler/kayip-nesne",
+    resultExerciseType: "kayip-nesne",
+    category: "memory",
+    assignmentEnabled: true,
+    supportedSettings: ["difficulty"],
+  },
+  {
     slug: "parcali-resim-kelime",
     title: "Parçalı Resim Kelime",
     route: "/egzersizler/parcali-resim-kelime",

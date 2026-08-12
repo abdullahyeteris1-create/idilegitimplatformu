@@ -141,6 +141,17 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "kayip-nesne",
+    title: "Kayıp Nesne",
+    resultExerciseType: "kayip-nesne",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 20,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "blok-okuma",
     title: "Blok Okuma",
     resultExerciseType: "block-reading",
