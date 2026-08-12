@@ -1,5 +1,6 @@
 import { ASSIGNMENT_EXERCISE_BY_SLUG } from "@/lib/assignments/exerciseCatalog";
 import type { AssignmentExerciseDefinition, AssignmentSettingsSchema } from "@/lib/assignments/types";
+import { READING_SPEED_OPTIONS } from "@/lib/exercises/readingSpeedOptions";
 
 /**
  * 20 gunluk odev programi icin SUNUCU-GUVENLI (server-safe) egzersiz
@@ -333,11 +334,11 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     settingsSchema: {
       blockSize: { kind: "enum", values: [1, 2, 3, 4, 5] },
       speedMode: { kind: "enum", values: ["interval", "wpm"] },
-      intervalMs: { kind: "integer", min: 100, max: 60000 },
+      intervalMs: { kind: "enum", values: READING_SPEED_OPTIONS },
       wordsPerMinute: { kind: "integer", min: 1 },
       fontSize: { kind: "enum", values: [24, 32, 40, 48, 56] },
     },
-    defaultSettings: { blockSize: 3, speedMode: "interval", intervalMs: 750, wordsPerMinute: 150, fontSize: 40 },
+    defaultSettings: { blockSize: 3, speedMode: "interval", intervalMs: 500, wordsPerMinute: 150, fontSize: 40 },
   },
   {
     // src/app/egzersizler/gruplama-calismasi/GroupingExerciseClient.tsx
@@ -357,7 +358,7 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
       displayMode: { kind: "enum", values: ["keep", "fade"] },
       scrollMode: { kind: "enum", values: ["line", "page"] },
       speedMode: { kind: "enum", values: ["milliseconds", "wordsPerMinute"] },
-      customMilliseconds: { kind: "integer", min: 50, max: 10000 },
+      customMilliseconds: { kind: "enum", values: READING_SPEED_OPTIONS },
       customWordsPerMinute: { kind: "integer", min: 1 },
       fontSize: { kind: "enum", values: [14, 16, 18, 20, 22, 24, 26, 28] },
     },
@@ -366,7 +367,7 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
       displayMode: "keep",
       scrollMode: "page",
       speedMode: "milliseconds",
-      customMilliseconds: 1000,
+      customMilliseconds: 500,
       customWordsPerMinute: 300,
       fontSize: 20,
     },

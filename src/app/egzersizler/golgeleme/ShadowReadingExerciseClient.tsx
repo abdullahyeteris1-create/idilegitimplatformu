@@ -21,6 +21,7 @@ import {
 } from "@/lib/exercise-engine/shadowReading";
 import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
+import { READING_SPEED_OPTIONS, type ReadingSpeedMs } from "@/lib/exercises/readingSpeedOptions";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
@@ -44,7 +45,7 @@ import styles from "@/components/exercises/shadow-reading-theme.module.css";
 
 type ExercisePhase = "setup" | "ready" | "running" | "result";
 type BlockSize = 1 | 2 | 3 | 4 | 5;
-type JumpSpeedMs = number;
+type JumpSpeedMs = ReadingSpeedMs;
 type WordsPerMinute = number;
 type FontSizePx = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 26 | 28;
 type ReadableText = {
@@ -82,12 +83,7 @@ const WORDS_PER_MINUTE_MIN = 1;
 const WORDS_PER_MINUTE_MAX = 2000;
 
 const BLOCK_SIZE_OPTIONS: BlockSize[] = [1, 2, 3, 4, 5];
-const JUMP_SPEED_OPTIONS: JumpSpeedMs[] = [
-  ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
-  1100,
-  2000,
-  5000,
-];
+const JUMP_SPEED_OPTIONS = READING_SPEED_OPTIONS;
 const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
 
 const ACTION_BUTTON_CLASS =

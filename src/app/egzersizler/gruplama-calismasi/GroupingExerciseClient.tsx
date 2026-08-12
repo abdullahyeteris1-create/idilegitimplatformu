@@ -12,6 +12,7 @@ import {
   hasGroupingReadingReachedAssignedDuration,
 } from "@/lib/exercise-engine/groupingReading";
 import { normalizeDelayMs, normalizeReadingSpeed, wordsPerMinuteToDelay } from "@/lib/exercises/timing";
+import { READING_SPEED_OPTIONS, type ReadingSpeedMs } from "@/lib/exercises/readingSpeedOptions";
 import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
@@ -65,7 +66,7 @@ const EXPECTED_RESULT_EXERCISE_TYPE = "grouping-reading";
 const MAX_RESULT_DURATION_SECONDS = 21_600;
 const GROUP_SIZE_OPTIONS: GroupSize[] = [2, 3, 4, 5];
 const SPEED_MODE_OPTIONS: SpeedMode[] = ["milliseconds", "wordsPerMinute"];
-const CUSTOM_MILLISECONDS_OPTIONS = [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000];
+const CUSTOM_MILLISECONDS_OPTIONS = READING_SPEED_OPTIONS;
 const CUSTOM_WORDS_PER_MINUTE_MIN = 1;
 const CUSTOM_WORDS_PER_MINUTE_MAX = 2000;
 
@@ -129,7 +130,7 @@ export function GroupingExerciseClient({
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMode", SPEED_MODE_OPTIONS, "milliseconds"),
   );
   const [customMilliseconds, setCustomMilliseconds] = useState(() =>
-    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 1000),
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 500),
   );
   const [customWordsPerMinute, setCustomWordsPerMinute] = useState(() =>
     pickEducationProgramRangeSettingOption(
@@ -210,7 +211,7 @@ export function GroupingExerciseClient({
   const totalWords = words.length;
   const totalCharacters = selected ? calculateCharacterCount(selected.text) : 0;
 
-  const safeMilliseconds = normalizeDelayMs(customMilliseconds, 1000, 50, 10000);
+  const safeMilliseconds = normalizeDelayMs(customMilliseconds, 500, 50, 5000);
   const safeWordsPerMinute = normalizeReadingSpeed(customWordsPerMinute, 300, 1);
   const currentGroupWordCount = groups[index]?.length || groupSize;
 
@@ -609,19 +610,22 @@ export function GroupingExerciseClient({
       {speedMode === "milliseconds" ? (
         <label className="flex flex-col gap-1">
           <span className={`text-[11px] font-semibold uppercase text-slate-500 ${styles.settingsLabel}`}>Milisaniye</span>
-          <input
+          <select
             className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}
-            type="number"
-            min={50}
-            max={10000}
             value={customMilliseconds}
             disabled={isEducationProgramMode}
             onChange={(event) => {
               const nextSpeed = Number(event.target.value);
               if (!Number.isFinite(nextSpeed)) return;
-              setCustomMilliseconds(Math.min(10000, Math.max(50, nextSpeed)));
+              setCustomMilliseconds(nextSpeed as ReadingSpeedMs);
             }}
-          />
+          >
+            {CUSTOM_MILLISECONDS_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value} ms
+              </option>
+            ))}
+          </select>
         </label>
       ) : (
         <label className="flex flex-col gap-1">

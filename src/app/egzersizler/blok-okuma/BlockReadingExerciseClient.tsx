@@ -16,6 +16,7 @@ import {
 } from "@/lib/exercise-engine/blockReading";
 import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
+import { READING_SPEED_OPTIONS, type ReadingSpeedMs } from "@/lib/exercises/readingSpeedOptions";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
 import { useIsAssignmentMode } from "@/components/assignments/AssignmentTaskProvider";
 import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
@@ -70,7 +71,7 @@ const EXPECTED_RESULT_EXERCISE_TYPE = "block-reading";
 const MAX_RESULT_DURATION_SECONDS = 21_600;
 const BLOCK_SIZE_OPTIONS: BlockSize[] = [1, 2, 3, 4, 5];
 const SPEED_MODE_OPTIONS: BlockReadingSpeedMode[] = ["interval", "wpm"];
-const INTERVAL_MS_OPTIONS = [250, 500, 750, 1000, 1500, 2000, 3000, 5000];
+const INTERVAL_MS_OPTIONS = READING_SPEED_OPTIONS;
 const WORDS_PER_MINUTE_MIN = 1;
 const WORDS_PER_MINUTE_MAX = 2000;
 
@@ -149,7 +150,7 @@ export function BlockReadingExerciseClient({
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"),
   );
   const [intervalInputMs, setIntervalInputMs] = useState(() =>
-    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "intervalMs", INTERVAL_MS_OPTIONS, 750),
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "intervalMs", INTERVAL_MS_OPTIONS, 500),
   );
   const [wordsPerMinute, setWordsPerMinute] = useState(() =>
     pickEducationProgramRangeSettingOption(
@@ -662,11 +663,17 @@ export function BlockReadingExerciseClient({
           {speedMode === "interval" ? "Hız" : "Okuma Hızı (kelime/dk)"}
         </span>
         {speedMode === "interval" ? (
-          <input type="number" min={100} step={50} value={intervalInputMs} disabled={isEducationProgramMode} onChange={(event) => {
+          <select value={intervalInputMs} disabled={isEducationProgramMode} onChange={(event) => {
             const nextSpeed = Number(event.target.value);
             if (!Number.isFinite(nextSpeed)) return;
-            setIntervalInputMs(Math.min(60_000, Math.max(100, nextSpeed)));
-          }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`} />
+            setIntervalInputMs(nextSpeed as ReadingSpeedMs);
+          }} className={`${FULLSCREEN_SELECT_CLASS} ${styles.selectOverride}`}>
+            {INTERVAL_MS_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value} ms
+              </option>
+            ))}
+          </select>
         ) : (
           <>
             <input

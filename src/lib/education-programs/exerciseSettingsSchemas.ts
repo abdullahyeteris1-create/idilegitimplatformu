@@ -1,4 +1,5 @@
 import type { EducationProgramTaskSettings } from "@/lib/education-programs/types";
+import { READING_SPEED_OPTIONS } from "@/lib/exercises/readingSpeedOptions";
 
 // Ogretmen tarafindan gorev bazinda duzenlenebilir ayar semasi tanimlanmis
 // egzersizler: goz-egzersizleri-kolonlar, kelime-bulma, kare-gorme-alani,
@@ -264,8 +265,8 @@ const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
       key: "intervalMs",
       label: "Blok Aralığı",
       type: "integer",
-      options: [250, 500, 750, 1000, 1500, 2000, 3000, 5000],
-      defaultValue: 750,
+      options: READING_SPEED_OPTIONS,
+      defaultValue: 500,
       unit: "ms",
     },
     {
@@ -305,10 +306,7 @@ const SHADOW_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
       key: "intervalMs",
       label: "Atlama Hızı",
       type: "integer",
-      options: [
-        50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900,
-        950, 1000, 1100, 2000, 5000,
-      ],
+      options: READING_SPEED_OPTIONS,
       defaultValue: 500,
       unit: "ms",
     },
@@ -353,8 +351,8 @@ const GROUPING_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
       key: "customMilliseconds",
       label: "Milisaniye",
       type: "integer",
-      options: [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000],
-      defaultValue: 1000,
+      options: READING_SPEED_OPTIONS,
+      defaultValue: 500,
       unit: "ms",
     },
     {

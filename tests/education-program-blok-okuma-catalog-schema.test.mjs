@@ -51,8 +51,13 @@ test("3) blok-okuma semasi gercek client alanlariyla eslesir: blockSize, speedMo
   assert.deepEqual(fieldsByKey.speedMode.options, ["interval", "wpm"]);
   assert.equal(fieldsByKey.speedMode.defaultValue, "interval");
 
-  assert.deepEqual(fieldsByKey.intervalMs.options, [250, 500, 750, 1000, 1500, 2000, 3000, 5000]);
-  assert.equal(fieldsByKey.intervalMs.defaultValue, 750);
+  assert.deepEqual(fieldsByKey.intervalMs.options, [
+    ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
+    1100,
+    2000,
+    5000,
+  ]);
+  assert.equal(fieldsByKey.intervalMs.defaultValue, 500);
 
   // wordsPerMinute artik sabit secenek listesi degil, serbest bir tam sayi
   // araligidir (bagimsiz ekrandaki serbest Kelime/Dakika girisiyle uyumlu).
@@ -107,7 +112,7 @@ test("6) BlockReadingTaskSettings mevcut *TaskSettings deseniyle tanimlanir", as
 
   assert.match(
     source,
-    /export type BlockReadingTaskSettings = \{\s*\n\s*blockSize\?: 1 \| 2 \| 3 \| 4 \| 5;\s*\n\s*speedMode\?: "interval" \| "wpm";\s*\n\s*intervalMs\?: 250 \| 500 \| 750 \| 1000 \| 1500 \| 2000 \| 3000 \| 5000;\s*\n\s*wordsPerMinute\?: 50 \| 100 \| 150 \| 200 \| 250 \| 300 \| 400 \| 500;\s*\n\s*\};/,
+    /export type BlockReadingTaskSettings = \{\s*\n\s*blockSize\?: 1 \| 2 \| 3 \| 4 \| 5;\s*\n\s*speedMode\?: "interval" \| "wpm";\s*\n\s*intervalMs\?: 50 \| 100 \| 150 \| 200 \| 250 \| 300 \| 350 \| 400 \| 450 \| 500 \| 550 \| 600 \| 650 \| 700 \| 750 \| 800 \| 850 \| 900 \| 950 \| 1000 \| 1100 \| 2000 \| 5000;\s*\n\s*wordsPerMinute\?: 50 \| 100 \| 150 \| 200 \| 250 \| 300 \| 400 \| 500;\s*\n\s*\};/,
   );
 });
 

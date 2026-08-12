@@ -71,13 +71,14 @@ test("13) teacher settings guvenli okunuyor: groupSize/speedMode/customMilliseco
 
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "groupSize", GROUP_SIZE_OPTIONS, 2\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "speedMode", SPEED_MODE_OPTIONS, "milliseconds"\)/);
-  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 1000\)/);
+  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "customMilliseconds", CUSTOM_MILLISECONDS_OPTIONS, 500\)/);
   assert.match(
     source,
     /pickEducationProgramRangeSettingOption\(\s*\n\s*educationProgramLaunch\?\.settings,\s*\n\s*"customWordsPerMinute",\s*\n\s*CUSTOM_WORDS_PER_MINUTE_MIN,\s*\n\s*CUSTOM_WORDS_PER_MINUTE_MAX,\s*\n\s*300,\s*\n\s*\)/,
   );
   assert.match(source, /const CUSTOM_WORDS_PER_MINUTE_MIN = 1;/);
   assert.match(source, /const CUSTOM_WORDS_PER_MINUTE_MAX = 2000;/);
+  assert.match(source, /CUSTOM_MILLISECONDS_OPTIONS\.map\(\(value\) =>/);
 });
 
 test("14) EP modunda yalniz dogru kontroller kilitlenir: groupSize/speedMode/customMilliseconds/customWordsPerMinute", async () => {

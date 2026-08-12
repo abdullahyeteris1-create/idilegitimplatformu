@@ -88,13 +88,14 @@ test("15) blockSize/speedMode/intervalMs sabit secenek listesiyle, wordsPerMinut
 
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "blockSize", BLOCK_SIZE_OPTIONS, 3\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"\)/);
-  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "intervalMs", INTERVAL_MS_OPTIONS, 750\)/);
+  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "intervalMs", INTERVAL_MS_OPTIONS, 500\)/);
   assert.match(
     source,
     /pickEducationProgramRangeSettingOption\(\s*\n\s*educationProgramLaunch\?\.settings,\s*\n\s*"wordsPerMinute",\s*\n\s*WORDS_PER_MINUTE_MIN,\s*\n\s*WORDS_PER_MINUTE_MAX,\s*\n\s*150,\s*\n\s*\)/,
   );
   assert.match(source, /const WORDS_PER_MINUTE_MIN = 1;/);
   assert.match(source, /const WORDS_PER_MINUTE_MAX = 2000;/);
+  assert.match(source, /INTERVAL_MS_OPTIONS\.map\(\(value\) =>/);
 });
 
 test("16) durationSeconds/initialLevel/startingLevel bu egzersizde okunmaz (supportsLevel: false)", async () => {

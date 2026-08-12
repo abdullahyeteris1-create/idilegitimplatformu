@@ -257,13 +257,20 @@ test("12) blockSize/speedMode/intervalMs (blok-okuma), groupSize/speedMode/custo
   assert.equal(blockFieldsByKey.speedMode.type, "enum");
   assert.deepEqual(blockFieldsByKey.speedMode.options, ["interval", "wpm"]);
   assert.equal(blockFieldsByKey.intervalMs.type, "integer");
-  assert.deepEqual(blockFieldsByKey.intervalMs.options, [250, 500, 750, 1000, 1500, 2000, 3000, 5000]);
+  const sharedSpeedOptions = [
+    ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
+    1100,
+    2000,
+    5000,
+  ];
+  assert.deepEqual(blockFieldsByKey.intervalMs.options, sharedSpeedOptions);
 
   const groupingSchema = getExerciseSettingsSchema("gruplama-calismasi");
   const groupingFieldsByKey = Object.fromEntries(groupingSchema.fields.map((field) => [field.key, field]));
   assert.equal(groupingFieldsByKey.groupSize.type, "integer");
   assert.equal(groupingFieldsByKey.speedMode.type, "enum");
   assert.equal(groupingFieldsByKey.customMilliseconds.type, "integer");
+  assert.deepEqual(groupingFieldsByKey.customMilliseconds.options, sharedSpeedOptions);
 });
 
 test("12) editor enum/integer alanlar icin hala <select> render eder (integer-range disindaki dal degismedi)", async () => {
@@ -345,7 +352,7 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // 2026-07-30: Profilim icin school_name kolonu migration'i eklendi (30).
   // 2026-07-31: Faz 1 parola hash altyapisi icin nullable alanlar eklendi (32).
   // 2026-08-04: kelime-yarisi tam entegrasyonu icin whitelist migration'i eklendi.
-  assert.equal(sqlFiles.length, 36);
+  assert.equal(sqlFiles.length, 42);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {

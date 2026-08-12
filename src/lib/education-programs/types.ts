@@ -69,7 +69,7 @@ export type CardMatchingTaskSettings = {
 export type BlockReadingTaskSettings = {
   blockSize?: 1 | 2 | 3 | 4 | 5;
   speedMode?: "interval" | "wpm";
-  intervalMs?: 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 5000;
+  intervalMs?: 50 | 100 | 150 | 200 | 250 | 300 | 350 | 400 | 450 | 500 | 550 | 600 | 650 | 700 | 750 | 800 | 850 | 900 | 950 | 1000 | 1100 | 2000 | 5000;
   wordsPerMinute?: 50 | 100 | 150 | 200 | 250 | 300 | 400 | 500;
 };
 
@@ -92,7 +92,7 @@ export type ShadowReadingTaskSettings = {
 export type GroupingReadingTaskSettings = {
   groupSize?: 2 | 3 | 4 | 5;
   speedMode?: "milliseconds" | "wordsPerMinute";
-  customMilliseconds?: 100 | 250 | 500 | 750 | 1000 | 1500 | 2000 | 3000 | 5000 | 7500 | 10000;
+  customMilliseconds?: 50 | 100 | 150 | 200 | 250 | 300 | 350 | 400 | 450 | 500 | 550 | 600 | 650 | 700 | 750 | 800 | 850 | 900 | 950 | 1000 | 1100 | 2000 | 5000;
   customWordsPerMinute?: 100 | 150 | 200 | 250 | 300 | 400 | 500 | 600 | 800 | 1000;
 };
 

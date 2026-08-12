@@ -66,9 +66,14 @@ test("5) gruplama-calismasi semasi gercek client alanlariyla eslesir: groupSize,
   // listeleri kurasyon degerlerdir, gercek bir <select> secim listesi degil.
   assert.deepEqual(
     fieldsByKey.customMilliseconds.options,
-    [100, 250, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000],
+    [
+      ...Array.from({ length: 20 }, (_, index) => (index + 1) * 50),
+      1100,
+      2000,
+      5000,
+    ],
   );
-  assert.equal(fieldsByKey.customMilliseconds.defaultValue, 1000);
+  assert.equal(fieldsByKey.customMilliseconds.defaultValue, 500);
 
   // customWordsPerMinute artik sabit secenek listesi degil, serbest bir tam
   // sayi araligidir (bagimsiz ekrandaki serbest Kelime/Dakika girisiyle uyumlu).
@@ -138,7 +143,7 @@ test("GroupingReadingTaskSettings mevcut *TaskSettings deseniyle tanimlanir, dis
   assert.match(source, /export type GroupingReadingTaskSettings = \{/);
   assert.match(source, /groupSize\?: 2 \| 3 \| 4 \| 5;/);
   assert.match(source, /speedMode\?: "milliseconds" \| "wordsPerMinute";/);
-  assert.match(source, /customMilliseconds\?: 100 \| 250 \| 500 \| 750 \| 1000 \| 1500 \| 2000 \| 3000 \| 5000 \| 7500 \| 10000;/);
+  assert.match(source, /customMilliseconds\?: 50 \| 100 \| 150 \| 200 \| 250 \| 300 \| 350 \| 400 \| 450 \| 500 \| 550 \| 600 \| 650 \| 700 \| 750 \| 800 \| 850 \| 900 \| 950 \| 1000 \| 1100 \| 2000 \| 5000;/);
   assert.match(source, /customWordsPerMinute\?: 100 \| 150 \| 200 \| 250 \| 300 \| 400 \| 500 \| 600 \| 800 \| 1000;/);
 
   const typeStart = source.indexOf("export type GroupingReadingTaskSettings = {");
