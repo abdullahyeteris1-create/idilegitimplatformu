@@ -34,13 +34,13 @@
 .count24 { grid-template-columns: repeat(6, 1fr); max-width: 800px; }
 .count32 { grid-template-columns: repeat(8, 1fr); max-width: 950px; }
 .count40, .count60 { grid-template-columns: repeat(10, 1fr); max-width: 1100px; }
-.card { display: block; position: relative; width: 100%; min-width: 0; min-height: 2.7rem; aspect-ratio: 1; padding: 0; border: 0; cursor: pointer; background: transparent; perspective: 600px; }
+.card { display: block; position: relative; width: 100%; min-width: 0; min-height: 2.7rem; aspect-ratio: 1; padding: 0; border: 0; cursor: pointer; background: transparent; perspective: 600px; container-type: inline-size; }
 .card:disabled { cursor: default; }
 .cardInner { display: block; position: relative; width: 100%; min-height: 2.7rem; aspect-ratio: 1; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.4,0,.2,1); }
 .card:hover:not(:disabled):not(.pressed) .cardInner { transform: rotateY(8deg) scale(1.05); }
 .pressed .cardInner { transform: rotateY(5deg) scale(.94); transition-duration: .12s; }
 .flipped .cardInner, .matched .cardInner { transform: rotateY(180deg); }
-.cardFace { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 16px; backface-visibility: hidden; font-size: 2.5rem; }
+.cardFace { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 16px; backface-visibility: hidden; font-size: clamp(.9rem, 42cqw, 2.5rem); }
 .front { border: 1px solid rgba(255,255,255,.18); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 15px rgba(102,126,234,.3), inset 0 1px rgba(255,255,255,.25); }
 .front::after { content: "?"; color: rgba(255,255,255,.35); font-size: 2rem; font-weight: 900; }
 .back { transform: rotateY(180deg); border: 2px solid rgba(255,255,255,.1); background: linear-gradient(135deg, #1a1a2e, #16213e); box-shadow: 0 4px 15px rgba(0,0,0,.3); }
@@ -71,6 +71,6 @@
 @keyframes trophyBounce { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-10px) rotate(-5deg); } 75% { transform: translateY(-10px) rotate(5deg); } }
 @keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
 @media (max-width: 900px) { .stage { grid-template-columns: 1fr; } .scorePanel { order: -1; } }
-@media (max-width: 768px) { .shell { padding: .6rem; } .cardGrid { gap: .5rem; } .count40, .count60 { grid-template-columns: repeat(8, 1fr); } .cardFace { border-radius: 10px; font-size: 1.5rem; } .count24 .cardFace { font-size: 2rem; } .count32 .cardFace { font-size: 1.8rem; } .count40 .cardFace { font-size: 1.6rem; } .count60 .cardFace { font-size: 1.45rem; } }
+@media (max-width: 768px) { .shell { padding: .6rem; } .cardGrid { gap: .5rem; } .count40, .count60 { grid-template-columns: repeat(8, 1fr); } .cardFace { border-radius: 10px; } }
 @media (max-width: 380px) { .count60 { grid-template-columns: repeat(6, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .shell *, .shell *::before, .shell *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }

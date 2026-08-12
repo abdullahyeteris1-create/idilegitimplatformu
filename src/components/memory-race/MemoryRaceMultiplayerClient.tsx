@@ -46,6 +46,7 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   const transitionInFlight = useRef(false);
   const pendingMoveRef = useRef(false);
   const authoritativeVersionRef = useRef(0);
+  const highestSeenBroadcastVersionRef = useRef(0);
   const previousGameRef = useRef<MemoryRaceSnapshot | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -82,15 +83,25 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   }, [primeAudio, soundEnabled]);
 
   const setAuthoritativeGame = useCallback((nextGame: MemoryRaceSnapshot) => {
+    if (nextGame.version < authoritativeVersionRef.current) return false;
     authoritativeVersionRef.current = nextGame.version;
     setGame(nextGame);
+    return true;
   }, []);
 
   const loadState = useCallback(async () => {
     const nextRoom = await fetchRoom(roomId);
     setRoom(nextRoom);
     if (nextRoom.status === "waiting" || nextRoom.status === "starting") { setGame(null); setMessage(nextRoom.status === "starting" ? "Oyun başlatılıyor..." : "Oyun henüz başlamadı."); return; }
-    try { setAuthoritativeGame(await fetchGame(roomId)); setMessage(""); }
+    try {
+      const nextGame = await fetchGame(roomId);
+      if (nextGame.version < highestSeenBroadcastVersionRef.current) {
+        refreshQueued.current = true;
+        return;
+      }
+      setAuthoritativeGame(nextGame);
+      setMessage("");
+    }
     catch (error) {
       if (error instanceof MemoryRaceFetchError && error.status === 404) { setGame(null); setMessage("Oyun henüz başlamadı."); return; }
       throw error;
@@ -99,7 +110,7 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
 
   const requestRefresh = useCallback(() => {
     if (refreshInFlight.current) { refreshQueued.current = true; return refreshInFlight.current; }
-    const refresh = (async () => { do { refreshQueued.current = false; try { await loadState(); } catch (error) { if (error instanceof MemoryRaceFetchError && error.status === 403) setTerminalMessage(error.message.includes("çıkarıldınız") ? "Bu odadan çıkarıldınız." : "Bu odadaki erişiminiz sona erdi."); else setMessage("Bağlantı yenileniyor..."); } finally { setLoading(false); } } while (refreshQueued.current); })().finally(() => { refreshInFlight.current = null; });
+    const refresh = (async () => { do { refreshQueued.current = false; try { await loadState(); } catch (error) { if (error instanceof MemoryRaceFetchError && error.status === 403) setTerminalMessage(error.message.includes("çıkarıldınız") ? "Bu odadan çıkarıldınız." : "Bu odadaki erişiminiz sona erdi."); else setMessage("Bağlantı yenileniyor..."); } finally { setLoading(false); } } while (refreshQueued.current || authoritativeVersionRef.current < highestSeenBroadcastVersionRef.current); })().finally(() => { refreshInFlight.current = null; });
     refreshInFlight.current = refresh; return refresh;
   }, [loadState]);
 
@@ -109,7 +120,10 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
     const channel = client.channel(`game-room:${roomId}`);
     channel.on("broadcast", { event: "room_changed" }, (event: RoomChangedEvent) => {
       const version = typeof event?.payload?.version === "number" ? event.payload.version : null;
-      if (version !== null && authoritativeVersionRef.current >= version) return;
+      if (version !== null) {
+        highestSeenBroadcastVersionRef.current = Math.max(highestSeenBroadcastVersionRef.current, version);
+        if (authoritativeVersionRef.current >= version) return;
+      }
       void requestRefresh();
     }).subscribe();
     return () => { void client.removeChannel(channel); };
