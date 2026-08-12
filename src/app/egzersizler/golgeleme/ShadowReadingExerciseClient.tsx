@@ -634,14 +634,14 @@ export function ShadowReadingExerciseClient({
   }, [resolvedTextId, blockSize, phase, scrollReadingAreaToTop]);
 
   const textInfo = (
-    <div className="grid w-full gap-2 text-xs font-bold text-slate-700 sm:grid-cols-3">
-      <span className="rounded-xl border border-red-100 bg-white/90 px-3 py-2 shadow-sm shadow-red-100/60">
+    <div className={`grid w-full gap-2 text-xs font-bold text-slate-700 sm:grid-cols-3 ${styles.metricGrid}`}>
+      <span className={`rounded-xl border border-red-100 bg-white/90 px-3 py-2 shadow-sm shadow-red-100/60 ${styles.metricCard}`}>
         Kelime Sayisi: {totalWords}
       </span>
-      <span className="rounded-xl border border-red-100 bg-white/90 px-3 py-2 shadow-sm shadow-red-100/60">
+      <span className={`rounded-xl border border-red-100 bg-white/90 px-3 py-2 shadow-sm shadow-red-100/60 ${styles.metricCard}`}>
         Karakter Sayisi: {totalCharacters}
       </span>
-      <span className="rounded-xl border border-red-100 bg-red-50/90 px-3 py-2 text-red-700 shadow-sm shadow-red-100/60">
+      <span className={`rounded-xl border border-red-100 bg-red-50/90 px-3 py-2 text-red-700 shadow-sm shadow-red-100/60 ${styles.metricCard}`}>
         Okuma Suresi: {formatDuration(estimatedDurationSeconds)}
       </span>
     </div>
@@ -1040,7 +1040,7 @@ export function ShadowReadingExerciseClient({
           <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Gölgeleme metni</p>
           <div
             ref={readingAreaRef}
-            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth whitespace-normal break-words text-slate-900 [overflow-wrap:anywhere] [word-break:break-word]"
+            className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth whitespace-normal break-words text-slate-900 [overflow-wrap:anywhere] [word-break:break-word] ${styles.readingText}`}
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}
           >
             {words.map((word, index) => {
@@ -1064,11 +1064,11 @@ export function ShadowReadingExerciseClient({
           </div>
 
           <div className="mt-3 shrink-0">
-            <div className="mb-2 flex items-center justify-between gap-3 text-sm font-bold text-slate-700">
+            <div className={`mb-2 flex items-center justify-between gap-3 text-sm font-bold text-slate-700 ${styles.progressMeta}`}>
               <span>{progressPercent}% tamamlandi</span>
               <span>{completedBlocks}/{totalBlocks}</span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-200/90 shadow-inner">
+            <div className={`h-3 overflow-hidden rounded-full bg-slate-200/90 shadow-inner ${styles.progressTrack}`}>
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,#ef4444_0%,#dc2626_55%,#991b1b_100%)] transition-all duration-300 ease-out"
                 style={{ width: `${progressPercent}%` }}

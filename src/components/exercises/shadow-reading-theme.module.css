@@ -64,6 +64,25 @@
   color: var(--sr-text) !important;
 }
 
+.darkTheme .metricCard {
+  background: var(--sr-panel-2) !important;
+  border-color: var(--sr-border) !important;
+  color: var(--sr-text) !important;
+  box-shadow: none !important;
+}
+
+.darkTheme .readingText {
+  color: var(--sr-text) !important;
+}
+
+.darkTheme .progressMeta {
+  color: var(--sr-muted) !important;
+}
+
+.darkTheme .progressTrack {
+  background: var(--sr-bg) !important;
+}
+
 .darkTheme :global(.fixed-exercise-stage__topbar) {
   background: rgba(9, 16, 32, 0.92) !important;
   border-color: var(--sr-border) !important;
