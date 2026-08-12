@@ -10,6 +10,8 @@ type MemoryRaceApiResponse = { ok: boolean; message?: string; game?: MemoryRaceS
 type RoomApiResponse = { ok: boolean; message?: string; room?: GameRoomView };
 type MemoryRaceMutationResponse = { ok: boolean; message?: string; result?: { snapshot?: MemoryRaceSnapshot } };
 type RoomChangedEvent = { payload?: { version?: unknown } };
+type RevealEvent = { payload?: { version?: unknown; phase?: unknown; cards?: unknown; matched?: unknown; revealEndsAt?: unknown } };
+type TransientReveal = { emoji: string; version: number; expiresAt: number };
 
 class MemoryRaceFetchError extends Error { constructor(public status: number, message: string) { super(message); } }
 async function readJson<T>(response: Response): Promise<T> { return response.json() as Promise<T>; }
@@ -28,6 +30,7 @@ async function fetchGame(roomId: string): Promise<MemoryRaceSnapshot> {
 
 const acceptingMovePhases: MemoryRacePhase[] = ["awaiting_first", "awaiting_second"];
 const revealPhases: MemoryRacePhase[] = ["revealing_match", "revealing_mismatch"];
+const revealHoldMs: Record<string, number> = { awaiting_second: 800, revealing_match: 550, revealing_mismatch: 850 };
 
 export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; role: GameRoomRole }) {
   const [room, setRoom] = useState<GameRoomView | null>(null);
@@ -41,12 +44,15 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   const [scorePulse, setScorePulse] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [terminalMessage, setTerminalMessage] = useState("");
+  const [transientReveals, setTransientReveals] = useState<Record<number, TransientReveal>>({});
   const refreshInFlight = useRef<Promise<void> | null>(null);
   const refreshQueued = useRef(false);
   const transitionInFlight = useRef(false);
   const pendingMoveRef = useRef(false);
   const authoritativeVersionRef = useRef(0);
   const highestSeenBroadcastVersionRef = useRef(0);
+  const highestRevealEventVersionRef = useRef(0);
+  const transientRevealTimersRef = useRef<Record<number, number>>({});
   const previousGameRef = useRef<MemoryRaceSnapshot | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -86,7 +92,46 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
     if (nextGame.version < authoritativeVersionRef.current) return false;
     authoritativeVersionRef.current = nextGame.version;
     setGame(nextGame);
+    setTransientReveals((current) => Object.fromEntries(
+      Object.entries(current).filter(([index, reveal]) => {
+        const card = nextGame.cards[Number(index)];
+        return !(reveal.version <= nextGame.version && card?.revealed);
+      }),
+    ));
     return true;
+  }, []);
+
+  const applyRevealEvent = useCallback((event: RevealEvent) => {
+    const payload = event.payload ?? {};
+    const version = typeof payload?.version === "number" ? payload.version : null;
+    if (version === null || version < authoritativeVersionRef.current || version < highestRevealEventVersionRef.current) return;
+    const phase = typeof payload.phase === "string" ? payload.phase : "awaiting_second";
+    const cards = Array.isArray(payload.cards)
+      ? payload.cards.filter((card): card is { index: number; emoji: string } => Boolean(card) && typeof card === "object" && typeof (card as { index?: unknown }).index === "number" && typeof (card as { emoji?: unknown }).emoji === "string")
+      : [];
+    if (!cards.length) return;
+    highestRevealEventVersionRef.current = Math.max(highestRevealEventVersionRef.current, version);
+    const holdUntil = Math.min(
+      Date.now() + (revealHoldMs[phase] ?? 800),
+      typeof payload.revealEndsAt === "string" ? new Date(payload.revealEndsAt).getTime() : Number.POSITIVE_INFINITY,
+    );
+    setTransientReveals((current) => {
+      const next = { ...current };
+      for (const card of cards) next[card.index] = { emoji: card.emoji, version, expiresAt: holdUntil };
+      return next;
+    });
+    for (const card of cards) {
+      const previousTimer = transientRevealTimersRef.current[card.index];
+      if (previousTimer) window.clearTimeout(previousTimer);
+      transientRevealTimersRef.current[card.index] = window.setTimeout(() => {
+        setTransientReveals((current) => {
+          const next = { ...current };
+          if (next[card.index]?.version === version) delete next[card.index];
+          return next;
+        });
+        delete transientRevealTimersRef.current[card.index];
+      }, Math.max(0, holdUntil - Date.now()));
+    }
   }, []);
 
   const loadState = useCallback(async () => {
@@ -115,6 +160,7 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   }, [loadState]);
 
   useEffect(() => { void requestRefresh(); }, [requestRefresh]);
+  useEffect(() => () => { Object.values(transientRevealTimersRef.current).forEach((timer) => window.clearTimeout(timer)); }, []);
   useEffect(() => {
     const client = getSupabaseBrowserClient(); if (!client) return;
     const channel = client.channel(`game-room:${roomId}`);
@@ -125,9 +171,17 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
         if (authoritativeVersionRef.current >= version) return;
       }
       void requestRefresh();
+    }).on("broadcast", { event: "memory_race_card_revealed" }, (event: RevealEvent) => {
+      applyRevealEvent(event);
+      void requestRefresh();
+    }).on("broadcast", { event: "memory_race_pair_resolved" }, (event: RevealEvent) => {
+      applyRevealEvent(event);
+      void requestRefresh();
+    }).on("broadcast", { event: "memory_race_transitioned" }, () => {
+      void requestRefresh();
     }).subscribe();
     return () => { void client.removeChannel(channel); };
-  }, [requestRefresh, roomId]);
+  }, [applyRevealEvent, requestRefresh, roomId]);
   useEffect(() => {
     const resync = () => { if (document.visibilityState === "visible") void requestRefresh(); };
     document.addEventListener("visibilitychange", resync); window.addEventListener("pageshow", resync);
@@ -213,7 +267,7 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
     <div className={styles.progress}><div className={styles.progressFill} style={{ width: `${progress}%` }} /></div>
     {message ? <p className={styles.notice} role="status">{message}</p> : null}
     <section className={styles.stage}><div className={styles.boardPanel}><div className={`${styles.cardGrid} ${gridClass}`}>
-      {game.cards.map((card) => { const visible = card.revealed || card.matched; const closing = wrongCards.includes(card.index); const displayVisible = visible || closing; const selected = pressedCardIndex === card.index; const wrong = closing; return <button key={card.index} type="button" aria-label={`Kart ${card.index + 1}`} disabled={!canMove || busy || card.matched || card.revealed} onClick={() => void submitMove(card.index)} className={`${styles.card} ${displayVisible ? styles.flipped : ""} ${card.matched ? styles.matched : ""} ${selected ? styles.pressed : ""} ${wrong ? styles.wrong : ""}`}><span className={styles.cardInner}><span className={`${styles.cardFace} ${styles.front}`} aria-hidden="true" /><span className={`${styles.cardFace} ${styles.back}`}>{displayVisible ? card.emoji ?? wrongCardEmojis[card.index] : null}</span></span></button>; })}
+      {game.cards.map((card) => { const visible = card.revealed || card.matched; const transient = transientReveals[card.index]; const displayVisible = visible || Boolean(transient); const selected = pressedCardIndex === card.index; const closing = wrongCards.includes(card.index); const wrong = closing; return <button key={card.index} type="button" aria-label={`Kart ${card.index + 1}`} disabled={!canMove || busy || card.matched || card.revealed} onClick={() => void submitMove(card.index)} className={`${styles.card} ${displayVisible ? styles.flipped : ""} ${card.matched ? styles.matched : ""} ${selected ? styles.pressed : ""} ${wrong ? styles.wrong : ""}`}><span className={styles.cardInner}><span className={`${styles.cardFace} ${styles.front}`} aria-hidden="true" /><span className={`${styles.cardFace} ${styles.back}`}>{displayVisible ? card.emoji ?? transient?.emoji ?? wrongCardEmojis[card.index] : null}</span></span></button>; })}
     </div>{role === "teacher" ? <p className={styles.spectator}>Öğretmen görünümü: oyun izleniyor, kart seçimi kapalı.</p> : null}<p className={styles.remaining}>{game.matchedCount} / {game.cardCount / 2} çift eşleşti{scorePulse ? <span className={` ${styles.scorePulse}`}> +1</span> : null}</p></div>
       <aside className={styles.scorePanel}><h2 className={styles.scoreTitle}>Skorlar</h2><ol className={styles.scoreList}>{ranking.map((entry) => <li key={entry.playerId} className={`${styles.scoreItem} ${entry.playerId === game.currentPlayerId ? styles.activeScore : ""}`}><span>{entry.rank}. {playerNames.get(entry.playerId) ?? "Oyuncu"}</span><strong>{entry.score}</strong></li>)}</ol></aside></section>
     {isFinished ? <section className={styles.finish}><div className={styles.trophy}>🏆</div><h2>Oyun Bitti!</h2><p className={styles.winner}>{winnerText}</p>{Array.from({ length: 18 }, (_, index) => <span key={index} className={styles.confetti} style={{ left: `${(index * 37) % 100}%`, animationDelay: `${(index % 7) * .12}s` }} />)}</section> : null}

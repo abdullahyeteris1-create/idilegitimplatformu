@@ -255,3 +255,13 @@ export async function broadcastGameRoomChange(roomId: string, action: string, ve
     await client.removeChannel(channel);
   }
 }
+
+export async function broadcastGameRoomEvent(roomId: string, event: string, payload: Record<string, unknown>): Promise<void> {
+  const client = db();
+  const channel = client.channel(`game-room:${roomId}`);
+  try {
+    await channel.httpSend(event, payload);
+  } finally {
+    await client.removeChannel(channel);
+  }
+}

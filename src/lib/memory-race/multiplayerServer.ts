@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GameRoomError, broadcastGameRoomChange, getGameRoomView, type GameRoomActor } from "@/lib/multiplayer/server";
+import { GameRoomError, broadcastGameRoomChange, broadcastGameRoomEvent, getGameRoomView, type GameRoomActor } from "@/lib/multiplayer/server";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { buildMemoryRaceSnapshot, type MemoryRaceSnapshotRow } from "./multiplayerSnapshot";
 import type { MemoryRaceSnapshot } from "./multiplayerTypes";
@@ -71,6 +71,7 @@ export async function submitMemoryRaceMove(
   });
   if (error) mapMemoryRaceDatabaseError(error);
   const snapshot = await getMemoryRaceSnapshot(actor, roomId);
+  await broadcastReveal(roomId, cardIndex, snapshot);
   await broadcastInvalidation(roomId, "memory_race_move", snapshot.version);
   return { result: data, snapshot };
 }
@@ -84,7 +85,17 @@ export async function transitionMemoryRace(actor: GameRoomActor, roomId: string)
   if (error) mapMemoryRaceDatabaseError(error);
   const result = data as { changed?: boolean } | null;
   const snapshot = await getMemoryRaceSnapshot(actor, roomId);
-  if (result?.changed) await broadcastInvalidation(roomId, "memory_race_transition", snapshot.version);
+  if (result?.changed) {
+    try {
+      await broadcastGameRoomEvent(roomId, "memory_race_transitioned", {
+        version: snapshot.version,
+        phase: snapshot.phase,
+      });
+    } catch (error) {
+      console.error("Memory Race transition notification failed", error);
+    }
+    await broadcastInvalidation(roomId, "memory_race_transition", snapshot.version);
+  }
   return { result: data, snapshot };
 }
 
@@ -93,5 +104,25 @@ async function broadcastInvalidation(roomId: string, action: string, version: nu
     await broadcastGameRoomChange(roomId, action, version);
   } catch (error) {
     console.error("Memory Race Realtime notification failed", error);
+  }
+}
+
+async function broadcastReveal(roomId: string, cardIndex: number, snapshot: MemoryRaceSnapshot) {
+  const visibleCards = snapshot.cards
+    .filter((card) => card.revealed && card.emoji)
+    .map((card) => ({ index: card.index, emoji: card.emoji }));
+  const event = snapshot.phase === "awaiting_second" ? "memory_race_card_revealed" : "memory_race_pair_resolved";
+  try {
+    await broadcastGameRoomEvent(roomId, event, {
+      version: snapshot.version,
+      phase: snapshot.phase,
+      cards: snapshot.phase === "awaiting_second"
+        ? visibleCards.filter((card) => card.index === cardIndex)
+        : visibleCards,
+      matched: snapshot.phase === "revealing_match" || snapshot.phase === "finished",
+      revealEndsAt: snapshot.phaseEndsAt,
+    });
+  } catch (error) {
+    console.error("Memory Race reveal notification failed", error);
   }
 }
