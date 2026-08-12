@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
+import { getCurrentStudent } from "@/lib/auth/auth";
+import { mapEducationLevelToClassGroup } from "@/lib/assignments/classGroups";
+import { normalizeEducationLevel } from "@/lib/assignments/educationLevels";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
+import { getTatliDukkaniScoreEvaluation, TATLI_DUKKANI_SCORE_RANGES } from "@/lib/tatli-dukkani/scoreRanges";
+import evaluationStyles from "./TatliDukkaniScoreEvaluation.module.css";
 import styles from "./TatliDukkaniExerciseClient.module.css";
 
 type Item = { id: string; emoji: string; name: string };
@@ -52,6 +57,13 @@ export function TatliDukkaniExerciseClient({ educationProgramLaunch }: { educati
   const [saved, setSaved] = useState(false); const timerRef = useRef<number | null>(null); const saveRef = useRef(false);
   useEducationProgramExerciseRunning(Boolean(educationProgramLaunch) && phase !== "intro" && phase !== "gameover");
   const { completeTaskAfterResultSave } = useEducationProgramTaskCompletion(educationProgramLaunch?.taskId, RESULT_TYPE);
+  const scoreEvaluation = useMemo(() => {
+    const student = getCurrentStudent();
+    const educationLevel = normalizeEducationLevel(student?.educationLevel ?? student?.classLevel ?? student?.className);
+    const classMapping = mapEducationLevelToClassGroup(educationLevel);
+    return getTatliDukkaniScoreEvaluation(score, classMapping.ok ? classMapping.value : null);
+  }, [score]);
+  const successRate = rounds > 0 ? Math.round((correct / rounds) * 100) : 0;
 
   const startRound = useCallback((nextLevel = level) => {
     if (timerRef.current) window.clearInterval(timerRef.current);
@@ -103,8 +115,10 @@ export function TatliDukkaniExerciseClient({ educationProgramLaunch }: { educati
   };
 
   const titleStats = useMemo(() => `Tur ${rounds + 1} / Seviye ${level}`, [level, rounds]);
+  if (phase === "gameover") {
+    return <main className={styles.page}><section className={styles.gameover}><div className={styles.bigEmoji}>😢</div><h1>Oyun Bitti!</h1><p>Dükkanın kapısına “Kapalı” tabelası asıldı...</p><div className={styles.finalStats}><span>Seviye <b>{level}</b></span><span>Toplam Puan <b>⭐ {score}</b></span><span>Doğru Cevap <b>✅ {correct}</b></span><span>Yanlış Cevap <b>{rounds - correct}</b></span><span>Başarı Oranı <b>%{successRate}</b></span><span>Tam Seri <b>🔥 {maxCombo}x</b></span><span>Toplam Tur <b>{rounds}</b></span></div><section className={evaluationStyles.scoreEvaluation} aria-labelledby="tatli-score-evaluation-title"><h2 id="tatli-score-evaluation-title">Skor Değerlendirmesi</h2>{scoreEvaluation.classLabel ? <p className={evaluationStyles.evaluationClass}>Sınıf grubun: <strong>{scoreEvaluation.classLabel}</strong></p> : <p className={evaluationStyles.evaluationClass}>Sınıf bilgisi bulunamadı. Genel değerlendirme:</p>}<div className={evaluationStyles.evaluationBadge} data-tone={scoreEvaluation.range.tone}><strong>{scoreEvaluation.range.label}</strong><span>{score} puan</span></div>{scoreEvaluation.classGroup ? <div className={evaluationStyles.scoreTableWrap}><table className={evaluationStyles.scoreTable}><caption className={evaluationStyles.srOnly}>{scoreEvaluation.classLabel} puan değerlendirmesi</caption><thead><tr><th scope="col">Puan Aralığı</th><th scope="col">Değerlendirme</th></tr></thead><tbody>{TATLI_DUKKANI_SCORE_RANGES.map((range) => { const active = range === scoreEvaluation.range; return <tr className={active ? evaluationStyles.activeScoreRow : undefined} data-tone={range.tone} key={range.label}><td>{range.max === null ? `${range.min}+` : `${range.min}–${range.max}`}</td><td><span>{range.label}</span>{active && <strong className={evaluationStyles.currentScore}>Sen buradasın</strong>}</td></tr>; })}</tbody></table></div> : null}</section><p className={styles.saveStatus}>{saved ? "Sonuç kaydedildi." : "Sonuç kaydediliyor..."}</p><button className={styles.gold} onClick={startGame}>🔄 Yeniden Oyna!</button></section></main>;
+  }
   if (phase === "intro") return <main className={styles.page}><section className={styles.intro}><div className={styles.bigEmoji}>🧁</div><h1>Tatlı Dükkanı</h1><p>Müşterilerin siparişlerini hafızanda tut, tatlıları hazırla!</p><div className={styles.howTo}><h2>Nasıl Oynanır?</h2><ul><li>Müşterinin siparişi kısa süre gösterilir.</li><li>Sipariş kaybolmadan dikkat et.</li><li>Doğru ürünleri seçip siparişi hazırla.</li><li>Ardışık doğru cevaplarla bonus kazan.</li></ul></div><button className={styles.primary} onClick={startGame}>🍬 Oyuna Başla!</button></section></main>;
-  if (phase === "gameover") return <main className={styles.page}><section className={styles.gameover}><div className={styles.bigEmoji}>😢</div><h1>Oyun Bitti!</h1><p>Dükkanın kapısına “Kapalı” tabelası asıldı...</p><div className={styles.finalStats}><span>Seviye <b>{level}</b></span><span>Toplam Puan <b>⭐ {score}</b></span><span>Doğru Cevap <b>✅ {correct}</b></span><span>Tam Seri <b>🔥 {maxCombo}x</b></span><span>Toplam Tur <b>{rounds}</b></span></div><p className={styles.saveStatus}>{saved ? "Sonuç kaydedildi." : "Sonuç kaydediliyor..."}</p><button className={styles.gold} onClick={startGame}>🔄 Yeniden Oyna!</button></section></main>;
   return <main className={styles.page}><div className={styles.game}><header><h1>🧁 Tatlı Dükkanı</h1><div className={styles.stats}><span>📊 Seviye {level}</span><span>⭐ Puan: {score}</span>{combo >= 2 && <span className={styles.combo}>🔥 Seri: {combo}x</span>}<span>❤️ {lives}</span></div><div className={styles.progress}><i style={{ width: `${(roundInLevel / 3) * 100}%` }} /></div><small>{titleStats}</small></header><section className={styles.phase}>
     {phase === "order" && <div className={styles.order}><div className={styles.bigEmoji}>🧑‍🍳</div><strong>MÜŞTERİ SİPARİŞİ</strong><div className={styles.timer}><i style={{ width: `${orderProgress}%` }} /></div><div className={styles.orderItems}>{order.map((item) => <span key={item.id}>{item.emoji} {item.name}</span>)}</div></div>}
     {phase === "selection" && <div className={styles.selection}><h2>📋 Doğru Ürünleri Seç!</h2><p>Hafızandaki siparişi hatırla ve işaretle</p><div className={styles.grid}>{options.map((item) => <button type="button" className={`${styles.item} ${selected.includes(item.id) ? styles.selected : ""}`} key={item.id} onClick={() => setSelected((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])}><span>{item.emoji}</span><b>{item.name}</b></button>)}</div><button className={styles.primary} onClick={submit}>🍽️ Siparişi Hazırla</button></div>}
