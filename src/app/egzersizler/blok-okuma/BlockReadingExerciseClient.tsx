@@ -144,7 +144,7 @@ export function BlockReadingExerciseClient({
   const [textLoadError, setTextLoadError] = useState<string | null>(null);
   const [textDiagnostics, setTextDiagnostics] = useState<TextLibraryLoadResult["diagnostics"] | null>(null);
   const [blockSize, setBlockSize] = useState<BlockSize>(() =>
-    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "blockSize", BLOCK_SIZE_OPTIONS, 3),
+    pickEducationProgramSettingOption(educationProgramLaunch?.settings, "blockSize", BLOCK_SIZE_OPTIONS, 2),
   );
   const [speedMode, setSpeedMode] = useState<BlockReadingSpeedMode>(() =>
     pickEducationProgramSettingOption(educationProgramLaunch?.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"),

@@ -86,7 +86,8 @@ test("14) educationProgramLaunch prop'u opsiyonel ve tipli olarak tanimlanir", a
 test("15) blockSize/speedMode/intervalMs sabit secenek listesiyle, wordsPerMinute serbest aralikla (1-2000) okunur", async () => {
   const source = await read(CLIENT_PATH);
 
-  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "blockSize", BLOCK_SIZE_OPTIONS, 3\)/);
+  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "blockSize", BLOCK_SIZE_OPTIONS, 2\)/);
+  assert.match(source, /const \[blockSize, setBlockSize\] = useState<BlockSize>\(\(\) =>/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "speedMode", SPEED_MODE_OPTIONS, "interval"\)/);
   assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "intervalMs", INTERVAL_MS_OPTIONS, 500\)/);
   assert.match(
@@ -128,6 +129,14 @@ test("18) blockSize/speedMode/aktif hiz input'u Egitim Programi modunda kilitlen
 
   assert.match(source, /value=\{intervalInputMs\} disabled=\{isEducationProgramMode\}/);
   assert.match(source, /value=\{wordsPerMinuteInput\}\s*\n\s*disabled=\{isEducationProgramMode\}/);
+});
+
+test("19) restart/reset blockSize secimini korur; explicit educationProgramLaunch blockSize'i defaultun uzerindedir", async () => {
+  const source = await read(CLIENT_PATH);
+
+  assert.match(source, /pickEducationProgramSettingOption\(educationProgramLaunch\?\.settings, "blockSize", BLOCK_SIZE_OPTIONS, 2\)/);
+  assert.doesNotMatch(source, /setBlockSize\(2\)/);
+  assert.match(source, /setBlockSize\(nextBlockSize as BlockSize\)/);
 });
 
 test("19) fontSize, kategori ve metin secimi Egitim Programi modunda serbest kalir (ek kilit eklenmedi)", async () => {

@@ -322,7 +322,7 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
   },
   {
     // src/app/egzersizler/blok-okuma/BlockReadingExerciseClient.tsx
-    // blockSize (L31, default 3), speedMode "interval"|"wpm" (blockReading.ts, default "interval"),
+    // blockSize (L31, default 2), speedMode "interval"|"wpm" (blockReading.ts, default "interval"),
     // intervalInputMs (L459: Math.min(60_000, Math.max(100,...)), default 750),
     // wordsPerMinute (L193: normalizeReadingSpeed(v,150,1) - yalniz alt sinir var, ust sinir yok),
     // fontSize (L32, default 40). Legacy save (saveExerciseResult, L16/L266-287).
@@ -338,7 +338,7 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
       wordsPerMinute: { kind: "integer", min: 1 },
       fontSize: { kind: "enum", values: [24, 32, 40, 48, 56] },
     },
-    defaultSettings: { blockSize: 3, speedMode: "interval", intervalMs: 500, wordsPerMinute: 150, fontSize: 40 },
+    defaultSettings: { blockSize: 2, speedMode: "interval", intervalMs: 500, wordsPerMinute: 150, fontSize: 40 },
   },
   {
     // src/app/egzersizler/gruplama-calismasi/GroupingExerciseClient.tsx

@@ -252,7 +252,7 @@ const BLOCK_READING_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
       label: "Blok Boyutu",
       type: "integer",
       options: [1, 2, 3, 4, 5],
-      defaultValue: 3,
+      defaultValue: 2,
     },
     {
       key: "speedMode",

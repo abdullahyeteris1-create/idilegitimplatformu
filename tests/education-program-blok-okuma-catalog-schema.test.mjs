@@ -6,6 +6,7 @@ import { resolveEducationProgramExerciseRoute } from "../src/lib/education-progr
 import { getEducationProgramExercise } from "../src/lib/education-programs/exerciseCatalog.ts";
 import {
   getExerciseSettingsSchema,
+  pickEducationProgramSettingOption,
   validateExerciseSettingsValue,
 } from "../src/lib/education-programs/exerciseSettingsSchemas.ts";
 
@@ -46,7 +47,7 @@ test("3) blok-okuma semasi gercek client alanlariyla eslesir: blockSize, speedMo
   );
 
   assert.deepEqual(fieldsByKey.blockSize.options, [1, 2, 3, 4, 5]);
-  assert.equal(fieldsByKey.blockSize.defaultValue, 3);
+  assert.equal(fieldsByKey.blockSize.defaultValue, 2);
 
   assert.deepEqual(fieldsByKey.speedMode.options, ["interval", "wpm"]);
   assert.equal(fieldsByKey.speedMode.defaultValue, "interval");
@@ -85,6 +86,12 @@ test("4) blok-okuma semasina fontSize/textId/category/durationSeconds/initialLev
   ]) {
     assert.equal(excludedKey in fieldsByKey, false, `${excludedKey} semada olmamali`);
   }
+});
+
+test("explicit education program blockSize default 2'yi override eder; gecersiz deger defaulta doner", () => {
+  const options = [1, 2, 3, 4, 5];
+  assert.equal(pickEducationProgramSettingOption({ blockSize: 4 }, "blockSize", options, 2), 4);
+  assert.equal(pickEducationProgramSettingOption({ blockSize: 99 }, "blockSize", options, 2), 2);
 });
 
 // 5) Gecersiz degerler sessizce atlanir (mevcut validateExerciseSettingsValue davranisi)
