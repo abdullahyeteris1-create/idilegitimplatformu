@@ -140,6 +140,7 @@ export const navItems: NavItem[] = [
   { label: "Öğrenci Paneli", icon: "home", href: "/ogrenci-paneli-onizleme" },
   { label: "Ana Sayfa", icon: "house", href: "/ogrenci" },
   { label: "Egzersizler", icon: "checkbox", href: "/egzersizler" },
+  { label: "Oyun Odaları", icon: "puzzle", href: "/ogrenci/oyun-odalari" },
   { label: "Çalışmalarım", icon: "clock" },
   { label: "Sonuçlarım", icon: "medal", href: "/sonuc" },
   { label: "Okuma Testlerim", icon: "bookOpen", href: "/ogrenci/okuma-testlerim" },

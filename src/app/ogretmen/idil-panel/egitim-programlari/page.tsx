@@ -6,7 +6,7 @@ import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { EducationProgramTemplateList } from "@/components/education-programs/EducationProgramTemplateList";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/auth/adminSession";
+import { ADMIN_SESSION_COOKIE_NAME, isAdminSessionTokenValid } from "@/lib/auth/adminSession";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { listEducationProgramTemplates } from "@/lib/education-programs/repository";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 async function requireAdminSession() {
   const token = (await cookies()).get(ADMIN_SESSION_COOKIE_NAME)?.value;
-  if (!token || token.trim().length < 16) redirect("/giris");
+  if (!isAdminSessionTokenValid(token)) redirect("/giris");
 }
 
 export default async function EducationProgramsPage() {

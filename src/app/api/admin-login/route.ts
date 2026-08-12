@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_MAX_AGE_SECONDS } from "@/lib/auth/adminSession";
+import { ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_MAX_AGE_SECONDS, createAdminSessionToken } from "@/lib/auth/adminSession";
 
 type AdminLoginBody = {
   username?: unknown;
@@ -15,10 +15,6 @@ function getConfiguredAdminCredentials(): { username: string; password: string }
   }
 
   return { username, password };
-}
-
-function createSessionToken(): string {
-  return `${crypto.randomUUID()}-${crypto.randomUUID()}`;
 }
 
 export async function POST(request: Request) {
@@ -52,11 +48,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const sessionToken = createAdminSessionToken();
+  if (!sessionToken) {
+    return NextResponse.json(
+      { ok: false, message: "Sunucu yonetici oturumuna hazir degil." },
+      { status: 500 },
+    );
+  }
+
   const response = NextResponse.json({ ok: true });
 
   response.cookies.set({
     name: ADMIN_SESSION_COOKIE_NAME,
-    value: createSessionToken(),
+    value: sessionToken,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

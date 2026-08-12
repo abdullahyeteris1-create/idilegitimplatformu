@@ -39,8 +39,9 @@ test("4) /ogretmen/idil-panel/odevler navigasyonda gorunmeye devam ediyor - fark
   assert.ok(hrefs.includes("/ogretmen/idil-panel/odevler"));
 });
 
-test("gizli oldugunda dahi item sayisi tutarli: yalniz 1 eksik (Odev Programi)", () => {
-  assert.equal(TEACHER_NAV_ITEMS.length, 13);
+test("gizli oldugunda dahi item sayisi tutarli: eski Odev Programi gizli, Oyun Odalari aktif", () => {
+  assert.equal(TEACHER_NAV_ITEMS.length, 14);
+  assert.ok(TEACHER_NAV_ITEMS.some((item) => item.href === "/ogretmen/idil-panel/oyun-odalari"));
 });
 
 test("gorunurluk karari tek kaynaktan (ASSIGNMENT_PROGRAM_HREF) yonetiliyor, baska yerde ayrica hardcode edilmemis", async () => {

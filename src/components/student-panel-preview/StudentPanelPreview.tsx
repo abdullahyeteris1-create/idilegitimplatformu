@@ -483,7 +483,7 @@ function selectDailyTaskItem(items: DailyAssignmentItem[]): DailyAssignmentItem 
     ?? null;
 }
 
-function DailyTask({ taskState }: { taskState: DailyTaskState }) {
+function DailyTaskContent({ taskState }: { taskState: DailyTaskState }) {
   if (taskState.status === "loading") {
     return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="loading"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Görev yükleniyor...</p></section>;
   }
@@ -517,6 +517,10 @@ function DailyTask({ taskState }: { taskState: DailyTaskState }) {
   const itemHref = `/egzersizler/${selectedItem.exerciseSlug}?assignmentItemId=${encodeURIComponent(selectedItem.id)}`;
 
   return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="ready"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyTaskTitle}>{selectedItem.exerciseTitle}</p><div className={styles.dailyTaskMeta}><small><b>Durum:</b> {statusLabel}</small>{durationMinutes !== null && <small><b>Süre:</b> {durationMinutes} dakika</small>}{selectedItem.assignedTextTitle && <small><b>Metin:</b> {selectedItem.assignedTextTitle}</small>}{selectedItem.teacherNote && <small><b>Öğretmen notu:</b> {selectedItem.teacherNote}</small>}</div><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><div className={styles.astronaut}>👨‍🚀</div><Link href={itemHref}>Göreve Devam Et <Icon name="arrow"/></Link></section>;
+}
+
+function DailyTask({ taskState }: { taskState: DailyTaskState }) {
+  return <><GameRoomJoinCard/><DailyTaskContent taskState={taskState}/></>;
 }
 
 function RecentResults({ results, loading, error }: { results: ExerciseResult[]; loading: boolean; error: boolean }) {
@@ -602,6 +606,10 @@ function ReadingTest({ test, loading }: { test?: ReadingTestResult; loading: boo
 
 function StatisticsCard() {
   return <section className={styles.sideCard}><span className={styles.cornerSpark}>✦</span><h2>İstatistikler</h2><p className={styles.readingEmpty}>Çalışma geçmişinizi ve gelişiminizi inceleyin.</p><Link href="/sonuc" className={styles.subtleButton}>İstatistikleri Gör <Icon name="chart"/></Link></section>;
+}
+
+function GameRoomJoinCard() {
+  return <section className={styles.sideCard} data-game-room-card><span className={styles.cornerSpark}>✦</span><h2>Oyun Odasına Katıl</h2><p className={styles.readingEmpty}>Öğretmeninin paylaştığı 6 haneli kodla canlı oyun lobisine gir.</p><Link href="/ogrenci/oyun-odalari" className={styles.subtleButton}>Oda Kodunu Gir <Icon name="puzzle"/></Link></section>;
 }
 
 const mobileItems: NavItem[] = [

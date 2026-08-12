@@ -15,6 +15,7 @@ const ALL_TEACHER_NAV_ITEMS = [
   { href: ASSIGNMENT_PROGRAM_HREF, label: "Ödev Programı" },
   { href: "/ogretmen/idil-panel/egitim-programlari", label: "Eğitim Programları" },
   { href: "/ogretmen/idil-panel/ogrenci-programlari", label: "Öğrenci Programları" },
+  { href: "/ogretmen/idil-panel/oyun-odalari", label: "Oyun Odaları" },
   { href: "/ogretmen/idil-panel/ders-kayitlari", label: "Ders Kayıtları" },
   { href: "/egzersizler", label: "Egzersizler" },
   { href: "/sonuc", label: "Sonuçlar" },

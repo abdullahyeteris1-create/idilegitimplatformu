@@ -6,7 +6,7 @@ import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { EducationProgramAssignmentForm } from "@/components/education-programs/EducationProgramAssignmentForm";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/auth/adminSession";
+import { ADMIN_SESSION_COOKIE_NAME, isAdminSessionTokenValid } from "@/lib/auth/adminSession";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { listEducationProgramAssignmentOptions } from "@/lib/education-programs/studentProgramRepository";
 import type { StudentEducationProgramAssignmentOptions } from "@/lib/education-programs/studentProgramTypes";
@@ -24,7 +24,7 @@ const EMPTY_OPTIONS: StudentEducationProgramAssignmentOptions = {
 
 async function requireAdminSession() {
   const token = (await cookies()).get(ADMIN_SESSION_COOKIE_NAME)?.value;
-  if (!token || token.trim().length < 16) redirect("/giris");
+  if (!isAdminSessionTokenValid(token)) redirect("/giris");
 }
 
 export default async function AssignEducationProgramPage() {

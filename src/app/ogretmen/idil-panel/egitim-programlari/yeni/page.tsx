@@ -5,7 +5,7 @@ import { TeacherOnly } from "@/components/auth/TeacherOnly";
 import { EducationProgramCreateForm } from "@/components/education-programs/EducationProgramCreateForm";
 import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
-import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/auth/adminSession";
+import { ADMIN_SESSION_COOKIE_NAME, isAdminSessionTokenValid } from "@/lib/auth/adminSession";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default async function NewEducationProgramPage() {
   const token = (await cookies()).get(ADMIN_SESSION_COOKIE_NAME)?.value;
-  if (!token || token.trim().length < 16) redirect("/giris");
+  if (!isAdminSessionTokenValid(token)) redirect("/giris");
 
   return (
     <AppShell

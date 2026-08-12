@@ -83,6 +83,12 @@ const MODULE_CARDS: ModuleCard[] = [
     href: "/ogretmen/idil-panel/ders-kayitlari",
   },
   {
+    title: "Oyun Odaları",
+    description: "Çok oyunculu oyunlar için oda oluştur, kod paylaş ve canlı lobiyi yönet.",
+    status: "Aktif",
+    href: "/ogretmen/idil-panel/oyun-odalari",
+  },
+  {
     title: "Ödev Programı",
     description: "Sınıf gruplarına göre 20 günlük ödev şablonu ayarları ve program önizlemesi.",
     status: "Aktif",

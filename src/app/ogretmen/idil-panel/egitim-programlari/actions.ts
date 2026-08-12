@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ADMIN_SESSION_COOKIE_NAME } from "@/lib/auth/adminSession";
+import { ADMIN_SESSION_COOKIE_NAME, isAdminSessionTokenValid } from "@/lib/auth/adminSession";
 import {
   createEducationProgramTemplate,
   EDUCATION_PROGRAM_TEMPLATES_TABLE,
@@ -34,7 +34,7 @@ const STUDENT_PROGRAMS_ROUTE = "/ogretmen/idil-panel/ogrenci-programlari";
 async function hasAdminSession(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
-  return typeof token === "string" && token.trim().length >= 16;
+  return isAdminSessionTokenValid(token);
 }
 
 function errorState(
