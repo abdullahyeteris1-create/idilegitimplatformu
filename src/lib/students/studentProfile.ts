@@ -9,6 +9,7 @@ export type StudentProfile = {
   name: string;
   username?: string | null;
   class_name?: string | null;
+  profile_image_url?: string | null;
 };
 
 export type StudentProfileDetails = StudentProfile & {
@@ -23,7 +24,7 @@ export async function getStudentProfileById(studentId: string): Promise<StudentP
   try {
     const { data, error } = await supabase
       .from(STUDENTS_TABLE)
-      .select("id,name,username,class_name")
+      .select("id,name,username,class_name,profile_image_url")
       .eq("id", studentId)
       .maybeSingle();
 
@@ -36,6 +37,7 @@ export async function getStudentProfileById(studentId: string): Promise<StudentP
       name: typeof data.name === "string" ? data.name : "",
       username: typeof data.username === "string" ? data.username : null,
       class_name: typeof data.class_name === "string" ? data.class_name : null,
+      profile_image_url: typeof data.profile_image_url === "string" ? data.profile_image_url : null,
     };
   } catch {
     return null;
