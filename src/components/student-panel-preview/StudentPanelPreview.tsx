@@ -419,13 +419,13 @@ function Hero({ studentName, resumeTarget, progressSummary }: { studentName: str
     resumeContent = <p className={styles.resumeState}>Devam bilgisi şu anda görüntülenemiyor.</p>;
   } else if (resumeTarget.status === "assignment") {
     resumeContent = <><small className={styles.resumeEyebrow}>Günlük görev</small><strong>{resumeTarget.item.exerciseTitle}</strong><div className={styles.resumeDetails}>{resumeTarget.details.map((detail) => <span key={detail}>{detail}</span>)}</div></>;
-    resumeAction = <Link href={resumeTarget.href} data-resume-action="assignment">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
+    resumeAction = <Link href="/ogrenci/egitim-programim?resume=1" data-resume-action="assignment">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
   } else if (resumeTarget.status === "result") {
     const title = resumeTarget.result.exerciseTitle?.trim() || "Çalışma";
     const isReadingSpeedTest = resumeTarget.result.exerciseType === "reading-speed-test";
     const readingSpeedWpm = getResultDetailNumber(resumeTarget.result, "readingSpeedWpm");
     resumeContent = <><small className={styles.resumeEyebrow}>Son çalışmana dön</small><strong>{title}</strong><div className={styles.resumeDetails}><span>{formatResultDate(resumeTarget.result.date)}</span>{isReadingSpeedTest ? <><span>Okuma Hızı: {readingSpeedWpm !== null ? `${readingSpeedWpm} kelime/dk` : "-"}</span><span>Süre: {formatResultDuration(resumeTarget.result.durationSeconds)}</span></> : <><span>Başarı: %{clampPercentage(resumeTarget.result.successRate)}</span><span>Puan: {Number.isFinite(resumeTarget.result.score) ? resumeTarget.result.score : 0}</span></>}</div></>;
-    resumeAction = <Link href={resumeTarget.href} data-resume-action="result">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
+    resumeAction = <Link href="/ogrenci/egitim-programim?resume=1" data-resume-action="result">Kaldığın Yerden Devam Et <Icon name="arrow"/></Link>;
   } else {
     resumeContent = <><small className={styles.resumeEyebrow}>Çalışma önerisi</small><strong>Yeni bir çalışmaya başla</strong><p className={styles.resumeDescription}>Egzersizlerden birini seçerek gelişimine devam edebilirsin.</p></>;
     resumeAction = <Link href={resumeTarget.href} data-resume-action="empty">Egzersizleri Aç <Icon name="arrow"/></Link>;

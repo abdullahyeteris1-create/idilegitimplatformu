@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   countCompletedStudentProgramTasks,
   selectInitialStudentProgramDayId,
+  selectStudentProgramResumeTarget,
 } from "../src/lib/education-programs/studentProgramPresentation.ts";
 
 async function read(relativePath) {
@@ -35,6 +36,10 @@ function task(status) {
     startingLevel: null,
     status,
   };
+}
+
+function taskWithId(id, status, orderNumber = 1) {
+  return { ...task(status), id, orderNumber };
 }
 
 // --- countCompletedStudentProgramTasks ---
@@ -106,6 +111,31 @@ test("gun dizisi bossa null doner", () => {
   assert.equal(selectInitialStudentProgramDayId([], 1), null);
 });
 
+test("resume hedefi aktif gundeki ilk in_progress veya available gorevi secer", () => {
+  const days = [
+    day(1, "completed", [taskWithId("completed-task", "completed")]),
+    day(2, "in_progress", [
+      taskWithId("available-task", "available"),
+      taskWithId("progress-task", "in_progress", 2),
+    ]),
+    day(3, "locked", [taskWithId("locked-task", "locked")]),
+  ];
+
+  assert.deepEqual(selectStudentProgramResumeTarget(days, 2), {
+    dayId: "day-2",
+    taskId: "progress-task",
+  });
+});
+
+test("resume hedefi kilitli veya tamamlanmis goreve yonlenmez", () => {
+  const days = [
+    day(1, "completed", [taskWithId("done-task", "completed")]),
+    day(2, "locked", [taskWithId("locked-task", "locked")]),
+  ];
+
+  assert.equal(selectStudentProgramResumeTarget(days, 2), null);
+});
+
 // --- StudentEducationProgramDaysExplorer.tsx statik kaynak dogrulamasi ---
 
 const EXPLORER_PATH =
@@ -162,6 +192,15 @@ test("8/9) StudentEducationProgramDaysExplorer'a gun basina data-day-id ile isar
 
   assert.match(source, /<StudentEducationProgramDaysExplorer/);
   assert.match(source, /data-day-id=\{day\.id\}/);
+});
+
+test("resume focus task kartini guvenli DOM id ve data attribute ile isaretler", async () => {
+  const source = await read(VIEW_PATH);
+
+  assert.match(source, /education-program-task-\$\{task\.id\}/);
+  assert.match(source, /data-resume-focus=\{isResumeTarget \? "true" : undefined\}/);
+  assert.match(source, /scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/);
+  assert.match(source, /new URLSearchParams\(window\.location\.search\)/);
 });
 
 test("FAZ 4-2B-2) gun secimi kontrollu: parent selectedDayId state'ini tutar, Explorer'a selectedDayId\\/onSelectDayId olarak gecirilir", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/student-panel-preview/icons";
 import { TaskLaunchForm } from "@/components/education-programs/TaskLaunchForm";
@@ -16,6 +16,7 @@ import {
   formatStudentProgramDuration,
   selectCurrentStudentProgramDay,
   selectInitialStudentProgramDayId,
+  selectStudentProgramResumeTarget,
   STUDENT_PROGRAM_DAY_STATUS_LABELS,
   STUDENT_PROGRAM_TASK_STATUS_LABELS,
 } from "@/lib/education-programs/studentProgramPresentation";
@@ -100,9 +101,11 @@ export function StudentEducationProgramErrorState() {
 function TaskCard({
   task,
   orderNumber,
+  isResumeTarget,
 }: {
   task: StudentEducationProgramStudentTask | null;
   orderNumber: number;
+  isResumeTarget: boolean;
 }) {
   if (!task) {
     return (
@@ -117,7 +120,12 @@ function TaskCard({
   const visual = getStudentProgramTaskVisual(task.exerciseSlug);
 
   return (
-    <article className={styles.taskCard} data-status={task.status}>
+    <article
+      id={`education-program-task-${task.id}`}
+      className={styles.taskCard}
+      data-status={task.status}
+      data-resume-focus={isResumeTarget ? "true" : undefined}
+    >
       <div className={styles.taskTop}>
         <div className={styles.taskIdentity}>
           <span className={`${styles.taskIcon} ${taskIconToneClass(visual.tone)}`} aria-hidden="true">
@@ -155,9 +163,11 @@ function TaskCard({
 function DayArticle({
   day,
   isCurrent,
+  resumeTaskId,
 }: {
   day: StudentEducationProgramStudentDay;
   isCurrent: boolean;
+  resumeTaskId: string | null;
 }) {
   const tasksByOrder = new Map(day.tasks.map((task) => [task.orderNumber, task]));
   const completedTaskCount = countCompletedStudentProgramTasks(day.tasks);
@@ -206,6 +216,7 @@ function DayArticle({
               key={`${day.id}-${orderNumber}`}
               task={tasksByOrder.get(orderNumber) ?? null}
               orderNumber={orderNumber}
+              isResumeTarget={tasksByOrder.get(orderNumber)?.id === resumeTaskId}
             />
           );
         })}
@@ -262,6 +273,40 @@ export function StudentEducationProgramStudentView({
   // (secili gunun sure toplami icin) AYNI secime, yeni bir state mimarisi
   // kurmadan erisebilir. Gorev baslatma/gun degistirme davranisi degismedi.
   const [selectedDayId, setSelectedDayId] = useState(initialSelectedDayId);
+  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const resumeTarget = useMemo(
+    () => selectStudentProgramResumeTarget(program.days, program.currentDayNumber),
+    [program],
+  );
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("resume") !== "1") return;
+    if (!resumeTarget) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      setSelectedDayId(resumeTarget.dayId);
+      setFocusedTaskId(resumeTarget.taskId);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [resumeTarget]);
+
+  useEffect(() => {
+    if (!focusedTaskId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById(`education-program-task-${focusedTaskId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const timeout = window.setTimeout(() => setFocusedTaskId(null), 2200);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [focusedTaskId]);
+
   const selectedDay =
     program.days.find((day) => day.id === selectedDayId) ?? null;
   const selectedDayDurationSeconds = selectedDay
@@ -314,7 +359,11 @@ export function StudentEducationProgramStudentView({
           >
             {program.days.map((day) => (
               <div key={day.id} data-day-id={day.id}>
-                <DayArticle day={day} isCurrent={currentDay?.id === day.id} />
+                <DayArticle
+                  day={day}
+                  isCurrent={currentDay?.id === day.id}
+                  resumeTaskId={focusedTaskId}
+                />
               </div>
             ))}
           </StudentEducationProgramDaysExplorer>

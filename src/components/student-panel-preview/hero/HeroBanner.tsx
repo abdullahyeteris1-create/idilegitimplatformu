@@ -67,7 +67,7 @@ function HeroFloatingCards({ summary }: { summary: HeroProgressSummary }) {
 }
 
 function HeroActions({ resumeAction }: { resumeAction: ReactNode }) {
-  return <div className={styles.heroActions}><Link href="/ogrenci" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow" /></Link>{resumeAction}</div>;
+  return <div className={styles.heroActions}><Link href="/ogrenci/egitim-programim?resume=1" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow" /></Link>{resumeAction}</div>;
 }
 
 function HeroThemePicker({ controller }: { controller: HeroThemeController }) {

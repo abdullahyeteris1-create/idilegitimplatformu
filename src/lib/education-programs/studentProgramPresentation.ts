@@ -84,6 +84,38 @@ export function countCompletedStudentProgramTasks(
   return tasks.filter((task) => task.status === "completed").length;
 }
 
+export type StudentProgramResumeTarget = {
+  dayId: string;
+  taskId: string;
+};
+
+export function selectStudentProgramResumeTarget(
+  days: readonly StudentEducationProgramStudentDay[],
+  currentDayNumber: number,
+): StudentProgramResumeTarget | null {
+  const sortedDays = [...days].sort(
+    (first, second) => first.dayNumber - second.dayNumber,
+  );
+  const openDays = sortedDays.filter(
+    (day) => day.status === "available" || day.status === "in_progress",
+  );
+  const currentOpenDay = openDays.find(
+    (day) => day.dayNumber === currentDayNumber,
+  );
+  const orderedDays = currentOpenDay
+    ? [currentOpenDay, ...openDays.filter((day) => day.id !== currentOpenDay.id)]
+    : openDays;
+
+  for (const day of orderedDays) {
+    const task =
+      day.tasks.find((candidate) => candidate.status === "in_progress") ??
+      day.tasks.find((candidate) => candidate.status === "available");
+    if (task) return { dayId: day.id, taskId: task.id };
+  }
+
+  return null;
+}
+
 // Iki kolonlu gun gezgininin baslangicta hangi gunu secili gostermesi
 // gerektigini belirler. Yalniz UI state icin kullanilir - veritabanini veya
 // mevcut program.currentDayNumber degerini degistirmez. Sira: 1) ogrencinin

@@ -312,6 +312,18 @@
   box-shadow: none;
 }
 
+.taskCard[data-resume-focus="true"] {
+  animation: resumeTaskFocus 2.2s ease-out;
+  border-color: var(--idil-program-accent);
+  box-shadow: 0 0 0 4px var(--idil-program-accent-soft), 0 18px 40px var(--idil-shadow);
+}
+
+@keyframes resumeTaskFocus {
+  0%, 100% { transform: translateY(0); }
+  18% { transform: translateY(-3px); }
+  42% { transform: translateY(0); }
+}
+
 .taskTop {
   display: flex;
   flex-wrap: wrap;
