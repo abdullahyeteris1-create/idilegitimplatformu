@@ -8,6 +8,8 @@ import styles from "./MemoryRaceMultiplayerClient.module.css";
 
 type MemoryRaceApiResponse = { ok: boolean; message?: string; game?: MemoryRaceSnapshot };
 type RoomApiResponse = { ok: boolean; message?: string; room?: GameRoomView };
+type MemoryRaceMutationResponse = { ok: boolean; message?: string; result?: { snapshot?: MemoryRaceSnapshot } };
+type RoomChangedEvent = { payload?: { version?: unknown } };
 
 class MemoryRaceFetchError extends Error { constructor(public status: number, message: string) { super(message); } }
 async function readJson<T>(response: Response): Promise<T> { return response.json() as Promise<T>; }
@@ -43,6 +45,7 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   const refreshQueued = useRef(false);
   const transitionInFlight = useRef(false);
   const pendingMoveRef = useRef(false);
+  const authoritativeVersionRef = useRef(0);
   const previousGameRef = useRef<MemoryRaceSnapshot | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -78,16 +81,21 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
     } catch { /* Ses hiçbir koşulda oyunu bozmaz. */ }
   }, [primeAudio, soundEnabled]);
 
+  const setAuthoritativeGame = useCallback((nextGame: MemoryRaceSnapshot) => {
+    authoritativeVersionRef.current = nextGame.version;
+    setGame(nextGame);
+  }, []);
+
   const loadState = useCallback(async () => {
     const nextRoom = await fetchRoom(roomId);
     setRoom(nextRoom);
     if (nextRoom.status === "waiting" || nextRoom.status === "starting") { setGame(null); setMessage(nextRoom.status === "starting" ? "Oyun başlatılıyor..." : "Oyun henüz başlamadı."); return; }
-    try { setGame(await fetchGame(roomId)); setMessage(""); }
+    try { setAuthoritativeGame(await fetchGame(roomId)); setMessage(""); }
     catch (error) {
       if (error instanceof MemoryRaceFetchError && error.status === 404) { setGame(null); setMessage("Oyun henüz başlamadı."); return; }
       throw error;
     }
-  }, [roomId]);
+  }, [roomId, setAuthoritativeGame]);
 
   const requestRefresh = useCallback(() => {
     if (refreshInFlight.current) { refreshQueued.current = true; return refreshInFlight.current; }
@@ -99,7 +107,11 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   useEffect(() => {
     const client = getSupabaseBrowserClient(); if (!client) return;
     const channel = client.channel(`game-room:${roomId}`);
-    channel.on("broadcast", { event: "room_changed" }, () => { void requestRefresh(); }).subscribe();
+    channel.on("broadcast", { event: "room_changed" }, (event: RoomChangedEvent) => {
+      const version = typeof event?.payload?.version === "number" ? event.payload.version : null;
+      if (version !== null && authoritativeVersionRef.current >= version) return;
+      void requestRefresh();
+    }).subscribe();
     return () => { void client.removeChannel(channel); };
   }, [requestRefresh, roomId]);
   useEffect(() => {
@@ -122,9 +134,24 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
   useEffect(() => {
     if (!game || !revealPhases.includes(game.phase) || !game.phaseEndsAt) return;
     const delay = Math.max(0, new Date(game.phaseEndsAt).getTime() - Date.now()) + 20;
-    const timer = window.setTimeout(() => { if (transitionInFlight.current) return; transitionInFlight.current = true; void fetch(`/api/game-rooms/${roomId}/memory-race/transition`, { method: "POST", credentials: "same-origin" }).then(() => requestRefresh()).catch(() => setMessage("Bağlantı yenileniyor...")).finally(() => { transitionInFlight.current = false; }); }, delay);
+    const timer = window.setTimeout(() => {
+      if (transitionInFlight.current) return;
+      transitionInFlight.current = true;
+      void fetch(`/api/game-rooms/${roomId}/memory-race/transition`, { method: "POST", credentials: "same-origin" })
+        .then(async (response) => {
+          const result = await readJson<MemoryRaceMutationResponse>(response);
+          if (!response.ok || !result.ok) {
+            await requestRefresh();
+            throw new Error(result.message || "Geçiş tamamlanamadı.");
+          }
+          if (result.result?.snapshot) setAuthoritativeGame(result.result.snapshot);
+          else await requestRefresh();
+        })
+        .catch(() => setMessage("Bağlantı yenileniyor..."))
+        .finally(() => { transitionInFlight.current = false; });
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [game, requestRefresh, roomId]);
+  }, [game, requestRefresh, roomId, setAuthoritativeGame]);
 
   const self = useMemo(() => room?.players.find((player) => player.isSelf) ?? null, [room]);
   const playerNames = useMemo(() => new Map((room?.players ?? []).map((player) => [player.id, player.displayName])), [room]);
@@ -141,9 +168,12 @@ export function MemoryRaceMultiplayerClient({ roomId, role }: { roomId: string; 
     pendingMoveRef.current = true; primeAudio(); setPressedCardIndex(cardIndex); setBusy(true); setMessage("");
     try {
       const response = await fetch(`/api/game-rooms/${roomId}/memory-race/moves`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cardIndex, expectedVersion: game.version }) });
-      const result = await readJson<{ ok: boolean; message?: string }>(response);
-      if (!response.ok || !result.ok) setMessage(result.message || "Oyun durumu değişti. Güncel durum alınıyor...");
-      await requestRefresh();
+      const result = await readJson<MemoryRaceMutationResponse>(response);
+      if (!response.ok || !result.ok) {
+        setMessage(result.message || "Oyun durumu değişti. Güncel durum alınıyor...");
+        await requestRefresh();
+      } else if (result.result?.snapshot) setAuthoritativeGame(result.result.snapshot);
+      else await requestRefresh();
     } catch { setMessage("Bağlantı yenileniyor..."); await requestRefresh(); }
     finally { pendingMoveRef.current = false; setPressedCardIndex(null); setBusy(false); }
   };

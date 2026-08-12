@@ -328,10 +328,22 @@ test("snapshot/move/transition API auth, UUID ve rate-limit conventionlarini izl
   assert.match(sources[0], /Cache-Control": "private, no-store"/);
 });
 
-test("Realtime yalniz sabit invalidation action'i gonderir", async () => {
+test("Realtime invalidation action ve version gonderir, hidden board verisi gondermez", async () => {
   const server = await read("src/lib/memory-race/multiplayerServer.ts");
-  assert.match(server, /broadcastGameRoomChange\(roomId, action\)/);
+  const broadcast = await read("src/lib/multiplayer/server.ts");
+  assert.match(server, /broadcastGameRoomChange\(roomId, action, version\)/);
+  assert.match(broadcast, /httpSend\("room_changed", \{ action, version \}\)/);
   assert.doesNotMatch(server, /broadcastGameRoomChange\([^)]*(?:board|emoji|scores|studentId)/);
+});
+
+test("move ve transition authoritative snapshot ile kendi Realtime refetch'ini azaltir", async () => {
+  const server = await read("src/lib/memory-race/multiplayerServer.ts");
+  const client = await read("src/components/memory-race/MemoryRaceMultiplayerClient.tsx");
+  assert.match(server, /const snapshot = await getMemoryRaceSnapshot\(actor, roomId\)/);
+  assert.match(server, /return \{ result: data, snapshot \}/);
+  assert.match(client, /setAuthoritativeGame\(result\.result\.snapshot\)/);
+  assert.match(client, /authoritativeVersionRef\.current >= version/);
+  assert.match(client, /expectedVersion: game\.version/);
 });
 
 test("standalone Hafiza Yarisi dosyalari Phase 1 importlarindan bagimsiz kalir", async () => {

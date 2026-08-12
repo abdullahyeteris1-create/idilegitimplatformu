@@ -242,11 +242,15 @@ async function notifyGameRoomChange(roomId: string, action: string): Promise<voi
   }
 }
 
-export async function broadcastGameRoomChange(roomId: string, action: string): Promise<void> {
+export async function broadcastGameRoomChange(roomId: string, action: string, version?: number): Promise<void> {
   const client = db();
   const channel = client.channel(`game-room:${roomId}`);
   try {
-    await channel.httpSend("room_changed", { action });
+    if (typeof version === "number") {
+      await channel.httpSend("room_changed", { action, version });
+    } else {
+      await channel.httpSend("room_changed", { action });
+    }
   } finally {
     await client.removeChannel(channel);
   }

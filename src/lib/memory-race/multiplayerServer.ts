@@ -70,8 +70,9 @@ export async function submitMemoryRaceMove(
     p_expected_version: expectedVersion,
   });
   if (error) mapMemoryRaceDatabaseError(error);
-  await broadcastInvalidation(roomId, "memory_race_move");
-  return data;
+  const snapshot = await getMemoryRaceSnapshot(actor, roomId);
+  await broadcastInvalidation(roomId, "memory_race_move", snapshot.version);
+  return { result: data, snapshot };
 }
 
 export async function transitionMemoryRace(actor: GameRoomActor, roomId: string) {
@@ -82,13 +83,14 @@ export async function transitionMemoryRace(actor: GameRoomActor, roomId: string)
   });
   if (error) mapMemoryRaceDatabaseError(error);
   const result = data as { changed?: boolean } | null;
-  if (result?.changed) await broadcastInvalidation(roomId, "memory_race_transition");
-  return data;
+  const snapshot = await getMemoryRaceSnapshot(actor, roomId);
+  if (result?.changed) await broadcastInvalidation(roomId, "memory_race_transition", snapshot.version);
+  return { result: data, snapshot };
 }
 
-async function broadcastInvalidation(roomId: string, action: string) {
+async function broadcastInvalidation(roomId: string, action: string, version: number) {
   try {
-    await broadcastGameRoomChange(roomId, action);
+    await broadcastGameRoomChange(roomId, action, version);
   } catch (error) {
     console.error("Memory Race Realtime notification failed", error);
   }
