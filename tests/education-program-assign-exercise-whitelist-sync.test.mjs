@@ -85,9 +85,11 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
 
 test("Tatlı Dükkanı whitelist migration'i mevcut RPC imzasını ve güvenlik modelini korur", async () => {
   const source = await read(TATLI_DUKKANI_MIGRATION_PATH);
-  assert.match(source, /execute v_updated_definition/i);
+  assert.match(source, /create or replace function public\.assign_education_program_template_v1/i);
+  assert.match(source, /security definer/i);
+  assert.match(source, /set search_path to 'public', 'pg_temp'/i);
   assert.match(source, /'tatli-dukkani'/);
-  assert.match(source, /p_student_id uuid, p_template_id uuid/);
+  assert.match(source, /p_student_id uuid,\s+p_template_id uuid/);
   assert.match(source, /comment on function public\.assign_education_program_template_v1/);
 });
 
