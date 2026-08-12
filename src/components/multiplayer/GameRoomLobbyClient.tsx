@@ -117,6 +117,14 @@ export function GameRoomLobbyClient({ roomId, role }: { roomId: string; role: Ga
     return () => window.clearTimeout(timer);
   }, [requestRoomRefresh, room?.expiresAt]);
 
+  useEffect(() => {
+    if (room?.status !== "playing" || room.gameType !== "memory-race") return;
+    const base = role === "teacher"
+      ? "/ogretmen/idil-panel/oyun-odalari"
+      : "/ogrenci/oyun-odalari";
+    router.replace(`${base}/${roomId}/hafiza-yarisi`);
+  }, [role, room?.gameType, room?.status, roomId, router]);
+
   const activePlayers = useMemo(() => room?.players.filter((player) => player.memberStatus === "active") ?? [], [room]);
 
   const act = async (action: "ready" | "start" | "kick" | "leave" | "close", playerId?: string) => {
@@ -160,7 +168,12 @@ export function GameRoomLobbyClient({ roomId, role }: { roomId: string; role: Ga
         <p className="text-xs font-black uppercase tracking-[.24em] text-fuchsia-300">🎮 Oyun Odası</p>
         <p className="mt-5 text-sm font-bold text-violet-200">ODA KODU</p>
         <h1 className="mt-1 text-5xl font-black tracking-[.16em] md:text-7xl">{room.roomCode}</h1>
-        <p className="mt-3 text-sm text-violet-200">Kodu öğrencilerinle paylaş · Öğretmen: {room.hostDisplayName}</p>
+      <p className="mt-3 text-sm text-violet-200">Kodu öğrencilerinle paylaş · Öğretmen: {room.hostDisplayName}</p>
+      <div className="mx-auto mt-5 flex max-w-2xl flex-wrap items-center justify-center gap-2 text-sm font-black">
+        <span className="rounded-full bg-fuchsia-400/20 px-3 py-1 text-fuchsia-100">{room.gameType === "memory-race" ? "Hafıza Yarışı" : "Genel Oyun Odası"}</span>
+        {room.gameType === "memory-race" ? <span className="rounded-full bg-violet-400/20 px-3 py-1 text-violet-100">Seviye {room.memoryRaceLevel}</span> : null}
+        <span className="rounded-full bg-white/10 px-3 py-1 text-violet-100">{activePlayers.length} / {room.maxPlayers} oyuncu</span>
+      </div>
       </header>
 
       <div className="mx-auto mt-8 grid max-w-3xl gap-3">

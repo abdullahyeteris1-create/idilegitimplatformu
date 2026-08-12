@@ -4,10 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { GameRoomApiResponse, GameRoomRole } from "@/lib/multiplayer/types";
 
+const MEMORY_RACE_GAME_TYPE = "memory-race";
+const MEMORY_RACE_LEVELS = {
+  1: { cards: 16 },
+  2: { cards: 20 },
+  3: { cards: 24 },
+  4: { cards: 32 },
+  5: { cards: 40 },
+  6: { cards: 60 },
+} as const;
+type MemoryRaceLevel = keyof typeof MEMORY_RACE_LEVELS;
+
 export function GameRoomEntryClient({ role }: { role: GameRoomRole }) {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const [maxPlayers, setMaxPlayers] = useState(8);
+  const [gameType, setGameType] = useState("");
+  const [level, setLevel] = useState<MemoryRaceLevel>(1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -20,7 +33,7 @@ export function GameRoomEntryClient({ role }: { role: GameRoomRole }) {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(role === "teacher" ? { maxPlayers } : { roomCode }),
+        body: JSON.stringify(role === "teacher" ? { maxPlayers, gameType: gameType || null, settings: gameType === MEMORY_RACE_GAME_TYPE ? { level } : {} } : { roomCode }),
       });
       const result = await response.json() as GameRoomApiResponse;
       if (!response.ok || !result.ok || !result.roomId) throw new Error(result.message || "İşlem tamamlanamadı.");
@@ -45,12 +58,27 @@ export function GameRoomEntryClient({ role }: { role: GameRoomRole }) {
         </p>
 
         {role === "teacher" ? (
-          <label className="mx-auto mt-6 block max-w-xs text-left text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200">
-            Maksimum oyuncu
-            <select value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-950 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-white">
-              {[2, 4, 6, 8, 12, 16, 24].map((value) => <option key={value} value={value}>{value} oyuncu</option>)}
-            </select>
-          </label>
+          <div className="mx-auto mt-6 grid max-w-xl gap-4 text-left sm:grid-cols-2">
+            <label className="text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+              Oyun türü
+              <select value={gameType} onChange={(event) => { const next = event.target.value; setGameType(next); setMaxPlayers(next === MEMORY_RACE_GAME_TYPE ? 2 : 8); }} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-950 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-white">
+                <option value="">Genel Oyun Odası</option>
+                <option value={MEMORY_RACE_GAME_TYPE}>Hafıza Yarışı</option>
+              </select>
+            </label>
+            <label className="text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200">
+              Maksimum oyuncu
+              <select value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-950 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-white">
+                {(gameType === MEMORY_RACE_GAME_TYPE ? [2, 3, 4] : [2, 4, 6, 8, 12, 16, 24]).map((value) => <option key={value} value={value}>{value} oyuncu</option>)}
+              </select>
+            </label>
+            {gameType === MEMORY_RACE_GAME_TYPE ? <label className="text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200 sm:col-span-2">
+              Hafıza Yarışı seviyesi
+              <select value={level} onChange={(event) => setLevel(Number(event.target.value) as MemoryRaceLevel)} className="mt-2 min-h-12 w-full rounded-xl border border-violet-300 bg-white px-3 text-slate-950 [data-idil-theme=dark]:border-violet-500 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-white">
+                {(Object.keys(MEMORY_RACE_LEVELS) as unknown as MemoryRaceLevel[]).map((value) => <option key={value} value={value}>Seviye {value} · {MEMORY_RACE_LEVELS[value].cards} kart</option>)}
+              </select>
+            </label> : null}
+          </div>
         ) : (
           <label className="mx-auto mt-6 block max-w-sm text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200">
             Oda kodu

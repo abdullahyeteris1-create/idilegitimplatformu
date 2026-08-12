@@ -16,6 +16,7 @@ export type GameRoomView = {
   hostDisplayName: string;
   status: GameRoomStatus;
   gameType: string | null;
+  memoryRaceLevel: number | null;
   maxPlayers: number;
   expiresAt: string;
   players: GameRoomPlayerView[];

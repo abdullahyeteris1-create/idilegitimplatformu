@@ -5,6 +5,7 @@ import { getAdminSessionFromCookies, isAdminSessionValid } from "@/lib/auth/admi
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { getStudentProfileById } from "@/lib/students/studentProfile";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { MEMORY_RACE_GAME_TYPE, createMemoryRaceBoard, isMemoryRaceLevel, isValidMemoryRaceBoard } from "@/lib/memory-race/multiplayerConfig";
 import type { GameRoomRole, GameRoomStatus, GameRoomView } from "./types";
 
 const GAME_ROOMS_TABLE = "game_rooms";
@@ -77,19 +78,29 @@ function mapDatabaseError(error: { message?: string } | null): never {
     invalid_max_players: [400, "Oyuncu sınırı geçersiz."],
     invalid_action: [400, "Oda işlemi geçersiz."],
     invalid_ready: [400, "Hazır durumu geçersiz."],
+    wrong_game_type: [409, "Oda Hafıza Yarışı için oluşturulmamış."],
+    invalid_level: [400, "Hafıza Yarışı seviyesi geçersiz."],
+    invalid_board: [500, "Hafıza Yarışı kartları oluşturulamadı."],
+    not_enough_players: [409, "Hafıza Yarışı için en az 2 aktif oyuncu gerekli."],
+    too_many_players: [409, "Hafıza Yarışı en fazla 4 aktif oyuncuyla oynanabilir."],
   };
   const match = Object.entries(messages).find(([key]) => value.includes(key));
   throw new GameRoomError(match?.[1][0] ?? 500, match?.[1][1] ?? "Oyun odası işlemi tamamlanamadı.");
 }
 
-export async function createGameRoom(actor: GameRoomActor, maxPlayers: number) {
+export async function createGameRoom(
+  actor: GameRoomActor,
+  maxPlayers: number,
+  gameType: string | null = null,
+  settings: Record<string, unknown> = {},
+) {
   if (actor.role !== "teacher") throw new GameRoomError(403, "Yalnızca öğretmen oda oluşturabilir.");
   const { data, error } = await db().rpc("create_game_room_v1", {
     p_host_session_hash: actor.ownerHash,
     p_host_display_name: actor.displayName,
     p_max_players: maxPlayers,
-    p_game_type: null,
-    p_settings: {},
+    p_game_type: gameType,
+    p_settings: settings,
   });
   if (error || !data) mapDatabaseError(error);
   return data as { roomId: string; roomCode: string };
@@ -112,7 +123,7 @@ export async function getGameRoomView(actor: GameRoomActor, roomId: string): Pro
   const client = db();
   const { data: room, error: roomError } = await client
     .from(GAME_ROOMS_TABLE)
-    .select("id,room_code,host_session_hash,host_display_name,status,game_type,max_players,expires_at")
+    .select("id,room_code,host_session_hash,host_display_name,status,game_type,max_players,expires_at,settings")
     .eq("id", roomId)
     .maybeSingle();
   if (roomError || !room) throw new GameRoomError(404, "Bu oda bulunamadı.");
@@ -141,6 +152,11 @@ export async function getGameRoomView(actor: GameRoomActor, roomId: string): Pro
     hostDisplayName: String(room.host_display_name),
     status: room.status as GameRoomStatus,
     gameType: typeof room.game_type === "string" ? room.game_type : null,
+    memoryRaceLevel:
+      room.game_type === MEMORY_RACE_GAME_TYPE && room.settings && typeof room.settings === "object"
+        && isMemoryRaceLevel((room.settings as Record<string, unknown>).level)
+        ? (room.settings as Record<string, unknown>).level as number
+        : null,
     maxPlayers: Number(room.max_players),
     expiresAt: String(room.expires_at),
     role: actor.role as GameRoomRole,
@@ -175,12 +191,41 @@ export async function runGameRoomAction(actor: GameRoomActor, roomId: string, ac
       throw new GameRoomError(400, "Oda işlemi geçersiz.");
     }
     if (action === "kick" && !playerId) throw new GameRoomError(400, "Oyuncu seçilmedi.");
-    result = await client.rpc("manage_game_room_v1", {
-      p_room_id: roomId,
-      p_host_session_hash: actor.ownerHash,
-      p_action: action,
-      p_player_id: playerId ?? null,
-    });
+    if (action === "start") {
+      const { data: room, error: roomError } = await client
+        .from(GAME_ROOMS_TABLE)
+        .select("game_type,settings")
+        .eq("id", roomId)
+        .maybeSingle();
+      if (roomError || !room) throw new GameRoomError(404, "Bu oda bulunamadı.");
+      if (room.game_type === MEMORY_RACE_GAME_TYPE) {
+        const settings = room.settings && typeof room.settings === "object" ? room.settings as Record<string, unknown> : {};
+        const level = settings.level;
+        if (!isMemoryRaceLevel(level)) throw new GameRoomError(400, "Hafıza Yarışı seviyesi geçersiz.");
+        const board = createMemoryRaceBoard(level);
+        if (!isValidMemoryRaceBoard(level, board)) throw new GameRoomError(500, "Hafıza Yarışı kartları oluşturulamadı.");
+        result = await client.rpc("start_memory_race_game_v1", {
+          p_room_id: roomId,
+          p_host_session_hash: actor.ownerHash,
+          p_level: level,
+          p_board: board,
+        });
+      } else {
+        result = await client.rpc("manage_game_room_v1", {
+          p_room_id: roomId,
+          p_host_session_hash: actor.ownerHash,
+          p_action: action,
+          p_player_id: playerId ?? null,
+        });
+      }
+    } else {
+      result = await client.rpc("manage_game_room_v1", {
+        p_room_id: roomId,
+        p_host_session_hash: actor.ownerHash,
+        p_action: action,
+        p_player_id: playerId ?? null,
+      });
+    }
   }
   if (result.error) mapDatabaseError(result.error);
   await notifyGameRoomChange(roomId, action);
