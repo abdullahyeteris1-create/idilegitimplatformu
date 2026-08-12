@@ -1,16 +1,15 @@
 import "server-only";
 
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import {
+  loadStudentProfile,
+  type StudentProfile,
+  type StudentProfileQueryError,
+} from "@/lib/students/studentProfileQuery";
+
+export type { StudentProfile } from "@/lib/students/studentProfileQuery";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
-
-export type StudentProfile = {
-  id: string;
-  name: string;
-  username?: string | null;
-  class_name?: string | null;
-  profile_image_url?: string | null;
-};
 
 export type StudentProfileDetails = StudentProfile & {
   birth_date?: string | null;
@@ -22,24 +21,32 @@ export async function getStudentProfileById(studentId: string): Promise<StudentP
   if (!supabase) return null;
 
   try {
-    const { data, error } = await supabase
-      .from(STUDENTS_TABLE)
-      .select("id,name,username,class_name,profile_image_url")
-      .eq("id", studentId)
-      .maybeSingle();
+    return await loadStudentProfile(
+      async (columns, requestedStudentId) => {
+        const { data, error } = await supabase
+          .from(STUDENTS_TABLE)
+          .select(columns)
+          .eq("id", requestedStudentId)
+          .maybeSingle();
 
-    if (error || !data) {
-      return null;
-    }
-
-    return {
-      id: String(data.id ?? ""),
-      name: typeof data.name === "string" ? data.name : "",
-      username: typeof data.username === "string" ? data.username : null,
-      class_name: typeof data.class_name === "string" ? data.class_name : null,
-      profile_image_url: typeof data.profile_image_url === "string" ? data.profile_image_url : null,
-    };
-  } catch {
+        return {
+          data: data as Record<string, unknown> | null,
+          error,
+        };
+      },
+      studentId,
+      (stage, error: StudentProfileQueryError) => {
+        console.error(`[student-profile] ${stage}`, {
+          code: error.code,
+          message: error.message,
+        });
+      },
+    );
+  } catch (error) {
+    console.error("[student-profile] profile_query_failed", {
+      code: "unexpected_error",
+      message: error instanceof Error ? error.message : "Unknown profile query error",
+    });
     return null;
   }
 }
