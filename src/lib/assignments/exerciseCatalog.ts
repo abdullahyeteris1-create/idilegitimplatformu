@@ -242,6 +242,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["level", "durationMinutes", "targetCorrect"],
   },
   {
+    slug: "tatli-dukkani",
+    title: "Tatlı Dükkanı",
+    route: "/egzersizler/tatli-dukkani",
+    resultExerciseType: "tatli-dukkani",
+    category: "memory",
+    assignmentEnabled: true,
+    supportedSettings: ["durationMinutes"],
+  },
+  {
     slug: "parcali-resim-kelime",
     title: "Parçalı Resim Kelime",
     route: "/egzersizler/parcali-resim-kelime",

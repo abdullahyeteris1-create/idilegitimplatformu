@@ -18,6 +18,8 @@ const GROWING_SHAPES_MIGRATION_PATH =
 // entegrasyondan sonra gecerli olan whitelist kaynagi bu migration'dir.
 const WORD_RACE_MIGRATION_PATH =
   "supabase/migrations/20260804160000_readd_kelime_yarisi_to_exercise_whitelist.sql";
+const TATLI_DUKKANI_MIGRATION_PATH =
+  "supabase/migrations/20260812160000_add_tatli_dukkani_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";
@@ -59,6 +61,7 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const forwardSource = await read(FORWARD_MIGRATION_PATH);
   const growingShapesSource = await read(GROWING_SHAPES_MIGRATION_PATH);
   const wordRaceSource = await read(WORD_RACE_MIGRATION_PATH);
+  const tatliDukkaniSource = await read(TATLI_DUKKANI_MIGRATION_PATH);
 
   const catalogSlugs = extractCatalogSlugs(catalogSource);
   assert.ok(catalogSlugs.length >= 14, "katalogda en az 14 egzersiz beklenir");
@@ -69,7 +72,8 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const forwardWhitelistSlugs = extractWhitelistSlugs(forwardSource);
   const growingShapesWhitelistSlugs = extractWhitelistSlugs(growingShapesSource);
   const wordRaceWhitelistSlugs = [...wordRaceSource.matchAll(/'([a-z0-9-]+)'/g)].map((match) => match[1]);
-  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs, ...wordRaceWhitelistSlugs]);
+  const tatliDukkaniWhitelistSlugs = extractWhitelistSlugs(tatliDukkaniSource);
+  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs, ...wordRaceWhitelistSlugs, ...tatliDukkaniWhitelistSlugs]);
 
   for (const slug of catalogSlugs) {
     assert.ok(
@@ -77,6 +81,14 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
       `'${slug}' exerciseCatalog.ts'te var ama assign RPC whitelist'inde eksik - regresyon!`,
     );
   }
+});
+
+test("Tatlı Dükkanı whitelist migration'i mevcut RPC imzasını ve güvenlik modelini korur", async () => {
+  const source = await read(TATLI_DUKKANI_MIGRATION_PATH);
+  assert.match(source, /execute v_updated_definition/i);
+  assert.match(source, /'tatli-dukkani'/);
+  assert.match(source, /p_student_id uuid, p_template_id uuid/);
+  assert.match(source, /comment on function public\.assign_education_program_template_v1/);
 });
 
 test("5 yeni egzersiz (blok-okuma, golgeleme, gruplama-calismasi, anlama-testi, okuma-hizi-testi) whitelist'e eklendi", async () => {

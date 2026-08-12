@@ -275,6 +275,14 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     scoreRule: { type: "string", maxLength: 120 },
     maxLevel: { type: "integer", min: 1, max: 5 },
   },
+  "tatli-dukkani": {
+    reachedLevel: { type: "integer", min: 1, max: 10 },
+    totalRounds: { type: "integer", min: 0, max: 100_000 },
+    totalCorrect: { type: "integer", min: 0, max: 100_000 },
+    maxCombo: { type: "integer", min: 0, max: 100_000 },
+    livesRemaining: { type: "integer", min: 0, max: 3 },
+    completionReason: { type: "string", values: ["game-over", "manual"] },
+  },
   "block-reading": {
     category: { type: "string", maxLength: 80 },
     textTitle: { type: "string", maxLength: 160 },

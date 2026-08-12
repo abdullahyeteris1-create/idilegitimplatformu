@@ -265,6 +265,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/card-matching.svg",
         tags: ["Serbest Oyun", "Akıl ve Zeka"],
       },
+      {
+        title: "Tatlı Dükkanı",
+        description: "Müşteri siparişlerini aklında tut, doğru tatlıları seç ve puanını yükselt.",
+        href: "/egzersizler/tatli-dukkani",
+        icon: "TD",
+        image: "/exercise-visuals/exercises/card-matching.svg",
+        tags: ["Hafıza", "Akıl ve Zeka"],
+      },
     ],
   },
   {

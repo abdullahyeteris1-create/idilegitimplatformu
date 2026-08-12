@@ -132,6 +132,15 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
   {
+    slug: "tatli-dukkani",
+    title: "Tatlı Dükkanı",
+    resultExerciseType: "tatli-dukkani",
+    supportsLevel: false,
+    defaultDurationSeconds: 300,
+    settingsSchemaVersion: 1,
+    settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
+  },
+  {
     slug: "blok-okuma",
     title: "Blok Okuma",
     resultExerciseType: "block-reading",
