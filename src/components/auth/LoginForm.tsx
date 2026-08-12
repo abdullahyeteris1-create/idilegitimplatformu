@@ -53,12 +53,14 @@ export function LoginForm() {
       return;
     }
 
+    console.info("[student-login] submit_started");
     const response = await fetch("/api/student-session", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ username: cleanUsername, password: cleanPassword }) });
     const payload = (await response.json()) as { ok?: boolean; message?: string; student?: Student };
     if (!response.ok || !payload.ok || !payload.student) {
       setMessage(payload.message ?? "Kullanıcı adı veya şifre hatalı.");
       return;
     }
+    console.info("[student-login] api_success");
     setCurrentStudent(payload.student);
     setCurrentUser({ role: "student", username: payload.student.username, studentId: payload.student.id, studentName: payload.student.name });
     try {
@@ -66,6 +68,7 @@ export function LoginForm() {
     } catch {
       // Session storage is an optimization for suppressing stale watcher races.
     }
+    console.info("[student-login] replace_ogrenci");
     router.replace("/ogrenci");
   };
 

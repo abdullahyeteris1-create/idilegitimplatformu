@@ -9,6 +9,7 @@ const SESSION_RETRY_DELAY_MS = 300;
 
 export function StudentSessionWatcher() {
   useEffect(() => {
+    console.info("[student-session-watcher] mounted");
     let disposed = false;
     let redirecting = false;
     let checking = false;
@@ -42,6 +43,7 @@ export function StudentSessionWatcher() {
       redirecting = true;
       stopWatching();
       activeController?.abort();
+      console.info("[student-session-watcher] redirect_giris");
       window.location.replace("/giris");
     };
 
@@ -60,6 +62,7 @@ export function StudentSessionWatcher() {
       const controller = new AbortController();
       activeController = controller;
       const timeoutId = window.setTimeout(() => controller.abort(), SESSION_CHECK_TIMEOUT_MS);
+      console.info("[student-session-watcher] status_request_start");
 
       try {
         const request = () => fetch("/api/student/session-status", {
@@ -69,6 +72,10 @@ export function StudentSessionWatcher() {
         });
         let response = await request();
         let reason = "session_invalid";
+
+        if (response.ok) {
+          console.info("[student-session-watcher] status_200");
+        }
 
         if (response.status === 401 || response.status === 403) {
           try {
@@ -83,9 +90,16 @@ export function StudentSessionWatcher() {
             // Retry below; an invalid response body is not enough to log out.
           }
 
+          console.info(`[student-session-watcher] status_${response.status} reason=${reason}`);
+
+          console.info("[student-session-watcher] retry");
           await new Promise<void>((resolve) => window.setTimeout(resolve, SESSION_RETRY_DELAY_MS));
           if (controller.signal.aborted || disposed || redirecting) return;
           response = await request();
+
+          if (response.ok) {
+            console.info("[student-session-watcher] status_200");
+          }
 
           if (response.status === 401 || response.status === 403) {
             try {
@@ -99,7 +113,7 @@ export function StudentSessionWatcher() {
             } catch {
               // Keep the safe generic reason.
             }
-            console.warn(`[student-session] redirect reason=${reason}`);
+            console.info(`[student-session-watcher] status_${response.status} reason=${reason}`);
             redirectToLogin();
           }
         }
@@ -123,6 +137,7 @@ export function StudentSessionWatcher() {
       disposed = true;
       stopWatching();
       activeController?.abort();
+      console.info("[student-session-watcher] unmounted");
     };
   }, []);
 

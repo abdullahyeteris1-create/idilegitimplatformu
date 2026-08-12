@@ -7,9 +7,14 @@ import { getStudentProfileById } from "@/lib/students/studentProfile";
 import { getStudentXpSnapshotByStudentId } from "@/lib/xp/xpRepository";
 
 export default async function StudentDashboardPage() {
+  console.info("[student-page] request_received");
   const cookieStore = await cookies();
   const access = await verifyStudentAccessToken(cookieStore.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "");
-  if (!access.ok) redirect("/giris");
+  if (!access.ok) {
+    console.info(`[student-page] redirect_giris reason=${access.reason}`);
+    redirect("/giris");
+  }
+  console.info("[student-page] access_pass");
 
   const [student, xpSnapshot] = await Promise.all([
     getStudentProfileById(access.studentId),
@@ -17,6 +22,7 @@ export default async function StudentDashboardPage() {
   ]);
   const studentName = typeof student?.name === "string" ? student.name.trim() : "";
   if (!student || String(student.id) !== access.studentId || !studentName) {
+    console.info("[student-page] redirect_giris reason=profile_unavailable");
     redirect("/giris");
   }
 

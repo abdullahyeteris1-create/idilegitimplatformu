@@ -160,6 +160,7 @@ async function upgradeLegacyStudentPassword(
 }
 
 export async function POST(request: NextRequest) {
+  console.info("[student-session] request_received");
   let body: StudentLoginBody;
   try {
     body = (await request.json()) as StudentLoginBody;
@@ -231,6 +232,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: dateAccessCheck.message }, { status: 403 });
   }
 
+  console.info("[student-session] credentials_valid");
+
   if (passwordCheck.shouldUpgradeLegacy && !(await upgradeLegacyStudentPassword(supabase, String(student.id), password))) {
     return NextResponse.json({ ok: false, message: "Kullanici adi veya sifre hatali." }, { status: 401 });
   }
@@ -297,8 +300,11 @@ export async function POST(request: NextRequest) {
     value: token,
     ...getStudentSessionCookieOptions(),
   });
+  console.info("[student-session] cookie_set");
 
   await awardFirstLoginXp(String(student.id));
+
+  console.info("[student-session] response_200");
 
   return response;
 }
