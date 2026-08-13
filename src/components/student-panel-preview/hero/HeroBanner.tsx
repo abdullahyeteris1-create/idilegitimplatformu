@@ -63,11 +63,12 @@ export type HeroProgressSummary = {
 
 function HeroFloatingCards({ summary }: { summary: HeroProgressSummary }) {
   const loading = summary.status === "loading" || summary.status === "error";
-  return <div className={styles.heroAside}><div className={styles.heroFloatCard}><span>Bugünkü görev</span><strong>{summary.status === "empty" ? "Serbest çalışma" : summary.taskLabel}</strong><small>{loading ? "Veri yükleniyor" : `${summary.completedCount} / ${summary.totalCount} tamamlandı · %${summary.progress}`}</small></div><div className={`${styles.heroFloatCard} ${styles.heroFloatCardBottom}`}><span>Seviye ilerlemesi</span><strong>{loading ? "—" : `${summary.xpWithinLevel} / ${summary.xpRequiredForLevel} XP`}</strong><small>{loading ? "XP bilgisi bekleniyor" : `${summary.totalXp.toLocaleString("tr-TR")} XP toplam`}</small></div></div>;
+  const noTasks = summary.status === "ready" && summary.totalCount === 0;
+  return <div className={styles.heroAside}><div className={styles.heroFloatCard}><span>Bugünkü görev</span><strong>{summary.status === "empty" || noTasks ? "Aktif program yok" : summary.taskLabel}</strong><small>{loading ? "Veri yükleniyor" : summary.status === "empty" || noTasks ? "Serbest çalışmalardan birini seç" : `${summary.completedCount} / ${summary.totalCount} tamamlandı · %${summary.progress}`}</small></div><div className={`${styles.heroFloatCard} ${styles.heroFloatCardBottom}`}><span>Seviye ilerlemesi</span><strong>{loading ? "—" : `${summary.xpWithinLevel} / ${summary.xpRequiredForLevel} XP`}</strong><small>{loading ? "XP bilgisi bekleniyor" : `${summary.totalXp.toLocaleString("tr-TR")} XP toplam`}</small></div></div>;
 }
 
 function HeroActions({ resumeAction }: { resumeAction: ReactNode }) {
-  return <div className={styles.heroActions}><Link href="/ogrenci/egitim-programim?resume=1" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow" /></Link>{resumeAction}</div>;
+  return <div className={styles.heroActions}>{resumeAction}<Link href="/ogrenci/egitim-programim?resume=1" data-hero-primary>Bugünkü Programı Başlat <Icon name="arrow" /></Link></div>;
 }
 
 function HeroThemePicker({ controller }: { controller: HeroThemeController }) {

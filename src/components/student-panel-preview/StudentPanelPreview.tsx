@@ -18,6 +18,8 @@ import { HeroThemeProvider } from "./hero/HeroThemeEngine";
 import { createDefaultStudentXpSnapshot, type StudentXpSnapshot } from "@/lib/xp/xpLevels";
 import { useXpRewardNotifications } from "@/components/xp-notifications/xpRewardNotifications";
 import { StudentAccountMenu } from "./StudentAccountMenu";
+import { getStudentPanelRecommendation, type StudentPanelRecommendation } from "@/lib/recommendations/studentPanelRecommendation";
+import { getStudentXpBadges } from "@/lib/xp/xpBadges";
 
 type DemoPanel = "menu" | "notifications" | "profile" | null;
 type PreviewStudentIdentity = { name: string; classLabel: string; studentId: string | null; username: string | null; resolved: boolean };
@@ -282,7 +284,12 @@ function Sidebar({
   streakNote: string;
   xpSnapshot: StudentXpSnapshot;
 }) {
-  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
+  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><Badges xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
+}
+
+function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {
+  const earnedCount = getStudentXpBadges(xpSnapshot).filter((badge) => badge.isEarned).length;
+  return <Link href="/ogrenci/rozetlerim" className={styles.badgesLink}>Rozetlerim <span>{earnedCount}</span></Link>;
 }
 
 function LevelCard({
@@ -855,6 +862,10 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
   const resultsLoading = resultsState.status === "loading";
   const resultsError = resultsState.status === "error";
   const recentResults = useMemo(() => resultsState.results.slice(0, 3), [resultsState.results]);
+  const todayResults = useMemo(() => {
+    const today = getIstanbulDateKey(new Date());
+    return resultsState.results.filter((result) => getIstanbulDateKey(new Date(result.date)) === today);
+  }, [resultsState.results]);
   const dailyStreak = useMemo(() => calculateDailyStreak(resultsState.results), [resultsState.results]);
   const metricPlaceholder = resultsLoading || resultsError ? "—" : null;
   const streakValue = metricPlaceholder ?? `${dailyStreak} gün`;
@@ -867,44 +878,43 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
         : "Henüz aktif seri yok";
   const dashboardStats = useMemo<DashboardStat[]>(() => [
     {
-      label: "Günlük Seri",
-      value: metricPlaceholder ?? `${dailyStreak} gün`,
-      note: resultsLoading ? "Sonuçlar yükleniyor" : dailyStreak > 0 ? "Bugünkü ritmini koru" : "İlk serini başlat",
-      icon: "flame",
-      tone: "orange",
-      // Haftalık seri hedefi 7 gün; ölçer serinin haftaya oranını gösterir.
-      progress: metricPlaceholder ? 0 : (dailyStreak / 7) * 100,
-      badge: dailyStreak >= 7 ? "Hafta tamam" : `Hedef 7 gün`,
+      label: "Bugünkü Program",
+      value: dailyTaskState.status === "ready" ? `${dailyTaskState.assignment.items.filter((item) => item.status === "completed").length} / ${dailyTaskState.assignment.items.length}` : metricPlaceholder ?? "—",
+      note: dailyTaskState.status === "ready" ? `${Math.max(0, dailyTaskState.assignment.items.length - dailyTaskState.assignment.items.filter((item) => item.status === "completed").length)} görev kaldı` : "Program bilgisi bekleniyor",
+      icon: "bookOpen",
+      tone: "blue",
+      progress: dailyTaskState.status === "ready" && dailyTaskState.assignment.items.length > 0 ? (dailyTaskState.assignment.items.filter((item) => item.status === "completed").length / dailyTaskState.assignment.items.length) * 100 : 0,
+      badge: dailyTaskState.status === "ready" && dailyTaskState.assignment.items.length > 0 && dailyTaskState.assignment.items.every((item) => item.status === "completed") ? "Tamamlandı" : "Bugün",
     },
     {
-      label: "Toplam XP",
-      value: `${formatNumber(safeXpSnapshot.totalXp)} XP`,
-      note: `${safeXpSnapshot.remainingXp} XP sonra seviye ${safeXpSnapshot.level + 1}`,
+      label: "Çalışma Süresi",
+      value: resultsLoading ? "—" : `${Math.floor(todayResults.reduce((sum, result) => sum + Math.max(0, result.durationSeconds), 0) / 60)} dk`,
+      note: "Bugün",
+      icon: "clock",
+      tone: "cyan",
+      progress: Math.min(100, todayResults.reduce((sum, result) => sum + Math.max(0, result.durationSeconds), 0) / 60 / 30 * 100),
+      badge: "Gerçek süre",
+    },
+    {
+      label: "Kazanılan XP",
+      value: resultsLoading ? "—" : "—",
+      note: "Bugün için ayrı XP verisi yok",
       icon: "sparkles",
       tone: "purple",
-      progress: safeXpSnapshot.progressPercent,
-      badge: `%${clampPercentage(safeXpSnapshot.progressPercent)}`,
+      progress: 0,
+      badge: "Veri yok",
     },
     {
-      label: "Mevcut Seviye",
-      value: `Seviye ${safeXpSnapshot.level}`,
-      note: safeXpSnapshot.title,
-      icon: "target",
-      tone: "cyan",
-      progress: safeXpSnapshot.progressPercent,
-      badge: `Sıradaki: ${safeXpSnapshot.level + 1}`,
+      label: "Seri",
+      value: metricPlaceholder ?? `🔥 ${dailyStreak} gün`,
+      note: dailyStreak > 0 ? "Mevcut çalışma serin" : "Henüz aktif seri yok",
+      icon: "flame",
+      tone: "orange",
+      progress: metricPlaceholder ? 0 : (dailyStreak / 7) * 100,
+      badge: dailyStreak >= 7 ? "Hafta tamam" : "Hedef 7 gün",
     },
-    {
-      label: "Tamamlanan Çalışma",
-      value: metricPlaceholder ?? formatNumber(resultsState.results.length),
-      note: resultsLoading ? "Sonuçlar yükleniyor" : "Toplam tamamlanan çalışma",
-      icon: "activity",
-      tone: "green",
-      // 50 çalışma bir dönüm noktası; ölçer o kilometre taşına ilerlemeyi gösterir.
-      progress: metricPlaceholder ? 0 : (resultsState.results.length / 50) * 100,
-      badge: resultsState.results.length >= 50 ? "50+ çalışma" : "Hedef 50",
-    },
-  ], [dailyStreak, metricPlaceholder, resultsLoading, resultsState.results.length, safeXpSnapshot]);
+  ], [dailyStreak, dailyTaskState, metricPlaceholder, resultsLoading, todayResults]);
+  const panelRecommendation = useMemo<StudentPanelRecommendation>(() => getStudentPanelRecommendation(resultsState.results), [resultsState.results]);
   const lastReadingTest = resultsState.readingTests[0];
   const resumeTarget = useMemo(() => resolveResumeTarget(dailyTaskState, resultsState), [dailyTaskState, resultsState]);
   const heroProgressSummary = useMemo<HeroProgressSummary>(() => {
@@ -922,5 +932,5 @@ export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard
     return { ...xp, status: "ready", taskLabel: selectedItem?.exerciseTitle ?? "Günün görevleri tamamlandı", completedCount, totalCount, progress: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0 };
   }, [dailyTaskState, safeXpSnapshot]);
 
-  return <HeroThemeProvider><main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} onAccountMenu={openAccountMenu} accountMenuOpen={panel === "profile"} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget} progressSummary={heroProgressSummary}/><LevelCard xpSnapshot={safeXpSnapshot} lastReward={lastReward}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><TodaysProgramTasksCard/><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={openAccountMenu} profileOpen={panel === "profile"}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)} onAccountMenu={openAccountMenu} accountMenuOpen={false}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main></HeroThemeProvider>;
+  return <HeroThemeProvider><main className={`${styles.preview} ${light ? styles.light : ""}`}><div className={styles.shell}><Sidebar onDemo={showToast} onAccountMenu={openAccountMenu} accountMenuOpen={panel === "profile"} streakValue={streakValue} streakNote={streakNote} xpSnapshot={safeXpSnapshot}/><div className={styles.content}><div className={styles.mobileHeader}><Brand/><button type="button" aria-label="Menüyü aç" aria-expanded={panel === "menu"} onClick={() => togglePanel("menu")}><Icon name="menu"/></button><button type="button" aria-label="Bildirimler" aria-expanded={panel === "notifications"} onClick={() => togglePanel("notifications")}><Icon name="bell"/></button></div><Header light={light} panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onToggleTheme={() => setTheme(light ? "dark" : "light")} onTogglePanel={togglePanel}/><div className={styles.heroGrid}><Hero studentName={studentIdentity.name} resumeTarget={resumeTarget} progressSummary={heroProgressSummary}/><LevelCard xpSnapshot={safeXpSnapshot} lastReward={lastReward}/></div><div className={styles.dashboardGrid}><div className={styles.mainColumn}><section className={styles.statsGrid} aria-label="İstatistikler">{dashboardStats.map((stat,index) => <StatCard key={stat.label} stat={stat} index={index}/>)}</section><TodaysProgramTasksCard/><section className={styles.panelRecommendation} aria-labelledby="panel-recommendation-title"><div><span className={styles.smartEyebrow}>BUGÜN SANA ÖNERİYORUM</span><h2 id="panel-recommendation-title">✨ {panelRecommendation.title}</h2><p>{panelRecommendation.description}</p><small>{panelRecommendation.category}</small></div><Link href={panelRecommendation.href} className={styles.panelRecommendationAction}>Oyna <Icon name="arrow"/></Link></section>{showReadingTestsCard && <ReadingTestsCard results={resultsState.results} status={resultsState.status}/>}<RecentResults results={recentResults} loading={resultsLoading} error={resultsError}/><section className={styles.categoriesSection}><div className={styles.sectionTitle}><div><h2>🚀 Egzersiz Kategorileri</h2><p>Göz, dikkat, okuma ve hafıza becerilerini geliştir.</p></div><Link href="/egzersizler">Tüm Egzersizler <Icon name="arrow"/></Link></div><div className={styles.categoryGrid}>{categories.map((category,index) => <CategoryCard key={category.title} category={category} index={index}/>)}</div></section></div><aside className={styles.rightColumn}><DailyTask taskState={dailyTaskState}/><ReadingTest test={lastReadingTest} loading={resultsLoading}/>{showStatisticsCard && <StatisticsCard/>}<section className={styles.motivation}><div><strong>Unutma!</strong><p>Her gün küçük adımlar,<br/>büyük gelişimler getir.</p></div><span>🪐</span></section></aside></div></div></div><MobileNav onDemo={showToast} onProfile={openAccountMenu} profileOpen={panel === "profile"}/>{panel && <><button type="button" className={styles.panelBackdrop} aria-label="Açık paneli kapat" onClick={() => setPanel(null)}/>{panel === "menu" ? <MobileMenu onDemo={showToast} onClose={() => setPanel(null)} onAccountMenu={openAccountMenu} accountMenuOpen={false}/> : <DemoPopover panel={panel} studentName={studentIdentity.name} classLabel={studentIdentity.classLabel} onDemo={showToast} onClose={() => setPanel(null)} onLogout={() => void handleLogout()} isLoggingOut={isLoggingOut}/>}</>}{logoutError && <div className={styles.logoutError} role="alert">{logoutError}</div>}{toast && <div className={styles.toast} role="status" aria-live="polite">{toast}</div>}</main></HeroThemeProvider>;
 }

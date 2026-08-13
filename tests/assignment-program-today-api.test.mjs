@@ -281,9 +281,8 @@ test("src/app/ogrenci/page.tsx artik karti dogrudan render ETMIYOR - kart Studen
 test("StudentPanelPreview.tsx karti ana icerik sutununda (mainColumn) render ediyor, mevcut bolumleri bozmuyor", async () => {
   const source = await readFile(STUDENT_PANEL_PREVIEW_URL, "utf8");
   assert.match(source, /import \{ TodaysProgramTasksCard \} from "\.\/TodaysProgramTasksCard"/);
-  // mainColumn'un ILK cocugu olmali (statsGrid'den once) - sol menu/sidebar
-  // veya sayfanin bagimsiz bir yerinde DEGIL.
-  assert.match(source, /className=\{styles\.mainColumn\}><TodaysProgramTasksCard\/><section className=\{styles\.statsGrid\}/);
+  // Mobil akista once ozet metrikler, sonra program karti gorunmeli.
+  assert.match(source, /className=\{styles\.mainColumn\}><section className=\{styles\.statsGrid\}[\s\S]*<\/section><TodaysProgramTasksCard\/>/);
   // Eski bolumler (Hero, DailyTask, RecentResults, kategori grid'i) hala yerinde.
   assert.match(source, /<Hero /);
   assert.match(source, /<DailyTask /);

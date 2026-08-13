@@ -3,7 +3,7 @@
 @media(max-width:1250px){.shell{grid-template-columns:210px 1fr}.content{padding:18px 14px}.heroGrid,.dashboardGrid{grid-template-columns:minmax(0,1fr) 260px}.categoryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.preview{padding:0 0 76px}.shell{display:block;border:0;border-radius:0}.sidebar,.header{display:none}.content{padding:0 14px 18px}.mobileHeader{height:72px;display:flex;align-items:center;gap:8px}.mobileHeader .brand{margin-right:auto;padding:0}.mobileHeader button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:#0b172a;display:grid;place-items:center}.light .mobileHeader button{background:#eef3f9;color:#172033}.mobileHeader button:hover{border-color:#60749a;background:#172845}.mobileHeader button svg{width:20px}.heroGrid,.dashboardGrid{grid-template-columns:1fr}.heroGrid{gap:12px}.hero{min-height:315px}.heroCopy{max-width:100%;padding:23px}.heroCopy h2{font-size:21px;max-width:70%}.heroCopy p{max-width:64%;line-height:1.6}.spaceScene{width:50%}.rocket{width:110px;height:110px;right:15px;top:53px}.rocketTrail{right:80px;bottom:72px}.heroActions{margin-top:23px}.heroActions :is(button,a){padding:0 12px;font-size:11px}.levelCard{padding:16px}.rightColumn{grid-row:auto}.mobileNav{display:flex;position:fixed;left:14px;right:14px;bottom:10px;z-index:15;height:62px;border:1px solid #283752;border-radius:17px;background:#091426f2;backdrop-filter:blur(16px);align-items:center;justify-content:space-around;box-shadow:0 10px 32px #0009}.mobileNav :is(button,a){width:44px;height:44px;border:0;background:transparent;border-radius:12px;display:grid;place-items:center}.mobileNav :is(button,a):hover{background:#ffffff14}.mobileNav svg{width:21px}.mobileNav .mobileActive{color:#fff;background:linear-gradient(135deg,#ed174e,#f5266c)}.mobileMenuPanel{display:flex;left:14px;right:14px;top:74px;max-height:calc(100vh - 164px);overflow:auto;border-radius:17px;padding:10px;flex-direction:column;gap:5px}.mobileMenuPanel :is(button,a){min-height:44px;display:flex;align-items:center;gap:12px;border:0;border-radius:11px;background:transparent;padding:0 13px;text-align:left}.mobileMenuPanel :is(button,a):hover{background:#ffffff12}.mobileMenuPanel svg{width:19px;height:19px}.demoPopover{top:74px;right:14px}.toast{bottom:86px;left:20px;right:20px;text-align:center}}
 @media(max-width:560px){.content{padding:0 10px 16px}.mobileHeader{height:66px}.brand strong{font-size:20px}.brandMark{width:28px;height:28px}.hero{min-height:340px}.heroCopy h2{max-width:75%;font-size:20px}.heroCopy p{max-width:70%;font-size:12px}.tags{max-width:75%;gap:6px}.tags span{font-size:9px;padding:6px 7px}.spaceScene{width:44%}.rocket{width:92px;height:92px;top:78px;right:4px}.planet{font-size:38px}.heroActions{flex-direction:column;width:100%;gap:8px}.heroActions :is(button,a){width:100%}.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.statCard{min-height:112px;padding:14px}.statCard strong{font-size:19px}.categoryGrid{grid-template-columns:1fr}.sectionTitle{align-items:flex-start}.sectionTitle>a{font-size:0;width:44px;padding:0;justify-content:center}.categoryCard{padding:17px}.categoryHead{min-height:70px}.dashboardGrid{gap:12px}.rightColumn{gap:10px}}
-@media(max-width:360px){.statsGrid{grid-template-columns:1fr}.heroCopy h2,.heroCopy p,.tags{max-width:82%}}
+@media(max-width:360px){.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.statCard{min-height:108px;padding:12px}.statCard strong{font-size:17px}.heroCopy h2,.heroCopy p,.tags{max-width:82%}}
 @media(prefers-reduced-motion:reduce){.preview *,.preview *::before,.preview *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 .categoriesSection{display:none}
 .todaysProgramAllLink{display:inline-flex;align-items:center;justify-content:center;min-height:42px;margin-top:14px;padding:0 14px;border:1px solid var(--line);border-radius:10px;font-size:11px;font-weight:700;background:#101b30}
@@ -57,7 +57,7 @@
 
 /* Compact desktop and category rhythm. */
 .levelCompact{margin-top:6px}
-.support{margin-top:0}
+.support{margin-top:0}.badgesLink{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:12px}.badgesLink span{min-width:22px;padding:3px 6px;border-radius:999px;background:#ffffff12;color:var(--text);text-align:center;font-size:10px;font-weight:800}
 .dashboardGrid{gap:14px;margin-top:14px}
 .categoriesSection{margin-top:12px;padding:16px}
 .sectionTitle{margin-bottom:14px}
@@ -260,6 +260,8 @@
 .light .statCardBody span{color:#5a6a82}
 .light .statCardBody small{color:#5f6d84}
 .light .statCardMeter{background:#e6ecf5}
+.panelRecommendation{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 15px;padding:16px;border:1px solid #f0b74b66;border-radius:18px;background:linear-gradient(145deg,#2a1d10,#111d35 76%);box-shadow:0 10px 28px #f59e0b1c;color:var(--text)}
+.panelRecommendation h2{margin:4px 0 6px;font-size:18px}.panelRecommendation p{margin:0 0 6px;color:var(--muted);font-size:12px;line-height:1.5}.panelRecommendation small{color:#fcd34d;font-size:10px;font-weight:800}.panelRecommendationAction{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 15px;border-radius:11px;background:#f59e0b;color:#211303!important;font-size:12px;font-weight:800}.panelRecommendationAction svg{width:15px;height:15px}.light .panelRecommendation{background:linear-gradient(145deg,#fff7ed,#eff6ff);border-color:#fed7aa;color:#172033}.light .panelRecommendation p{color:#526076}.light .panelRecommendation small{color:#b45309}.light .panelRecommendationAction{background:#f59e0b;color:#211303!important}
 
 @media(max-width:900px){.heroThemePicker{margin-top:12px;max-width:100%}.statCard{min-height:142px}}
 @media(max-width:560px){
@@ -272,8 +274,9 @@
   .statCard{min-height:136px;padding:13px}
   .statCardBody strong{font-size:19px}
   .statCard .statCardBadge{font-size:8px;padding:0 6px}
+  .panelRecommendation{align-items:stretch;flex-direction:column;gap:12px;padding:14px}.panelRecommendationAction{width:100%;justify-content:center}
 }
-@media(max-width:360px){.statsGrid{grid-template-columns:1fr}}
+@media(max-width:360px){.statsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.statCardMeter span{animation:none}.hero[data-hero-ready] .spaceScene,.hero[data-hero-ready] .heroMotivation{animation:none}}
 
 /* Uzay ve bulut temaları için eksik olan tema-özel dokunuşlar. */

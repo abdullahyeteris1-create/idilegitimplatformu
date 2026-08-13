@@ -206,7 +206,7 @@ export function TodaysProgramTasksCard() {
             </p>
           ) : null}
           <ul className={styles.todaysProgramList}>
-            {state.tasks.slice(0, 4).map((task) => {
+            {state.tasks.slice(0, 3).map((task) => {
               // Buton yalniz gercekten hazir bir egzersize, katalogdan gelen
               // bir route varsa VE durum uygunsa gosterilir. href, API'nin
               // dondurdugu (katalogdan cozulmus) route'a ?programTaskId=
