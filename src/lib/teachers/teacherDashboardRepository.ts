@@ -109,7 +109,7 @@ export async function getTeacherDashboardSummary(): Promise<TeacherDashboardSumm
       supabase
         .from(STUDENT_EDUCATION_PROGRAMS_TABLE)
         .select("id,student_id,visible_name,status,current_day_number,completed_days,total_days,assigned_at,started_at,completed_at")
-        .eq("status", "active"),
+        .order("assigned_at", { ascending: false }),
       supabase
         .from(STUDENT_XP_SUMMARY_TABLE)
         .select("student_id,total_xp"),

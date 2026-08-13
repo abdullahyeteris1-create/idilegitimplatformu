@@ -21,6 +21,16 @@ export type TeacherDashboardStats = {
   inactiveStudents: number | null;
   completedStudents: number | null;
   activePrograms: number | null;
+  activeProgramStudents: number | null;
+  completedProgramStudents: number | null;
+  behindProgramStudents: number | null;
+  todayActiveStudents: number | null;
+  todayInactiveStudents: number | null;
+  inactiveStudentsLast3Days: number | null;
+  todayCompletedTasks: number | null;
+  averageReadingSpeedLast7Days: number | null;
+  averageComprehensionLast7Days: number | null;
+  readingTestsLast7Days: number | null;
   totalXp: number | null;
   activeStudentsLast7Days: number | null;
   completedActivitiesLast7Days: number | null;
@@ -73,11 +83,21 @@ export type TeacherDashboardAttentionStudent = {
   detailHref: string;
 };
 
+export type TeacherDashboardImprovingStudent = {
+  studentId: string;
+  studentName: string;
+  reasonLabel: string;
+  supportingValue: string;
+  lastActivityAt: string | null;
+  detailHref: string;
+};
+
 export type TeacherDashboardSummary = {
   stats: TeacherDashboardStats;
   recentActivities: TeacherDashboardRecentActivity[];
   recentStudents: TeacherDashboardRecentStudent[];
   attentionStudents: TeacherDashboardAttentionStudent[];
+  improvingStudents: TeacherDashboardImprovingStudent[];
   generatedAt: string;
   warnings: TeacherDashboardSectionWarning[];
 };

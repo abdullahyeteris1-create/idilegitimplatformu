@@ -4,6 +4,7 @@ import { getStudentXpSnapshot } from "@/lib/xp/xpLevels";
 import type {
   TeacherDashboardAttentionReasonCode,
   TeacherDashboardAttentionStudent,
+  TeacherDashboardImprovingStudent,
   TeacherDashboardRecentActivity,
   TeacherDashboardRecentStudent,
   TeacherDashboardSectionWarning,
@@ -105,6 +106,7 @@ const RECENT_WINDOW_DAYS = 30;
 const ACTIVITY_LIMIT = 10;
 const RECENT_STUDENT_LIMIT = 5;
 const ATTENTION_LIMIT = 5;
+const IMPROVING_LIMIT = 5;
 const PERFORMANCE_DECLINE_PERCENT = 15;
 const PERFORMANCE_DECLINE_POINTS = 15;
 
@@ -472,7 +474,10 @@ function compareTimestampDesc(left: string | null, right: string | null): number
 function buildProgramLookup(programs: readonly NormalizedProgram[]): Map<string, NormalizedProgram> {
   const lookup = new Map<string, NormalizedProgram>();
   for (const program of programs) {
-    lookup.set(program.student_id, program);
+    const current = lookup.get(program.student_id);
+    if (!current || (program.active && !current.active)) {
+      lookup.set(program.student_id, program);
+    }
   }
   return lookup;
 }
@@ -721,15 +726,21 @@ function buildSummaryStats(args: {
   programs: readonly NormalizedProgram[];
   xpSummaries: readonly XpSummaryRow[];
   activities: readonly DashboardActivityEntry[];
+  results: readonly NormalizedResult[];
+  tasks: readonly NormalizedTask[];
   xpEvents: readonly XpEventRow[];
   dateRangeStart: string;
   dateRangeEnd: string;
+  now: Date;
 }): TeacherDashboardStats {
   const totalStudents = args.students.length;
   const activeStudents = args.students.filter((student) => student.active).length;
   const inactiveStudents = args.students.filter((student) => student.status === "passive").length;
   const completedStudents = args.students.filter((student) => student.completed).length;
   const activePrograms = args.programs.filter((program) => program.active).length;
+  const activeProgramStudents = new Set(args.programs.filter((program) => program.active).map((program) => program.student_id)).size;
+  const completedProgramStudents = new Set(args.programs.filter((program) => program.status === "completed").map((program) => program.student_id)).size;
+  const behindProgramStudents = new Set(args.programs.filter((program) => program.active && program.completed_days < program.current_day_number).map((program) => program.student_id)).size;
   const totalXp = args.xpSummaries.reduce((sum, row) => sum + row.total_xp, 0);
 
   const rangeStart = normalizeTimestamp(args.dateRangeStart);
@@ -755,6 +766,23 @@ function buildSummaryStats(args: {
   }
 
   const completedActivitiesLast7Days = activitiesInWindow.filter((activity) => activity.countAsCompletedWork).length;
+  const todayKey = getTodayDateKey(args.now);
+  const todayActivities = args.activities.filter((activity) => getIstanbulDateKey(activity.occurredAt) === todayKey);
+  const todayActiveStudentIds = new Set(todayActivities.filter((activity) => activity.countAsActiveStudent).map((activity) => activity.studentId));
+  const inactiveCutoff = shiftDateKey(todayKey, -2);
+  const latestActivityByStudent = new Map<string, string>();
+  for (const activity of args.activities) {
+    const dateKey = getIstanbulDateKey(activity.occurredAt);
+    if (!dateKey) continue;
+    const current = latestActivityByStudent.get(activity.studentId);
+    if (!current || dateKey > current) latestActivityByStudent.set(activity.studentId, dateKey);
+  }
+  const recentReadingResults = args.results.filter((result) => {
+    const dateKey = getIstanbulDateKey(result.occurredAt);
+    return dateKey !== null && dateKey >= shiftDateKey(todayKey, -6) && dateKey < shiftDateKey(todayKey, 1) && (result.exerciseType === "reading-speed-test" || result.exerciseType === "reading-comprehension");
+  });
+  const readingSpeeds = recentReadingResults.filter((result) => result.exerciseType === "reading-speed-test").map((result) => readNumber((result.details ?? {}) as DatabaseRow, ["readingSpeedWpm"])).filter(isFiniteNumber);
+  const comprehensionRates = recentReadingResults.filter((result) => result.exerciseType === "reading-comprehension").map((result) => readNumber((result.details ?? {}) as DatabaseRow, ["comprehensionScore", "successRate"]) ?? result.successRate).filter(isFiniteNumber);
   const earnedXpLast7Days = args.xpEvents.reduce((sum, event) => {
     const timestamp = normalizeTimestamp(event.earned_at);
     if (timestamp === null || rangeStart === null || rangeEnd === null || timestamp < rangeStart || timestamp >= rangeEnd) {
@@ -769,6 +797,16 @@ function buildSummaryStats(args: {
     inactiveStudents,
     completedStudents,
     activePrograms,
+    activeProgramStudents,
+    completedProgramStudents,
+    behindProgramStudents,
+    todayActiveStudents: todayActiveStudentIds.size,
+    todayInactiveStudents: args.students.filter((student) => student.active && !student.completed && !todayActiveStudentIds.has(student.id)).length,
+    inactiveStudentsLast3Days: args.students.filter((student) => student.active && !student.completed && (!latestActivityByStudent.get(student.id) || latestActivityByStudent.get(student.id)! < inactiveCutoff)).length,
+    todayCompletedTasks: args.tasks.filter((task) => getIstanbulDateKey(task.occurredAt) === todayKey).length,
+    averageReadingSpeedLast7Days: readingSpeeds.length ? Math.round(readingSpeeds.reduce((sum, value) => sum + value, 0) / readingSpeeds.length) : null,
+    averageComprehensionLast7Days: comprehensionRates.length ? Math.round(comprehensionRates.reduce((sum, value) => sum + value, 0) / comprehensionRates.length) : null,
+    readingTestsLast7Days: recentReadingResults.length,
     totalXp,
     activeStudentsLast7Days: activeStudentIds.size,
     completedActivitiesLast7Days,
@@ -992,6 +1030,68 @@ function buildAttentionStudents(
     .slice(0, ATTENTION_LIMIT);
 }
 
+function buildImprovingStudents(
+  students: readonly NormalizedStudent[],
+  activities: readonly DashboardActivityEntry[],
+  recentResults: readonly NormalizedResult[],
+  now: Date,
+): TeacherDashboardImprovingStudent[] {
+  const todayKey = getTodayDateKey(now);
+  const startKey = shiftDateKey(todayKey, -6);
+  const latestActivityByStudent = new Map<string, string>();
+  for (const activity of activities) {
+    const dateKey = getIstanbulDateKey(activity.occurredAt);
+    if (!dateKey) continue;
+    const current = latestActivityByStudent.get(activity.studentId);
+    if (!current || dateKey > current) latestActivityByStudent.set(activity.studentId, dateKey);
+  }
+
+  const candidates: Array<TeacherDashboardImprovingStudent & { score: number }> = [];
+  for (const student of students) {
+    if (!student.active || student.completed) continue;
+    const studentResults = recentResults
+      .filter((result) => result.studentId === student.id)
+      .filter((result) => {
+        const dateKey = getIstanbulDateKey(result.occurredAt);
+        return dateKey !== null && dateKey >= startKey && dateKey <= todayKey;
+      })
+      .sort((left, right) => right.timestamp - left.timestamp);
+    const speeds = studentResults
+      .filter((result) => result.exerciseType === "reading-speed-test")
+      .map((result) => readNumber((result.details ?? {}) as DatabaseRow, ["readingSpeedWpm"]))
+      .filter(isFiniteNumber);
+    const comprehension = studentResults
+      .filter((result) => result.exerciseType === "reading-comprehension")
+      .map((result) => readNumber((result.details ?? {}) as DatabaseRow, ["comprehensionScore", "successRate"]) ?? result.successRate)
+      .filter(isFiniteNumber);
+    const speedDelta = speeds.length >= 2 ? speeds[0]! - speeds[speeds.length - 1]! : null;
+    const comprehensionDelta = comprehension.length >= 2 ? comprehension[0]! - comprehension[comprehension.length - 1]! : null;
+    const activityCount = studentResults.length;
+    let reasonLabel = "";
+    let supportingValue = "";
+    let score = 0;
+    if (isFiniteNumber(speedDelta) && speedDelta > 0) {
+      reasonLabel = "Okuma hızı gelişiyor";
+      supportingValue = `+${Math.round(speedDelta)} kelime/dk`;
+      score = speedDelta;
+    }
+    if (isFiniteNumber(comprehensionDelta) && comprehensionDelta > 0 && comprehensionDelta > score) {
+      reasonLabel = "Anlama başarısı gelişiyor";
+      supportingValue = `+%${Math.round(comprehensionDelta)}`;
+      score = comprehensionDelta;
+    }
+    if (!reasonLabel && activityCount >= 3) {
+      reasonLabel = "Düzenli çalışma";
+      supportingValue = `${activityCount} çalışma tamamlandı`;
+      score = activityCount;
+    }
+    if (!reasonLabel) continue;
+    candidates.push({ studentId: student.id, studentName: student.name, reasonLabel, supportingValue, lastActivityAt: latestActivityByStudent.get(student.id) ? studentResults[0]?.occurredAt ?? null : null, detailHref: `/ogretmen/ogrenciler/${student.id}`, score });
+  }
+
+  return candidates.sort((left, right) => right.score - left.score || left.studentId.localeCompare(right.studentId)).slice(0, IMPROVING_LIMIT).map((student) => ({ studentId: student.studentId, studentName: student.studentName, reasonLabel: student.reasonLabel, supportingValue: student.supportingValue, lastActivityAt: student.lastActivityAt, detailHref: student.detailHref }));
+}
+
 function buildDashboardSummary(input: {
   students: readonly DatabaseRow[];
   activePrograms: readonly DatabaseRow[];
@@ -1009,7 +1109,7 @@ function buildDashboardSummary(input: {
     .filter((row): row is NormalizedStudent => row !== null);
   const summaryPrograms = input.activePrograms
     .map((row) => normalizeProgramRow(row))
-    .filter((row): row is NormalizedProgram => row !== null && row.active);
+    .filter((row): row is NormalizedProgram => row !== null);
   const summaryXp = input.xpSummaries
     .map((row) => normalizeXpSummaryRow(row))
     .filter((row): row is XpSummaryRow => row !== null);
@@ -1079,13 +1179,17 @@ function buildDashboardSummary(input: {
       programs: summaryPrograms,
       xpSummaries: summaryXp,
       activities: dedupedActivities,
+      results: summaryResults,
+      tasks: summaryTasks,
       xpEvents: summaryXpEvents,
       dateRangeStart: window.startInclusiveIso,
       dateRangeEnd: window.endExclusiveIso,
+      now,
     }),
     recentActivities: dedupedActivities.slice(0, ACTIVITY_LIMIT),
     recentStudents: buildRecentStudents(summaryStudents, dedupedActivities, programLookup, summaryXp),
     attentionStudents: buildAttentionStudents(summaryStudents, dedupedActivities, summaryPrograms, summaryResults),
+    improvingStudents: buildImprovingStudents(summaryStudents, dedupedActivities, summaryResults, now),
     generatedAt: now.toISOString(),
     warnings: [] as TeacherDashboardSectionWarning[],
   };

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type {
   TeacherDashboardAttentionStudent,
+  TeacherDashboardImprovingStudent,
   TeacherDashboardRecentActivity,
   TeacherDashboardRecentStudent,
   TeacherDashboardSummary,
@@ -305,6 +306,32 @@ function AttentionCard({ student }: { student: TeacherDashboardAttentionStudent 
   );
 }
 
+function CompactMetric({ label, value, tone = "slate" }: { label: string; value: number | null; tone?: "slate" | "amber" | "green" | "sky" }) {
+  const tones = {
+    slate: "border-slate-200 bg-slate-50 text-slate-900 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-100",
+    amber: "border-amber-200 bg-amber-50 text-amber-950 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-50",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-950 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-50",
+    sky: "border-sky-200 bg-sky-50 text-sky-950 [data-idil-theme=dark]:border-sky-400/30 [data-idil-theme=dark]:bg-sky-400/10 [data-idil-theme=dark]:text-sky-50",
+  }[tone];
+  return <div className={`rounded-2xl border px-3 py-3 ${tones}`}><p className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-70">{label}</p><p className="mt-1 text-2xl font-black">{value === null ? "—" : formatNumber(value)}</p></div>;
+}
+
+function TodayStudentStatus({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
+  return <PanelCard title="Bugünkü Öğrenci Durumu" subtitle="Bugünün aktivitesi ve hızlı takip sinyalleri"><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"><CompactMetric label="Bugün çalışan" value={stats.todayActiveStudents} tone="green"/><CompactMetric label="Bugün çalışmayan" value={stats.todayInactiveStudents} tone="amber"/><CompactMetric label="3 gündür çalışmayan" value={stats.inactiveStudentsLast3Days} tone="amber"/><CompactMetric label="Bugün tamamlanan görev" value={stats.todayCompletedTasks} tone="sky"/></div></PanelCard>;
+}
+
+function ProgramSummary({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
+  return <PanelCard title="Program Takibi" subtitle="Öğrenci bazında aktif ve tamamlanan program özeti"><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Aktif programlı" value={stats.activeProgramStudents} tone="sky"/><CompactMetric label="Tamamlayan" value={stats.completedProgramStudents} tone="green"/><CompactMetric label="Geride kalan" value={stats.behindProgramStudents} tone="amber"/></div><Link href="/ogretmen/idil-panel/egitim-programlari" className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-800 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100">Program takibini aç →</Link></PanelCard>;
+}
+
+function ReadingSummary({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
+  return <PanelCard title="Son 7 Gün Okuma Özeti" subtitle="Yalnızca mevcut okuma testi sonuçlarından"><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Ort. okuma hızı" value={stats.averageReadingSpeedLast7Days} tone="sky"/><CompactMetric label="Ort. anlama" value={stats.averageComprehensionLast7Days} tone="green"/><CompactMetric label="Test sayısı" value={stats.readingTestsLast7Days}/></div></PanelCard>;
+}
+
+function ImprovingStudents({ students }: { students: TeacherDashboardImprovingStudent[] }) {
+  return <PanelCard title="Son 7 Günde Gelişenler" subtitle="Gerçek sonuç değişimlerinden türetilen liste">{students.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">Yeterli pozitif değişim verisi bulunmuyor.</div> : <div className="grid gap-2">{students.map((student) => <div key={student.studentId} className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10"><div className="min-w-0"><p className="truncate text-sm font-bold text-emerald-950 [data-idil-theme=dark]:text-emerald-50">{student.studentName}</p><p className="text-xs text-emerald-800 [data-idil-theme=dark]:text-emerald-100/90">{student.reasonLabel} · {student.supportingValue}</p></div><Link href={student.detailHref} className="shrink-0 text-xs font-bold text-emerald-800 underline [data-idil-theme=dark]:text-emerald-100">Detay</Link></div>)}</div>}</PanelCard>;
+}
+
 export function TeacherDashboardOverview({ summary, error }: TeacherDashboardOverviewProps) {
   if (error || !summary) {
     return (
@@ -387,6 +414,8 @@ export function TeacherDashboardOverview({ summary, error }: TeacherDashboardOve
         </PanelCard>
       ) : null}
 
+      <TodayStudentStatus stats={summary.stats} />
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Toplam Öğrenci" value={summary.stats.totalStudents} description="Kayıtlı tüm öğrenciler" icon="👤" />
         <StatCard label="Aktif Öğrenci" value={summary.stats.activeStudents} description="Güncel durumunda aktif öğrenciler" icon="🟢" />
@@ -398,6 +427,13 @@ export function TeacherDashboardOverview({ summary, error }: TeacherDashboardOve
         <StatCard label="Son 7 Gün Çalışma" value={summary.stats.completedActivitiesLast7Days} description="Dedupe edilmiş tamamlanan çalışma" icon="✅" />
         <StatCard label="Son 7 Gün XP" value={summary.stats.earnedXpLast7Days} description="XP eventlerinden hesaplanan kazanım" icon="🎯" />
       </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <ProgramSummary stats={summary.stats} />
+        <ReadingSummary stats={summary.stats} />
+      </section>
+
+      <ImprovingStudents students={summary.improvingStudents} />
 
       <section className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
         <PanelCard title="Son Aktiviteler" subtitle="En yeni çalışmalar ve giriş hareketleri">

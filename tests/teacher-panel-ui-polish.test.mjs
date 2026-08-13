@@ -38,6 +38,10 @@ test("dashboard overview gercek ozet kartlari ve uyarilari icerir", async () => 
   assert.match(source, /Son 7 Gün XP/);
   assert.match(source, /Veri Uyarıları/);
   assert.match(source, /Takip Edilmesi Önerilen Öğrenciler/);
+  assert.match(source, /Bugünkü Öğrenci Durumu/);
+  assert.match(source, /Son 7 Günde Gelişenler/);
+  assert.match(source, /Program Takibi/);
+  assert.match(source, /Son 7 Gün Okuma Özeti/);
 });
 
 test("ogrenci takip ekraninda class ve level filtreleri ile mobil kart ve desktop tablo vardir", async () => {
