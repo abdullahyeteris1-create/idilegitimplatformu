@@ -11,6 +11,15 @@ test("öğrenci paneli recommendation aynı gün deterministik ve katalog route 
   assert.match(first.href, /^\/egzersizler\//);
 });
 
+test("Seviye + recommendation kartÄ± recommendation alanÄ±nÄ± okunabilir tutar", async () => {
+  const css = await readFile("src/components/student-panel-preview/student-panel-preview.module.css", "utf8");
+  assert.match(css, /\.levelRecommendationHead span[^}]*font-size:11px/);
+  assert.match(css, /\.levelRecommendationThumb\{width:46px;height:46px/);
+  assert.match(css, /\.levelRecommendationAction\{[^}]*min-height:38px/);
+  assert.match(css, /\.levelRecommendationCopy p[^}]*-webkit-line-clamp:2/);
+  assert.match(css, /@media\(max-width:360px\)[\s\S]*\.levelRecommendationAction\{[^}]*min-height:36px/);
+});
+
 test("son oynanan oyun mümkünse önerilmez", () => {
   const result = { id: "1", exerciseType: "tatli-dukkani", exerciseTitle: "Tatlı Dükkanı", score: 1, successRate: 100, correctCount: 1, wrongCount: 0, durationSeconds: 60, date: "2026-08-12T10:00:00Z" };
   assert.notEqual(getStudentPanelRecommendation([result], new Date("2026-08-13T10:00:00+03:00")).slug, "tatli-dukkani");
