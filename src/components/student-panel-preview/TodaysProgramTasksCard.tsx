@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import type { RecommendationArea, ImprovingRecommendationArea, StudentCoachMessage, StudentExerciseRecommendation, StudentSkillAnalysis } from "@/lib/recommendations/studentExerciseRecommendations";
 import styles from "./student-panel-preview.module.css";
 
 type TodayProgramTask = {
@@ -35,27 +33,6 @@ type LoadState =
   | { status: "no-program" }
   | { status: "program-completed" }
   | { status: "ready"; dayNumber: number; tasks: TodayProgramTask[]; dayCompleted: boolean };
-type RecommendationsState = {
-  status: "loading" | "ready" | "error";
-  analysis: StudentSkillAnalysis[];
-  recommendations: StudentExerciseRecommendation[];
-  strengths: RecommendationArea[];
-  developmentAreas: RecommendationArea[];
-  improvingAreas: ImprovingRecommendationArea[];
-  strongestArea: RecommendationArea | null;
-  coachSummary: string | null;
-  coachMessage: StudentCoachMessage | null;
-};
-
-const EMPTY_RECOMMENDATION_SUMMARY = {
-  strengths: [],
-  developmentAreas: [],
-  improvingAreas: [],
-  strongestArea: null,
-  coachSummary: null,
-  coachMessage: null,
-} satisfies Omit<RecommendationsState, "status" | "analysis" | "recommendations">;
-
 const STATUS_LABELS: Record<string, string> = {
   locked: "Kilitli",
   available: "Bekliyor",
@@ -141,40 +118,11 @@ export function TodaysProgramTasksCard() {
     };
   }, []);
 
-  const [recommendations, setRecommendations] = useState<RecommendationsState>({ status: "loading", analysis: [], recommendations: [], ...EMPTY_RECOMMENDATION_SUMMARY });
-  useEffect(() => {
-    const controller = new AbortController();
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch("/api/student/recommendations", { credentials: "same-origin", cache: "no-store", signal: controller.signal });
-        const payload = await response.json() as Partial<RecommendationsState>;
-        if (!response.ok || !Array.isArray(payload.analysis) || !Array.isArray(payload.recommendations) || !Array.isArray(payload.strengths) || !Array.isArray(payload.developmentAreas) || !Array.isArray(payload.improvingAreas)) throw new Error("recommendations");
-        if (!cancelled) setRecommendations({
-          status: "ready",
-          analysis: payload.analysis,
-          recommendations: payload.recommendations,
-          strengths: payload.strengths,
-          developmentAreas: payload.developmentAreas,
-          improvingAreas: payload.improvingAreas,
-          strongestArea: payload.strongestArea ?? null,
-          coachSummary: payload.coachSummary ?? null,
-          coachMessage: payload.coachMessage ?? null,
-        });
-      } catch (error) {
-        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) setRecommendations({ status: "error", analysis: [], recommendations: [], ...EMPTY_RECOMMENDATION_SUMMARY });
-      }
-    })();
-    return () => { cancelled = true; controller.abort(); };
-  }, []);
-
   const title =
     state.status === "ready" ? `${state.dayNumber}. Gün • Bugünkü Ödevlerim` : "Bugünkü Ödevlerim";
   const subtitle = state.status === "ready" ? `${state.tasks.length} görev` : null;
 
-  return (<>
-    <SmartRecommendationsCard state={recommendations} />
-    <section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>
+  return (<section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>
       <div className={styles.todaysProgramHead}>
         <h2 id="todays-program-tasks-title">{title}</h2>
         {subtitle ? <p>{subtitle}</p> : null}
@@ -257,58 +205,5 @@ export function TodaysProgramTasksCard() {
           </Link>
         </>
       )}
-    </section>
-  </>);
-}
-
-function SmartRecommendationsCard({ state }: { state: RecommendationsState }) {
-  return <section className={styles.smartRecommendations} aria-labelledby="smart-recommendations-title">
-    <div className={styles.smartRecommendationsHead}><div><span className={styles.smartEyebrow}>AKILLI ÇALIŞMA</span><h2 id="smart-recommendations-title">✨ Sana Özel Çalışma Önerileri</h2><p>Son çalışmalarına göre bugün gelişimini destekleyebilecek alanlar.</p></div><span className={styles.smartTarget}>🎯</span></div>
-    {state.status === "loading" ? <p className={styles.smartEmpty}>Önerilerin hazırlanıyor…</p> : state.status === "error" ? <p className={styles.smartEmpty}>Öneriler şu anda yüklenemiyor.</p> : <>
-      {state.coachMessage ? <StudentCoachMessageCard state={state} /> : null}
-      {state.recommendations.length === 0 ? <p className={styles.smartEmpty}>Henüz seni tanımaya çalışıyorum. Birkaç çalışma daha tamamladığında sana özel öneriler oluşturacağım.</p> : <div className={styles.smartRecommendationGrid}>{state.recommendations.map((recommendation) => <article className={styles.smartRecommendation} key={`${recommendation.categoryId}-${recommendation.exerciseSlug}`}><div className={styles.smartRecommendationIcon}>✦</div><div className={styles.smartRecommendationBody}><span>{recommendation.categoryTitle}</span><h3>{recommendation.exerciseTitle}</h3><p>{recommendation.reasonText}</p><Link href={`/egzersizler/${recommendation.exerciseSlug}`}>Çalışmaya Başla</Link></div></article>)}</div>}
-      <RecommendationInsights state={state} />
-    </>}
-  </section>;
-}
-
-function StudentCoachMessageCard({ state }: { state: RecommendationsState }) {
-  if (!state.coachMessage) return null;
-  const linkedRecommendation = state.coachMessage.recommendedExerciseSlug
-    ? state.recommendations.find((item) => item.exerciseSlug === state.coachMessage?.recommendedExerciseSlug)
-    : null;
-
-  return <aside className={styles.coachMessageCard} data-coach-tone={state.coachMessage.tone} aria-label="Akıllı Koç">
-    <div className={styles.coachMessageContent}>
-      <span className={styles.coachMessageEyebrow}>🧠 AKILLI KOÇ</span>
-      <h3>{state.coachMessage.title}</h3>
-      <p>{state.coachMessage.message}</p>
-    </div>
-    {linkedRecommendation ? <Link className={styles.coachMessageAction} href={`/egzersizler/${linkedRecommendation.exerciseSlug}`}>Önerilen çalışmaya başla</Link> : null}
-  </aside>;
-}
-
-function formatAreaScore(score: number): string {
-  return `%${Math.round(score)}`;
-}
-
-function RecommendationInsights({ state }: { state: RecommendationsState }) {
-  const hasInsights = state.strengths.length > 0 || state.developmentAreas.length > 0 || state.improvingAreas.length > 0;
-  if (!hasInsights) return null;
-
-  return <div className={styles.recommendationInsights}>
-    {state.coachSummary ? <p className={styles.coachSummary}>{state.coachSummary}</p> : null}
-    {state.strongestArea ? <div className={styles.strongestArea}><span className={styles.insightEyebrow}>🌟 En Güçlü Alanın</span><strong>{state.strongestArea.categoryTitle} <b>{formatAreaScore(state.strongestArea.score)}</b></strong><p>Son çalışmalarında bu alanda çok başarılısın.</p></div> : null}
-    {state.strengths.length > 0 ? <InsightSection title="🌟 Güçlü Olduğun Alanlar" tone="strong"><div className={styles.insightGrid}>{state.strengths.map((area) => <InsightArea key={area.categoryId} area={area} text="Bu alandaki performansın istikrarlı." />)}</div></InsightSection> : null}
-    {state.developmentAreas.length > 0 ? <InsightSection title="🎯 Geliştirebileceğin Alanlar" tone="development"><div className={styles.insightGrid}>{state.developmentAreas.map((area) => <InsightArea key={area.categoryId} area={area} text="Bu alanda biraz daha pratik yapmak gelişimini destekleyebilir." />)}</div></InsightSection> : null}
-    {state.improvingAreas.length > 0 ? <InsightSection title="📈 Son Dönemde Gelişim Gösterdiğin Alanlar" tone="improving"><div className={styles.insightGrid}>{state.improvingAreas.map((area) => <article className={styles.insightArea} key={area.categoryId}><strong>{area.categoryTitle}</strong><b>+{Math.round(area.trendDelta)} puan</b><p>Son çalışmalarında belirgin bir yükseliş var.</p></article>)}</div></InsightSection> : null}
-  </div>;
-}
-
-function InsightSection({ title, tone, children }: { title: string; tone: "strong" | "development" | "improving"; children: ReactNode }) {
-  return <section className={`${styles.insightSection} ${styles[`insightSection${tone[0].toUpperCase()}${tone.slice(1)}`]}`}><h3>{title}</h3>{children}</section>;
-}
-
-function InsightArea({ area, text }: { area: RecommendationArea; text: string }) {
-  return <article className={styles.insightArea}><strong>{area.categoryTitle}</strong><b>{formatAreaScore(area.score)}</b><p>{text}</p></article>;
+  </section>);
 }

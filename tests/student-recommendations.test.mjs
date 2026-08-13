@@ -250,14 +250,11 @@ test("başka öğrenci kimliği enjekte edilemez ve oturumsuz istek access failu
   assert.doesNotMatch(source, /studentId.*searchParams|request\.json|\.insert\(|\.update\(|\.delete\(/);
 });
 
-test("dashboard recommendation fetch'i loading/empty/error durumlarını izole eder", async () => {
+test("dashboard ana paneli eski büyük recommendation fetch/card tekrarını kaldırır", async () => {
   const source = await fs.readFile(new URL("../src/components/student-panel-preview/TodaysProgramTasksCard.tsx", import.meta.url), "utf8");
-  assert.match(source, /status: \"loading\"/);
-  assert.match(source, /recommendations\.length === 0/);
-  assert.match(source, /status: \"error\"/);
-  assert.match(source, /catch \(error\)/);
-  assert.match(source, /<SmartRecommendationsCard[\s\S]*<section className=\{styles\.todaysProgramSection\}/);
-  assert.match(source, /RecommendationInsights/);
+  assert.doesNotMatch(source, /\/api\/student\/recommendations/);
+  assert.doesNotMatch(source, /SmartRecommendationsCard|RecommendationInsights/);
+  assert.match(source, /<section className=\{styles\.todaysProgramSection\}/);
 });
 
 test("recommendation endpoint kimliği client parametresinden değil session'dan ve service role'dan alır", async () => {

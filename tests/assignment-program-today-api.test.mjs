@@ -285,7 +285,7 @@ test("StudentPanelPreview.tsx karti ana icerik sutununda (mainColumn) render edi
   assert.match(source, /className=\{styles\.mainColumn\}><section className=\{styles\.statsGrid\}[\s\S]*<\/section><TodaysProgramTasksCard\/>/);
   // Eski bolumler (Hero, DailyTask, RecentResults, kategori grid'i) hala yerinde.
   assert.match(source, /<Hero /);
-  assert.match(source, /<DailyTask /);
+  assert.match(source, /<GameRoomJoinCard\/>/);
   assert.match(source, /<RecentResults /);
   // StudentPanelPreview DOGRUDAN DB/tablo adina referans vermiyor - yalniz
   // kendi ic bileseni (TodaysProgramTasksCard) araciligiyla, o da yalniz
