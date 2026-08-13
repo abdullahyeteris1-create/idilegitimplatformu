@@ -444,6 +444,10 @@
 .panelBackdrop{pointer-events:auto}
 .panelBackdropOpen{pointer-events:auto}
 
+/* Masaüstünde sağ sütunu Hero ile aynı üst hizaya alır; mobil akışta sıfırlanır. */
+.dashboardGrid>.rightColumn{position:relative;margin-top:-268px}
+@media(max-width:900px){.dashboardGrid>.rightColumn{margin-top:0}}
+
 /* Sağ sütundaki seviye + günlük öneri birleşik kartı. */
 .rightColumn>.levelCard{padding:14px;border-radius:15px}
 .rightColumn>.levelCard .hexBadge{width:44px;height:44px;font-size:18px}

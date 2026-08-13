@@ -11,6 +11,12 @@ test("öğrenci paneli recommendation aynı gün deterministik ve katalog route 
   assert.match(first.href, /^\/egzersizler\//);
 });
 
+test("saÄŸ sÃ¼tun Hero Ã¼st hizasÄ±na Ã§ekilir, mobilde normal akÄ±ÅŸ korunur", async () => {
+  const css = await readFile("src/components/student-panel-preview/student-panel-preview.module.css", "utf8");
+  assert.match(css, /\.dashboardGrid>\.rightColumn\{position:relative;margin-top:-268px\}/);
+  assert.match(css, /@media\(max-width:900px\)\{\.dashboardGrid>\.rightColumn\{margin-top:0\}\}/);
+});
+
 test("Seviye + recommendation kartÄ± recommendation alanÄ±nÄ± okunabilir tutar", async () => {
   const css = await readFile("src/components/student-panel-preview/student-panel-preview.module.css", "utf8");
   assert.match(css, /\.levelRecommendationHead span[^}]*font-size:11px/);
