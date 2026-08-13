@@ -66,6 +66,10 @@ test("dashboard source renders Phase 2 sections, existing badge route and one re
   assert.match(source, /AchievementsCard/);
   assert.match(source, /GameScoresCard/);
   assert.match(source, /BadgeSummary/);
+  assert.match(source, /haftalık değişim/);
+  assert.match(source, /ortalama anlama oranı/);
+  assert.match(source, /Günlük çalışma/);
+  assert.match(source, /phase2NewBadge/);
   assert.match(source, /href="\/ogrenci\/rozetlerim"/);
   assert.equal((source.match(/fetch\("\/api\/student\/results"/g) ?? []).length, 1);
 });
