@@ -445,7 +445,7 @@
 .panelBackdropOpen{pointer-events:auto}
 
 /* Masaüstünde sağ sütunu Hero ile aynı üst hizaya alır; mobil akışta sıfırlanır. */
-.dashboardGrid>.rightColumn{position:relative;margin-top:-284px}
+.dashboardGrid>.rightColumn{position:relative;margin-top:-421px}
 @media(max-width:900px){.dashboardGrid>.rightColumn{margin-top:0}}
 
 /* Sağ sütundaki seviye + günlük öneri birleşik kartı. */
