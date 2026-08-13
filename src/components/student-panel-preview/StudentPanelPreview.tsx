@@ -492,48 +492,6 @@ function selectDailyTaskItem(items: DailyAssignmentItem[]): DailyAssignmentItem 
     ?? null;
 }
 
-function DailyTaskContent({ taskState }: { taskState: DailyTaskState }) {
-  if (taskState.status === "loading") {
-    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="loading"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Görev yükleniyor...</p></section>;
-  }
-
-  if (taskState.status === "error") {
-    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="error"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyStateMessage}>Günlük görev şu anda görüntülenemiyor.</p></section>;
-  }
-
-  if (taskState.status === "empty") {
-    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="empty"><span className={styles.cornerSpark}>✦</span><h2>Bugün için atanmış görev yok</h2><p className={styles.dailyStateMessage}>Serbest çalışmalarından birini seçerek devam edebilirsin.</p><Link href="/egzersizler">Egzersizleri Gör <Icon name="arrow"/></Link></section>;
-  }
-
-  const { assignment } = taskState;
-  const selectedItem = selectDailyTaskItem(assignment.items);
-  const completedCount = assignment.items.filter((item) => item.status === "completed").length;
-  const totalCount = assignment.items.length;
-  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  if (!selectedItem) {
-    return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="completed"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü görevlerini tamamladın</h2><p className={styles.dailyStateMessage}>Bugünkü tüm çalışmalarını başarıyla tamamladın.</p><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><Link href="/egzersizler">Serbest Çalışmalara Git <Icon name="arrow"/></Link></section>;
-  }
-
-  const durationMinutes = typeof selectedItem.settingsJson.durationMinutes === "number"
-    ? selectedItem.settingsJson.durationMinutes
-    : null;
-  const statusLabel = selectedItem.status === "started"
-    ? "Başlandı"
-    : selectedItem.status === "pending"
-      ? "Bekliyor"
-      : "Atlandı";
-  const itemHref = `/egzersizler/${selectedItem.exerciseSlug}?assignmentItemId=${encodeURIComponent(selectedItem.id)}`;
-
-  return <section className={`${styles.sideCard} ${styles.dailyCard}`} data-daily-task-state="ready"><span className={styles.cornerSpark}>✦</span><h2>Bugünkü Görevin</h2><p className={styles.dailyTaskTitle}>{selectedItem.exerciseTitle}</p><div className={styles.dailyTaskMeta}><small><b>Durum:</b> {statusLabel}</small>{durationMinutes !== null && <small><b>Süre:</b> {durationMinutes} dakika</small>}{selectedItem.assignedTextTitle && <small><b>Metin:</b> {selectedItem.assignedTextTitle}</small>}{selectedItem.teacherNote && <small><b>Öğretmen notu:</b> {selectedItem.teacherNote}</small>}</div><div className={styles.dailyProgressLabel}><span>{completedCount} / {totalCount} tamamlandı</span><strong>%{progress}</strong></div><Progress value={progress} label={`Bugünkü görevler yüzde ${progress} tamamlandı`}/><div className={styles.astronaut}>👨‍🚀</div><Link href={itemHref}>Göreve Devam Et <Icon name="arrow"/></Link></section>;
-}
-
-function DailyTask({ taskState }: { taskState: DailyTaskState }) {
-  void taskState;
-  void DailyTaskContent;
-  return <GameRoomJoinCard/>;
-}
-
 function RecentResults({ results, loading, error }: { results: ExerciseResult[]; loading: boolean; error: boolean }) {
   return (
     <section className={styles.recentSection} aria-labelledby="recent-results-title">
@@ -665,7 +623,6 @@ function AccountMenuPopover({ studentName, classLabel, onClose, onLogout, isLogg
 }
 
 export function StudentPanelPreview({ authenticatedStudent, showReadingTestsCard = false, showStatisticsCard = false, xpSnapshot }: StudentPanelPreviewProps) {
-  void DailyTask;
   const { theme, setTheme } = useIdilTheme();
   const { lastReward } = useXpRewardNotifications();
   const light = theme === "light";

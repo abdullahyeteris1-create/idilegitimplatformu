@@ -53,7 +53,6 @@
 .cyan{--tone:#31def6}.pink,.rose{--tone:#ff4d80}.green{--tone:#46dc74}.purple{--tone:#c94fff}.orange{--tone:#ffae27}.blue{--tone:#38a9ff}.indigo{--tone:#778cff}.categoryCard>a{background:color-mix(in srgb,var(--tone) 48%,#111827);border-color:var(--tone);color:#fff}.light .categoryCard>a{background:color-mix(in srgb,var(--tone) 72%,#172033);border-color:var(--tone);color:#fff}
 .categoryDescription{min-height:48px;margin:0 0 12px;color:#cbd5e1;font-size:10px;line-height:1.55}.categoryExamples{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 13px}.categoryExamples a{min-height:28px;display:inline-flex;align-items:center;border:1px solid color-mix(in srgb,var(--tone) 55%,transparent);border-radius:999px;padding:4px 8px;background:color-mix(in srgb,var(--tone) 15%,transparent);color:#f8fafc;font-size:9px;font-weight:700;line-height:1.2;transition:background .2s,border-color .2s}.categoryExamples a:hover{background:color-mix(in srgb,var(--tone) 30%,transparent);border-color:var(--tone)}.light .categoryDescription{color:#526076}.light .categoryExamples a{background:color-mix(in srgb,var(--tone) 12%,white);color:#253047;border-color:color-mix(in srgb,var(--tone) 45%,#cbd5e1)}
 .categoryGrid{grid-auto-rows:1fr}.categoryCard{display:flex;flex-direction:column;height:100%}.categoryExamples a{min-height:44px}.categoryCard>.progress{margin-bottom:15px}.categoryCard>a{margin-top:auto}
-.dailyCard{display:flex;flex-direction:column}.dailyStateMessage,.dailyTaskTitle{overflow-wrap:anywhere;line-height:1.55}.dailyTaskTitle{padding-right:64px;font-weight:800}.dailyTaskMeta{display:grid;gap:6px;padding-right:64px}.dailyTaskMeta small{overflow-wrap:anywhere;line-height:1.45}.dailyTaskMeta b{color:var(--text)}.dailyProgressLabel{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 8px;font-size:11px;color:var(--muted)}.dailyProgressLabel strong{color:var(--text)}.dailyCard .progress{width:100%}.dailyCard>a{min-height:44px;margin-top:auto}.light .dailyTaskMeta b,.light .dailyProgressLabel strong{color:#172033}
 
 /* Compact desktop and category rhythm. */
 .levelCompact{margin-top:6px}
@@ -142,7 +141,7 @@
 
 .iconButton:focus-visible,.mobileHeader button:focus-visible,.demoPopover button:focus-visible{outline:2px solid #f472b6;outline-offset:2px}
 
-/* "Bugunku Odevlerim" (20 gunluk kilitli program - Faz 1, salt-okunur) -
+/* "Egitim Programim" (20 gunluk kilitli program - Faz 1, salt-okunur) -
    mevcut .recentSection/.readingCard ile ayni tasarim diline (border-radius,
    bosluk, degrade, var(--line)/var(--muted)/var(--text)) uyumlu, katmanli. */
 .todaysProgramSection{margin-top:0;border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(160deg,#09152a,#071120)}
@@ -359,7 +358,7 @@
 @media(prefers-reduced-motion:reduce){.dashboardThemeShell:before{animation:none}}
 
 /* Phase 1 dashboard hierarchy: compact cards keep the daily decision visible. */
-.todaysProgramSection{padding:13px;margin-bottom:12px}.todaysProgramHead{margin-bottom:10px}.todaysProgramItem{padding:10px 12px}.panelRecommendation{padding:13px;margin-bottom:12px}.panelRecommendation h2{font-size:16px}.panelRecommendation p{font-size:11px}.rightColumn{gap:11px}.sideCard{padding:14px}.dailyCard{min-height:0}
+.todaysProgramSection{padding:13px;margin-bottom:12px}.todaysProgramHead{margin-bottom:10px}.todaysProgramItem{padding:10px 12px}.panelRecommendation{padding:13px;margin-bottom:12px}.panelRecommendation h2{font-size:16px}.panelRecommendation p{font-size:11px}.rightColumn{gap:11px}.sideCard{padding:14px}
 @media(max-width:900px){.statCard{min-height:126px}.todaysProgramSection{padding:12px}.panelRecommendation{padding:13px}}
 @media(max-width:560px){.statCard{min-height:112px}.todaysProgramSection{padding:12px}.panelRecommendation{padding:12px}.panelRecommendation h2{font-size:15px}}
 .smartRecommendations{padding:13px;margin-bottom:12px}.smartRecommendationsHead{margin-bottom:10px}.smartRecommendations h2{font-size:16px}.smartRecommendations p{font-size:11px}.coachMessageCard{padding:11px;margin-bottom:10px}.coachMessageCard p{font-size:11px}.smartRecommendation{padding:10px}.smartRecommendationBody p{min-height:34px}.smartRecommendationBody a{margin-top:6px}.coachSummary{margin-top:10px;padding:8px 10px;font-size:11px!important}

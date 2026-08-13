@@ -120,7 +120,7 @@ export function TodaysProgramTasksCard() {
   }, []);
 
   const title =
-    state.status === "ready" ? `${state.dayNumber}. Gün • Bugünkü Ödevlerim` : "Bugünkü Ödevlerim";
+    state.status === "ready" ? `Eğitim Programım • ${state.dayNumber}. Gün` : "Eğitim Programım";
   const subtitle = state.status === "ready" ? `${state.tasks.length} görev` : null;
 
   return (<><section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>

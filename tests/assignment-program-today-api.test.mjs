@@ -207,11 +207,20 @@ test("TodaysProgramTasksCard bos program/tamamlanmis program durumlarinda dogru 
 
 test("TodaysProgramTasksCard basliginda gun numarasini ve gorev sayisini gosteriyor", async () => {
   const source = await readCardComponent();
-  assert.match(source, /\$\{state\.dayNumber\}\. Gün • Bugünkü Ödevlerim/);
+  assert.match(source, /Eğitim Programım • \$\{state\.dayNumber\}\. Gün/);
   assert.match(source, /\$\{state\.tasks\.length\} görev/);
   // dayNumber, API'nin zaten dondurdugu todayDay.dayNumber'dan geliyor -
   // yeni bir alan/migration icat edilmedi.
   assert.match(source, /dayNumber:\s*data\.todayDay\.dayNumber/);
+});
+
+test("eski Bugünkü Ödevlerim/DailyTask bloğu dashboard'dan kaldırıldı, program kartı korunuyor", async () => {
+  const panelSource = await readFile(STUDENT_PANEL_PREVIEW_URL, "utf8");
+  const programSource = await readFile(CARD_COMPONENT_URL, "utf8");
+  assert.doesNotMatch(panelSource, /function DailyTaskContent|function DailyTask\b|Bugünkü Görevin/);
+  assert.doesNotMatch(programSource, /Bugünkü Ödevlerim/);
+  assert.match(programSource, /Eğitim Programım/);
+  assert.match(programSource, /StudentRecommendationsCard/);
 });
 
 test("TodaysProgramTasksCard gorsel dili (CSS module) mevcut panel kartlariyla uyumlu siniflar kullaniyor, Tailwind'e gecmiyor", async () => {
