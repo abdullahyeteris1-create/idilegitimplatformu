@@ -43,6 +43,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "growing-shapes-hexagon": "Büyüyen Şekiller",
   "kayip-nesne": "Kayıp Nesne",
   "saray-dedektifi": "Saray Dedektifi",
+  "anlik-goruntu": "Anlık Görüntü",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);

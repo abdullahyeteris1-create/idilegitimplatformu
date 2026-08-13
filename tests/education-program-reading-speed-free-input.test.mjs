@@ -353,7 +353,8 @@ test("15) bu duzeltme icin yeni bir migration/RPC dosyasi olusturulmadi", async 
   // 2026-07-31: Faz 1 parola hash altyapisi icin nullable alanlar eklendi (32).
   // 2026-08-04: kelime-yarisi tam entegrasyonu icin whitelist migration'i eklendi.
   // 2026-08-13: saray-dedektifi icin whitelist migration'i eklendi (43).
-  assert.equal(sqlFiles.length, 43);
+  // 2026-08-13: anlik-goruntu icin whitelist migration'i eklendi (44).
+  assert.equal(sqlFiles.length, 44);
 });
 
 test("15) RPC dosyalarina (assign_education_program_template_v1 dahil) bu duzeltme icin dokunulmadi", async () => {

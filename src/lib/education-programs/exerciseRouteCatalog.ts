@@ -15,6 +15,7 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "kart-eslestirme": "/egzersizler/kart-eslestirme",
   "tatli-dukkani": "/egzersizler/tatli-dukkani",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
+  "anlik-goruntu": "/egzersizler/anlik-goruntu",
   "blok-okuma": "/egzersizler/blok-okuma",
   "cift-tarafli-odak": "/egzersizler/cift-tarafli-odak",
   "kelime-yarisi": "/egzersizler/kelime-yarisi",

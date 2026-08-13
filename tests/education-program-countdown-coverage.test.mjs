@@ -17,7 +17,7 @@ async function findClientFile(slug) {
 test("Education Program duration route coverage: ortak Chrome ve running state eksikleri yakalanır", async () => {
   const catalog = await readFile(CATALOG_PATH, "utf8");
   const routeSlugs = [...catalog.matchAll(/slug:\s*"([^"]+)"/g)].map((match) => match[1]);
-  assert.equal(routeSlugs.length, 22, "Education Program katalog route sayısı değişti; tabloyu bilinçli güncelleyin");
+  assert.equal(routeSlugs.length, 23, "Education Program katalog route sayısı değişti; tabloyu bilinçli güncelleyin");
 
   for (const slug of routeSlugs) {
     const pagePath = join(EXERCISES_ROOT, slug, "page.tsx");

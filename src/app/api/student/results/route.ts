@@ -300,6 +300,17 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     livesRemaining: { type: "integer", min: 0, max: 10 },
     completionReason: { type: "string", values: ["game-over", "completed"] },
   },
+  "anlik-goruntu": {
+    speed: { type: "string", values: ["beginner", "comfortable", "normal", "fast", "very-fast", "expert", "master"] },
+    exposureMs: { type: "integer", min: 10, max: 5_000 },
+    startLevel: { type: "integer", min: 1, max: 13 },
+    reachedLevel: { type: "integer", min: 1, max: 13 },
+    completedLevels: { type: "integer", min: 0, max: 13 },
+    totalRounds: { type: "integer", min: 0, max: 100_000 },
+    capacityLetterCount: { type: "integer", min: 0, max: 15 },
+    maxCombo: { type: "integer", min: 0, max: 100_000 },
+    averageResponseTimeMs: { type: "integer", min: 0, max: 600_000 },
+  },
   "block-reading": {
     category: { type: "string", maxLength: 80 },
     textTitle: { type: "string", maxLength: 160 },

@@ -98,6 +98,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",
   "kayip-nesne": "/egzersizler/kayip-nesne",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
+  "anlik-goruntu": "/egzersizler/anlik-goruntu",
 };
 
 function toTimestamp(value: string): number {

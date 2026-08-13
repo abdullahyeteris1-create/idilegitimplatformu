@@ -269,6 +269,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["mode", "speed"],
   },
   {
+    slug: "anlik-goruntu",
+    title: "Anlık Görüntü",
+    route: "/egzersizler/anlik-goruntu",
+    resultExerciseType: "anlik-goruntu",
+    category: "attention",
+    assignmentEnabled: true,
+    supportedSettings: ["speed", "level"],
+  },
+  {
     slug: "parcali-resim-kelime",
     title: "Parçalı Resim Kelime",
     route: "/egzersizler/parcali-resim-kelime",

@@ -24,6 +24,8 @@ const KAYIP_NESNE_MIGRATION_PATH =
   "supabase/migrations/20260812170000_add_kayip_nesne_to_exercise_whitelist.sql";
 const SARAY_DEDEKTIFI_MIGRATION_PATH =
   "supabase/migrations/20260813120000_add_saray_dedektifi_to_exercise_whitelist.sql";
+const ANLIK_GORUNTU_MIGRATION_PATH =
+  "supabase/migrations/20260813130000_add_anlik_goruntu_to_exercise_whitelist.sql";
 const ORIGINAL_MIGRATION_PATH =
   "supabase/migrations/20260725180000_create_student_education_program_system.sql";
 const EXERCISE_CATALOG_PATH = "src/lib/education-programs/exerciseCatalog.ts";
@@ -68,6 +70,7 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const tatliDukkaniSource = await read(TATLI_DUKKANI_MIGRATION_PATH);
   const kayipNesneSource = await read(KAYIP_NESNE_MIGRATION_PATH);
   const sarayDedektifiSource = await read(SARAY_DEDEKTIFI_MIGRATION_PATH);
+  const anlikGoruntuSource = await read(ANLIK_GORUNTU_MIGRATION_PATH);
 
   const catalogSlugs = extractCatalogSlugs(catalogSource);
   assert.ok(catalogSlugs.length >= 14, "katalogda en az 14 egzersiz beklenir");
@@ -81,7 +84,8 @@ test("exerciseCatalog.ts'teki TUM egzersiz slug'lari duzeltme migration'inin whi
   const tatliDukkaniWhitelistSlugs = extractWhitelistSlugs(tatliDukkaniSource);
   const kayipNesneWhitelistSlugs = extractWhitelistSlugs(kayipNesneSource);
   const sarayDedektifiWhitelistSlugs = extractWhitelistSlugs(sarayDedektifiSource);
-  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs, ...wordRaceWhitelistSlugs, ...tatliDukkaniWhitelistSlugs, ...kayipNesneWhitelistSlugs, ...sarayDedektifiWhitelistSlugs]);
+  const anlikGoruntuWhitelistSlugs = extractWhitelistSlugs(anlikGoruntuSource);
+  const allWhitelistSlugs = new Set([...fixWhitelistSlugs, ...newestWhitelistSlugs, ...forwardWhitelistSlugs, ...growingShapesWhitelistSlugs, ...wordRaceWhitelistSlugs, ...tatliDukkaniWhitelistSlugs, ...kayipNesneWhitelistSlugs, ...sarayDedektifiWhitelistSlugs, ...anlikGoruntuWhitelistSlugs]);
 
   for (const slug of catalogSlugs) {
     assert.ok(

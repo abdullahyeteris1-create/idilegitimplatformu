@@ -300,6 +300,22 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     defaultSettings: { mode: "baslangic", speed: "normal" },
   },
   {
+    exerciseSlug: "anlik-goruntu",
+    assignmentEligible: true,
+    integrationStatus: "ready",
+    supportsLevel: true,
+    levelMin: 1,
+    levelMax: 13,
+    supportsSpeed: false,
+    settingsSchema: {
+      speed: {
+        kind: "enum",
+        values: ["beginner", "comfortable", "normal", "fast", "very-fast", "expert", "master"],
+      },
+    },
+    defaultSettings: { speed: "normal" },
+  },
+  {
     exerciseSlug: "goz-beyin",
     assignmentEligible: true,
     // Faz 2.5: Egzersiz platform katalogunda gorunmeye devam eder; ancak

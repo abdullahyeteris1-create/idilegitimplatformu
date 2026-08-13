@@ -78,6 +78,7 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",
   "kayip-nesne": "/egzersizler/kayip-nesne",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
+  "anlik-goruntu": "/egzersizler/anlik-goruntu",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */

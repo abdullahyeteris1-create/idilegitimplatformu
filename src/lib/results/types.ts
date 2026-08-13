@@ -26,7 +26,8 @@
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"
   | "kayip-nesne"
-  | "saray-dedektifi";
+  | "saray-dedektifi"
+  | "anlik-goruntu";
 
 export type ExerciseResult = {
   id: string;

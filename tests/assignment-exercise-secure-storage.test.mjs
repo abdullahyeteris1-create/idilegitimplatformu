@@ -30,6 +30,7 @@ const READY_EXERCISE_COMPONENTS = {
   "kelime-yarisi": "../src/app/egzersizler/kelime-yarisi/WordRaceExerciseClient.tsx",
   "kayip-nesne": "../src/app/egzersizler/kayip-nesne/KayipNesneExerciseClient.tsx",
   "saray-dedektifi": "../src/app/egzersizler/saray-dedektifi/SarayDedektifiExerciseClient.tsx",
+  "anlik-goruntu": "../src/app/egzersizler/anlik-goruntu/AnlikGoruntuExerciseClient.tsx",
   takistoskop: "../src/components/exercises/TachistoscopeExerciseClient.tsx",
 };
 
