@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import html2pdf from "html2pdf.js";
 import type { DevelopmentReport, DevelopmentReportLesson, DevelopmentMetric } from "@/lib/reports/developmentReportTypes";
 import styles from "./development-report.module.css";
 
@@ -23,6 +24,15 @@ function date(value: string | null): string {
 function signed(value: number | null, suffix = "%"): string {
   if (value === null || !Number.isFinite(value)) return "—";
   return `${value >= 0 ? "+" : ""}${Math.round(value)}${suffix}`;
+}
+
+function fileSafeName(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase() || "ogrenci";
 }
 
 type ChartField = "wordsPerMinute" | "comprehensionScore" | "focusScore";
@@ -98,9 +108,12 @@ function MetricCard({ title, metric, lessons, field, tone, suffix = "%", scale =
 }
 
 export default function DevelopmentReportClient({ report }: { report: DevelopmentReport }) {
+  const reportRef = useRef<HTMLElement>(null);
   const [comment, setComment] = useState("");
   const [selectedRecommendations, setSelectedRecommendations] = useState<string[]>([]);
   const [customRecommendation, setCustomRecommendation] = useState("");
+  const [isPdfPreparing, setIsPdfPreparing] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const toggleRecommendation = (value: string) => setSelectedRecommendations((current) => current.includes(value) ? current.filter((item) => item !== value) : current.length >= 5 ? current : [...current, value]);
   const addCustomRecommendation = () => {
     const value = customRecommendation.trim();
@@ -108,12 +121,52 @@ export default function DevelopmentReportClient({ report }: { report: Developmen
     setCustomRecommendation("");
   };
 
+  const downloadPdf = async () => {
+    if (!reportRef.current || isPdfPreparing) return;
+    setIsPdfPreparing(true);
+    setPdfError("");
+    const clone = reportRef.current.cloneNode(true) as HTMLElement;
+    const printControls = clone.querySelectorAll<HTMLElement>(".noPrint");
+    printControls.forEach((element) => element.remove());
+    clone.querySelectorAll<HTMLElement>(".printOnly").forEach((element) => { element.style.display = "block"; });
+    clone.style.width = "794px";
+    clone.style.maxWidth = "none";
+    clone.style.margin = "0";
+    clone.style.boxShadow = "none";
+    clone.style.background = "white";
+    clone.style.padding = "34px";
+    const host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.position = "fixed";
+    host.style.left = "-100000px";
+    host.style.top = "0";
+    host.style.width = "862px";
+    host.style.background = "white";
+    host.appendChild(clone);
+    document.body.appendChild(host);
+    try {
+      await html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `${fileSafeName(report.student.name)}-gelisim-raporu.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      }).from(clone).save();
+    } catch {
+      setPdfError("PDF hazırlanırken bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      host.remove();
+      setIsPdfPreparing(false);
+    }
+  };
+
   return <main className={styles.page}>
     <div className={styles.toolbar}>
       <a href="/ogretmen/idil-panel/ders-kayitlari">← Ders Kayıtları</a>
-      <button type="button" onClick={() => window.print()}>Yazdır / PDF Olarak Kaydet</button>
+      <div className={styles.toolbarActions}><button type="button" onClick={() => window.print()}>Yazdır / PDF Olarak Kaydet</button><button type="button" onClick={downloadPdf} disabled={isPdfPreparing}>{isPdfPreparing ? "PDF hazırlanıyor..." : "⬇ PDF İndir"}</button></div>
     </div>
-    <article className={styles.report}>
+    {pdfError ? <p role="alert" className={styles.pdfError}>{pdfError}</p> : null}
+    <article ref={reportRef} className={styles.report}>
       <header className={styles.brand}><div className={styles.logo}>İDİL</div><div><p>HIZLI OKUMA</p><h1>Gelişim Raporu</h1></div><time>{date(report.reportDate)}</time></header>
       <section className={styles.studentBox}><h2>Öğrenci Bilgileri</h2><div><span><b>Ad Soyad</b>{report.student.name}</span><span><b>Öğrenci ID</b>{report.student.id}</span><span><b>Başlangıç Tarihi</b>{date(report.student.educationStartDate)}</span><span><b>Bitiş Tarihi</b>{date(report.student.accessEndDate)}</span><span><b>Rapor Tarihi</b>{date(report.reportDate)}</span></div></section>
       <section className={styles.metricGrid}>

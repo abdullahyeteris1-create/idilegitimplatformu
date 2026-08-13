@@ -51,3 +51,14 @@ test("development report print styles keep A4 charts together and preserve print
   assert.match(css, /print-color-adjust: exact/);
   assert.doesNotMatch(css, /noteHint/);
 });
+
+test("development report provides direct PDF download without changing print flow", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/DevelopmentReportClient.tsx", "utf8"));
+  assert.match(source, /html2pdf/);
+  assert.match(source, /PDF hazırlanıyor/);
+  assert.match(source, /fileSafeName\(report\.student\.name\)/);
+  assert.match(source, /\.pdf/);
+  assert.match(source, /printControls.*noPrint/);
+  assert.match(source, /useCORS: true/);
+  assert.match(source, /window\.print\(\)/);
+});
