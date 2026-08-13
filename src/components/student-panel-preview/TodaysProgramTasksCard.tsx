@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./student-panel-preview.module.css";
+import { StudentRecommendationsCard } from "./StudentRecommendationsCard";
 
 type TodayProgramTask = {
   id: string;
@@ -122,7 +123,7 @@ export function TodaysProgramTasksCard() {
     state.status === "ready" ? `${state.dayNumber}. Gün • Bugünkü Ödevlerim` : "Bugünkü Ödevlerim";
   const subtitle = state.status === "ready" ? `${state.tasks.length} görev` : null;
 
-  return (<section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>
+  return (<><section className={styles.todaysProgramSection} aria-labelledby="todays-program-tasks-title" data-todays-program-state={state.status}>
       <div className={styles.todaysProgramHead}>
         <h2 id="todays-program-tasks-title">{title}</h2>
         {subtitle ? <p>{subtitle}</p> : null}
@@ -205,5 +206,5 @@ export function TodaysProgramTasksCard() {
           </Link>
         </>
       )}
-  </section>);
+  </section><StudentRecommendationsCard/></>);
 }

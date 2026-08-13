@@ -252,9 +252,12 @@ test("başka öğrenci kimliği enjekte edilemez ve oturumsuz istek access failu
 
 test("dashboard ana paneli eski büyük recommendation fetch/card tekrarını kaldırır", async () => {
   const source = await fs.readFile(new URL("../src/components/student-panel-preview/TodaysProgramTasksCard.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /\/api\/student\/recommendations/);
-  assert.doesNotMatch(source, /SmartRecommendationsCard|RecommendationInsights/);
+  assert.match(source, /StudentRecommendationsCard/);
   assert.match(source, /<section className=\{styles\.todaysProgramSection\}/);
+  const recommendationSource = await fs.readFile(new URL("../src/components/student-panel-preview/StudentRecommendationsCard.tsx", import.meta.url), "utf8");
+  assert.match(recommendationSource, /\/api\/student\/recommendations/);
+  assert.match(recommendationSource, /slice\(0, 3\)/);
+  assert.match(recommendationSource, /Sana Özel Çalışma Önerileri/);
 });
 
 test("recommendation endpoint kimliği client parametresinden değil session'dan ve service role'dan alır", async () => {
