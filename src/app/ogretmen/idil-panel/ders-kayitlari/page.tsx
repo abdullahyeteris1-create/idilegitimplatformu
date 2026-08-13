@@ -1131,14 +1131,15 @@ function LessonRecordsContent() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSuccessMessage("Rapor ozelligi sonraki asamada eklenecek")}
-                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
-                aria-label="Rapor olustur"
-              >
-                Rapor Olustur
-              </button>
+              {form.studentId ? (
+                <Link
+                  href={`/ogretmen/idil-panel/ders-kayitlari/gelisim-raporu?studentId=${encodeURIComponent(form.studentId)}`}
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800"
+                  aria-label="Gelişim raporu oluştur"
+                >
+                  Gelişim Raporu Oluştur
+                </Link>
+              ) : null}
               <button
                 type="button"
                 onClick={openCreateForm}
