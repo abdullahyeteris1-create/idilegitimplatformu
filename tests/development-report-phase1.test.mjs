@@ -24,3 +24,30 @@ test("development report has no overall score or radar benchmark contract", asyn
   assert.doesNotMatch(source, /radar/i);
   assert.match(source, /focusScore.*\/ 10/);
 });
+
+test("development report charts use responsive label density and SVG area/marker styling", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/DevelopmentReportClient.tsx", "utf8"));
+  assert.match(source, /getLabelIndexes/);
+  assert.match(source, /length <= 6/);
+  assert.match(source, /length <= 10/);
+  assert.match(source, /areaPath/);
+  assert.match(source, /strokeWidth=\"2\"/);
+  assert.match(source, /CHART_COLORS/);
+  assert.match(source, /field !== \"wordsPerMinute\"/);
+  assert.match(source, /axisLabel/);
+});
+
+test("development report keeps focus missing values out of chart points and displays focus on ten", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/DevelopmentReportClient.tsx", "utf8"));
+  assert.match(source, /lesson\[field\] === null \? null/);
+  assert.match(source, /field === \"focusScore\" \? lesson\[field\] \/ 10/);
+  assert.match(source, /field === \"focusScore\" \? \[0, 2\.5, 5, 7\.5, 10\]/);
+});
+
+test("development report print styles keep A4 charts together and preserve print colors", async () => {
+  const css = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/development-report.module.css", "utf8"));
+  assert.match(css, /@page \{ size: A4 portrait/);
+  assert.match(css, /page-break-inside: avoid/);
+  assert.match(css, /print-color-adjust: exact/);
+  assert.doesNotMatch(css, /noteHint/);
+});
