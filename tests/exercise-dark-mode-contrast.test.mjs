@@ -33,6 +33,10 @@ test("grouping, block reading, and shadow reading provide dark-mode work-surface
     assert.match(source, /\.darkTheme[\s\S]*\.text-slate-950/);
   }
   assert.match(grouping, /\.darkTheme \.readingArea/);
+  assert.match(grouping, /\.darkTheme \.readingArea :global\(\.text-slate-950\)[\s\S]*color: #0f172a !important;/);
+  assert.match(grouping, /\.darkTheme :global\(\.fixed-exercise-stat--brand\)[\s\S]*color: #ffe4e6 !important;/);
+  assert.match(block, /\.darkTheme \.runningWord \{\s*color: inherit !important;/);
+  assert.match(block, /\.darkTheme :global\(\.fixed-exercise-stat--brand\)[\s\S]*color: #ffe4e6 !important;/);
   assert.match(shadow, /\.darkTheme \.readingArea/);
 });
 

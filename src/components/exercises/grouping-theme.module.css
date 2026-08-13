@@ -64,6 +64,16 @@
   color: var(--gr-text) !important;
 }
 
+.darkTheme .readingArea :global(.text-slate-950) {
+  color: #0f172a !important;
+}
+
+.darkTheme :global(.fixed-exercise-stat--brand) {
+  background: #3a1d2a !important;
+  border-color: #fb7185 !important;
+  color: #ffe4e6 !important;
+}
+
 .darkTheme .noticeInfo {
   background: var(--gr-panel-2) !important;
   border-color: var(--gr-border) !important;
