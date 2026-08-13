@@ -287,12 +287,11 @@ test("src/app/ogrenci/page.tsx artik karti dogrudan render ETMIYOR - kart Studen
   assert.match(source, /<StudentPanelPreview\s*\n\s*showReadingTestsCard=\{true\}\s*\n\s*showStatisticsCard=\{true\}/);
 });
 
-test("StudentPanelPreview.tsx karti ana icerik sutununda (mainColumn) render ediyor, mevcut bolumleri bozmuyor", async () => {
+test("StudentPanelPreview dashboard akisini compact recommendation sirasi ile render ediyor", async () => {
   const source = await readFile(STUDENT_PANEL_PREVIEW_URL, "utf8");
-  assert.match(source, /import \{ TodaysProgramTasksCard \} from "\.\/TodaysProgramTasksCard"/);
-  // Mobil akista once ozet metrikler, sonra program karti gorunmeli.
-  assert.match(source, /className=\{styles\.mainColumn\}><section className=\{styles\.statsGrid\}[\s\S]*<\/section><TodaysProgramTasksCard\/>/);
-  // Eski bolumler (Hero, DailyTask, RecentResults, kategori grid'i) hala yerinde.
+  assert.doesNotMatch(source, /TodaysProgramTasksCard/);
+  assert.ok(source.indexOf("<section className={styles.panelRecommendation}") < source.indexOf("<section className={styles.statsGrid}"));
+  assert.match(source, /<StudentRecommendationsCard\/>/);
   assert.match(source, /<Hero /);
   assert.match(source, /<GameRoomJoinCard\/>/);
   assert.match(source, /<RecentResults /);
