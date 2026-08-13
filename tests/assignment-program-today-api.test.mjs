@@ -287,11 +287,13 @@ test("src/app/ogrenci/page.tsx artik karti dogrudan render ETMIYOR - kart Studen
   assert.match(source, /<StudentPanelPreview\s*\n\s*showReadingTestsCard=\{true\}\s*\n\s*showStatisticsCard=\{true\}/);
 });
 
-test("StudentPanelPreview dashboard akisini compact recommendation sirasi ile render ediyor", async () => {
+test("StudentPanelPreview dashboard akisini seviye karti icinde recommendation sirasi ile render ediyor", async () => {
   const source = await readFile(STUDENT_PANEL_PREVIEW_URL, "utf8");
   assert.doesNotMatch(source, /TodaysProgramTasksCard/);
-  assert.ok(source.indexOf("<section className={styles.panelRecommendation}") < source.indexOf("<section className={styles.statsGrid}"));
-  assert.match(source, /<StudentRecommendationsCard\/>/);
+  assert.doesNotMatch(source, /<section className=\{styles\.panelRecommendation\}/);
+  assert.ok(source.indexOf("<section className={styles.statsGrid}") < source.indexOf("<StudentRecommendationsCard/>"));
+  assert.match(source, /<LevelCard xpSnapshot=\{safeXpSnapshot\} lastReward=\{lastReward\} recommendation=\{panelRecommendation\}\/\>/);
+  assert.match(source, /levelRecommendation/);
   assert.match(source, /<Hero /);
   assert.match(source, /<GameRoomJoinCard\/>/);
   assert.match(source, /<RecentResults /);

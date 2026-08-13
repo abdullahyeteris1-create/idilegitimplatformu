@@ -34,7 +34,7 @@ test("11-16) panel kartlari gercek XP snapshot'i kullanir ve placeholder metinle
 
   assert.match(
     source,
-    /function LevelCard\(\{\s*compact = false,\s*xpSnapshot,\s*lastReward,\s*\}:\s*\{\s*compact\?: boolean;\s*xpSnapshot: StudentXpSnapshot;\s*lastReward\?: ReturnType<typeof useXpRewardNotifications>\["lastReward"\];\s*\}\)/s,
+    /function LevelCard\(\{\s*compact = false,\s*xpSnapshot,\s*lastReward,\s*recommendation,\s*\}:\s*\{\s*compact\?: boolean;\s*xpSnapshot: StudentXpSnapshot;\s*lastReward\?: ReturnType<typeof useXpRewardNotifications>\["lastReward"\];\s*recommendation\?: StudentPanelRecommendation;\s*\}\)/s,
   );
   assert.ok(source.includes("Seviye {xpSnapshot.level}"));
   assert.ok(source.includes('xpSnapshot.totalXp.toLocaleString("tr-TR")'));

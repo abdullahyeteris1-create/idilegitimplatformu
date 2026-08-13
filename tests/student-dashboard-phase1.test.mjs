@@ -22,7 +22,8 @@ test("panel Phase 1 gerçek metrikleri ve no-fake XP kararını taşır", async 
   assert.match(source, /Çalışma Süresi/);
   assert.match(source, /Kazanılan XP/);
   assert.match(source, /Bugün için ayrı XP verisi yok/);
-  assert.match(source, /BUGÜN SANA ÖNERİYORUM/);
+  assert.match(source, /levelRecommendation/);
+  assert.match(source, /recommendation=\{panelRecommendation\}/);
   assert.match(source, /getStudentPanelRecommendation/);
   assert.match(source, /Kaldığın Yerden Devam Et/);
 });
