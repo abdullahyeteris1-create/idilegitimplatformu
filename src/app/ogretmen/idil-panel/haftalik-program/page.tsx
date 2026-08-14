@@ -839,8 +839,8 @@ export default function WeeklyProgramPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="grid min-w-[1540px] grid-cols-7 gap-2">
+        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:overflow-x-hidden">
+          <div className="grid min-w-0 max-lg:min-w-[1540px] grid-cols-7 gap-2 lg:grid-cols-[repeat(7,minmax(0,1fr))] lg:gap-1.5">
             {days.map((day) => {
               const daySchedules = schedulesByDate.get(day.dateIso) ?? [];
               const slots = placeSchedulesInSlots(daySchedules);
@@ -848,30 +848,30 @@ export default function WeeklyProgramPage() {
               return (
                 <section
                   key={day.key}
-                  className={`rounded-2xl border ${day.color.border} ${day.color.bg} overflow-hidden`}
+                  className={`min-w-0 overflow-hidden rounded-2xl border ${day.color.border} ${day.color.bg}`}
                 >
                   <header
-                    className={`border-b ${day.color.border} ${day.color.header} px-3 py-2`}
+                    className={`border-b ${day.color.border} ${day.color.header} px-3 py-2 lg:px-2 lg:py-1.5`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
+                    <div className="flex items-center justify-between gap-2 lg:flex-col lg:items-start lg:gap-0.5">
+                      <div className="min-w-0 max-w-full">
                         <h2
-                          className={`text-sm font-black leading-tight ${day.color.text}`}
+                          className={`max-w-full truncate text-sm font-black leading-tight lg:text-[13px] ${day.color.text}`}
                         >
                           {day.label}
                         </h2>
-                        <p className="mt-0.5 text-[11px] font-bold text-slate-500">
+                        <p className="mt-0.5 truncate text-[11px] font-bold text-slate-500 lg:text-[10px]">
                           {formatShortDate(day.date)}
                         </p>
                       </div>
 
-                      <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-slate-700 shadow-sm">
+                      <span className="shrink-0 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-black text-slate-700 shadow-sm lg:px-1.5 lg:py-0.5 lg:text-[10px]">
                         {daySchedules.length} ders
                       </span>
                     </div>
                   </header>
 
-                  <div className="space-y-1.5 p-2">
+                  <div className="space-y-1.5 p-2 lg:space-y-1 lg:p-1.5">
                     {slots.map((schedule, slotIndex) => {
                       if (isLoading) {
                         return (
@@ -905,12 +905,13 @@ export default function WeeklyProgramPage() {
                       return (
                         <article
                           key={schedule.id}
-                          className={`h-[86px] overflow-hidden rounded-xl border px-2 py-1.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${studentColor.card}`}
+                          className={`h-[86px] min-w-0 overflow-hidden rounded-xl border px-2 py-1.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:h-[92px] lg:px-1.5 lg:py-1 ${studentColor.card}`}
                         >
-                          <div className="flex items-start justify-between gap-1">
+                          <div className="flex min-w-0 items-start justify-between gap-1 lg:gap-0.5">
                             <div className="min-w-0">
                               <p
-                                className={`truncate text-[12px] font-black uppercase leading-tight ${studentColor.name}`}
+                                title={getStudentName(schedule, students)}
+                                className={`min-w-0 truncate text-[12px] font-black uppercase leading-tight lg:text-[11px] ${studentColor.name}`}
                               >
                                 {getStudentName(schedule, students)}
                               </p>
@@ -927,7 +928,7 @@ export default function WeeklyProgramPage() {
                                 onClick={() =>
                                   handleStatusChange(schedule.id, "Tamamlandı")
                                 }
-                                className={`flex h-6 w-6 items-center justify-center rounded-lg text-[12px] font-black transition ${
+                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-black transition lg:h-7 lg:w-7 lg:text-[11px] ${
                                   schedule.status === "Tamamlandı"
                                     ? "bg-emerald-200 text-emerald-800"
                                     : "bg-white/80 text-emerald-700 hover:bg-emerald-100"
@@ -940,7 +941,7 @@ export default function WeeklyProgramPage() {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(schedule, slotIndex)}
-                                className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/80 text-[12px] text-slate-700 transition hover:bg-slate-100"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/80 text-[12px] text-slate-700 transition hover:bg-slate-100 lg:h-7 lg:w-7 lg:text-[11px]"
                                 title="Düzenle"
                               >
                                 ✎
@@ -949,7 +950,7 @@ export default function WeeklyProgramPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDelete(schedule)}
-                                className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/80 text-[12px] text-rose-600 transition hover:bg-rose-100"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/80 text-[12px] text-rose-600 transition hover:bg-rose-100 lg:h-7 lg:w-7 lg:text-[11px]"
                                 title="Sil"
                               >
                                 🗑
@@ -957,7 +958,7 @@ export default function WeeklyProgramPage() {
                             </div>
                           </div>
 
-                          <div className="mt-1 flex min-w-0 items-center gap-1">
+                          <div className="mt-1 flex min-w-0 items-center gap-1 lg:gap-0.5">
                             <select
                               value={lessonDay}
                               onChange={(event) =>
@@ -967,7 +968,7 @@ export default function WeeklyProgramPage() {
                                   slotIndex,
                                 )
                               }
-                              className="h-7 w-[72px] min-w-0 truncate rounded-full border border-slate-200 bg-white/90 px-1.5 text-[10px] font-black text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                              className="h-7 w-[72px] min-w-0 truncate rounded-full border border-slate-200 bg-white/90 px-1.5 text-[10px] font-black text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 lg:h-6 lg:w-[58px] lg:px-1 lg:text-[9px]"
                               title="Kaçıncı ders günü?"
                             >
                               {LESSON_DAY_OPTIONS.map((dayNumber) => (
@@ -985,7 +986,7 @@ export default function WeeklyProgramPage() {
                                   event.target.value as ScheduleStatus,
                                 )
                               }
-                              className={`h-7 min-w-0 flex-1 truncate rounded-full border px-1.5 text-[10px] font-black outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 ${statusBadgeClass(
+                              className={`h-7 min-w-0 flex-1 truncate rounded-full border px-1.5 text-[10px] font-black outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 lg:h-6 lg:px-1 lg:text-[9px] ${statusBadgeClass(
                                 schedule.status,
                               )}`}
                             >
