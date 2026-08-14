@@ -721,8 +721,8 @@ export default function WeeklyProgramPage() {
     >
       <TeacherOnly>
       <section className="w-full text-slate-900">
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="mb-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:mb-2 lg:px-4 lg:py-2">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <Link
                 href="/ogretmen/idil-panel"
@@ -735,11 +735,11 @@ export default function WeeklyProgramPage() {
                   (ve sayfada ikinci bir <h1> oluşuyordu). */}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               <button
                 type="button"
                 onClick={() => setWeekStart((current) => addWeeks(current, -1))}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 lg:px-3 lg:py-1.5"
               >
                 ← Önceki Hafta
               </button>
@@ -747,7 +747,7 @@ export default function WeeklyProgramPage() {
               <button
                 type="button"
                 onClick={() => setWeekStart(getMonday(new Date()))}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-black text-rose-700 shadow-sm transition hover:bg-rose-100"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-black text-rose-700 shadow-sm transition hover:bg-rose-100 lg:px-3 lg:py-1.5"
               >
                 Bu Hafta
               </button>
@@ -755,7 +755,7 @@ export default function WeeklyProgramPage() {
               <button
                 type="button"
                 onClick={() => setWeekStart((current) => addWeeks(current, 1))}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 lg:px-3 lg:py-1.5"
               >
                 Sonraki Hafta →
               </button>
@@ -763,7 +763,7 @@ export default function WeeklyProgramPage() {
               <button
                 type="button"
                 onClick={() => openCreateModal(days[0]?.dateIso, 0)}
-                className="rounded-xl bg-slate-950 px-5 py-2 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800"
+                className="rounded-xl bg-slate-950 px-5 py-2 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 lg:px-4 lg:py-1.5"
               >
                 + Yeni Ders
               </button>
@@ -771,32 +771,32 @@ export default function WeeklyProgramPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid gap-3 xl:grid-cols-[1fr_auto] xl:items-center">
-          <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <div className="mb-3 grid gap-3 lg:mb-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-2">
+          <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:px-4 lg:py-2.5">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
               Seçili Hafta
             </p>
 
-            <p className="mt-1 text-xl font-black text-slate-950">
+            <p className="mt-1 text-xl font-black text-slate-950 lg:mt-0.5 lg:text-lg">
               {formatLongDateRange(weekStart, weekEnd)}
             </p>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
               <p className="text-[11px] font-black text-slate-500">
                 Toplam Ders
               </p>
-              <p className="mt-1 text-2xl font-black text-slate-950">
+              <p className="mt-1 text-2xl font-black text-slate-950 lg:mt-0 lg:text-xl">
                 {schedules.length}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center shadow-sm">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
               <p className="text-[11px] font-black text-emerald-700">
                 Tamamlandı
               </p>
-              <p className="mt-1 text-2xl font-black text-emerald-700">
+              <p className="mt-1 text-2xl font-black text-emerald-700 lg:mt-0 lg:text-xl">
                 {
                   schedules.filter(
                     (schedule) => schedule.status === "Tamamlandı",
@@ -805,9 +805,9 @@ export default function WeeklyProgramPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center shadow-sm">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
               <p className="text-[11px] font-black text-amber-700">Gelmedi</p>
-              <p className="mt-1 text-2xl font-black text-amber-700">
+              <p className="mt-1 text-2xl font-black text-amber-700 lg:mt-0 lg:text-xl">
                 {
                   schedules.filter((schedule) => schedule.status === "Gelmedi")
                     .length
@@ -815,9 +815,9 @@ export default function WeeklyProgramPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-center shadow-sm">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
               <p className="text-[11px] font-black text-rose-700">İptal</p>
-              <p className="mt-1 text-2xl font-black text-rose-700">
+              <p className="mt-1 text-2xl font-black text-rose-700 lg:mt-0 lg:text-xl">
                 {
                   schedules.filter((schedule) => schedule.status === "İptal")
                     .length
@@ -828,13 +828,13 @@ export default function WeeklyProgramPage() {
         </div>
 
         {errorMessage && (
-          <div role="alert" aria-live="assertive" className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+          <div role="alert" aria-live="assertive" className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 lg:mb-2 lg:py-2">
             {errorMessage}
           </div>
         )}
 
         {successMessage && (
-          <div role="status" aria-live="polite" className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+          <div role="status" aria-live="polite" className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:mb-2 lg:py-2">
             {successMessage}
           </div>
         )}
