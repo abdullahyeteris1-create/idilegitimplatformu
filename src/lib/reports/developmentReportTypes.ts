@@ -8,6 +8,14 @@ export type DevelopmentReportLesson = {
   teacherNote: string;
 };
 
+export type DevelopmentReportDailyAverage = {
+  dateKey: string;
+  lessonCount: number;
+  wordsPerMinute: number | null;
+  comprehensionScore: number | null;
+  focusScore: number | null;
+};
+
 export type DevelopmentMetric = {
   first: number | null;
   last: number | null;
@@ -24,6 +32,7 @@ export type DevelopmentReport = {
   };
   reportDate: string;
   lessons: DevelopmentReportLesson[];
+  dailyAverages: DevelopmentReportDailyAverage[];
   metrics: {
     speed: DevelopmentMetric;
     comprehension: DevelopmentMetric;

@@ -2,7 +2,7 @@ import "server-only";
 
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTeacherSession } from "@/lib/auth/teacherSession";
-import { calculateDevelopmentMetric } from "./developmentReportCalculations";
+import { calculateDailyDevelopmentAverages, calculateDevelopmentMetric } from "./developmentReportCalculations";
 import type { DevelopmentReport, DevelopmentReportLesson } from "./developmentReportTypes";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -77,6 +77,7 @@ export async function getDevelopmentReport(studentId: string): Promise<Developme
     .map((row) => mapLesson(row as Row))
     .filter((lesson): lesson is DevelopmentReportLesson => lesson !== null)
     .sort((a, b) => a.lessonNo - b.lessonNo || a.lessonDate.localeCompare(b.lessonDate));
+  const dailyAverages = calculateDailyDevelopmentAverages(lessons);
 
   return {
     student: {
@@ -87,10 +88,11 @@ export async function getDevelopmentReport(studentId: string): Promise<Developme
     },
     reportDate: new Date().toISOString(),
     lessons,
+    dailyAverages,
     metrics: {
-      speed: calculateDevelopmentMetric(lessons.map((lesson) => lesson.wordsPerMinute)),
-      comprehension: calculateDevelopmentMetric(lessons.map((lesson) => lesson.comprehensionScore)),
-      focus: calculateDevelopmentMetric(lessons.map((lesson) => lesson.focusScore)),
+      speed: calculateDevelopmentMetric(dailyAverages.map((day) => day.wordsPerMinute)),
+      comprehension: calculateDevelopmentMetric(dailyAverages.map((day) => day.comprehensionScore)),
+      focus: calculateDevelopmentMetric(dailyAverages.map((day) => day.focusScore)),
     },
   };
 }
