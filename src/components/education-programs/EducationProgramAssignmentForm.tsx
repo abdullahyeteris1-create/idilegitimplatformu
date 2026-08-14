@@ -13,7 +13,7 @@ const INITIAL_STATE = {
 };
 
 const FIELD_CLASS =
-  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
+  "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
 
 function formatDate(value: string): string {
   if (!value || Number.isNaN(Date.parse(value))) return "—";
@@ -54,7 +54,8 @@ export function EducationProgramAssignmentForm({
       {state.status !== "idle" ? (
         <div
           role={state.status === "error" ? "alert" : "status"}
-          className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+          aria-live={state.status === "error" ? "assertive" : "polite"}
+          className={`rounded-xl border px-4 py-3 text-sm font-medium ${
             state.status === "error"
               ? "border-red-200 bg-red-50 text-red-800"
               : "border-emerald-200 bg-emerald-50 text-emerald-800"
@@ -92,7 +93,8 @@ export function EducationProgramAssignmentForm({
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+        <fieldset className="grid gap-4 border-0 p-0 lg:grid-cols-2">
+          <legend className="sr-only">Öğrenci ve program seçimi</legend>
         <label className="grid gap-1.5">
           <span className="text-sm font-semibold text-slate-800 [data-idil-theme=dark]:text-slate-100">
             Öğrenci
@@ -147,7 +149,7 @@ export function EducationProgramAssignmentForm({
             Yalnız yayınlanmış ve aktif şablonlar atanabilir.
           </span>
         </label>
-      </div>
+        </fieldset>
 
       {selectedTemplate ? (
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm sm:grid-cols-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900/70">

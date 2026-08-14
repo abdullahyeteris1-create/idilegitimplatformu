@@ -84,6 +84,18 @@ test("development report keeps focus missing values out of chart points and disp
   assert.match(source, /field === \"focusScore\" \? \[0, 2\.5, 5, 7\.5, 10\]/);
 });
 
+test("development report keeps KPI and profile formatting on the shared metric display", async () => {
+  const source = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/DevelopmentReportClient.tsx", "utf8"));
+  assert.match(source, /function profileMetricValue/);
+  assert.match(source, /const display = metricDisplay\(metric, field\)/);
+  assert.match(source, /return `\$\{formatted\} kelime\/dk`/);
+  assert.match(source, /return `%\$\{formatted\}`/);
+  assert.match(source, /return `\$\{formatted\}\/10`/);
+  assert.match(source, /metric=\{report\.metrics\.speed\} field="wordsPerMinute"/);
+  assert.match(source, /metric=\{report\.metrics\.comprehension\} field="comprehensionScore"/);
+  assert.match(source, /metric=\{report\.metrics\.focus\} field="focusScore"/);
+});
+
 test("development report print styles keep A4 charts together and preserve print colors", async () => {
   const css = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/development-report.module.css", "utf8"));
   assert.match(css, /@page \{ size: A4 portrait/);
@@ -105,6 +117,15 @@ test("development report keeps the two-page PDF structure and compact A4 capture
   assert.match(source, /Sayfa 2 \/ 2/);
   assert.match(source, /calculateDailyDevelopmentAverages/);
   assert.match(source, /formatShortDate/);
+});
+
+test("development report does not clip the compact first PDF page", async () => {
+  const css = await import("node:fs/promises").then((fs) => fs.readFile("src/components/teacher-panel/development-report.module.css", "utf8"));
+  assert.match(css, /\.pdfMode \.reportPageOne \{ height: auto; min-height: 0; overflow: visible; \}/);
+  assert.match(css, /\.pdfMode \.chartCard \{ min-height: 190px/);
+  assert.match(css, /\.pdfMode \.chartSvg \{ height: 160px; max-height: 160px/);
+  assert.match(css, /\.pdfMode \.profileRow \{ grid-template-columns: 165px minmax\(0, 1fr\) 135px/);
+  assert.match(css, /\.pdfMode \.assessmentCard \{ margin-top: 8px/);
 });
 
 test("development report provides direct PDF download without changing print flow", async () => {

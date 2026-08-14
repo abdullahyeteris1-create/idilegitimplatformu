@@ -8,16 +8,16 @@ import type { ProgramTemplateSlot } from "@/lib/assignments/types";
  */
 
 export const CARD_SURFACE_CLASS =
-  "rounded-2xl border border-[var(--idil-border,#e2e8f0)] bg-[var(--idil-surface,#ffffff)] p-4 text-[var(--idil-text,#0f172a)] shadow-sm transition";
+  "rounded-xl border border-[var(--idil-border,#e2e8f0)] bg-[var(--idil-surface,#ffffff)] p-4 text-[var(--idil-text,#0f172a)] shadow-sm transition-colors duration-200 hover:border-red-200";
 
 export const INPUT_CLASS =
-  "min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100 [data-idil-theme=dark]:disabled:bg-slate-800";
+  "min-h-[44px] w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-red-500 focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100 [data-idil-theme=dark]:disabled:bg-slate-800";
 
 export const PRIMARY_BUTTON_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:bg-slate-300";
+  "inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg bg-red-700 px-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:bg-slate-300";
 
 export const SECONDARY_BUTTON_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-50 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100";
+  "inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-50 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100";
 
 export const MUTED_TEXT_CLASS = "text-xs text-[var(--idil-muted,#64748b)]";
 

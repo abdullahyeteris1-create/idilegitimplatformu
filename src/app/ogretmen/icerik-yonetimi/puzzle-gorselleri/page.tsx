@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import { TeacherOnly } from "@/components/auth/TeacherOnly";
+import styles from "../content-management.module.css";
 
 const visuals = [
   { title: "Takistoskop", src: "/exercise-visuals/exercises/tachistoscope.svg" },
@@ -21,6 +22,7 @@ export default function PuzzleVisualsPage() {
       wide
     >
       <TeacherOnly>
+        <div className={styles.screen}>
         <PanelCard
           title="Gorsel Kutuphane"
           subtitle="Egzersiz tasariminda kullanilan ornek gorsel setleri."
@@ -34,6 +36,7 @@ export default function PuzzleVisualsPage() {
             ))}
           </div>
         </PanelCard>
+        </div>
       </TeacherOnly>
     </AppShell>
   );

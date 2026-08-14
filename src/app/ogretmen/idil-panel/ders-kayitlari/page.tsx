@@ -1112,13 +1112,13 @@ function LessonRecordsContent() {
     >
       <TeacherOnly>
         {errorMessage ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+          <div role="alert" aria-live="assertive" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
             {errorMessage}
           </div>
         ) : null}
 
         {successMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          <div role="status" aria-live="polite" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {successMessage}
           </div>
         ) : null}
@@ -1474,7 +1474,7 @@ function LessonRecordsContent() {
                 )}
               </div>
 
-              <div className="mt-4 hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white md:block">
+              <div className="mt-4 hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
                 <table className="min-w-[980px] w-full border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
                     <tr>

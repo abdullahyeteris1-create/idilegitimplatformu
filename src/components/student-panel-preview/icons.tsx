@@ -2,7 +2,7 @@ import type { SVGProps } from "react";
 
 export type IconName =
   | "activity" | "arrow" | "badge" | "bell" | "book" | "bookOpen" | "brain"
-  | "chart" | "checkbox" | "circle" | "clock" | "eye" | "flame" | "gauge"
+  | "chart" | "checkbox" | "circle" | "clock" | "close" | "eye" | "flame" | "gauge"
   | "grid" | "help" | "home" | "house" | "lock" | "medal" | "menu" | "moon"
   | "play" | "puzzle" | "rocket" | "settings" | "sparkles" | "target" | "type" | "user";
 
@@ -18,6 +18,7 @@ const paths: Record<IconName, React.ReactNode> = {
   checkbox: <><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m8 12 3 3 5-6"/></>,
   circle: <circle cx="12" cy="12" r="8" />,
   clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></>,
+  close: <><path d="m6 6 12 12M18 6 6 18" /></>,
   eye: <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></>,
   flame: <path d="M12 22c4 0 7-3 7-7 0-3-2-6-5-9 0 3-2 4-3 5 0-3-1-6-3-8 0 5-3 7-3 12 0 4 3 7 7 7Z" />,
   gauge: <><path d="M4 18a9 9 0 1 1 16 0"/><path d="m12 15 4-5"/><path d="M7 18h10"/></>,

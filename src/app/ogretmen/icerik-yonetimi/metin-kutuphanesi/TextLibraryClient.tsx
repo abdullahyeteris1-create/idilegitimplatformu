@@ -27,6 +27,7 @@ import {
   normalizeTextTitle,
   sortByCategoryAndTitle,
 } from "@/lib/text-library/sorting";
+import styles from "../content-management.module.css";
 
 type TextFormState = {
   title: string;
@@ -485,7 +486,7 @@ export function TextLibraryClient() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={`${styles.screen} flex flex-col gap-4`} aria-busy={isSaving}>
       <section className="idil-card overflow-hidden p-4 md:p-[18px]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -536,6 +537,8 @@ export function TextLibraryClient() {
 
         {statusMessage ? (
           <div
+            role={statusMessage.tone === "error" ? "alert" : "status"}
+            aria-live={statusMessage.tone === "error" ? "assertive" : "polite"}
             className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
               statusMessage.tone === "error"
                 ? "border-red-200 bg-red-50 text-red-800"

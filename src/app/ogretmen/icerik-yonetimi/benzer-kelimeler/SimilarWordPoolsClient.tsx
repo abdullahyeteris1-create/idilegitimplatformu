@@ -18,6 +18,7 @@ import {
   updateSimilarWordPoolAction,
   type SimilarWordPoolActionResponse,
 } from "./actions";
+import styles from "../content-management.module.css";
 
 type DraftState = {
   id: string | null;
@@ -325,7 +326,7 @@ export function SimilarWordPoolsClient({ initialItems }: { initialItems: Similar
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={`${styles.screen} flex flex-col gap-4`} aria-busy={isBusy}>
       <section className="idil-card overflow-hidden p-4 md:p-[18px]">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -376,6 +377,8 @@ export function SimilarWordPoolsClient({ initialItems }: { initialItems: Similar
 
           {statusMessage ? (
             <div
+              role={statusMessage.tone === "error" ? "alert" : "status"}
+              aria-live={statusMessage.tone === "error" ? "assertive" : "polite"}
               className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
                 statusMessage.tone === "error"
                   ? "border-red-200 bg-red-50 text-red-800"

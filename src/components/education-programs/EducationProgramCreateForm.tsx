@@ -12,7 +12,7 @@ const INITIAL_STATE: EducationProgramActionState = {
 };
 
 const INPUT_CLASS =
-  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
+  "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
 
 export function EducationProgramCreateForm() {
   const [state, formAction, pending] = useActionState(
@@ -23,7 +23,7 @@ export function EducationProgramCreateForm() {
   return (
     <form action={formAction} className="space-y-5">
       {state.status === "error" ? (
-        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+        <div role="alert" aria-live="assertive" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
           <p>{state.message}</p>
           {state.issues && state.issues.length > 1 ? (
             <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -35,7 +35,8 @@ export function EducationProgramCreateForm() {
         </div>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <fieldset className="grid gap-5 border-0 p-0 lg:grid-cols-2">
+        <legend className="sr-only">Temel program bilgileri</legend>
         <label className="grid gap-1.5">
           <span className="text-sm font-semibold text-slate-800 [data-idil-theme=dark]:text-slate-100">
             Program adı
@@ -65,7 +66,7 @@ export function EducationProgramCreateForm() {
           </select>
           <span className="text-xs text-slate-500">Kategori yalnız yönetici filtresi olarak kullanılır.</span>
         </label>
-      </div>
+      </fieldset>
 
       <label className="grid gap-1.5">
         <span className="text-sm font-semibold text-slate-800 [data-idil-theme=dark]:text-slate-100">

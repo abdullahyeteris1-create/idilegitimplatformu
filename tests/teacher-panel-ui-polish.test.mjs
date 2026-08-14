@@ -52,7 +52,8 @@ test("ogrenci takip ekraninda class ve level filtreleri ile mobil kart ve deskto
   assert.match(source, /Avatar name=\{student\.fullName\}/);
   assert.match(source, /ProgressBar value=\{student\.programProgressPercent\}/);
   assert.match(source, /md:hidden/);
-  assert.match(source, /hidden overflow-hidden rounded-\[24px\]/);
+  assert.match(source, /hidden overflow-hidden overflow-x-auto rounded-\[24px\]/);
+  assert.match(source, /min-w-\[1120px\]/);
   assert.match(source, /Filtreleri Temizle/);
   assert.match(source, /Detayları Gör/);
 });
@@ -68,7 +69,8 @@ test("ogrenci detay ekraninda avatar, gamification ozeti ve performans kartlari 
   assert.match(source, /Sonuç Geçmişi/);
   assert.match(source, /Henüz veri yok/);
   assert.match(source, /md:hidden/);
-  assert.match(source, /hidden overflow-hidden rounded-\[24px\]/);
+  assert.match(source, /hidden overflow-hidden overflow-x-auto rounded-\[24px\]/);
+  assert.match(source, /min-w-\[(700|820)px\]/);
 });
 
 test("ogrenci takip sayfasi temel sorgu hatasini error state'e cevirir", async () => {

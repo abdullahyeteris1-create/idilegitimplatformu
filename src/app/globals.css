@@ -652,6 +652,173 @@ textarea {
   color: #b91c1c;
 }
 
+/* Teacher shell tokens and primitives. Kept scoped so the student shell keeps
+   its existing visual language during the phased redesign. */
+.teacher-shell {
+  --teacher-background: #f8fafc;
+  --teacher-surface: #ffffff;
+  --teacher-surface-muted: #f1f5f9;
+  --teacher-border: #e2e8f0;
+  --teacher-text-primary: #0f172a;
+  --teacher-text-secondary: #475569;
+  --teacher-text-muted: #64748b;
+  --teacher-sidebar: #111827;
+  --teacher-sidebar-muted: #94a3b8;
+  --teacher-brand: #b42318;
+  --teacher-brand-strong: #8f1d14;
+  --teacher-focus: #2563eb;
+  --teacher-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+[data-idil-theme="dark"] .teacher-shell {
+  --teacher-background: #0f172a;
+  --teacher-surface: #111827;
+  --teacher-surface-muted: #1e293b;
+  --teacher-border: #334155;
+  --teacher-text-primary: #f8fafc;
+  --teacher-text-secondary: #cbd5e1;
+  --teacher-text-muted: #94a3b8;
+  --teacher-sidebar: #020617;
+  --teacher-sidebar-muted: #94a3b8;
+  --teacher-brand: #f87171;
+  --teacher-brand-strong: #fca5a5;
+  --teacher-focus: #93c5fd;
+  --teacher-shadow: 0 1px 2px rgb(2 6 23 / 0.3);
+}
+
+.teacher-skip-link {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: var(--teacher-brand);
+  color: white;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.teacher-skip-link:focus { top: 1rem; }
+
+.teacher-sidebar {
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  background: var(--teacher-sidebar);
+  color: #f8fafc;
+  box-shadow: var(--teacher-shadow);
+}
+
+.teacher-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(148 163 184 / 0.16);
+  padding: 0.25rem 0.25rem 1rem;
+}
+
+.teacher-brand-mark {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--teacher-brand);
+  color: white;
+}
+
+.teacher-brand strong,
+.teacher-brand span { display: block; }
+.teacher-brand strong { font-size: 0.95rem; letter-spacing: 0.12em; }
+.teacher-brand span { margin-top: 0.125rem; color: var(--teacher-sidebar-muted); font-size: 0.72rem; }
+
+.teacher-navigation { flex: 1; overflow-y: auto; padding: 1rem 0.25rem; }
+.teacher-nav-group + .teacher-nav-group { margin-top: 1.25rem; }
+.teacher-nav-group-label {
+  margin: 0 0 0.4rem;
+  padding: 0 0.75rem;
+  color: var(--teacher-sidebar-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.teacher-nav-link {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-left: 3px solid transparent;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.teacher-nav-link:hover { background: rgb(148 163 184 / 0.12); color: white; }
+.teacher-nav-link.is-active { border-left-color: #f87171; background: rgb(180 35 24 / 0.22); color: white; }
+.teacher-nav-link:focus-visible,
+.teacher-icon-button:focus-visible,
+.teacher-header-action:focus-visible,
+.teacher-logout-button:focus-visible { outline: 3px solid var(--teacher-focus); outline-offset: 2px; }
+
+.teacher-sidebar-footer { border-top: 1px solid rgb(148 163 184 / 0.16); padding: 0.75rem 0.25rem 0.25rem; }
+.teacher-logout-button,
+.teacher-header-action,
+.teacher-user-chip,
+.teacher-icon-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.teacher-logout-button { width: 100%; margin-top: 0.625rem; border: 1px solid rgb(248 113 113 / 0.3); background: rgb(180 35 24 / 0.16); color: #fecaca; }
+.teacher-logout-button:hover { background: rgb(180 35 24 / 0.28); }
+.teacher-header {
+  display: flex;
+  min-height: 7.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border: 1px solid var(--teacher-border);
+  border-radius: 1rem;
+  background: var(--teacher-surface);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--teacher-shadow);
+}
+
+.teacher-breadcrumb { display: flex; flex-wrap: wrap; gap: 0.5rem; color: var(--teacher-text-muted); font-size: 0.75rem; font-weight: 600; }
+.teacher-breadcrumb [aria-current="page"] { color: var(--teacher-brand); }
+.teacher-page-title { margin: 0.375rem 0 0; color: var(--teacher-text-primary); font-size: clamp(1.5rem, 2.4vw, 2rem); font-weight: 700; letter-spacing: -0.025em; }
+.teacher-page-subtitle { margin: 0.375rem 0 0; max-width: 48rem; color: var(--teacher-text-secondary); font-size: 0.9375rem; line-height: 1.5; }
+.teacher-header-action { border: 1px solid #fecaca; background: #fff1f2; padding: 0.5rem 0.75rem; color: #991b1b; white-space: nowrap; }
+.teacher-header-action:hover { background: #ffe4e6; }
+.teacher-user-chip { border: 1px solid var(--teacher-border); background: var(--teacher-surface-muted); padding: 0.5rem 0.75rem; color: var(--teacher-text-secondary); }
+.teacher-icon-button { height: 2.75rem; width: 2.75rem; border: 1px solid var(--teacher-border); background: var(--teacher-surface); color: var(--teacher-text-secondary); }
+.teacher-icon-button:hover { background: var(--teacher-surface-muted); color: var(--teacher-text-primary); }
+.teacher-drawer-backdrop { border: 0; background: rgb(2 6 23 / 0.56); }
+.teacher-sidebar-mobile { transform: translateX(-105%); transition: transform 180ms ease; }
+.teacher-sidebar-mobile.is-open { transform: translateX(0); }
+
+@media (max-width: 767px) {
+  .teacher-header { min-height: 0; flex-direction: column; padding: 1rem; }
+  .teacher-header > :last-child { width: 100%; }
+  .teacher-header-action, .teacher-user-chip { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
 /* Full-viewport login experience */
 .login-page { height: 100dvh; min-height: 100dvh; overflow: hidden; background: #0a1022; color: #fff; }
 .login-stage { position: relative; width: 100%; height: 100%; min-height: 100dvh; overflow: hidden; background: #0a1022; }

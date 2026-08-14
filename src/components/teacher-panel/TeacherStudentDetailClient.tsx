@@ -653,9 +653,7 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
 
   return (
     <div className="grid gap-4">
-      <section className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,rgba(127,29,29,0.98)_0%,rgba(220,38,38,0.96)_44%,rgba(249,115,22,0.9)_100%)] p-5 text-white shadow-[0_20px_60px_rgba(185,28,28,0.2)] md:p-6 [data-idil-theme=dark]:border-slate-700">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-orange-200/15 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 p-5 text-white shadow-sm md:p-6 [data-idil-theme=dark]:border-slate-700">
 
         <div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
@@ -1052,7 +1050,7 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
                 ))}
               </div>
 
-              <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <div className="hidden overflow-hidden overflow-x-auto rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
                 <table className="w-full min-w-[700px] border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-400">
                     <tr>
@@ -1116,7 +1114,7 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
                 ))}
               </div>
 
-              <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+              <div className="hidden overflow-hidden overflow-x-auto rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
                 <table className="w-full min-w-[820px] border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.08em] text-slate-500 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-400">
                     <tr>

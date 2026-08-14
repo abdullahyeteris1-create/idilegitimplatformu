@@ -111,7 +111,7 @@ export function StudentEducationProgramList({
   const pendingDeleteProgram = programs.find((program) => program.id === pendingDeleteId) ?? null;
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 [data-idil-theme=dark]:border-slate-700">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 [data-idil-theme=dark]:border-slate-700">
       <table className="w-full min-w-[1240px] border-collapse text-left text-sm">
         <thead className="bg-slate-100 text-xs uppercase tracking-[0.08em] text-slate-600 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
           <tr>
@@ -134,7 +134,7 @@ export function StudentEducationProgramList({
             return (
               <tr
                 key={program.id}
-                className="align-top transition hover:bg-slate-50 [data-idil-theme=dark]:hover:bg-slate-800/70"
+                className="align-top transition-colors duration-200 hover:bg-slate-50 [data-idil-theme=dark]:hover:bg-slate-800/70"
               >
                 <td className="px-4 py-4">
                   <p className="font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-50">
@@ -178,7 +178,7 @@ export function StudentEducationProgramList({
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/ogretmen/idil-panel/ogrenci-programlari/${program.id}`}
-                      className="inline-flex min-h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-800 transition hover:bg-red-100"
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-800 transition-colors duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     >
                       Görüntüle
                     </Link>
@@ -186,7 +186,7 @@ export function StudentEducationProgramList({
                       type="button"
                       onClick={() => setPendingDeleteId(program.id)}
                       disabled={isBusy}
-                      className="inline-flex min-h-9 items-center justify-center rounded-lg border border-red-300 bg-white px-3 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 [data-idil-theme=dark]:bg-slate-900"
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-300 bg-white px-3 text-xs font-semibold text-red-700 transition-colors duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60 [data-idil-theme=dark]:bg-slate-900"
                     >
                       Programı Sil
                     </button>

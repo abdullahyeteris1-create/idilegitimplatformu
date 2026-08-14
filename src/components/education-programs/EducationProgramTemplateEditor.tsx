@@ -81,7 +81,7 @@ function isValidIntegerRangeInput(field: ExerciseSettingsRangeFieldDef, rawValue
 }
 
 const FIELD_CLASS =
-  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
+  "min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-50";
 
 function createSlotSettings(
   exerciseSlug: string,
@@ -341,7 +341,7 @@ export function EducationProgramTemplateEditor({
 
   return (
     <div className="grid min-h-[680px] gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside className="rounded-2xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900/70">
+      <aside className="rounded-xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900/70">
         <div className="mb-3 px-1">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Program günleri</p>
           <p className="mt-1 text-xs text-slate-500">
@@ -383,7 +383,7 @@ export function EducationProgramTemplateEditor({
       </aside>
 
       <section className="min-w-0">
-        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Seçilen gün</p>
             <h2 className="mt-1 text-2xl font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-50">
@@ -413,12 +413,14 @@ export function EducationProgramTemplateEditor({
           <div
             role="alert"
             className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+            aria-live="assertive"
           >
             <p>{switchError}</p>
           </div>
         ) : switchNotice ? (
           <div
             role="status"
+            aria-live="polite"
             className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-medium ${
               switchNotice.tone === "warning"
                 ? "border-amber-200 bg-amber-50 text-amber-900"
@@ -433,7 +435,8 @@ export function EducationProgramTemplateEditor({
           {state.status !== "idle" ? (
             <div
               role={state.status === "error" || state.status === "warning" ? "alert" : "status"}
-              className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+              aria-live={state.status === "error" || state.status === "warning" ? "assertive" : "polite"}
+              className={`rounded-xl border px-4 py-3 text-sm font-medium ${
                 state.status === "error"
                   ? "border-red-200 bg-red-50 text-red-800"
                   : state.status === "warning"

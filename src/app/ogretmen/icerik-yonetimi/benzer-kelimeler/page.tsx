@@ -38,7 +38,7 @@ export default async function SimilarWordPoolsPage() {
           <SimilarWordPoolsClient initialItems={result.items} />
         ) : (
           <section className="idil-card p-5">
-            <p className="text-sm font-semibold text-red-700">Benzer Kelimeler içeriği yüklenemedi.</p>
+            <p role="alert" className="text-sm font-semibold text-red-700">Benzer Kelimeler içeriği yüklenemedi.</p>
             <p className="mt-1 text-sm text-slate-600">{result.message}</p>
           </section>
         )}

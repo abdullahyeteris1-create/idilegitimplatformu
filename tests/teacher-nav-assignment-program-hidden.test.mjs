@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   ASSIGNMENT_PROGRAM_HREF,
   SHOW_ASSIGNMENT_PROGRAM,
+  TEACHER_NAV_GROUPS,
   TEACHER_NAV_ITEMS,
 } from "../src/lib/constants/teacherNavigation.ts";
 
@@ -39,9 +40,17 @@ test("4) /ogretmen/idil-panel/odevler navigasyonda gorunmeye devam ediyor - fark
   assert.ok(hrefs.includes("/ogretmen/idil-panel/odevler"));
 });
 
-test("gizli oldugunda dahi item sayisi tutarli: eski Odev Programi gizli, Oyun Odalari aktif", () => {
-  assert.equal(TEACHER_NAV_ITEMS.length, 14);
-  assert.ok(TEACHER_NAV_ITEMS.some((item) => item.href === "/ogretmen/idil-panel/oyun-odalari"));
+test("gruplu teacher navigation tekil route'larla flatten edilir ve aktif moduller korunur", () => {
+  const groupedItems = TEACHER_NAV_GROUPS.flatMap((group) => group.items);
+  const hrefs = TEACHER_NAV_ITEMS.map((item) => item.href);
+  const groupedHrefs = groupedItems.map((item) => item.href);
+
+  assert.deepEqual(hrefs, groupedHrefs);
+  assert.equal(new Set(hrefs).size, hrefs.length);
+  assert.ok(hrefs.includes("/ogretmen/idil-panel/oyun-odalari"));
+  assert.ok(hrefs.includes("/ogretmen/idil-panel/egitim-programlari"));
+  assert.ok(hrefs.includes("/ogretmen/idil-panel/odevler"));
+  assert.ok(!hrefs.includes(ASSIGNMENT_PROGRAM_HREF));
 });
 
 test("gorunurluk karari tek kaynaktan (ASSIGNMENT_PROGRAM_HREF) yonetiliyor, baska yerde ayrica hardcode edilmemis", async () => {

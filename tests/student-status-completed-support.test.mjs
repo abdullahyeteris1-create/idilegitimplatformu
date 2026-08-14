@@ -64,8 +64,8 @@ test("teacher tracking listesi completed'i varsayilan gosterimden cikarir", asyn
 test("dashboard completed ogrenci sayisini ayrik gösterir", async () => {
   const source = await read(DASHBOARD_OVERVIEW_URL);
 
-  assert.match(source, /summary\.stats\.completedStudents/);
-  assert.match(source, /Tamamlanan Öğrenci/);
+  assert.match(source, /stats\.completedStudents/);
+  assert.match(source, /label=\"Tamamlanan öğrenci\"/);
 });
 
 test("local student cache ve access kontrolu completed'i korur", async () => {

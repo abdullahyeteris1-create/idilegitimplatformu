@@ -1,489 +1,140 @@
 import Link from "next/link";
-import { PanelCard } from "@/components/ui/PanelCard";
+import type { ReactNode } from "react";
+import { Icon, type IconName } from "@/components/student-panel-preview/icons";
 import type {
   TeacherDashboardAttentionStudent,
   TeacherDashboardImprovingStudent,
   TeacherDashboardRecentActivity,
   TeacherDashboardRecentStudent,
+  TeacherDashboardStats,
   TeacherDashboardSummary,
 } from "@/lib/teachers/teacherDashboardTypes";
 
-type TeacherDashboardOverviewProps = {
-  summary: TeacherDashboardSummary | null;
-  error: string | null;
-};
+type TeacherDashboardOverviewProps = { summary: TeacherDashboardSummary | null; error: string | null };
 
-const QUICK_ACTIONS = [
-  {
-    href: "/ogretmen/idil-panel/ogrenci-takip",
-    label: "Öğrenci Takip",
-    description: "XP, seviye ve aktif program görünümünü incele.",
-    icon: "👥",
-  },
-  {
-    href: "/ogretmen/idil-panel/egitim-programlari",
-    label: "Eğitim Programları",
-    description: "Programları ata, takip et ve detaylarını aç.",
-    icon: "📘",
-  },
-  {
-    href: "/ogretmen/ogrenciler/yeni",
-    label: "Öğrenci Yönetimi",
-    description: "Yeni kayıt oluştur, öğrencileri düzenle veya sil.",
-    icon: "🪪",
-  },
+const QUICK_ACTIONS: Array<{ href: string; label: string; description: string; icon: IconName; primary?: boolean }> = [
+  { href: "/ogretmen/idil-panel/ogrenci-takip", label: "Öğrenci Takibi", description: "Aktivite, seviye ve program durumunu incele.", icon: "user", primary: true },
+  { href: "/ogretmen/idil-panel/egitim-programlari", label: "Eğitim Programları", description: "Programları ata ve ilerlemeyi izle.", icon: "book" },
+  { href: "/ogretmen/ogrenciler/yeni", label: "Yeni Öğrenci", description: "Yeni kayıt oluştur.", icon: "checkbox" },
 ];
 
 function formatNumber(value: number | null): string {
-  if (value === null || !Number.isFinite(value)) {
-    return "—";
-  }
-
-  return value.toLocaleString("tr-TR");
+  return value === null || !Number.isFinite(value) ? "—" : value.toLocaleString("tr-TR");
 }
 
 function formatDateTime(value: string | null): string {
-  if (!value) {
-    return "—";
-  }
-
+  if (!value) return "—";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat("tr-TR", {
-    timeZone: "Europe/Istanbul",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("tr-TR", { timeZone: "Europe/Istanbul", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 function getRelativeLabel(value: string | null): string {
-  if (!value) {
-    return "—";
-  }
-
+  if (!value) return "—";
   const timestamp = new Date(value).getTime();
-  if (!Number.isFinite(timestamp)) {
-    return "—";
-  }
-
+  if (!Number.isFinite(timestamp)) return "—";
   const diffDays = Math.round((Date.now() - timestamp) / 86_400_000);
-  if (diffDays <= 0) {
-    return "Bugün";
-  }
-
-  if (diffDays === 1) {
-    return "Dün";
-  }
-
+  if (diffDays <= 0) return "Bugün";
+  if (diffDays === 1) return "Dün";
   return `${diffDays} gün önce`;
 }
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return "Ö";
-  }
-
-  if (parts.length === 1) {
-    return parts[0]!.slice(0, 2).toLocaleUpperCase("tr-TR");
-  }
-
+  if (parts.length === 0) return "Ö";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toLocaleUpperCase("tr-TR");
   return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toLocaleUpperCase("tr-TR");
 }
 
 function getAvatarTone(name: string): string {
-  const palette = [
-    "from-red-500 to-rose-400",
-    "from-orange-500 to-amber-400",
-    "from-emerald-500 to-teal-400",
-    "from-sky-500 to-cyan-400",
-    "from-violet-500 to-fuchsia-400",
-    "from-slate-600 to-slate-500",
-  ];
-
-  const index = [...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length;
-  return palette[index];
+  const palette = ["bg-red-700", "bg-orange-700", "bg-emerald-700", "bg-sky-700", "bg-violet-700", "bg-slate-700"];
+  return palette[[...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length]!;
 }
 
 function DashboardAvatar({ name }: { name: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarTone(
-        name,
-      )} text-sm font-black text-white shadow-sm ring-1 ring-white/60`}
-    >
-      {getInitials(name)}
-    </span>
-  );
+  return <span aria-hidden="true" className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${getAvatarTone(name)} text-xs font-bold text-white`}>{getInitials(name)}</span>;
 }
 
-function StatCard({
-  label,
-  value,
-  description,
-  icon,
-}: {
-  label: string;
-  value: number | null;
-  description: string;
-  icon: string;
-}) {
-  return (
-    <article className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 [data-idil-theme=dark]:text-slate-400">{label}</p>
-          <p className="mt-2 text-[30px] font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">
-            {value === null ? "Yüklenemedi" : formatNumber(value)}
-          </p>
-          <p className="mt-1 text-sm text-slate-500 [data-idil-theme=dark]:text-slate-400">{description}</p>
-        </div>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-lg shadow-sm [data-idil-theme=dark]:bg-slate-800">
-          {icon}
-        </span>
-      </div>
-    </article>
-  );
-}
-
-function ActivityCard({ activity }: { activity: TeacherDashboardRecentActivity }) {
-  return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
-      <div className="flex items-start gap-3">
-        <DashboardAvatar name={activity.studentName} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h4 className="truncate text-sm font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
-                {activity.studentName}
-              </h4>
-              <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
-                {activity.title}
-              </p>
-            </div>
-            <time className="shrink-0 text-xs font-medium text-slate-500 [data-idil-theme=dark]:text-slate-400">
-              {formatDateTime(activity.occurredAt)}
-            </time>
-          </div>
-
-          <p className="mt-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">{activity.description}</p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge>{activity.activityType === "education_program_task_completed" ? "Program görevi" : activity.activityType === "reading_comprehension_completed" ? "Anlama testi" : activity.activityType === "reading_speed_test_completed" ? "Okuma hızı" : "Çalışma"}</Badge>
-            {activity.awardedXp ? <Badge tone="green">{`+${formatNumber(activity.awardedXp)} XP`}</Badge> : null}
-            {activity.programName ? <Badge tone="sky">{activity.programName}</Badge> : null}
-            {activity.readingSpeedWpm !== null ? <Badge tone="emerald">{`${formatNumber(activity.readingSpeedWpm)} WPM`}</Badge> : null}
-            {activity.comprehensionRate !== null ? <Badge tone="amber">{`%${formatNumber(activity.comprehensionRate)}`}</Badge> : null}
-          </div>
-
-          <div className="mt-3">
-            <Link
-              href={activity.detailHref}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              Öğrenci Detayı
-            </Link>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function Badge({
-  children,
-  tone = "slate",
-}: {
-  children: string;
-  tone?: "slate" | "green" | "sky" | "amber" | "emerald";
-}) {
-  const className = {
+function Badge({ children, tone = "slate" }: { children: ReactNode; tone?: "slate" | "green" | "sky" | "amber" }) {
+  const tones = {
     slate: "border-slate-200 bg-slate-50 text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300",
     green: "border-emerald-200 bg-emerald-50 text-emerald-700 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-100",
     sky: "border-sky-200 bg-sky-50 text-sky-700 [data-idil-theme=dark]:border-sky-400/30 [data-idil-theme=dark]:bg-sky-400/10 [data-idil-theme=dark]:text-sky-100",
-    amber: "border-amber-200 bg-amber-50 text-amber-700 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100",
-    emerald: "border-emerald-200 bg-emerald-50 text-emerald-700 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-100",
+    amber: "border-amber-200 bg-amber-50 text-amber-800 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100",
   }[tone];
-
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${className}`}>
-      {children}
-    </span>
-  );
+  return <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${tones}`}>{children}</span>;
 }
 
-function RecentStudentCard({ student }: { student: TeacherDashboardRecentStudent }) {
-  return (
-    <article className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
-      <div className="flex items-start gap-3">
-        <DashboardAvatar name={student.studentName} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h4 className="truncate text-sm font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
-                {student.studentName}
-              </h4>
-              <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
-                {student.classLabel ?? "Sınıf bilgisi yok"}
-              </p>
-            </div>
-            <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100">
-              {student.level === null ? "Seviye —" : `Seviye ${student.level}`}
-            </span>
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div className="rounded-2xl bg-slate-50 px-3 py-3 [data-idil-theme=dark]:bg-slate-800">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Son aktivite</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
-                {formatDateTime(student.lastActivityAt)}
-              </p>
-              <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{student.lastActivitySummary ?? "—"}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 px-3 py-3 [data-idil-theme=dark]:bg-slate-800">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">XP</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
-                {student.totalXp === null ? "Yüklenemedi" : `${formatNumber(student.totalXp)} XP`}
-              </p>
-              <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
-                {student.activeProgramName ?? "Aktif program yok"}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <Link
-              href={student.detailHref}
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-red-200 bg-white px-3.5 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              Detayı Gör
-            </Link>
-          </div>
-        </div>
-      </div>
-    </article>
-  );
+function MetricCard({ label, value, context, icon, tone = "slate" }: { label: string; value: number | null; context: string; icon: IconName; tone?: "slate" | "green" | "amber" | "blue" }) {
+  const tones = {
+    slate: "border-slate-200 [data-idil-theme=dark]:border-slate-700",
+    green: "border-emerald-200 [data-idil-theme=dark]:border-emerald-400/30",
+    amber: "border-amber-200 [data-idil-theme=dark]:border-amber-400/30",
+    blue: "border-sky-200 [data-idil-theme=dark]:border-sky-400/30",
+  }[tone];
+  const iconTones = { slate: "text-slate-500", green: "text-emerald-700", amber: "text-amber-700", blue: "text-sky-700" }[tone];
+  return <article className={`rounded-xl border bg-white p-4 shadow-sm [data-idil-theme=dark]:bg-slate-900 ${tones}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-slate-500 [data-idil-theme=dark]:text-slate-400">{label}</p><p className="mt-2 text-[28px] font-bold tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">{value === null ? "—" : formatNumber(value)}</p><p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{context}</p></div><Icon name={icon} className={`h-5 w-5 ${iconTones}`} /></div></article>;
 }
 
-function AttentionCard({ student }: { student: TeacherDashboardAttentionStudent }) {
-  return (
-    <article className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 shadow-sm [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h4 className="truncate text-sm font-black text-amber-950 [data-idil-theme=dark]:text-amber-50">
-            {student.studentName}
-          </h4>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700 [data-idil-theme=dark]:text-amber-100">
-            {student.reasonLabel}
-          </p>
-        </div>
-        <Badge tone="amber">{student.reasonCode}</Badge>
-      </div>
+function SectionHeading({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+  return <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50">{title}</h2>{subtitle ? <p className="mt-1 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-400">{subtitle}</p> : null}</div>{action}</div>;
+}
 
-      <p className="mt-3 text-sm leading-6 text-amber-800 [data-idil-theme=dark]:text-amber-100/90">
-        {student.supportingValue}
-      </p>
-      <p className="mt-2 text-xs text-amber-700 [data-idil-theme=dark]:text-amber-100/80">
-        Son aktivite: {getRelativeLabel(student.lastActivityAt)}
-      </p>
+function EmptyState({ children }: { children: string }) {
+  return <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">{children}</div>;
+}
 
-      <div className="mt-3">
-        <Link
-          href={student.detailHref}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-amber-300 bg-white px-3.5 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-        >
-          Öğrenci Detayı
-        </Link>
-      </div>
-    </article>
-  );
+function QuickActions() {
+  return <div className="grid gap-2 sm:grid-cols-3">{QUICK_ACTIONS.map((action) => <Link key={action.href} href={action.href} className={`group flex min-h-14 items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${action.primary ? "border-red-200 bg-red-50 text-red-900 hover:bg-red-100 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100" : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100"}`}><Icon name={action.icon} className="h-5 w-5 shrink-0" /><span className="min-w-0"><span className="block text-sm font-bold">{action.label}</span><span className="mt-0.5 block truncate text-xs opacity-70">{action.description}</span></span><Icon name="arrow" className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" /></Link>)}</div>;
+}
+
+function ActivityRow({ activity }: { activity: TeacherDashboardRecentActivity }) {
+  const type = activity.activityType === "education_program_task_completed" ? "Program görevi" : activity.activityType === "reading_comprehension_completed" ? "Anlama testi" : activity.activityType === "reading_speed_test_completed" ? "Okuma hızı" : "Çalışma";
+  return <div className="flex items-start gap-3 border-b border-slate-100 py-3 last:border-0 [data-idil-theme=dark]:border-slate-800"><DashboardAvatar name={activity.studentName} /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline justify-between gap-2"><p className="truncate text-sm font-bold text-slate-900 [data-idil-theme=dark]:text-slate-100">{activity.studentName}</p><time className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{formatDateTime(activity.occurredAt)}</time></div><p className="mt-0.5 truncate text-sm text-slate-600 [data-idil-theme=dark]:text-slate-400">{activity.title}</p><div className="mt-2 flex flex-wrap gap-1.5"><Badge>{type}</Badge>{activity.awardedXp ? <Badge tone="green">+{formatNumber(activity.awardedXp)} XP</Badge> : null}{activity.readingSpeedWpm !== null ? <Badge tone="sky">{formatNumber(activity.readingSpeedWpm)} WPM</Badge> : null}{activity.comprehensionRate !== null ? <Badge tone="amber">%{formatNumber(activity.comprehensionRate)}</Badge> : null}</div></div><Link href={activity.detailHref} className="inline-flex min-h-11 shrink-0 items-center rounded-lg px-2 text-xs font-bold text-red-800 underline underline-offset-2 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 [data-idil-theme=dark]:text-red-200">Detay</Link></div>;
+}
+
+function StudentRow({ student }: { student: TeacherDashboardRecentStudent }) {
+  return <div className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-0 [data-idil-theme=dark]:border-slate-800"><DashboardAvatar name={student.studentName} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900 [data-idil-theme=dark]:text-slate-100">{student.studentName}</p><p className="mt-0.5 truncate text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{student.lastActivitySummary || student.classLabel || "Son aktivite yok"}</p></div><div className="hidden text-right sm:block"><p className="text-xs font-semibold text-slate-700 [data-idil-theme=dark]:text-slate-300">{student.level === null ? "Seviye —" : `Seviye ${student.level}`}</p><p className="mt-0.5 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{getRelativeLabel(student.lastActivityAt)}</p></div><Link href={student.detailHref} className="inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-bold text-red-800 underline underline-offset-2 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 [data-idil-theme=dark]:text-red-200">Detay</Link></div>;
+}
+
+function AttentionRow({ student }: { student: TeacherDashboardAttentionStudent }) {
+  return <div className="flex items-start gap-3 border-b border-amber-100 py-3 last:border-0 [data-idil-theme=dark]:border-amber-400/20"><Icon name="target" className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-amber-950 [data-idil-theme=dark]:text-amber-50">{student.studentName}</p><p className="mt-0.5 text-xs font-semibold text-amber-800 [data-idil-theme=dark]:text-amber-100">{student.reasonLabel}</p><p className="mt-1 text-xs text-amber-800/80 [data-idil-theme=dark]:text-amber-100/80">{student.supportingValue} · {getRelativeLabel(student.lastActivityAt)}</p></div><Link href={student.detailHref} className="inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-bold text-amber-900 underline underline-offset-2 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 [data-idil-theme=dark]:text-amber-100">İncele</Link></div>;
+}
+
+function ImprovingRow({ student }: { student: TeacherDashboardImprovingStudent }) {
+  return <div className="flex items-center gap-3 border-b border-emerald-100 py-3 last:border-0 [data-idil-theme=dark]:border-emerald-400/20"><Icon name="chart" className="h-5 w-5 shrink-0 text-emerald-700" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-emerald-950 [data-idil-theme=dark]:text-emerald-50">{student.studentName}</p><p className="truncate text-xs text-emerald-800 [data-idil-theme=dark]:text-emerald-100">{student.reasonLabel} · {student.supportingValue}</p></div><Link href={student.detailHref} className="inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-bold text-emerald-900 underline underline-offset-2 hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 [data-idil-theme=dark]:text-emerald-100">Detay</Link></div>;
 }
 
 function CompactMetric({ label, value, tone = "slate" }: { label: string; value: number | null; tone?: "slate" | "amber" | "green" | "sky" }) {
-  const tones = {
-    slate: "border-slate-200 bg-slate-50 text-slate-900 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-100",
-    amber: "border-amber-200 bg-amber-50 text-amber-950 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-50",
-    green: "border-emerald-200 bg-emerald-50 text-emerald-950 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10 [data-idil-theme=dark]:text-emerald-50",
-    sky: "border-sky-200 bg-sky-50 text-sky-950 [data-idil-theme=dark]:border-sky-400/30 [data-idil-theme=dark]:bg-sky-400/10 [data-idil-theme=dark]:text-sky-50",
-  }[tone];
-  return <div className={`rounded-2xl border px-3 py-3 ${tones}`}><p className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-70">{label}</p><p className="mt-1 text-2xl font-black">{value === null ? "—" : formatNumber(value)}</p></div>;
+  const tones = { slate: "border-slate-200", amber: "border-amber-200", green: "border-emerald-200", sky: "border-sky-200" }[tone];
+  return <div className={`rounded-lg border bg-slate-50 px-3 py-2.5 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 ${tones}`}><p className="text-xs font-semibold text-slate-500 [data-idil-theme=dark]:text-slate-400">{label}</p><p className="mt-1 text-lg font-bold text-slate-900 [data-idil-theme=dark]:text-slate-100">{value === null ? "—" : formatNumber(value)}</p></div>;
 }
 
-function TodayStudentStatus({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
-  return <PanelCard title="Bugünkü Öğrenci Durumu" subtitle="Bugünün aktivitesi ve hızlı takip sinyalleri"><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"><CompactMetric label="Bugün çalışan" value={stats.todayActiveStudents} tone="green"/><CompactMetric label="Bugün çalışmayan" value={stats.todayInactiveStudents} tone="amber"/><CompactMetric label="3 gündür çalışmayan" value={stats.inactiveStudentsLast3Days} tone="amber"/><CompactMetric label="Bugün tamamlanan görev" value={stats.todayCompletedTasks} tone="sky"/></div></PanelCard>;
+function SecondaryMetrics({ stats }: { stats: TeacherDashboardStats }) {
+  return <details className="rounded-xl border border-slate-200 bg-white [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"><summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 [data-idil-theme=dark]:text-slate-100">Diğer göstergeler <span className="ml-1 text-xs font-normal text-slate-500">(detayları aç)</span></summary><div className="grid gap-2 border-t border-slate-100 p-4 sm:grid-cols-2 lg:grid-cols-4 [data-idil-theme=dark]:border-slate-800"><CompactMetric label="Toplam öğrenci" value={stats.totalStudents} /><CompactMetric label="Aktif öğrenci" value={stats.activeStudents} tone="green" /><CompactMetric label="Pasif öğrenci" value={stats.inactiveStudents} tone="amber" /><CompactMetric label="Tamamlanan öğrenci" value={stats.completedStudents} tone="green" /><CompactMetric label="Toplam XP" value={stats.totalXp} /><CompactMetric label="Son 7 gün aktif öğrenci" value={stats.activeStudentsLast7Days} tone="sky" /><CompactMetric label="Son 7 Gün XP" value={stats.earnedXpLast7Days} tone="sky" /><CompactMetric label="Bugün çalışmayan" value={stats.todayInactiveStudents} tone="amber" /><CompactMetric label="3 gündür çalışmayan" value={stats.inactiveStudentsLast3Days} tone="amber" /><CompactMetric label="Bugün tamamlanan görev" value={stats.todayCompletedTasks} tone="sky" /><CompactMetric label="Son 7 gün çalışma" value={stats.completedActivitiesLast7Days} tone="green" /></div></details>;
 }
 
-function ProgramSummary({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
-  return <PanelCard title="Program Takibi" subtitle="Öğrenci bazında aktif ve tamamlanan program özeti"><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Aktif programlı" value={stats.activeProgramStudents} tone="sky"/><CompactMetric label="Tamamlayan" value={stats.completedProgramStudents} tone="green"/><CompactMetric label="Geride kalan" value={stats.behindProgramStudents} tone="amber"/></div><Link href="/ogretmen/idil-panel/egitim-programlari" className="mt-3 inline-flex min-h-[40px] items-center rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-800 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100">Program takibini aç →</Link></PanelCard>;
-}
+function TeacherDashboardOverviewContent({ summary }: { summary: TeacherDashboardSummary }) {
+  const { stats } = summary;
+  return <div className="grid gap-5">
+    <section className="border-b border-slate-200 pb-5 [data-idil-theme=dark]:border-slate-700"><SectionHeading title="Öğretmen paneline hoş geldiniz" subtitle="Canlı özet · Gerçek veri · Öğretmenin ilk bakışta karar verebilmesi için önceliklendirilmiş görünüm." /><QuickActions /></section>
 
-function ReadingSummary({ stats }: { stats: TeacherDashboardSummary["stats"] }) {
-  return <PanelCard title="Son 7 Gün Okuma Özeti" subtitle="Yalnızca mevcut okuma testi sonuçlarından"><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Ort. okuma hızı" value={stats.averageReadingSpeedLast7Days} tone="sky"/><CompactMetric label="Ort. anlama" value={stats.averageComprehensionLast7Days} tone="green"/><CompactMetric label="Test sayısı" value={stats.readingTestsLast7Days}/></div></PanelCard>;
-}
+    {summary.warnings.length > 0 ? <section role="alert" aria-live="polite" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100"><p className="font-bold">Veri Uyarıları</p><ul className="mt-1 list-disc pl-5">{summary.warnings.map((warning) => <li key={`${warning.section}-${warning.message}`}>{warning.message}</li>)}</ul></section> : null}
 
-function ImprovingStudents({ students }: { students: TeacherDashboardImprovingStudent[] }) {
-  return <PanelCard title="Son 7 Günde Gelişenler" subtitle="Gerçek sonuç değişimlerinden türetilen liste">{students.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">Yeterli pozitif değişim verisi bulunmuyor.</div> : <div className="grid gap-2">{students.map((student) => <div key={student.studentId} className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10"><div className="min-w-0"><p className="truncate text-sm font-bold text-emerald-950 [data-idil-theme=dark]:text-emerald-50">{student.studentName}</p><p className="text-xs text-emerald-800 [data-idil-theme=dark]:text-emerald-100/90">{student.reasonLabel} · {student.supportingValue}</p></div><Link href={student.detailHref} className="shrink-0 text-xs font-bold text-emerald-800 underline [data-idil-theme=dark]:text-emerald-100">Detay</Link></div>)}</div>}</PanelCard>;
+    <section aria-labelledby="priority-metrics"><SectionHeading title="Bugünkü Öğrenci Durumu" subtitle="Bugün ve son 7 günden öğretmenin kararını en çok etkileyen metrikler." /><div id="priority-metrics" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Bugün çalışan öğrenci" value={stats.todayActiveStudents} context="Bugünkü aktivite" icon="activity" tone="green" /><MetricCard label="Takip gerektiren" value={summary.attentionStudents.length} context="Açıklanabilir takip listesi" icon="target" tone="amber" /><MetricCard label="Aktif program" value={stats.activePrograms} context="Mevcut program kayıtları" icon="book" tone="blue" /><MetricCard label="Son 7 gün çalışma" value={stats.completedActivitiesLast7Days} context="Tamamlanan aktiviteler" icon="chart" tone="slate" /></div></section>
+    <SecondaryMetrics stats={stats} />
+
+    <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]" aria-label="Öncelikli öğrenci ve aktivite bilgileri"><div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10"><SectionHeading title="Takip Edilmesi Önerilen Öğrenciler" subtitle="Takip gerektiren öğrenciler ve açıklanabilir nedenleri." />{summary.attentionStudents.length === 0 ? <EmptyState>Şu anda özel takip gerektiren öğrenci bulunmuyor.</EmptyState> : <div>{summary.attentionStudents.map((student) => <AttentionRow key={`${student.studentId}-${student.reasonCode}`} student={student} />)}</div>}</div><div className="rounded-xl border border-slate-200 bg-white p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"><SectionHeading title="Son aktiviteler" subtitle="En yeni çalışmalar ve giriş hareketleri." />{summary.recentActivities.length === 0 ? <EmptyState>Henüz öğrenci aktivitesi bulunmuyor.</EmptyState> : <div>{summary.recentActivities.map((activity) => <ActivityRow key={activity.id} activity={activity} />)}</div>}</div></section>
+
+    <section className="grid gap-5 xl:grid-cols-2" aria-label="Öğrenci görünümü"><div className="rounded-xl border border-slate-200 bg-white p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"><SectionHeading title="Son çalışan öğrenciler" subtitle="Son aktiviteye göre sıralanır." action={<Link href="/ogretmen/idil-panel/ogrenci-takip" className="text-xs font-bold text-red-800 underline [data-idil-theme=dark]:text-red-200">Tüm öğrenciler</Link>} />{summary.recentStudents.length === 0 ? <EmptyState>Henüz çalışan öğrenci bulunmuyor.</EmptyState> : <div>{summary.recentStudents.map((student) => <StudentRow key={student.studentId} student={student} />)}</div>}</div><div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 [data-idil-theme=dark]:border-emerald-400/30 [data-idil-theme=dark]:bg-emerald-400/10"><SectionHeading title="Son 7 Günde Gelişenler" subtitle="Gerçek sonuç değişimlerinden türetilen liste." />{summary.improvingStudents.length === 0 ? <EmptyState>Yeterli pozitif değişim verisi bulunmuyor.</EmptyState> : <div>{summary.improvingStudents.map((student) => <ImprovingRow key={student.studentId} student={student} />)}</div>}</div></section>
+
+    <section className="grid gap-5 xl:grid-cols-2" aria-label="Program ve analiz"><div className="rounded-xl border border-slate-200 bg-white p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"><SectionHeading title="Program Takibi" subtitle="Öğrenci bazında mevcut program durumu." /><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Aktif programlı" value={stats.activeProgramStudents} tone="sky" /><CompactMetric label="Tamamlayan" value={stats.completedProgramStudents} tone="green" /><CompactMetric label="Geride kalan" value={stats.behindProgramStudents} tone="amber" /></div><Link href="/ogretmen/idil-panel/egitim-programlari" className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-red-800 underline [data-idil-theme=dark]:text-red-200">Program takibini aç</Link></div><div className="rounded-xl border border-slate-200 bg-white p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"><SectionHeading title="Son 7 Gün Okuma Özeti" subtitle="Yalnızca mevcut okuma testi sonuçlarından." /><div className="grid gap-2 sm:grid-cols-3"><CompactMetric label="Ort. okuma hızı" value={stats.averageReadingSpeedLast7Days} tone="sky" /><CompactMetric label="Ort. anlama" value={stats.averageComprehensionLast7Days} tone="green" /><CompactMetric label="Test sayısı" value={stats.readingTestsLast7Days} /></div></div></section>
+
+    <p className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">Son güncelleme: {formatDateTime(summary.generatedAt)}</p>
+  </div>;
 }
 
 export function TeacherDashboardOverview({ summary, error }: TeacherDashboardOverviewProps) {
-  if (error || !summary) {
-    return (
-      <div className="grid gap-4">
-        <PanelCard title="Panel Özeti" subtitle="Gerçek veri şu anda yüklenemiyor">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-5 text-sm leading-6 text-amber-800 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100">
-            {error ?? "Panel verileri şu anda yüklenemiyor."}
-          </div>
-        </PanelCard>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-4">
-      <section className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(255,243,243,0.98)_100%)] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] md:p-7 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-[linear-gradient(135deg,rgba(15,23,42,0.96)_0%,rgba(30,41,59,0.96)_100%)]">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-red-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="inline-flex rounded-full border border-red-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-red-700 shadow-sm [data-idil-theme=dark]:border-red-400/40 [data-idil-theme=dark]:bg-slate-900">
-              Yönetim Merkezi
-            </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 [data-idil-theme=dark]:text-slate-50 md:text-4xl">
-              Öğretmen paneline hoş geldiniz
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 [data-idil-theme=dark]:text-slate-300 md:text-base">
-              Öğrenci takip, aktif programlar, son aktiviteler ve dikkat gerektiren öğrencileri canlı verilerle izleyin.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["Canlı özet", "Son 7 gün", "Mobil uyumlu", "Gerçek veri"].map((chip) => (
-                <span
-                  key={chip}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-300"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-2 lg:w-[360px] lg:grid-cols-1">
-            {QUICK_ACTIONS.map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className="group flex min-h-[72px] items-center justify-between rounded-2xl border border-red-200 bg-white px-4 py-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 to-white text-xl shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
-                    {action.icon}
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-slate-950 [data-idil-theme=dark]:text-slate-50">{action.label}</p>
-                    <p className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">{action.description}</p>
-                  </div>
-                </div>
-                <span className="text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-red-600" aria-hidden="true">
-                  →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {summary.warnings.length > 0 ? (
-        <PanelCard title="Veri Uyarıları" subtitle="Bazı bölümler kısmi veriyle gösteriliyor">
-          <div className="grid gap-2">
-            {summary.warnings.map((warning) => (
-              <div
-                key={`${warning.section}-${warning.message}`}
-                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 [data-idil-theme=dark]:border-amber-400/30 [data-idil-theme=dark]:bg-amber-400/10 [data-idil-theme=dark]:text-amber-100"
-              >
-                {warning.message}
-              </div>
-            ))}
-          </div>
-        </PanelCard>
-      ) : null}
-
-      <TodayStudentStatus stats={summary.stats} />
-
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Toplam Öğrenci" value={summary.stats.totalStudents} description="Kayıtlı tüm öğrenciler" icon="👤" />
-        <StatCard label="Aktif Öğrenci" value={summary.stats.activeStudents} description="Güncel durumunda aktif öğrenciler" icon="🟢" />
-        <StatCard label="Pasif Öğrenci" value={summary.stats.inactiveStudents} description="Durumu pasif olan öğrenciler" icon="⚪" />
-        <StatCard label="Tamamlanan Öğrenci" value={summary.stats.completedStudents} description="Eğitimi tamamlanan öğrenciler" icon="🏁" />
-        <StatCard label="Aktif Program" value={summary.stats.activePrograms} description="Aktif eğitim programı kayıtları" icon="📘" />
-        <StatCard label="Toplam XP" value={summary.stats.totalXp} description="XP özet tablosundaki canonical toplam" icon="⭐" />
-        <StatCard label="Son 7 Gün Aktif Öğrenci" value={summary.stats.activeStudentsLast7Days} description="Son 7 gündeki farklı aktif öğrenciler" icon="📈" />
-        <StatCard label="Son 7 Gün Çalışma" value={summary.stats.completedActivitiesLast7Days} description="Dedupe edilmiş tamamlanan çalışma" icon="✅" />
-        <StatCard label="Son 7 Gün XP" value={summary.stats.earnedXpLast7Days} description="XP eventlerinden hesaplanan kazanım" icon="🎯" />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <ProgramSummary stats={summary.stats} />
-        <ReadingSummary stats={summary.stats} />
-      </section>
-
-      <ImprovingStudents students={summary.improvingStudents} />
-
-      <section className="grid gap-4 xl:grid-cols-[1.35fr_0.9fr]">
-        <PanelCard title="Son Aktiviteler" subtitle="En yeni çalışmalar ve giriş hareketleri">
-          {summary.recentActivities.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
-              Henüz öğrenci aktivitesi bulunmuyor.
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {summary.recentActivities.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} />
-              ))}
-            </div>
-          )}
-        </PanelCard>
-
-        <div className="grid gap-4">
-          <PanelCard title="Son Çalışan Öğrenciler" subtitle="Son aktiviteye göre sıralı öğrenciler">
-            {summary.recentStudents.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
-                Henüz çalışan öğrenci bulunmuyor.
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {summary.recentStudents.map((student) => (
-                  <RecentStudentCard key={student.studentId} student={student} />
-                ))}
-              </div>
-            )}
-          </PanelCard>
-
-          <PanelCard title="Takip Edilmesi Önerilen Öğrenciler" subtitle="Açıklanabilir kurallarla üretilen takip listesi">
-            {summary.attentionStudents.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
-                Şu anda özel takip gerektiren öğrenci bulunmuyor.
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {summary.attentionStudents.map((student) => (
-                  <AttentionCard key={`${student.studentId}-${student.reasonCode}`} student={student} />
-                ))}
-              </div>
-            )}
-          </PanelCard>
-        </div>
-      </section>
-
-      <section className="text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
-        Oluşturulma zamanı: {formatDateTime(summary.generatedAt)}
-      </section>
-    </div>
-  );
+  if (error || !summary) return <section role="alert" aria-live="assertive" className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm leading-6 text-rose-900 [data-idil-theme=dark]:border-rose-400/30 [data-idil-theme=dark]:bg-rose-400/10 [data-idil-theme=dark]:text-rose-100"><h2 className="text-lg font-bold">Panel özeti yüklenemedi</h2><p className="mt-1">{error ?? "Panel verileri şu anda yüklenemiyor."}</p><button type="button" onClick={() => window.location.reload()} className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-rose-300 bg-white px-3 text-sm font-bold text-rose-900 hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">Sayfayı yenile</button></section>;
+  return <TeacherDashboardOverviewContent summary={summary} />;
 }

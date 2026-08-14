@@ -1,0 +1,41 @@
+.screen {
+  --content-border: #dbe4ef;
+  min-width: 0;
+  color: #172033;
+}
+
+.screen :global(.idil-card),
+.screen :global(form),
+.screen :global(section) {
+  border-color: var(--content-border);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.screen :global(.rounded-3xl),
+.screen :global(.rounded-2xl) { border-radius: 14px; }
+.screen :global(.bg-gradient-to-r),
+.screen :global(.bg-gradient-to-br) { background-image: none; }
+.screen :global(input), .screen :global(select), .screen :global(textarea) { min-width: 0; }
+
+.screen :global(input:focus-visible),
+.screen :global(select:focus-visible),
+.screen :global(textarea:focus-visible),
+.screen :global(button:focus-visible),
+.screen :global(a:focus-visible) {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+.screen :global([role="alert"]), .screen :global([role="status"]) { border-radius: 10px; }
+.screen :global(table) { min-width: 620px; }
+.screen :global(th) { white-space: nowrap; }
+.screen :global(button:disabled) { cursor: not-allowed; }
+
+@media (max-width: 767px) {
+  .screen :global(.overflow-x-auto) { max-width: 100%; overscroll-behavior-inline: contain; }
+  .screen :global(form), .screen :global(section) { box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen :global(*) { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

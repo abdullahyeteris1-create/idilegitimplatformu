@@ -11,6 +11,7 @@ import {
   type GeneratedContent,
 } from "@/lib/ai/contentGeneratorTypes";
 import styles from "./AIContentGeneratorForm.module.css";
+import contentStyles from "@/app/ogretmen/icerik-yonetimi/content-management.module.css";
 
 const LENGTH_LABELS = { short: "Kısa (150-250 kelime)", medium: "Orta (300-450 kelime)", long: "Uzun (500-700 kelime)" } as const;
 const DIFFICULTY_LABELS = { easy: "Kolay", medium: "Orta", hard: "Zor" } as const;
@@ -148,7 +149,7 @@ export function AIContentGeneratorForm() {
   };
 
   return (
-    <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(300px,0.72fr)_minmax(0,1.28fr)] xl:items-start">
+    <div className={`${contentStyles.screen} grid min-w-0 gap-4 xl:grid-cols-[minmax(300px,0.72fr)_minmax(0,1.28fr)] xl:items-start`} aria-busy={loading || isSaving}>
       <form onSubmit={generate} className="min-w-0 rounded-2xl border border-[var(--idil-border)] bg-[var(--idil-surface-strong)] p-4 shadow-sm md:p-5">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Yeni taslak</p>

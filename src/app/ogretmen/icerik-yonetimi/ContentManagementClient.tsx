@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CONTENT_GROUPS, type ContentModule, type ContentModuleStatus } from "@/lib/content-management/modules";
+import styles from "./content-management.module.css";
 
 const STATUS_LABELS: Record<ContentModuleStatus, string> = {
   active: "Aktif",
@@ -43,7 +44,7 @@ export function ContentManagementClient() {
   const activeModules = CONTENT_GROUPS.flatMap((group) => group.modules).filter(isActionable).length;
 
   return (
-    <>
+    <div className={styles.screen}>
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
           <div>
@@ -61,12 +62,6 @@ export function ContentManagementClient() {
                 className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-900/25 bg-[var(--brand)] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[var(--brand-strong)]"
               >
                 Metin Ekle
-              </Link>
-              <Link
-                href="/ogretmen/icerik-yonetimi/metin-kutuphanesi"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-50"
-              >
-                + Metin Ekle
               </Link>
               <Link
                 href="/ogretmen/icerik-yonetimi/anlama-testi-olustur"
@@ -239,6 +234,6 @@ export function ContentManagementClient() {
           </div>
         </section>
       </section>
-    </>
+    </div>
   );
 }

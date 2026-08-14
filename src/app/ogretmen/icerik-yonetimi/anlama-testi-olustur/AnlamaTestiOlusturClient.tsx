@@ -17,6 +17,7 @@ import {
   type ComprehensionQuestion,
   refreshQuestionLibraryCache,
 } from "@/lib/settings/questionLibraryStorage";
+import styles from "../content-management.module.css";
 
 type QuestionFormState = {
   question: string;
@@ -272,7 +273,7 @@ export function AnlamaTestiOlusturClient() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+    <div className={`${styles.screen} grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]`}>
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

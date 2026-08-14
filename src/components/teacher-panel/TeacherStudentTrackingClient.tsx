@@ -365,7 +365,7 @@ export function TeacherStudentTrackingClient({
 
   return (
     <div className="grid gap-4">
-      <PanelCard className="overflow-hidden border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(255,244,244,0.98)_100%)] shadow-[0_18px_50px_rgba(15,23,42,0.06)] [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-[linear-gradient(135deg,rgba(15,23,42,0.96)_0%,rgba(30,41,59,0.96)_100%)]">
+      <PanelCard className="overflow-hidden border border-slate-200 bg-white shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[var(--brand)]">Öğrenci Takip</p>
@@ -405,7 +405,7 @@ export function TeacherStudentTrackingClient({
         ].map(([label, value], index) => (
           <article
             key={String(label)}
-            className={`rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 ${
+            className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:border-red-200 hover:shadow-md [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900 ${
               index === 0 ? "bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(255,245,245,0.98)_100%)]" : ""
             }`}
           >
@@ -571,12 +571,12 @@ export function TeacherStudentTrackingClient({
               ))}
             </div>
 
-            <div className="mt-4 hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
+            <div className="mt-4 hidden overflow-hidden overflow-x-auto rounded-[24px] border border-slate-200 bg-white shadow-sm md:block [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
               <table className="min-w-[1120px] w-full border-collapse text-left text-sm">
                 <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-400">
                   <tr>
                     {["Öğrenci", "Seviye", "XP", "Son Aktivite", "Program", "Erişim", "Durum", "İşlemler"].map((column) => (
-                      <th key={column} className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">
+                      <th key={column} scope="col" className="border-b border-slate-200 px-4 py-3 font-semibold [data-idil-theme=dark]:border-slate-700">
                         {column}
                       </th>
                     ))}

@@ -415,6 +415,7 @@ export default function AssignmentManagementPage() {
             <label className="grid gap-1 text-sm font-semibold text-slate-700 md:col-span-2">
               <span>Ogrenci</span>
               <select
+                aria-label="Öğrenci seç"
                 value={selectedStudentId}
                 onChange={(event) => setSelectedStudentId(event.target.value)}
                 className="min-h-[44px] rounded-xl border border-slate-300 bg-white px-3"
@@ -430,6 +431,7 @@ export default function AssignmentManagementPage() {
             <label className="grid gap-1 text-sm font-semibold text-slate-700">
               <span>Tarih</span>
               <input
+                aria-label="Ödev tarihi"
                 type="date"
                 value={selectedDate}
                 onChange={(event) => setSelectedDate(event.target.value)}
@@ -457,7 +459,7 @@ export default function AssignmentManagementPage() {
             </p>
           )}
 
-          {message ? <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">{message}</p> : null}
+          {message ? <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">{message}</p> : null}
         </PanelCard>
 
         {isLoading ? (

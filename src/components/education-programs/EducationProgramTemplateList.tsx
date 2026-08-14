@@ -138,7 +138,7 @@ export function EducationProgramTemplateList({
   const pendingDeleteTemplate = templates.find((template) => template.id === pendingDeleteId) ?? null;
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 [data-idil-theme=dark]:border-slate-700">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 [data-idil-theme=dark]:border-slate-700">
       <table className="min-w-[980px] w-full border-collapse text-left text-sm">
         <thead className="bg-slate-100 text-xs uppercase tracking-[0.08em] text-slate-600 [data-idil-theme=dark]:bg-slate-800 [data-idil-theme=dark]:text-slate-300">
           <tr>
@@ -157,7 +157,7 @@ export function EducationProgramTemplateList({
             const rowMessage = rowMessages[template.id];
 
             return (
-              <tr key={template.id} className="align-top transition hover:bg-slate-50 [data-idil-theme=dark]:hover:bg-slate-800/70">
+              <tr key={template.id} className="align-top transition-colors duration-200 hover:bg-slate-50 [data-idil-theme=dark]:hover:bg-slate-800/70">
                 <td className="px-4 py-4">
                   <p className="font-semibold text-slate-950 [data-idil-theme=dark]:text-slate-50">{template.name}</p>
                   {template.adminDescription ? (
@@ -191,7 +191,7 @@ export function EducationProgramTemplateList({
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/ogretmen/idil-panel/egitim-programlari/template/${template.id}`}
-                      className="inline-flex min-h-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-800 transition hover:bg-red-100"
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-800 transition-colors duration-200 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                     >
                       Düzenle
                     </Link>
@@ -199,7 +199,7 @@ export function EducationProgramTemplateList({
                       type="button"
                       onClick={() => void handleDuplicate(template)}
                       disabled={isBusy}
-                      className="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-200"
+                      className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors duration-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-200"
                     >
                       {isBusy ? "Kopyalanıyor..." : "Kopyala"}
                     </button>
@@ -207,7 +207,7 @@ export function EducationProgramTemplateList({
                       type="button"
                       onClick={() => setPendingDeleteId(template.id)}
                       disabled={isBusy}
-                      className="min-h-9 rounded-lg border border-red-300 bg-white px-3 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="min-h-11 rounded-lg border border-red-300 bg-white px-3 text-xs font-semibold text-red-700 transition-colors duration-200 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Sil
                     </button>
