@@ -23,6 +23,10 @@
   --idil-text: #f8fafc;
   --idil-muted: #8d96a8;
   --idil-danger-text: #f87171;
+  --idil-success-text: #4ade80;
+  --idil-warning-text: #fbbf24;
+  --idil-field-bg: rgba(15, 23, 42, 0.92);
+  --idil-field-border: rgba(71, 85, 105, 0.72);
   --idil-border: rgba(255, 255, 255, 0.08);
   --idil-shadow: rgba(2, 6, 23, 0.42);
   --idil-strong: #7c3aed;
@@ -51,6 +55,7 @@
 }
 
 [data-idil-theme="dark"] {
+  color-scheme: dark;
   --idil-page-bg: #08111f;
   --idil-surface: rgba(15, 23, 42, 0.72);
   --idil-surface-strong: rgba(15, 23, 42, 0.9);
@@ -58,6 +63,10 @@
   --idil-text: #e2e8f0;
   --idil-muted: #94a3b8;
   --idil-danger-text: #f87171;
+  --idil-success-text: #4ade80;
+  --idil-warning-text: #fbbf24;
+  --idil-field-bg: rgba(15, 23, 42, 0.92);
+  --idil-field-border: rgba(71, 85, 105, 0.72);
   --idil-border: rgba(71, 85, 105, 0.72);
   --idil-shadow: rgba(2, 6, 23, 0.3);
   --idil-strong: #7c3aed;
@@ -82,6 +91,7 @@
 }
 
 [data-idil-theme="light"] {
+  color-scheme: light;
   --idil-page-bg: #f4f0fb;
   --idil-surface: rgba(255, 255, 255, 0.82);
   --idil-surface-strong: rgba(255, 255, 255, 0.92);
@@ -89,6 +99,10 @@
   --idil-text: #141a28;
   --idil-muted: #667085;
   --idil-danger-text: #b91c1c;
+  --idil-success-text: #15803d;
+  --idil-warning-text: #92400e;
+  --idil-field-bg: rgba(255, 255, 255, 0.96);
+  --idil-field-border: #fee2e2;
   --idil-border: rgba(148, 163, 184, 0.24);
   --idil-shadow: rgba(15, 23, 42, 0.08);
   --idil-strong: #0f172a;
@@ -136,6 +150,35 @@
   background: var(--exercise-surface-elevated) !important;
   border-color: var(--exercise-border) !important;
   color: var(--exercise-text-secondary) !important;
+}
+
+/*
+ * Paylasilan egzersiz chrome'u (FixedExerciseStage) baslik/alt baslik ve arac
+ * cubugu butonlarini sabit acik-tema Tailwind sinifleriyle yazar. Kendi tema
+ * modulu olan egzersizler bunlari :global(...) + !important ile zaten eziyordu;
+ * (Not: seciciler `exercise-theme-topbar` uzerinden yazilir - ayni elemandaki
+ * `fixed-exercise-stage__topbar` adi bu dosyada kullanilamaz, cunku ham CSS'te
+ * `__` derleme sirasinda bosluga donusup seciciyi bozuyor.)
+ * modulu olmayanlarda (ornegin Anlik Goruntu, 13 Nokta) baslik karanlik zemin
+ * uzerinde neredeyse siyah kaliyordu. Asagidaki kurallar !important KULLANMAZ,
+ * boylece mevcut tema modulleri onceligini korur.
+ */
+[data-idil-theme="dark"] .exercise-theme-topbar h1 {
+  color: var(--exercise-text);
+}
+
+[data-idil-theme="dark"] .exercise-theme-topbar p {
+  color: var(--exercise-text-secondary);
+}
+
+[data-idil-theme="dark"] .exercise-theme-topbar button {
+  border-color: var(--exercise-border);
+  background-color: var(--exercise-surface-elevated);
+  color: var(--exercise-text);
+}
+
+[data-idil-theme="dark"] .exercise-theme-topbar button:hover {
+  background-color: color-mix(in srgb, var(--exercise-surface-elevated) 80%, var(--exercise-text) 20%);
 }
 
 [data-idil-theme="dark"] .exercise-theme-content,
@@ -248,12 +291,19 @@ textarea {
   min-height: 40px;
 }
 
+/*
+ * Bu kural KATMANSIZ (@layer disinda) oldugu icin Tailwind'in @layer utilities
+ * kurallarini ozgullukten bagimsiz olarak ezer; sabit beyaz zemin karanlik modda
+ * acik renk yazi tasiyan her select/input'u okunmaz hale getiriyordu. Ozgulluk
+ * bilincli olarak AYNI birakilip yalnizca renk temaya bagli degiskene tasindi -
+ * boylece bugune kadar bu kurali ezebilen hicbir kural etkilenmez.
+ */
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
   border-radius: 0.875rem;
-  border-color: #fee2e2;
-  background-color: rgba(255, 255, 255, 0.96);
+  border-color: var(--idil-field-border);
+  background-color: var(--idil-field-bg);
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
