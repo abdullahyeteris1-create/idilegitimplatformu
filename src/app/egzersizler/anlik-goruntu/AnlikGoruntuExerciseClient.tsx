@@ -342,7 +342,7 @@ export function AnlikGoruntuExerciseClient({
   const settings = (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="min-w-0">
-        <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Gösterim hızı</p>
+        <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--exercise-text-secondary)]">Gösterim hızı</p>
         <div className="flex flex-wrap gap-1.5">
           {ANLIK_GORUNTU_SPEEDS.map((item) => (
             <button
@@ -353,8 +353,8 @@ export function AnlikGoruntuExerciseClient({
               title={item.description}
               className={`min-h-9 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 item.id === speedId
-                  ? "border-red-500 bg-red-500 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-red-300 hover:bg-red-50"
+                  ? "border-red-600 bg-red-600 text-white shadow-sm"
+                  : "border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] text-[var(--exercise-text)] hover:border-red-400 hover:bg-red-500/15"
               }`}
             >
               {item.name}
@@ -365,7 +365,7 @@ export function AnlikGoruntuExerciseClient({
       </div>
 
       <div className="min-w-0">
-        <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Başlangıç seviyesi</p>
+        <p className="mb-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--exercise-text-secondary)]">Başlangıç seviyesi</p>
         <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-7">
           {ANLIK_GORUNTU_LEVELS.map((count, index) => (
             <button
@@ -375,8 +375,8 @@ export function AnlikGoruntuExerciseClient({
               onClick={() => setStartLevel(index + 1)}
               className={`min-h-9 rounded-lg border px-1 py-1 text-[10px] font-bold leading-tight transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 index + 1 === startLevel
-                  ? "border-red-500 bg-red-500 text-white shadow-sm"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-red-300 hover:bg-red-50"
+                  ? "border-red-600 bg-red-600 text-white shadow-sm"
+                  : "border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] text-[var(--exercise-text)] hover:border-red-400 hover:bg-red-500/15"
               }`}
             >
               {index + 1}
@@ -408,10 +408,10 @@ export function AnlikGoruntuExerciseClient({
         }
         onExit={() => router.push("/egzersizler")}
       >
-        <div className="exercise-theme-content flex h-full w-full max-w-3xl flex-col items-center justify-center overflow-auto rounded-3xl border border-white/80 bg-white/90 px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Göz Algılama</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl">⚡ Anlık Görüntü</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+        <div className="exercise-theme-content flex h-full w-full max-w-3xl flex-col items-center justify-center overflow-auto rounded-3xl border border-[var(--exercise-border)] bg-[var(--exercise-surface)] px-5 py-6 text-center shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--idil-danger-text)]">Göz Algılama</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-[var(--exercise-text)] md:text-4xl">⚡ Anlık Görüntü</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--exercise-text-secondary)]">
             Ortada bir anlığına beliren kelimeyi tek bakışta algıla. Kelime kaybolduktan sonra dört seçenek
             arasından gördüğünü seç.
           </p>
@@ -421,14 +421,14 @@ export function AnlikGoruntuExerciseClient({
               { icon: "🔠", title: "13 seviye", text: "Her 10 turda kelime bir harf uzar." },
               { icon: "🎯", title: "Benzer şıklar", text: "Çeldiriciler hedefe görsel olarak yakındır." },
             ].map((item) => (
-              <div key={item.title} className="rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-left">
+              <div key={item.title} className="rounded-2xl border border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] px-3 py-3 text-left">
                 <div className="text-lg">{item.icon}</div>
-                <p className="mt-1 text-xs font-black text-slate-900">{item.title}</p>
-                <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{item.text}</p>
+                <p className="mt-1 text-xs font-black text-[var(--exercise-text)]">{item.title}</p>
+                <p className="mt-0.5 text-[11px] leading-4 text-[var(--exercise-text-secondary)]">{item.text}</p>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-[11px] font-semibold text-slate-500">
+          <p className="mt-4 text-[11px] font-semibold text-[var(--exercise-text-secondary)]">
             Hız ve başlangıç seviyesini alt şeritten seçebilirsin. İlk tur alıştırmadır, puana yazılmaz.
           </p>
         </div>
@@ -446,7 +446,7 @@ export function AnlikGoruntuExerciseClient({
           <div className="grid gap-2">
             <p
               className={`text-center text-xs font-bold ${
-                saveState === "error" ? "text-red-700" : "text-slate-500"
+                saveState === "error" ? "text-[var(--idil-danger-text)]" : "text-[var(--exercise-text-secondary)]"
               }`}
               role={saveState === "error" ? "alert" : undefined}
             >
@@ -467,7 +467,7 @@ export function AnlikGoruntuExerciseClient({
               <button
                 type="button"
                 onClick={backToIntro}
-                className="min-h-[42px] rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="min-h-[42px] rounded-xl border border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] px-5 py-2 text-sm font-bold text-[var(--exercise-text)] shadow-sm transition hover:opacity-90"
               >
                 Ayarlara Dön
               </button>
@@ -477,14 +477,14 @@ export function AnlikGoruntuExerciseClient({
         }
         onExit={() => router.push("/egzersizler")}
       >
-        <div className="exercise-theme-content flex h-full w-full max-w-3xl flex-col overflow-auto rounded-3xl border border-white/80 bg-white/90 px-4 py-5 shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-7">
+        <div className="exercise-theme-content flex h-full w-full max-w-3xl flex-col overflow-auto rounded-3xl border border-[var(--exercise-border)] bg-[var(--exercise-surface)] px-4 py-5 shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-7">
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700">Algılama Kapasiten</p>
-            <p className="mt-1 text-4xl font-black text-slate-950 md:text-5xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--idil-danger-text)]">Algılama Kapasiten</p>
+            <p className="mt-1 text-4xl font-black text-[var(--exercise-text)] md:text-5xl">
               {capacity > 0 ? `${capacity} harf` : "—"}
             </p>
-            <p className="mt-1 text-sm font-bold text-slate-700">{resolveAnlikGoruntuRank(capacity)}</p>
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-sm font-bold text-[var(--exercise-text)]">{resolveAnlikGoruntuRank(capacity)}</p>
+            <p className="mt-1 text-[11px] text-[var(--exercise-text-secondary)]">
               {capacity > 0
                 ? `${speed.name} hızında (${speed.exposureMs} ms) %75+ başarıyla okunan en uzun kelime.`
                 : "Henüz %75 başarıyla tamamlanmış bir seviye yok."}
@@ -498,32 +498,32 @@ export function AnlikGoruntuExerciseClient({
               { label: "Başarı", value: `%${accuracy}` },
               { label: "Max Combo", value: `×${maxCombo}` },
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center">
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{item.label}</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{item.value}</p>
+              <div key={item.label} className="rounded-2xl border border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] px-3 py-3 text-center">
+                <p className="text-[10px] font-black uppercase tracking-wide text-[var(--exercise-text-secondary)]">{item.label}</p>
+                <p className="mt-1 text-lg font-black text-[var(--exercise-text)]">{item.value}</p>
               </div>
             ))}
           </div>
 
           {levelStats.length > 0 && (
             <div className="mt-5">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Seviye sonuçları</p>
+              <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-[var(--exercise-text-secondary)]">Seviye sonuçları</p>
               <div className="grid gap-1.5">
                 {levelStats.map((item) => (
                   <div
                     key={item.level}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] px-3 py-2 text-xs"
                   >
-                    <span className="font-bold text-slate-700">
+                    <span className="font-bold text-[var(--exercise-text)]">
                       {item.level}. seviye · {item.letterCount} harf · {item.rounds} tur
                     </span>
                     <span
                       className={`font-black ${
                         item.accuracy >= 88
-                          ? "text-green-600"
+                          ? "text-[var(--idil-success-text)]"
                           : item.accuracy >= 75
-                            ? "text-amber-600"
-                            : "text-red-600"
+                            ? "text-[var(--idil-warning-text)]"
+                            : "text-[var(--idil-danger-text)]"
                       }`}
                     >
                       %{item.accuracy} · {item.averageResponseTimeMs} ms
@@ -545,13 +545,13 @@ export function AnlikGoruntuExerciseClient({
       topStats={topStats}
       controls={
         <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
-          <p className="min-w-0 truncate text-xs font-semibold text-slate-500">
+          <p className="min-w-0 truncate text-xs font-semibold text-[var(--exercise-text-secondary)]">
             {isTutorial ? "Alıştırma: bu tur puana yazılmaz." : `Tur ${round} / ${ANLIK_GORUNTU_ROUNDS_PER_LEVEL}`}
           </p>
           <button
             type="button"
             onClick={handleManualFinish}
-            className="min-h-[42px] shrink-0 rounded-xl border border-red-200 bg-white px-5 py-2 text-sm font-bold text-red-700 shadow-sm transition hover:bg-red-50"
+            className="min-h-[42px] shrink-0 rounded-xl border border-red-400/60 bg-[var(--exercise-surface-elevated)] px-5 py-2 text-sm font-bold text-[var(--idil-danger-text)] shadow-sm transition hover:bg-red-500/15"
           >
             Bitir
           </button>
@@ -559,18 +559,18 @@ export function AnlikGoruntuExerciseClient({
       }
       onExit={() => router.push("/egzersizler")}
     >
-      <div className="exercise-theme-content flex h-full w-full max-w-3xl min-h-0 flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/90 px-3 py-3 shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-6 md:py-5">
+      <div className="exercise-theme-content flex h-full w-full max-w-3xl min-h-0 flex-col overflow-hidden rounded-3xl border border-[var(--exercise-border)] bg-[var(--exercise-surface)] px-3 py-3 shadow-[0_18px_54px_rgba(153,27,27,0.13)] md:px-6 md:py-5">
         <div className="flex items-center justify-between gap-2">
           {isTutorial ? (
-            <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-black tracking-[0.14em] text-amber-700">
+            <span className="rounded-full border border-amber-500/45 bg-amber-500/15 px-2.5 py-1 text-[10px] font-black tracking-[0.14em] text-[var(--idil-warning-text)]">
               ALIŞTIRMA
             </span>
           ) : (
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--exercise-text-secondary)]">
               Tur {round}/{ANLIK_GORUNTU_ROUNDS_PER_LEVEL}
             </span>
           )}
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--exercise-border)]">
             <div
               className="h-full rounded-full bg-red-500 transition-[width] duration-300"
               style={{ width: `${(round / ANLIK_GORUNTU_ROUNDS_PER_LEVEL) * 100}%` }}
@@ -581,16 +581,16 @@ export function AnlikGoruntuExerciseClient({
         <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           {phase === "level-up" ? (
             <div className="text-center">
-              <p className="text-3xl font-black text-slate-950 md:text-4xl">Seviye {level} tamamlandı</p>
-              <p className="mt-2 text-sm font-bold text-red-700">
+              <p className="text-3xl font-black text-[var(--exercise-text)] md:text-4xl">Seviye {level} tamamlandı</p>
+              <p className="mt-2 text-sm font-bold text-[var(--idil-danger-text)]">
                 Sıradaki: {getAnlikGoruntuLevelLetterCount(level + 1)} harf
               </p>
             </div>
           ) : phase === "fixation" ? (
-            <span className="text-4xl font-black text-slate-300">+</span>
+            <span className="text-4xl font-black text-[var(--exercise-text-secondary)]">+</span>
           ) : phase === "exposure" ? (
             <span
-              className={`max-w-full break-words px-2 text-center font-black leading-tight text-slate-950 ${stimulusFontClass(
+              className={`max-w-full break-words px-2 text-center font-black leading-tight text-[var(--exercise-text)] ${stimulusFontClass(
                 getAnlikGoruntuLetterCount(target),
               )}`}
               style={{ animation: "none", transition: "none", overflowWrap: "anywhere" }}
@@ -600,7 +600,7 @@ export function AnlikGoruntuExerciseClient({
           ) : phase === "gap" ? (
             <span className="sr-only">Kelime gizlendi</span>
           ) : (
-            <p className="px-4 text-center text-sm font-semibold text-slate-500">
+            <p className="px-4 text-center text-sm font-semibold text-[var(--exercise-text-secondary)]">
               {phase === "feedback"
                 ? chosenOption === target
                   ? "✅ Doğru!"
@@ -618,12 +618,12 @@ export function AnlikGoruntuExerciseClient({
           {options.map((option, index) => {
             const revealed = chosenOption !== null;
             const stateClass = !revealed
-              ? "border-slate-200 bg-white text-slate-800 hover:border-red-300 hover:bg-red-50"
+              ? "border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] text-[var(--exercise-text)] hover:border-red-400 hover:bg-red-500/15"
               : option === target
-                ? "border-green-500 bg-green-50 text-green-700"
+                ? "border-green-700 bg-green-700 text-white"
                 : option === chosenOption
-                  ? "border-red-500 bg-red-50 text-red-700"
-                  : "border-slate-200 bg-white text-slate-400 opacity-60";
+                  ? "border-red-700 bg-red-700 text-white"
+                  : "border-[var(--exercise-border)] bg-[var(--exercise-surface-elevated)] text-[var(--exercise-text-secondary)] opacity-55";
 
             return (
               <button
