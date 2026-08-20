@@ -35,6 +35,10 @@ type AppShellProps = {
   children: ReactNode;
   compactHeader?: boolean;
   wide?: boolean;
+  /** Öğretmen kabuğunda 1600px sınırını kaldırır; yoğun planlama ekranları için. */
+  fullWidth?: boolean;
+  /** Öğretmen başlığının dikey yoğunluğunu artırır (masaüstünde). */
+  denseHeader?: boolean;
   headerVariant?: "default" | "student-vibrant";
 };
 
@@ -84,7 +88,7 @@ function TeacherSidebarFooter({ onLogout }: { onLogout: () => Promise<void> }) {
   );
 }
 
-export function AppShell({ title, subtitle, navItems, children, compactHeader = false, wide = false, headerVariant = "default" }: AppShellProps) {
+export function AppShell({ title, subtitle, navItems, children, compactHeader = false, wide = false, fullWidth = false, denseHeader = false, headerVariant = "default" }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -141,7 +145,7 @@ export function AppShell({ title, subtitle, navItems, children, compactHeader = 
       <IdilThemeProvider className="teacher-shell min-h-screen bg-[var(--teacher-background)] text-[var(--teacher-text-primary)]">
         <div className="min-h-screen bg-[var(--teacher-background)]">
           <a href="#teacher-main" className="teacher-skip-link">İçeriğe geç</a>
-          <div className="mx-auto flex w-full max-w-[1600px] gap-4 p-3 md:p-4 lg:gap-6">
+          <div className={`mx-auto flex w-full gap-4 p-3 md:p-4 ${fullWidth ? "max-w-none lg:gap-4" : "max-w-[1600px] lg:gap-6"}`}>
             <aside className="teacher-sidebar sticky top-4 hidden h-[calc(100vh-32px)] w-64 shrink-0 overflow-hidden lg:flex lg:flex-col" aria-label="Öğretmen paneli menüsü">
               <TeacherBrand />
               <TeacherNavigation groups={teacherNavGroups} isActive={isTeacherItemActive} />
@@ -159,7 +163,7 @@ export function AppShell({ title, subtitle, navItems, children, compactHeader = 
             </aside>
 
             <div className="min-w-0 flex-1">
-              <header className="teacher-header">
+              <header className={`teacher-header${denseHeader ? " teacher-header--dense" : ""}`}>
                 <div className="flex min-w-0 items-start gap-3">
                   <button ref={mobileMenuButtonRef} type="button" className="teacher-icon-button lg:hidden" aria-label="Menüyü aç" aria-expanded={isMobileMenuOpen} aria-controls="teacher-mobile-navigation" onClick={() => setIsMobileMenuOpen(true)}><Icon name="menu" className="h-5 w-5" /></button>
                   <div className="min-w-0">
@@ -174,7 +178,7 @@ export function AppShell({ title, subtitle, navItems, children, compactHeader = 
                   <div className="teacher-user-chip"><Icon name="user" className="h-4 w-4" />{teacherUsername}</div>
                 </div>
               </header>
-              <main id="teacher-main" className={`${compactHeader ? "mt-4 gap-4" : "mt-5 gap-5"} flex min-w-0 flex-col`}>{children}</main>
+              <main id="teacher-main" className={`${denseHeader ? "mt-3 gap-3" : compactHeader ? "mt-4 gap-4" : "mt-5 gap-5"} flex min-w-0 flex-col`}>{children}</main>
             </div>
           </div>
         </div>

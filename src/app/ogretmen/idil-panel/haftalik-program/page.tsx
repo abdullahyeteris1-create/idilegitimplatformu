@@ -718,10 +718,12 @@ export default function WeeklyProgramPage() {
       subtitle="Öğrencilerin haftalık ders akışını planla ve takip et."
       navItems={TEACHER_NAV_ITEMS}
       wide
+      fullWidth
+      denseHeader
     >
       <TeacherOnly>
       <section className="w-full text-slate-900">
-        <div className="mb-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:mb-2 lg:px-4 lg:py-2">
+        <div className="mb-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:mb-1.5 lg:px-4 lg:py-1.5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <Link
@@ -771,32 +773,32 @@ export default function WeeklyProgramPage() {
           </div>
         </div>
 
-        <div className="mb-3 grid gap-3 lg:mb-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-2">
-          <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:px-4 lg:py-2.5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+        <div className="mb-3 grid gap-3 lg:mb-1.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch lg:gap-2">
+          <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:px-4 lg:py-2">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500 lg:leading-4">
               Seçili Hafta
             </p>
 
-            <p className="mt-1 text-xl font-black text-slate-950 lg:mt-0.5 lg:text-lg">
+            <p className="mt-1 text-xl font-black text-slate-950 lg:mt-0.5 lg:text-[17px] lg:leading-6">
               {formatLongDateRange(weekStart, weekEnd)}
             </p>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
-              <p className="text-[11px] font-black text-slate-500">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center shadow-sm lg:px-3 lg:py-1.5">
+              <p className="text-[11px] font-black text-slate-500 lg:leading-[14px]">
                 Toplam Ders
               </p>
-              <p className="mt-1 text-2xl font-black text-slate-950 lg:mt-0 lg:text-xl">
+              <p className="mt-1 text-2xl font-black text-slate-950 lg:mt-0 lg:text-lg lg:leading-6">
                 {schedules.length}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
-              <p className="text-[11px] font-black text-emerald-700">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-1.5">
+              <p className="text-[11px] font-black text-emerald-700 lg:leading-[14px]">
                 Tamamlandı
               </p>
-              <p className="mt-1 text-2xl font-black text-emerald-700 lg:mt-0 lg:text-xl">
+              <p className="mt-1 text-2xl font-black text-emerald-700 lg:mt-0 lg:text-lg lg:leading-6">
                 {
                   schedules.filter(
                     (schedule) => schedule.status === "Tamamlandı",
@@ -805,9 +807,9 @@ export default function WeeklyProgramPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
-              <p className="text-[11px] font-black text-amber-700">Gelmedi</p>
-              <p className="mt-1 text-2xl font-black text-amber-700 lg:mt-0 lg:text-xl">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-1.5">
+              <p className="text-[11px] font-black text-amber-700 lg:leading-[14px]">Gelmedi</p>
+              <p className="mt-1 text-2xl font-black text-amber-700 lg:mt-0 lg:text-lg lg:leading-6">
                 {
                   schedules.filter((schedule) => schedule.status === "Gelmedi")
                     .length
@@ -815,9 +817,9 @@ export default function WeeklyProgramPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-2">
-              <p className="text-[11px] font-black text-rose-700">İptal</p>
-              <p className="mt-1 text-2xl font-black text-rose-700 lg:mt-0 lg:text-xl">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-center shadow-sm lg:px-3 lg:py-1.5">
+              <p className="text-[11px] font-black text-rose-700 lg:leading-[14px]">İptal</p>
+              <p className="mt-1 text-2xl font-black text-rose-700 lg:mt-0 lg:text-lg lg:leading-6">
                 {
                   schedules.filter((schedule) => schedule.status === "İptal")
                     .length
@@ -828,18 +830,18 @@ export default function WeeklyProgramPage() {
         </div>
 
         {errorMessage && (
-          <div role="alert" aria-live="assertive" className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 lg:mb-2 lg:py-2">
+          <div role="alert" aria-live="assertive" className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 lg:mb-1.5 lg:py-1.5 lg:text-[13px] lg:leading-[18px]">
             {errorMessage}
           </div>
         )}
 
         {successMessage && (
-          <div role="status" aria-live="polite" className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:mb-2 lg:py-2">
+          <div role="status" aria-live="polite" className="mb-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 lg:mb-1.5 lg:py-1.5 lg:text-[13px] lg:leading-[18px]">
             {successMessage}
           </div>
         )}
 
-        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:overflow-x-hidden">
+        <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:overflow-x-hidden lg:p-2">
           <div className="grid min-w-0 max-lg:min-w-[1540px] grid-cols-7 gap-2 lg:grid-cols-[repeat(7,minmax(0,1fr))] lg:gap-1.5">
             {days.map((day) => {
               const daySchedules = schedulesByDate.get(day.dateIso) ?? [];
@@ -853,7 +855,7 @@ export default function WeeklyProgramPage() {
                   <header
                     className={`border-b ${day.color.border} ${day.color.header} px-3 py-2 lg:px-2 lg:py-1.5`}
                   >
-                    <div className="flex items-center justify-between gap-2 lg:flex-col lg:items-start lg:gap-0.5">
+                    <div className="flex items-center justify-between gap-2 lg:flex-col lg:items-start lg:gap-0.5 xl:flex-row xl:items-center xl:gap-2">
                       <div className="min-w-0 max-w-full">
                         <h2
                           className={`max-w-full truncate text-sm font-black leading-tight lg:text-[13px] ${day.color.text}`}
@@ -871,7 +873,7 @@ export default function WeeklyProgramPage() {
                     </div>
                   </header>
 
-                  <div className="space-y-1.5 p-2 lg:space-y-1 lg:p-1.5">
+                  <div className="space-y-1.5 p-2 lg:space-y-1 lg:p-1">
                     {slots.map((schedule, slotIndex) => {
                       if (isLoading) {
                         return (
@@ -890,7 +892,7 @@ export default function WeeklyProgramPage() {
                             key={`${day.key}-empty-${slotIndex}`}
                             type="button"
                             onClick={() => openCreateModal(day.dateIso, slotIndex)}
-                            className="group flex h-[86px] w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/45 text-[11px] font-black text-transparent transition hover:border-slate-400 hover:bg-white/80 hover:text-slate-500"
+                            className="group flex h-[86px] w-full cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/45 text-[11px] font-black text-transparent transition hover:border-slate-400 hover:bg-white/80 hover:text-slate-500 lg:h-9 lg:text-[10px]"
                             title={`${day.label} için ders ekle`}
                           >
                             + Ders Ekle
@@ -905,13 +907,13 @@ export default function WeeklyProgramPage() {
                       return (
                         <article
                           key={schedule.id}
-                          className={`h-[86px] min-w-0 overflow-hidden rounded-xl border px-2 py-1.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:h-[92px] lg:px-1.5 lg:py-1 ${studentColor.card}`}
+                          className={`h-[86px] min-w-0 overflow-hidden rounded-xl border px-2 py-1.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:px-1.5 lg:py-1 ${studentColor.card}`}
                         >
                           <div className="flex min-w-0 items-start justify-between gap-1 lg:gap-0.5">
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p
                                 title={getStudentName(schedule, students)}
-                                className={`min-w-0 truncate text-[12px] font-black uppercase leading-tight lg:text-[11px] ${studentColor.name}`}
+                                className={`min-w-0 truncate text-[12px] font-black uppercase leading-tight lg:text-[11px] 2xl:text-[12px] ${studentColor.name}`}
                               >
                                 {getStudentName(schedule, students)}
                               </p>
@@ -922,18 +924,19 @@ export default function WeeklyProgramPage() {
                               </p>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-0.5">
+                            <div className="flex shrink-0 items-center gap-0.5 lg:gap-px">
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleStatusChange(schedule.id, "Tamamlandı")
                                 }
-                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[12px] font-black transition lg:h-7 lg:w-7 lg:text-[11px] ${
+                                className={`flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[12px] font-black transition lg:h-[22px] lg:w-[22px] lg:text-[11px] xl:h-6 xl:w-6 2xl:h-[26px] 2xl:w-[26px] ${
                                   schedule.status === "Tamamlandı"
                                     ? "bg-emerald-200 text-emerald-800"
                                     : "bg-white/80 text-emerald-700 hover:bg-emerald-100"
                                 }`}
                                 title="Tamamlandı yap"
+                                aria-label={`${getStudentName(schedule, students)} dersini tamamlandı yap`}
                               >
                                 ✓
                               </button>
@@ -941,8 +944,9 @@ export default function WeeklyProgramPage() {
                               <button
                                 type="button"
                                 onClick={() => openEditModal(schedule, slotIndex)}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/80 text-[12px] text-slate-700 transition hover:bg-slate-100 lg:h-7 lg:w-7 lg:text-[11px]"
+                                className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-[12px] text-slate-700 transition hover:bg-slate-100 lg:h-[22px] lg:w-[22px] lg:text-[11px] xl:h-6 xl:w-6 2xl:h-[26px] 2xl:w-[26px]"
                                 title="Düzenle"
+                                aria-label={`${getStudentName(schedule, students)} dersini düzenle`}
                               >
                                 ✎
                               </button>
@@ -950,15 +954,16 @@ export default function WeeklyProgramPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDelete(schedule)}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/80 text-[12px] text-rose-600 transition hover:bg-rose-100 lg:h-7 lg:w-7 lg:text-[11px]"
+                                className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-[12px] text-rose-600 transition hover:bg-rose-100 lg:h-[22px] lg:w-[22px] lg:text-[11px] xl:h-6 xl:w-6 2xl:h-[26px] 2xl:w-[26px]"
                                 title="Sil"
+                                aria-label={`${getStudentName(schedule, students)} dersini sil`}
                               >
                                 🗑
                               </button>
                             </div>
                           </div>
 
-                          <div className="mt-1 flex min-w-0 items-center gap-1 lg:gap-0.5">
+                          <div className="mt-1 flex min-w-0 items-center gap-1 lg:mt-0.5 lg:gap-0.5">
                             <select
                               value={lessonDay}
                               onChange={(event) =>
@@ -999,7 +1004,7 @@ export default function WeeklyProgramPage() {
                           </div>
 
                           {visibleNotes ? (
-                            <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">
+                            <p className="mt-1 truncate text-[10px] font-semibold leading-[13px] text-slate-500 lg:mt-0.5">
                               {visibleNotes}
                             </p>
                           ) : null}

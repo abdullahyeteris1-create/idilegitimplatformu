@@ -859,6 +859,16 @@ textarea {
 .teacher-sidebar-mobile { transform: translateX(-105%); transition: transform 180ms ease; }
 .teacher-sidebar-mobile.is-open { transform: translateX(0); }
 
+/* Yoğun planlama ekranları (ör. Haftalık Ders Programı) için opt-in başlık
+   yoğunluğu. Yalnızca masaüstünde devreye girer; mobil başlık davranışı
+   aşağıdaki max-width:767px bloğunda olduğu gibi kalır. */
+@media (min-width: 1024px) {
+  .teacher-header--dense { min-height: 0; gap: 1rem; padding: 0.75rem 1.25rem; }
+  .teacher-header--dense .teacher-breadcrumb { font-size: 0.7rem; }
+  .teacher-header--dense .teacher-page-title { margin-top: 0.125rem; font-size: clamp(1.375rem, 2vw, 1.875rem); }
+  .teacher-header--dense .teacher-page-subtitle { margin-top: 0.125rem; font-size: 0.875rem; line-height: 1.35; }
+}
+
 @media (max-width: 767px) {
   .teacher-header { min-height: 0; flex-direction: column; padding: 1rem; }
   .teacher-header > :last-child { width: 100%; }
