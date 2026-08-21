@@ -50,7 +50,7 @@ export const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   fluency: ["blok-okuma", "golgeleme", "odakli-okuma", "gruplama-calismasi"],
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
-  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi", "hafiza-yarisi", "tatli-dukkani", "kayip-nesne"],
+  "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi", "hafiza-yarisi", "tatli-dukkani", "kayip-nesne", "moda-hafizasi"],
   assessment: ["anlama-testi", "okuma-hizi-testi"],
   memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme"],
 };
@@ -90,6 +90,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "parcali-resim-kelime": { description: "Parçalı görseli tamamlayarak kelime ve görsel hafızanı birlikte çalıştır.", tags: ["Hafıza", "Görsel"] },
   "tatli-dukkani": { description: "Müşteri siparişlerini aklında tut ve doğru tatlıları seç.", tags: ["Hafıza", "Akıl ve Zeka"] },
   "kayip-nesne": { description: "Sahnedeki nesnelerin yerlerini hatırla ve hedef nesnenin kutusunu bul.", tags: ["Hafıza", "Akıl ve Zeka"] },
+  "moda-hafizasi": { description: "Karakterin kıyafet, çanta, ayakkabı ve aksesuar renklerini hatırla ve yeniden giydir.", tags: ["Hafıza", "Akıl ve Zeka"] },
   "saray-dedektifi": { description: "Kısa süre görünen saray dosyasını oku, ayrıntıları hatırla ve soruları yanıtla.", tags: ["Algı", "Dikkat"] },
   "anlik-goruntu": { description: "Bir anlığına beliren kelimeyi tek bakışta algıla ve dört seçenek arasından bul.", tags: ["Algı", "Hız"] },
 };
@@ -98,6 +99,9 @@ const FALLBACK_ROUTE_BY_SLUG: Record<string, { title: string; route: string }> =
   "sayi-tablosu": { title: "Sayı Tablosu", route: "/egzersizler/sayi-tablosu" },
   "yeni-karti-bul": { title: "Yeni Kartı Bul", route: "/egzersizler/yeni-karti-bul" },
   "hafiza-yarisi": { title: "Hafıza Yarışı", route: "/egzersizler/hafiza-yarisi" },
+  // Moda Hafizasi henuz assignment kataloguna girmedi (backend/XP entegrasyonu
+  // yapilmadi), bu yuzden rotasi hafiza-yarisi gibi buradan cozuluyor.
+  "moda-hafizasi": { title: "Moda Hafızası", route: "/egzersizler/moda-hafizasi" },
 };
 
 function buildExerciseCard(slug: string): PreviewExerciseCard | null {

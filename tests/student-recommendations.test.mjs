@@ -93,6 +93,7 @@ test("word-games grubundaki katalog oyunlarinin hicbiri recommendation analizine
     "hafiza-yarisi",
     "tatli-dukkani",
     "kayip-nesne",
+    "moda-hafizasi",
   ]);
   const gameTypes = ASSIGNMENT_EXERCISE_CATALOG
     .filter((exercise) => AKIL_VE_ZEKA_OYUNLARI_EXERCISE_SLUGS.includes(exercise.slug))

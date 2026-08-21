@@ -1,0 +1,272 @@
+/*
+ * Moda Hafizasi (fashion memory) egzersizinin tema katmani.
+ *
+ * ONEMLI: Karakter sahnesi (.stage) her iki temada da acik/krem kalir.
+ * Karakterin uzerindeki renkler oyunun hatirlanacak icerigi oldugu icin
+ * arka plani koyulastirmak renk algisini bozar - bu yuzden sahne bilincli
+ * olarak temadan bagimsiz tutulmustur.
+ */
+
+.themeRoot {
+  min-height: 100dvh;
+}
+
+.lightTheme {
+  --fm-stage-from: #fffaf9;
+  --fm-stage-to: #f6f1ff;
+  --fm-stage-border: rgba(236, 190, 226, 0.7);
+}
+
+.darkTheme {
+  --fm-bg: #0b1020;
+  --fm-panel: #111a2e;
+  --fm-panel-2: #16223a;
+  --fm-text: #f4f2ff;
+  --fm-muted: #b4bfd6;
+  --fm-border: rgba(167, 139, 250, 0.32);
+  --fm-pink: #f472b6;
+  --fm-violet: #a78bfa;
+  --fm-green: #4ade80;
+  --fm-amber: #fbbf24;
+  --fm-rose: #fb7185;
+  --fm-stage-from: #fffaf9;
+  --fm-stage-to: #f3edff;
+  --fm-stage-border: rgba(167, 139, 250, 0.45);
+}
+
+/* --- Karakter sahnesi (her iki temada acik kalir) --- */
+
+.stage {
+  background: linear-gradient(160deg, var(--fm-stage-from, #fffaf9), var(--fm-stage-to, #f6f1ff));
+  border: 1px solid var(--fm-stage-border, rgba(236, 190, 226, 0.7));
+  box-shadow: inset 0 2px 18px rgba(139, 92, 246, 0.08);
+}
+
+.character {
+  display: block;
+  animation: fashionFloat 5s ease-in-out infinite;
+}
+
+.fadeIn {
+  animation: fashionFadeIn 0.32s ease-out both;
+}
+
+@keyframes fashionFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes fashionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.colorCard,
+.colorCardSelected,
+.tabIdle,
+.tabActive,
+.optionIdle,
+.optionActive {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.colorCard:hover,
+.colorCardSelected {
+  transform: translateY(-2px);
+}
+
+.emptyDot {
+  background: transparent;
+}
+
+.progressBar,
+.progressTrack,
+.timerTrack,
+.primaryButton,
+.disabledButton,
+.ghostButton,
+.introStep,
+.summaryCard,
+.summaryCardAccent {
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character,
+  .fadeIn {
+    animation: none;
+  }
+
+  .colorCard:hover,
+  .colorCardSelected {
+    transform: none;
+  }
+}
+
+/* --- Koyu tema --- */
+
+.darkTheme.pageBackground {
+  background: radial-gradient(circle at 78% 0, #241a45 0, transparent 34%), linear-gradient(150deg, #0a1122, #060a16) !important;
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .panel {
+  border-color: var(--fm-border) !important;
+  background: var(--fm-panel) !important;
+  box-shadow: 0 26px 64px rgba(2, 6, 23, 0.6) !important;
+}
+
+.darkTheme .panelHeader {
+  border-color: var(--fm-border) !important;
+}
+
+.darkTheme .title {
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .subtitle,
+.darkTheme .mutedText,
+.darkTheme .sectionLabel,
+.darkTheme .optionHint,
+.darkTheme .summaryLabel,
+.darkTheme .compareTitle,
+.darkTheme .introText {
+  color: var(--fm-muted) !important;
+}
+
+.darkTheme .headerStat {
+  border-color: var(--fm-border) !important;
+  background: var(--fm-panel-2) !important;
+}
+
+.darkTheme .headerStatAccent {
+  border-color: var(--fm-violet) !important;
+  background: rgba(167, 139, 250, 0.16) !important;
+}
+
+.darkTheme .headerStatLabel {
+  color: var(--fm-violet) !important;
+}
+
+.darkTheme .headerStatValue,
+.darkTheme .optionTitle,
+.darkTheme .promptText,
+.darkTheme .colorLabel,
+.darkTheme .summaryValue,
+.darkTheme .introTitle,
+.darkTheme .slotResultLabel {
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .progressTrack,
+.darkTheme .timerTrack {
+  background: rgba(148, 163, 184, 0.22) !important;
+}
+
+.darkTheme .introCard {
+  border-color: var(--fm-border) !important;
+  background: linear-gradient(150deg, rgba(167, 139, 250, 0.14), rgba(244, 114, 182, 0.1)) !important;
+}
+
+.darkTheme .introStep {
+  background: rgba(15, 23, 42, 0.6) !important;
+}
+
+.darkTheme .introStep b {
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .optionIdle,
+.darkTheme .controlPanel,
+.darkTheme .colorCard,
+.darkTheme .summaryCard,
+.darkTheme .tabIdle,
+.darkTheme .ghostButton {
+  border-color: var(--fm-border) !important;
+  background: var(--fm-panel-2) !important;
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .optionActive,
+.darkTheme .colorCardSelected,
+.darkTheme .tabActive,
+.darkTheme .summaryCardAccent {
+  border-color: var(--fm-violet) !important;
+  background: rgba(167, 139, 250, 0.18) !important;
+  color: var(--fm-text) !important;
+}
+
+.darkTheme .disabledButton {
+  background: rgba(100, 116, 139, 0.45) !important;
+  color: rgba(226, 232, 240, 0.7) !important;
+}
+
+.darkTheme .banner {
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  background: rgba(251, 191, 36, 0.14) !important;
+}
+
+.darkTheme .bannerText {
+  color: var(--fm-amber) !important;
+}
+
+.darkTheme .resultPerfect {
+  border-color: rgba(74, 222, 128, 0.45) !important;
+  background: rgba(74, 222, 128, 0.12) !important;
+}
+
+.darkTheme .resultPerfect .resultTitle {
+  color: var(--fm-green) !important;
+}
+
+.darkTheme .resultPartial {
+  border-color: rgba(251, 191, 36, 0.45) !important;
+  background: rgba(251, 191, 36, 0.12) !important;
+}
+
+.darkTheme .resultPartial .resultTitle {
+  color: var(--fm-amber) !important;
+}
+
+.darkTheme .slotResultOk {
+  border-color: rgba(74, 222, 128, 0.4) !important;
+  background: rgba(74, 222, 128, 0.12) !important;
+}
+
+.darkTheme .slotResultBad {
+  border-color: rgba(251, 113, 133, 0.4) !important;
+  background: rgba(251, 113, 133, 0.12) !important;
+}
+
+.darkTheme .compareCorrect {
+  border-color: rgba(74, 222, 128, 0.42) !important;
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+
+.darkTheme .compareStudent {
+  border-color: rgba(167, 139, 250, 0.45) !important;
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+
+.darkTheme .performanceMessage {
+  color: var(--fm-pink) !important;
+}
+
+.darkTheme .primaryButton {
+  box-shadow: 0 14px 30px -14px rgba(167, 139, 250, 0.9) !important;
+}
+
+.darkTheme .emptyDot {
+  border-color: rgba(148, 163, 184, 0.7) !important;
+}

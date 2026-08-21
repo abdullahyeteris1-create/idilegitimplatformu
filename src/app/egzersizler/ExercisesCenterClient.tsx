@@ -273,6 +273,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         image: "/exercise-visuals/exercises/card-matching.svg",
         tags: ["Hafıza", "Akıl ve Zeka"],
       },
+      {
+        title: "Moda Hafızası",
+        description: "Karakterin kıyafet, çanta, ayakkabı ve aksesuar renklerini hatırla ve yeniden giydir.",
+        href: "/egzersizler/moda-hafizasi",
+        icon: "👗",
+        image: "/exercise-visuals/exercises/memory.svg",
+        tags: ["Hafıza", "Akıl ve Zeka"],
+      },
     ],
   },
   {
