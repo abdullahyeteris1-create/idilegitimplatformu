@@ -13,6 +13,7 @@ import {
   WORD_RACE_RESULT_EXERCISE_TYPE,
   type WordRaceFinishedPayload,
   type WordRaceLeaderboardEntryView,
+  type WordRaceLeaderboardGroupLabel,
 } from "@/lib/word-race/wordRaceBridge";
 
 const EXERCISE_TITLE = WORD_RACE_EXERCISE_TITLE;
@@ -72,23 +73,29 @@ export function WordRaceExerciseClient({
     if (!frame) return;
 
     let entries: WordRaceLeaderboardEntryView[] = [];
+    let groupLabel: WordRaceLeaderboardGroupLabel = "Sınıf";
 
     try {
       const response = await fetch("/api/student/word-race-leaderboard", {
         credentials: "same-origin",
         cache: "no-store",
       });
-      const payload = (await response.json()) as { ok?: boolean; entries?: unknown };
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        groupLabel?: unknown;
+        entries?: unknown;
+      };
 
       if (response.ok && payload.ok && Array.isArray(payload.entries)) {
         entries = payload.entries as WordRaceLeaderboardEntryView[];
+        groupLabel = payload.groupLabel === "Lise" ? "Lise" : "Sınıf";
       }
     } catch {
       // Siralama gosterilemezse oyun akisi bozulmaz; bolum bos gecilir.
     }
 
     frame.postMessage(
-      { source: WORD_RACE_HOST_MESSAGE_SOURCE, type: "leaderboard", entries },
+      { source: WORD_RACE_HOST_MESSAGE_SOURCE, type: "leaderboard", groupLabel, entries },
       "*",
     );
   }, []);

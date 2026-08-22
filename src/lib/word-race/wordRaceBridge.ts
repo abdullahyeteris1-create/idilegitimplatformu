@@ -12,9 +12,12 @@ export const WORD_RACE_HOST_MESSAGE_SOURCE = "idil-word-race-host";
 export type WordRaceLeaderboardEntryView = {
   rank: number;
   displayName: string;
+  classLabel?: string;
   score: number;
   isCurrentStudent: boolean;
 };
+
+export type WordRaceLeaderboardGroupLabel = "Sınıf" | "Lise";
 
 export const WORD_RACE_RESULT_EXERCISE_TYPE = "word-race";
 

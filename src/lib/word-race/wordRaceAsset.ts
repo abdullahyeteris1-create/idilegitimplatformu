@@ -85,6 +85,7 @@ const LEADERBOARD_BLOCK = `
   #idilWordRaceLeaderboard li.me { background: rgba(34,197,94,.14); }
   #idilWordRaceLeaderboard .r { width: 22px; color: var(--muted); font-variant-numeric: tabular-nums; }
   #idilWordRaceLeaderboard .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #idilWordRaceLeaderboard .g { color: var(--muted); font-size: 12px; white-space: nowrap; }
   #idilWordRaceLeaderboard .s { font-weight: 600; font-variant-numeric: tabular-nums; }
   #idilWordRaceLeaderboard .empty { color: var(--muted); font-size: 12.5px; margin: 0; }
 </style>
@@ -107,14 +108,14 @@ const LEADERBOARD_BLOCK = `
     return box;
   }
 
-  function render(entries) {
+  function render(entries, groupLabel) {
     var box = container();
     if (!box) return;
 
     box.textContent = "";
 
     var heading = document.createElement("h2");
-    heading.textContent = "Sınıf Sıralaması";
+    heading.textContent = groupLabel === "Lise" ? "Lise Sıralaması" : "Sınıf Sıralaması";
     box.appendChild(heading);
 
     if (!entries.length) {
@@ -145,6 +146,12 @@ const LEADERBOARD_BLOCK = `
 
       row.appendChild(rank);
       row.appendChild(name);
+      if (entry.classLabel) {
+        var grade = document.createElement("span");
+        grade.className = "g";
+        grade.textContent = String(entry.classLabel);
+        row.appendChild(grade);
+      }
       row.appendChild(score);
       list.appendChild(row);
     }
@@ -157,7 +164,10 @@ const LEADERBOARD_BLOCK = `
     var data = event.data;
     if (!data || data.source !== "${WORD_RACE_HOST_MESSAGE_SOURCE}" || data.type !== "leaderboard") return;
 
-    render(Array.isArray(data.entries) ? data.entries.slice(0, 10) : []);
+    render(
+      Array.isArray(data.entries) ? data.entries.slice(0, 10) : [],
+      data.groupLabel === "Lise" ? "Lise" : "Sınıf"
+    );
   });
 })();
 </script>

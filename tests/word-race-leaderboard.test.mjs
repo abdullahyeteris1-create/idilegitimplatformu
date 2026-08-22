@@ -4,15 +4,21 @@ import path from "node:path";
 import test from "node:test";
 
 /**
- * Sinif ici liderlik tablosu. En kritik iddia GIZLILIK: disari yalniz adin ilk
- * kelimesi ve skor cikar - soyad, tam ad, kullanici adi, ogrenci id'si veya
- * sinif adi asla client'a gonderilmez.
+ * Sinif grubu liderlik tablosu. En kritik iddia GIZLILIK: disari adin yalniz
+ * ilk kelimesi cikar; lise havuzunda ham profil degeri yerine sadece guvenli
+ * 9-12 sinif etiketi gosterilir.
  */
 
 const ROOT = process.cwd();
 const read = (relativePath) => readFile(path.join(ROOT, relativePath), "utf8");
 
-const { toDisplayName, WORD_RACE_LEADERBOARD_SIZE } = await import(
+const {
+  mapWordRaceLeaderboardEntries,
+  resolveWordRaceLeaderboardGroup,
+  toDisplayName,
+  WORD_RACE_HIGH_SCHOOL_CLASS_NAMES,
+  WORD_RACE_LEADERBOARD_SIZE,
+} = await import(
   "../src/lib/word-race/wordRaceLeaderboard.ts"
 );
 const { injectWordRaceResultBridge, readWordRaceGameHtml } = await import(
@@ -40,18 +46,78 @@ test("ilk 10 ile sinirli", () => {
   assert.equal(WORD_RACE_LEADERBOARD_SIZE, 10);
 });
 
-test("repository yalniz gorunen ad ve skor dondurur, sinifla sinirlar", async () => {
+test("9 ve 12. sinif ogrencileri ayni 9-12 Lise havuzunu kullanir", () => {
+  const expectedClasses = ["9", "10", "11", "12"];
+
+  assert.deepEqual(WORD_RACE_HIGH_SCHOOL_CLASS_NAMES, expectedClasses);
+  assert.deepEqual(resolveWordRaceLeaderboardGroup("9"), {
+    groupLabel: "Lise",
+    classNames: expectedClasses,
+    showClassLabel: true,
+  });
+  assert.deepEqual(resolveWordRaceLeaderboardGroup("12"), {
+    groupLabel: "Lise",
+    classNames: expectedClasses,
+    showClassLabel: true,
+  });
+});
+
+test("Lise havuzu dogru siralanir ve her ogrencinin gercek sinif etiketi korunur", () => {
+  const students = [
+    { id: "student-9", name: "Ayşe Yılmaz", class_name: "9" },
+    { id: "student-12", name: "Mehmet Demir", class_name: "12" },
+    { id: "student-10", name: "Ece Kaya", class_name: "10" },
+    { id: "student-11", name: "Can Çelik", class_name: "11" },
+  ];
+  const results = [
+    { student_id: "student-9", score: 2450 },
+    { student_id: "student-12", score: 2310 },
+    { student_id: "student-10", score: 2250 },
+    { student_id: "student-11", score: 2180 },
+    // Ogrenci basina en iyi skor davranisi korunur.
+    { student_id: "student-9", score: 1200 },
+  ];
+
+  assert.deepEqual(
+    mapWordRaceLeaderboardEntries(students, results, "student-11", true),
+    [
+      { rank: 1, displayName: "Ayşe", classLabel: "9. Sınıf", score: 2450, isCurrentStudent: false },
+      { rank: 2, displayName: "Mehmet", classLabel: "12. Sınıf", score: 2310, isCurrentStudent: false },
+      { rank: 3, displayName: "Ece", classLabel: "10. Sınıf", score: 2250, isCurrentStudent: false },
+      { rank: 4, displayName: "Can", classLabel: "11. Sınıf", score: 2180, isCurrentStudent: true },
+    ],
+  );
+});
+
+test("8. sinif Lise havuzuna girmez; ilk ve ortaokul birebir sinif davranisini korur", () => {
+  assert.deepEqual(resolveWordRaceLeaderboardGroup("8"), {
+    groupLabel: "Sınıf",
+    classNames: ["8"],
+    showClassLabel: false,
+  });
+
+  for (const className of ["2", "3", "5", "6", "6-A"]) {
+    assert.deepEqual(resolveWordRaceLeaderboardGroup(className), {
+      groupLabel: "Sınıf",
+      classNames: [className],
+      showClassLabel: false,
+    });
+  }
+});
+
+test("repository Lise icin backend IN, diger siniflar icin mevcut EQ filtresini kullanir", async () => {
   const source = await read("src/lib/word-race/wordRaceLeaderboard.ts");
 
   // Ogrenci basina en iyi skor - tek ogrenci listeyi dolduramaz.
   assert.match(source, /bestByStudent/);
-  // Karsilastirma sinif ici.
+  // Karsilastirma oturumdaki ogrencinin backend'de cozulmus grubuyla sinirlidir.
   assert.match(source, /class_name/);
-  assert.match(source, /\.eq\("class_name", className\)/);
-  // Donen nesnede yalniz bu dort alan var.
+  assert.match(source, /classmatesQuery\.in\("class_name", group\.classNames\)/);
+  assert.match(source, /classmatesQuery\.eq\("class_name", group\.classNames\[0\]\)/);
+  // Ogrenci id'si donmez; lise icin guvenli sinif etiketi eklenebilir.
   assert.match(source, /rank: index \+ 1/);
-  assert.match(source, /displayName: nameById\.get/);
-  assert.match(source, /isCurrentStudent: rowStudentId === studentId/);
+  assert.match(source, /displayName: profile\?\.displayName/);
+  assert.match(source, /isCurrentStudent: rowStudentId === currentStudentId/);
 });
 
 test("API route ogrenci oturumu dogrulamadan veri vermez", async () => {
@@ -70,6 +136,7 @@ test("liderlik bolumu oyunun sonuc ekranina enjekte edilir, prototip degismez", 
 
   assert.match(html, /idilWordRaceLeaderboard/);
   assert.match(html, /Sınıf Sıralaması/);
+  assert.match(html, /Lise Sıralaması/);
   // Sonuc ekraninin icine yerlesir.
   assert.match(html, /#veilOver \.sheet/);
   // Blok </body> ONCESINE eklenir; kapanis etiketi hala tek ve en sonda.
@@ -84,6 +151,7 @@ test("isimler textContent ile yazilir - enjekte edilen blokta innerHTML yok", as
   assert.doesNotMatch(block, /innerHTML/);
   assert.doesNotMatch(block, /insertAdjacentHTML/);
   assert.match(block, /name\.textContent = String\(entry\.displayName\)/);
+  assert.match(block, /grade\.textContent = String\(entry\.classLabel\)/);
 });
 
 test("iframe yalniz kendi ust penceresinden gelen siralama mesajini kabul eder", async () => {

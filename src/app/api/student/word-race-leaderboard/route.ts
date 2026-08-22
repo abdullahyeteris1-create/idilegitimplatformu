@@ -7,9 +7,9 @@ import { getWordRaceClassLeaderboard } from "@/lib/word-race/wordRaceLeaderboard
 export const runtime = "nodejs";
 
 /**
- * Kelime Yarisi sinif ici ilk 10 listesi. Yalniz oturumu dogrulanmis ogrenci
- * cagirabilir ve yanit KENDI sinifiyla sinirlidir; govdede yalniz gorunen ad
- * (adin ilk kelimesi) ve skor doner.
+ * Kelime Yarisi sinif grubu ilk 10 listesi. Yalniz oturumu dogrulanmis ogrenci
+ * cagirabilir. Lise ogrencileri 9-12 havuzunu, diger ogrenciler yalnizca kendi
+ * sinifini gorur; client hangi sinifi istedigini secemez.
  */
 export async function GET(request: NextRequest) {
   const access = await verifyStudentAccess(request);
@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const entries = await getWordRaceClassLeaderboard(access.studentId);
+  const leaderboard = await getWordRaceClassLeaderboard(access.studentId);
 
   return NextResponse.json(
-    { ok: true, entries },
+    { ok: true, ...leaderboard },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
