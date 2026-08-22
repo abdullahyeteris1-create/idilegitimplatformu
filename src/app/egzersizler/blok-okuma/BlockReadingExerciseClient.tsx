@@ -26,7 +26,7 @@ import {
   pickEducationProgramSettingOption,
 } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
-import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
+import { getTextCategories, loadActiveReadingPracticeTextItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
@@ -197,7 +197,7 @@ export function BlockReadingExerciseClient({
         setIsLoadingTexts(true);
         setTextLoadError(null);
 
-        const result = await loadActiveTextLibraryItems();
+        const result = await loadActiveReadingPracticeTextItems();
         const activeTexts = result.items.map((item) => ({
           id: item.id,
           title: item.title,

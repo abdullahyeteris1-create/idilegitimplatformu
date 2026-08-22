@@ -17,7 +17,7 @@ import {
 import { getResolvedCurrentUser } from "@/lib/auth/auth";
 import { normalizeReadingSpeed } from "@/lib/exercises/timing";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
-import { getTextCategories, loadActiveTextLibraryItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
+import { getTextCategories, loadActiveReadingPracticeTextItems, type TextLibraryLoadResult } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
@@ -112,7 +112,7 @@ export function FocusedReadingExerciseClient() {
         setIsLoadingTexts(true);
         setTextLoadError(null);
 
-        const result = await loadActiveTextLibraryItems();
+        const result = await loadActiveReadingPracticeTextItems();
         const activeTexts = result.items.map((item) => ({
           id: item.id,
           title: item.title,

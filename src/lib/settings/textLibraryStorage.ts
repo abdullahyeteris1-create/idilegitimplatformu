@@ -1,8 +1,14 @@
 import { supabase } from "@/lib/supabase/client";
+import {
+  COMPREHENSION_QUESTIONS_RELATION,
+  filterReadingPracticeTextRows,
+} from "@/lib/settings/readingPracticeTextPool";
 
 export const TEXT_LIBRARY_STORAGE_KEY = "idil_text_library";
 export const TEXT_CATEGORY_STORAGE_KEY = "idil_text_categories";
 const TEXT_LIBRARY_TABLE = process.env.NEXT_PUBLIC_SUPABASE_TEXT_LIBRARY_TABLE ?? "text_library";
+const QUESTION_LIBRARY_TABLE = process.env.NEXT_PUBLIC_SUPABASE_QUESTION_LIBRARY_TABLE ?? "question_library";
+const TEXT_LIBRARY_SELECT_COLUMNS = "id,title,category,content,is_active,created_at,updated_at";
 const LEGACY_TEXT_LIBRARY_STORAGE_KEYS = [
   TEXT_LIBRARY_STORAGE_KEY,
   "textLibrary",
@@ -542,7 +548,10 @@ function logTextLibrarySupabaseError(action: string, error: { code?: string }): 
   });
 }
 
-async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLibraryLoadResult | null> {
+async function fetchTextLibraryFromSupabase(
+  onlyActive: boolean,
+  excludeComprehensionTexts = false,
+): Promise<TextLibraryLoadResult | null> {
   if (!supabase) {
     return null;
   }
@@ -557,10 +566,17 @@ async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLi
     renderStage: "fetch",
   });
 
-  let query = supabase.from(TEXT_LIBRARY_TABLE).select("id,title,category,content,is_active,created_at,updated_at").order("updated_at", { ascending: false });
+  const selectColumns = excludeComprehensionTexts
+    ? `${TEXT_LIBRARY_SELECT_COLUMNS},${COMPREHENSION_QUESTIONS_RELATION}:${QUESTION_LIBRARY_TABLE}(id)`
+    : TEXT_LIBRARY_SELECT_COLUMNS;
+  let query = supabase.from(TEXT_LIBRARY_TABLE).select(selectColumns).order("updated_at", { ascending: false });
 
   if (onlyActive) {
     query = query.eq("is_active", true);
+  }
+
+  if (excludeComprehensionTexts) {
+    query = query.is(COMPREHENSION_QUESTIONS_RELATION, null);
   }
 
   const { data, error } = await query;
@@ -576,7 +592,10 @@ async function fetchTextLibraryFromSupabase(onlyActive: boolean): Promise<TextLi
     };
   }
 
-  const items = data.map((row) => mapSupabaseRowToTextItem(row as Record<string, unknown>));
+  const rows = excludeComprehensionTexts
+    ? filterReadingPracticeTextRows(data as unknown as Record<string, unknown>[])
+    : data;
+  const items = rows.map((row) => mapSupabaseRowToTextItem(row as Record<string, unknown>));
   logSafeTextLibraryDiagnostic({
     stage: "fetch-complete",
     fetchStarted: "true",
@@ -811,6 +830,39 @@ export async function loadActiveTextLibraryItems(): Promise<TextLibraryLoadResul
       localStorageCount: localActiveItems.length,
       activeFilter: "is_active=true",
       error: "Supabase client yok",
+    },
+  };
+}
+
+export async function loadActiveReadingPracticeTextItems(): Promise<TextLibraryLoadResult> {
+  resetTextLibraryStorageDiagnostics();
+  const localActiveItems = getActiveTextLibraryItems();
+  const remoteResult = await fetchTextLibraryFromSupabase(true, true);
+  const activeFilter = "is_active=true;comprehension_questions=is.null";
+
+  if (!remoteResult) {
+    return {
+      items: [],
+      error: "Metin çalışma havuzu yüklenemedi. Supabase istemcisi kullanılamıyor.",
+      diagnostics: {
+        source: "none",
+        supabaseCount: 0,
+        localStorageCount: localActiveItems.length,
+        activeFilter,
+        error: "Supabase client yok",
+      },
+    };
+  }
+
+  return {
+    items: remoteResult.error ? [] : remoteResult.items,
+    error: remoteResult.error,
+    diagnostics: {
+      source: remoteResult.error ? "none" : "supabase",
+      supabaseCount: remoteResult.items.length,
+      localStorageCount: localActiveItems.length,
+      activeFilter,
+      error: remoteResult.error,
     },
   };
 }

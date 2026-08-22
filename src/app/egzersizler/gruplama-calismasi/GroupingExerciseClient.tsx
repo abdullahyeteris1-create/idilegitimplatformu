@@ -22,7 +22,7 @@ import {
   pickEducationProgramSettingOption,
 } from "@/lib/education-programs/exerciseSettingsSchemas";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
-import { getTextCategories, loadActiveTextLibraryItems } from "@/lib/settings/textLibraryStorage";
+import { getTextCategories, loadActiveReadingPracticeTextItems } from "@/lib/settings/textLibraryStorage";
 import { getDisplayTextTitle, sortByCategoryAndTitle } from "@/lib/text-library/sorting";
 import {
   FullscreenExerciseIntro,
@@ -172,7 +172,7 @@ export function GroupingExerciseClient({
     void (async () => {
       setIsTeacher(getResolvedCurrentUser()?.role === "teacher");
 
-      const loaded = await loadActiveTextLibraryItems();
+      const loaded = await loadActiveReadingPracticeTextItems();
       const items = loaded.items.map((item) => ({
         id: item.id,
         title: item.title,
