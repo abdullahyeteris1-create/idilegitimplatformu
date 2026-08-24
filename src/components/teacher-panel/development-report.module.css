@@ -127,3 +127,163 @@
 @media (prefers-reduced-motion: reduce) {
   .metricCard, .chartCard, .profileCard { transition: none; }
 }
+
+/* PDF export geometry: 190mm content width with 10mm A4 side margins. */
+.pdfMode {
+  width: 718px;
+  max-width: 718px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.pdfMode .reportPageOne,
+.pdfMode .reportPageTwo {
+  width: 718px;
+  max-width: 718px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.pdfMode .reportPageOne {
+  height: auto;
+  min-height: 0;
+}
+
+.pdfMode .reportPageTwo {
+  min-height: 0;
+}
+
+.pdfMode .chartGrid,
+.pdfMode .metricGrid,
+.pdfMode .profileCard,
+.pdfMode .assessmentCard,
+.pdfMode .tableWrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pdfMode .chartCard {
+  min-width: 0;
+}
+
+.pdfMode .chartSvg {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pdfMode .lessonSection {
+  margin-top: 12px;
+}
+
+.pdfMode .tableWrap {
+  overflow: visible;
+}
+
+.pdfMode .tableWrap table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  font-size: 9px;
+}
+
+.pdfMode .tableWrap th,
+.pdfMode .tableWrap td {
+  padding: 5px 6px;
+  line-height: 1.2;
+}
+
+.pdfMode .lessonNumber {
+  width: 18px;
+  height: 18px;
+}
+
+.pdfMode .detailGrid {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pdfMode .detailCard {
+  min-height: 112px;
+  padding: 11px 13px;
+}
+
+.pdfMode .comment {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.pdfMode .recommendationList {
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pdfMode .recommendationList li {
+  font-size: 9px;
+}
+
+.pdfMode .footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  font-size: 9px;
+}
+
+.pdfMode .footer span:nth-last-child(2) {
+  margin-left: 0;
+}
+
+.pdfMode .metricCard,
+.pdfMode .profileCard,
+.pdfMode .chartCard,
+.pdfMode .assessmentCard,
+.pdfMode .detailCard,
+.pdfMode .tableWrap tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.pdfMode .metricCard {
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 6px;
+  padding: 8px;
+}
+
+.pdfMode .metricIcon {
+  width: 26px;
+  height: 26px;
+  font-size: 17px;
+}
+
+.pdfMode .metricCard p {
+  margin-bottom: 4px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.pdfMode .metricValues {
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.pdfMode .metricValues strong {
+  font-size: 16px;
+}
+
+.pdfMode .metricValues span {
+  font-size: 13px;
+}
+
+.pdfMode .metricDelta {
+  margin-top: 3px;
+  padding: 4px 8px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.pdfMode .sparkline {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 50px;
+  height: 22px;
+}

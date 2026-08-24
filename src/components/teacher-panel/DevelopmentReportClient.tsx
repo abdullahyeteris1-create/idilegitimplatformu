@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import html2pdf from "html2pdf.js";
 import type { DevelopmentReport, DevelopmentReportDailyAverage, DevelopmentReportLesson, DevelopmentMetric } from "@/lib/reports/developmentReportTypes";
 import { calculateDailyDevelopmentAverages } from "@/lib/reports/developmentReportCalculations";
 import styles from "./development-report.module.css";
@@ -65,6 +64,10 @@ const CHART_COLORS: Record<ChartTone, { line: string; fill: string }> = {
   green: { line: "#059669", fill: "rgba(5,150,105,0.12)" },
   purple: { line: "#7c3aed", fill: "rgba(124,58,237,0.12)" },
 };
+
+const PDF_MARGIN_MM = 10;
+const PDF_CONTENT_WIDTH_PX = 718;
+const PDF_RENDER_VIEWPORT_WIDTH_PX = 1000;
 
 function getLabelIndexes(length: number): Set<number> {
   if (length <= 6) return new Set(Array.from({ length }, (_, index) => index));
@@ -174,9 +177,9 @@ export default function DevelopmentReportClient({ report }: { report: Developmen
     const printControls = clone.querySelectorAll<HTMLElement>(".noPrint");
     printControls.forEach((element) => element.remove());
     clone.querySelectorAll<HTMLElement>(".printOnly").forEach((element) => { element.style.display = "block"; });
-    clone.classList.add(styles.pdfMode); clone.style.width = "794px"; clone.style.maxWidth = "794px"; clone.style.minWidth = "0"; clone.style.boxSizing = "border-box"; clone.style.margin = "0"; clone.style.boxShadow = "none"; clone.style.background = "white"; clone.style.padding = "0";
-    const host = document.createElement("div"); host.setAttribute("aria-hidden", "true"); host.style.position = "fixed"; host.style.left = "-100000px"; host.style.top = "0"; host.style.width = "794px"; host.style.maxWidth = "794px"; host.style.overflow = "hidden"; host.style.background = "white"; host.appendChild(clone); document.body.appendChild(host);
-    try { await html2pdf().set({ margin: [8, 8, 8, 8], filename: `${fileSafeName(report.student.name)}-gelisim-raporu.pdf`, image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false }, jsPDF: { unit: "mm", format: "a4", orientation: "portrait" } }).from(clone).save(); } catch { setPdfError("PDF hazırlanırken bir hata oluştu. Lütfen tekrar deneyin."); } finally { host.remove(); setIsPdfPreparing(false); }
+    clone.classList.add(styles.pdfMode); clone.style.width = `${PDF_CONTENT_WIDTH_PX}px`; clone.style.maxWidth = `${PDF_CONTENT_WIDTH_PX}px`; clone.style.minWidth = "0"; clone.style.boxSizing = "border-box"; clone.style.margin = "0"; clone.style.boxShadow = "none"; clone.style.background = "white"; clone.style.padding = "0";
+    const host = document.createElement("div"); host.setAttribute("aria-hidden", "true"); host.style.position = "fixed"; host.style.left = "-100000px"; host.style.top = "0"; host.style.width = `${PDF_CONTENT_WIDTH_PX}px`; host.style.maxWidth = `${PDF_CONTENT_WIDTH_PX}px`; host.style.overflow = "visible"; host.style.background = "white"; host.appendChild(clone); document.body.appendChild(host);
+    try { const { default: html2pdf } = await import("html2pdf.js"); await html2pdf().set({ margin: [PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_MARGIN_MM], filename: `${fileSafeName(report.student.name)}-gelisim-raporu.pdf`, image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false, windowWidth: PDF_RENDER_VIEWPORT_WIDTH_PX }, jsPDF: { unit: "mm", format: "a4", orientation: "portrait" } }).from(clone).save(); } catch { setPdfError("PDF hazırlanırken bir hata oluştu. Lütfen tekrar deneyin."); } finally { host.remove(); setIsPdfPreparing(false); }
   };
 
   return <main className={styles.page}><div className={`${styles.toolbar} noPrint`}><a href="/ogretmen/idil-panel/ders-kayitlari">← Ders Kayıtları</a><div className={styles.toolbarActions}><button type="button" onClick={() => window.print()}>Yazdır / PDF Olarak Kaydet</button><button type="button" onClick={downloadPdf} disabled={isPdfPreparing}>{isPdfPreparing ? "PDF hazırlanıyor" : "↓ PDF İndir"}</button></div></div>{pdfError ? <p role="alert" className={`${styles.pdfError} noPrint`}>{pdfError}</p> : null}
