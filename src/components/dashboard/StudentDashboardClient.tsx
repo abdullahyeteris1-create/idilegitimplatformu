@@ -734,27 +734,6 @@ export function StudentDashboardClient() {
           </div>
         </section>
 
-        <section
-          aria-labelledby="student-guide-title"
-          className="group rounded-[24px] border border-red-100 bg-white p-4 shadow-sm transition-all duration-300 hover:border-red-200 hover:shadow-md md:p-5"
-        >
-          <a
-            href="/belgeler/ogrenci-kullanim-rehberi.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex min-h-[72px] items-center gap-4 rounded-2xl border border-red-100 bg-gradient-to-r from-red-50 via-white to-orange-50 px-4 py-3 transition-colors duration-200 hover:border-red-200 hover:bg-red-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 md:px-5"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700 transition-colors duration-200 group-hover:bg-red-200" aria-hidden="true">
-              <DashboardIcon name="book" className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span id="student-guide-title" className="block text-base font-black text-slate-950 md:text-lg">Kullanım Rehberi</span>
-              <span className="mt-1 block text-sm text-slate-600">Platformu nasıl kullanacağını öğren</span>
-            </span>
-            <DashboardIcon name="arrow-right" className="h-5 w-5 shrink-0 text-red-600 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </a>
-        </section>
-
         <section aria-labelledby="dashboard-stats-title">
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
