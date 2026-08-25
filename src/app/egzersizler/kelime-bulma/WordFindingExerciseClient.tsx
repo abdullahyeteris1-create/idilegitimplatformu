@@ -215,7 +215,7 @@ export function WordFindingExerciseClient({
     const finalDuration = Math.max(1, elapsedSeconds || configuredDurationSeconds);
     const payload = {
       exerciseType: "word-finding",
-      exerciseTitle: "Kelime Bulma Calismasi",
+      exerciseTitle: "Kelime Bulma Çalışması",
       durationSeconds: finalDuration,
       correctCount,
       wrongCount,
@@ -226,7 +226,7 @@ export function WordFindingExerciseClient({
         completedRounds,
         totalClicks: finalTotalClicks,
         net: finalNet,
-        scoreRule: "+10 dogru, -5 yanlis",
+        scoreRule: "+10 doğru, -5 yanlış",
       },
     } satisfies SecureExerciseResultInput;
     const nextResult = {
@@ -399,7 +399,7 @@ export function WordFindingExerciseClient({
           gizlenir. */}
       {isAssignmentMode || isEducationProgramMode ? null : (
         <label className="flex min-w-0 flex-col gap-1">
-          <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Sure</span>
+          <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 ${styles.settingsLabel}`}>Süre</span>
           <select
             value={durationMinutes}
             onChange={(event) => {
@@ -440,7 +440,7 @@ export function WordFindingExerciseClient({
       <div className="grid gap-2 sm:grid-cols-3 lg:col-span-3">
         {phase === "ready" ? (
           <button type="button" className={`${FULLSCREEN_PRIMARY_BUTTON_CLASS} ${styles.primaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleBeginPlay}>
-            Baslat
+            Başlat
           </button>
         ) : (
           <>
@@ -448,7 +448,7 @@ export function WordFindingExerciseClient({
               {isPaused ? "Devam Et" : "Duraklat"}
             </button>
             <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleRestart}>
-              Yeniden Baslat
+              Yeniden Başlat
             </button>
             <button type="button" className={`${FULLSCREEN_SECONDARY_BUTTON_CLASS} ${styles.secondaryButtonOverride}`} style={FULLSCREEN_TOUCH_STYLE} onClick={handleFinishEarly}>
               Bitir
@@ -463,9 +463,9 @@ export function WordFindingExerciseClient({
     return (
       <div className={themeRootClassName}>
         <FullscreenExerciseIntro
-          title="Kelime Bulma Calismasi"
-          description="Paragraf icindeki hedef kelimeyi hizlica bul ve tikla."
-          buttonLabel="Egitime Basla"
+          title="Kelime Bulma Çalışması"
+          description="Paragraf içindeki hedef kelimeyi hızlıca bul ve tıkla."
+          buttonLabel="Eğitime Başla"
           onStart={handleStartIntro}
         />
       </div>
@@ -476,20 +476,20 @@ export function WordFindingExerciseClient({
     return (
       <div className={themeRootClassName}>
         <FullscreenExerciseShell
-          title="Kelime Bulma Calismasi"
-          subtitle="Hazirlik modu"
+          title="Kelime Bulma Çalışması"
+          subtitle="Hazırlık modu"
           stats={[
-            { label: "Sure", value: `${durationMinutes} dk`, tone: "brand" },
+            { label: "Süre", value: `${durationMinutes} dk`, tone: "brand" },
             { label: "Hedef", value: targetWordsPerText },
           ]}
           stageClassName={`fx-slide-up flex min-h-[320px] w-full flex-col items-center justify-center gap-4 rounded-[28px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,248,246,0.9)_100%)] px-4 py-5 text-center shadow-[0_18px_56px_rgba(185,28,28,0.11)] backdrop-blur md:min-h-[380px] ${styles.stageOverride}`}
           footer={footerControls}
         >
           <div>
-            <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>Hazirlik</p>
-            <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>Ayarlarini sec, hazir oldugunda baslat.</h2>
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.22em] text-red-700 ${styles.introEyebrow}`}>Hazırlık</p>
+            <h2 className={`mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-4xl ${styles.introTitle}`}>Ayarlarını seç, hazır olduğunda başlat.</h2>
             <p className={`mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-500 md:text-base ${styles.introBody}`}>
-              Sureyi ve bir paragrafta bulunacak hedef kelime sayisini sec. Baslat dediginde sure islemeye baslar.
+              Süreyi ve bir paragrafta bulunacak hedef kelime sayısını seç. Başlat dediğinde süre işlemeye başlar.
             </p>
           </div>
         </FullscreenExerciseShell>
@@ -502,7 +502,7 @@ export function WordFindingExerciseClient({
       <div className={themeRootClassName}>
         <section className={`idil-card mx-auto w-full max-w-5xl p-4 md:p-6 ${styles.resultCardOverride}`}>
           <h2 className="text-2xl font-bold">Kelime Bulma Sonucu</h2>
-          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>{saveStatus === "success" ? "Calisma tamamlandi." : saveMessage}</p>
+          <p className={`mt-1 text-sm text-[var(--muted)] ${styles.resultMuted}`}>{saveStatus === "success" ? "Çalışma tamamlandı." : saveMessage}</p>
           {saveStatus !== "idle" ? <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${saveStatus === "error" || saveMessage.includes("görev") ? `border-red-200 bg-red-50 text-red-800 ${styles.noticeError}` : `border-blue-200 bg-blue-50 text-blue-800 ${styles.noticeInfo}`}`}><p>{saveMessage}</p>{saveStatus === "error" ? <button type="button" className="mt-2 min-h-11 rounded-xl bg-red-700 px-4 text-white" onClick={() => pendingResultRef.current && void persistResult(pendingResultRef.current)}>Yeniden Dene</button> : null}</div> : null}
           {completionStatus.state !== "idle" ? (
             <div className={`mt-3 rounded-xl border px-3 py-2 text-sm font-semibold ${completionStatus.state === "error" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-200 bg-blue-50 text-blue-800"}`}>
@@ -517,11 +517,11 @@ export function WordFindingExerciseClient({
 
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
-              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Dogru</p>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Doğru</p>
               <p className="mt-2 text-3xl font-extrabold text-[var(--ok)]">{result.correctCount}</p>
             </article>
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
-              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Yanlis</p>
+              <p className={`text-xs uppercase tracking-[0.1em] text-slate-500 ${styles.resultStatLabel}`}>Yanlış</p>
               <p className="mt-2 text-3xl font-extrabold text-[var(--bad)]">{result.wrongCount}</p>
             </article>
             <article className={`rounded-2xl border border-red-100 bg-red-50 p-4 text-center ${styles.resultStatTile}`}>
@@ -539,15 +539,15 @@ export function WordFindingExerciseClient({
           </div>
 
           <div className={`mt-6 rounded-2xl border border-red-100 bg-white p-4 text-sm ${styles.resultDetailCard}`}>
-            <p><strong>Toplam Sure:</strong> {formatDuration(result.durationSeconds)}</p>
-            <p className="mt-1"><strong>Toplam Tiklama:</strong> {result.totalClicks}</p>
-            <p className="mt-1"><strong>Basari:</strong> {result.successRate}%</p>
-            <p className="mt-1"><strong>Puanlama:</strong> +10 dogru, -5 yanlis</p>
+            <p><strong>Toplam Süre:</strong> {formatDuration(result.durationSeconds)}</p>
+            <p className="mt-1"><strong>Toplam Tıklama:</strong> {result.totalClicks}</p>
+            <p className="mt-1"><strong>Başarı:</strong> {result.successRate}%</p>
+            <p className="mt-1"><strong>Puanlama:</strong> +10 doğru, -5 yanlış</p>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button type="button" disabled={saveStatus !== "success"} className={ACTION_BUTTON_CLASS} style={TOUCH_STYLE} onClick={handleRestart}>
-              Yeniden Baslat
+              Yeniden Başlat
             </button>
             <button
               type="button"
@@ -577,7 +577,7 @@ export function WordFindingExerciseClient({
   return (
     <div className={themeRootClassName}>
       <FullscreenExerciseShell
-        title="Kelime Bulma Calismasi"
+        title="Kelime Bulma Çalışması"
         subtitle={selectedText.title}
         stats={stats}
         finishButton={
@@ -619,7 +619,7 @@ export function WordFindingExerciseClient({
           </div>
 
           {isPaused ? (
-            <p className={`mt-4 text-sm font-semibold text-red-700 ${styles.pausedText}`}>Duraklatildi. Devam Et ile kaldigin yerden surdur.</p>
+            <p className={`mt-4 text-sm font-semibold text-red-700 ${styles.pausedText}`}>Duraklatıldı. Devam Et ile kaldığın yerden sürdür.</p>
           ) : null}
         </div>
       </FullscreenExerciseShell>

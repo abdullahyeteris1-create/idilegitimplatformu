@@ -8,26 +8,26 @@ export type WordFindingText = {
 export const WORD_FINDING_TEXTS: WordFindingText[] = [
   {
     id: "gunluk-ritim",
-    title: "Gunluk Ritim",
+    title: "Günlük Ritim",
     category: "Genel",
-    text: "Her sabah ayni saatte uyanirim ve kisa bir esneme yaparim. Pencereyi acinca temiz hava odaya dolar. Masamin uzerindeki kitap, kalem ve defter gunun ilk calismasini bekler. Kahvaltida zeytin, peynir ve sicak cay olur. Sonra okul cantami kontrol eder, eksik bir sey kalmadigindan emin olurum.",
+    text: "Her sabah aynı saatte uyanırım ve kısa bir esneme yaparım. Pencereyi açınca temiz hava odaya dolar. Masamın üzerindeki kitap, kalem ve defter günün ilk çalışmasını bekler. Kahvaltıda zeytin, peynir ve sıcak çay olur. Sonra okul çantamı kontrol eder, eksik bir şey kalmadığından emin olurum.",
   },
   {
     id: "orman-yuruyusu",
-    title: "Orman Yuruyusu",
-    category: "Doga",
-    text: "Ormanda yururken yapraklarin arasindan gelen isik yolu aydinlatir. Kus sesleri dallarin arasinda yankilanir ve rüzgar agaclarin tepesinde hafifce dolasir. Patikanin kenarinda kucuk bir dere akar. Cocuklar dere kenarinda taslari inceler, ogretmenleri ise orman hakkinda sakin bir hikaye anlatir.",
+    title: "Orman Yürüyüşü",
+    category: "Doğa",
+    text: "Ormanda yürürken yaprakların arasından gelen ışık yolu aydınlatır. Kuş sesleri dalların arasında yankılanır ve rüzgâr ağaçların tepesinde hafifçe dolaşır. Patikanın kenarında küçük bir dere akar. Çocuklar dere kenarında taşları inceler, öğretmenleri ise orman hakkında sakin bir hikâye anlatır.",
   },
   {
     id: "kutuphane",
-    title: "Kutuphane Saati",
+    title: "Kütüphane Saati",
     category: "Okul",
-    text: "Kutuphane sessiz ve aydinlik bir calisma alanidir. Raflarda romanlar, dergiler, ansiklopediler ve renkli kapakli kitaplar bulunur. Ogrenciler aradiklari bilgiyi bulmak icin once kataloglara bakar. Sonra masaya oturup not alir, onemli cumlelerin altini cizer ve okuduklarini arkadaslariyla paylasir.",
+    text: "Kütüphane sessiz ve aydınlık bir çalışma alanıdır. Raflarda romanlar, dergiler, ansiklopediler ve renkli kapaklı kitaplar bulunur. Öğrenciler aradıkları bilgiyi bulmak için önce kataloglara bakar. Sonra masaya oturup not alır, önemli cümlelerin altını çizer ve okuduklarını arkadaşlarıyla paylaşır.",
   },
   {
     id: "bilim-atolyesi",
-    title: "Bilim Atolyesi",
+    title: "Bilim Atölyesi",
     category: "Bilim",
-    text: "Bilim atolyesinde ogrenciler merak ettikleri sorulara deneylerle cevap arar. Masalarda mikroskop, cetvel, renkli kartlar ve kucuk deney kaplari vardir. Her grup once tahminini yazar, sonra sonucu dikkatle gozlemler. Basarili bir deney icin sabir, dikkat ve duzenli not tutmak cok onemlidir.",
+    text: "Bilim atölyesinde öğrenciler merak ettikleri sorulara deneylerle cevap arar. Masalarda mikroskop, cetvel, renkli kartlar ve küçük deney kapları vardır. Her grup önce tahminini yazar, sonra sonucu dikkatle gözlemler. Başarılı bir deney için sabır, dikkat ve düzenli not tutmak çok önemlidir.",
   },
 ];
