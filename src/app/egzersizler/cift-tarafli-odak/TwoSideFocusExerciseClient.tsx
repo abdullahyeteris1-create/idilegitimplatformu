@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ExerciseFullscreenShell from "@/components/exercises/ExerciseFullscreenShell";
 import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
 import { useIdilTheme } from "@/components/theme/IdilThemeProvider";
@@ -182,6 +183,7 @@ export function TwoSideFocusExerciseClient({
   educationProgramLaunch?: EducationProgramExerciseLaunchProps;
   initialWordSets?: TwoSideFocusStudentWordSet[];
 }) {
+  const router = useRouter();
   const { theme } = useIdilTheme();
   const isLight = theme === "light";
   const themeRootClassName = [styles.themeRoot, isLight ? styles.lightTheme : styles.darkTheme].join(" ");
@@ -234,6 +236,7 @@ export function TwoSideFocusExerciseClient({
   const [freeSpeed, setFreeSpeed] = useState<SpeedOption>(DEFAULT_SPEED);
   const speed = controlledSpeed ?? freeSpeed;
   const [isRunning, setIsRunning] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   useEducationProgramExerciseRunning(isEducationProgramMode && isRunning);
   const [roundData, setRoundData] = useState<RoundData>(() => createRound(initialLevel, wordSets));
 
@@ -253,6 +256,8 @@ export function TwoSideFocusExerciseClient({
   const answerLockedRef = useRef(false);
   const timeoutRef = useRef<number | null>(null);
   const hasFinalizedRef = useRef(false);
+  const accumulatedActiveMsRef = useRef(0);
+  const lastResumedAtRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
@@ -285,7 +290,12 @@ export function TwoSideFocusExerciseClient({
             ? "Sonuç kaydedildi ancak görev tamamlanamadı."
             : "Sonuç başarıyla kaydedildi.",
         );
-        await completeTaskAfterResultSave();
+        const completionOk = await completeTaskAfterResultSave();
+        if (saved.assignmentCompletionStatus !== "failed" && completionOk) {
+          router.push(
+            `/sonuc?exerciseType=${encodeURIComponent(payload.exerciseType)}&correct=${payload.correctCount}&wrong=${payload.wrongCount}&successRate=${payload.successRate}&score=${payload.score}`,
+          );
+        }
       } catch {
         setSaveStatus("error");
         setSaveMessage("Sonuç kaydedilemedi. Lütfen tekrar deneyin.");
@@ -293,7 +303,7 @@ export function TwoSideFocusExerciseClient({
         saveInFlightRef.current = false;
       }
     },
-    [completeTaskAfterResultSave],
+    [completeTaskAfterResultSave, router],
   );
 
   // Egitim Programi/Odev modunda sure dogal olarak 0'a indiginde TEK sefer
@@ -307,8 +317,17 @@ export function TwoSideFocusExerciseClient({
     clearRoundTimeout();
     setIsRunning(false);
 
+    if (lastResumedAtRef.current !== null) {
+      accumulatedActiveMsRef.current += Date.now() - lastResumedAtRef.current;
+      lastResumedAtRef.current = null;
+    }
+
+    const durationSeconds = isTimedMode
+      ? Math.max(1, elapsedSeconds)
+      : Math.max(1, Math.round(accumulatedActiveMsRef.current / 1000));
+
     const payload = buildTwoSideFocusResultPayload({
-      durationSeconds: resolvedDurationSeconds,
+      durationSeconds,
       correctCount,
       wrongCount,
     }) satisfies SecureExerciseResultInput;
@@ -316,10 +335,10 @@ export function TwoSideFocusExerciseClient({
     pendingResultRef.current = payload;
     setFeedback({
       type: "info",
-      message: "Çalışma süresi doldu. Sonuç kaydediliyor...",
+      message: "Çalışma bitiriliyor. Sonuç kaydediliyor...",
     });
     void persistResult(payload);
-  }, [clearRoundTimeout, correctCount, persistResult, resolvedDurationSeconds, wrongCount]);
+  }, [clearRoundTimeout, correctCount, elapsedSeconds, isTimedMode, persistResult, wrongCount]);
 
   const createNextRound = useCallback(
     (nextLevel = level) => {
@@ -349,6 +368,9 @@ export function TwoSideFocusExerciseClient({
       setIsRunning(false);
       setCorrectCount(0);
       setWrongCount(0);
+      setHasStarted(false);
+      accumulatedActiveMsRef.current = 0;
+      lastResumedAtRef.current = null;
       setRoundData(createRound(nextLevel, wordSets));
       answerLockedRef.current = false;
       setFeedback({
@@ -543,6 +565,8 @@ export function TwoSideFocusExerciseClient({
   }, [handleAnswer]);
 
   const handleStartStop = () => {
+    if (saveStatus !== "idle") return;
+
     // Sure dolduysa (Egitim Programi/Odev modunda) yeniden baslatilamaz -
     // ogrenci "Yeniden Başlat" ile acikca sifirlamadan tekrar oynayamaz.
     if (isTimeUp && !isRunning) {
@@ -554,11 +578,17 @@ export function TwoSideFocusExerciseClient({
     setIsRunning(nextRunning);
 
     if (nextRunning) {
+      setHasStarted(true);
+      lastResumedAtRef.current = Date.now();
       setFeedback({
         type: "info",
         message: "Çalışma başladı. Aynıysa Sol, farklıysa Sağ.",
       });
     } else {
+      if (lastResumedAtRef.current !== null) {
+        accumulatedActiveMsRef.current += Date.now() - lastResumedAtRef.current;
+        lastResumedAtRef.current = null;
+      }
       clearRoundTimeout();
       setFeedback({
         type: "info",
@@ -577,6 +607,9 @@ export function TwoSideFocusExerciseClient({
 
   const handleReset = () => {
     setIsRunning(false);
+    setHasStarted(false);
+    accumulatedActiveMsRef.current = 0;
+    lastResumedAtRef.current = null;
     resetLevelStats();
     setRoundData(createRound(level, wordSets));
     setElapsedSeconds(0);
@@ -596,6 +629,8 @@ export function TwoSideFocusExerciseClient({
     setFreeSpeed(clampSpeed(value) as SpeedOption);
   };
 
+  const canFinish = isRunning || hasStarted;
+
   return (
     <div className={themeRootClassName}>
       <ExerciseFullscreenShell
@@ -608,7 +643,7 @@ export function TwoSideFocusExerciseClient({
             <label className="grid gap-1 text-xs font-bold"><span className={styles.settingsLabel}>Hız: {speed} ms</span>{isSpeedLocked ? <select value={speed} disabled className="min-h-9 rounded-xl border border-slate-300 bg-slate-100 px-2 text-xs text-slate-500">{(isEducationProgramMode ? EDUCATION_PROGRAM_SPEED_OPTIONS : SPEED_OPTIONS).map((value) => <option key={value} value={value}>{value} ms</option>)}</select> : <input type="range" min={500} max={5000} step={100} value={speed} onChange={(event) => handleSpeedChange(Number(event.target.value))} className="h-2" />}</label>
           </div>
         )}
-        footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} disabled={isTimeUp && !isRunning} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50 md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button></div>}
+        footer={<div className="flex flex-wrap justify-center gap-1.5"><button type="button" onClick={handleStartStop} disabled={isTimeUp && !isRunning} className={`min-h-9 rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white disabled:opacity-50 md:text-sm ${styles.startButton}`}>{isRunning ? "Duraklat" : "Başlat"}</button><button type="button" onClick={handleRefresh} disabled={saveStatus !== "idle"} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold disabled:opacity-50 md:text-sm ${styles.secondaryButton}`}>Yeni Kelimeler</button><button type="button" onClick={handleReset} disabled={saveStatus !== "idle"} className={`min-h-9 rounded-xl border border-slate-300 bg-white px-3 text-xs font-bold disabled:opacity-50 md:text-sm ${styles.secondaryButton}`}>Yeniden Başlat</button><button type="button" onClick={finishExercise} disabled={!canFinish || saveStatus !== "idle"} className={`min-h-9 rounded-xl border border-rose-300 bg-rose-50 px-3 text-xs font-bold text-rose-800 disabled:opacity-50 md:text-sm ${styles.secondaryButton}`}>Bitir</button></div>}
       >
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
           <div className="shrink-0 px-1 md:px-2">
