@@ -8,6 +8,9 @@ const targetCss = await readFile("src/app/egzersizler/mental-aritmetik/targetTot
 const chainSource = await readFile("src/app/egzersizler/mental-aritmetik/ChainOperationGameClient.tsx", "utf8");
 const chainCss = await readFile("src/app/egzersizler/mental-aritmetik/chainOperationGame.module.css", "utf8");
 const chainLogic = await readFile("src/lib/exercises/chainOperation.ts", "utf8");
+const cashSource = await readFile("src/app/egzersizler/mental-aritmetik/CashRegisterGameClient.tsx", "utf8");
+const cashCss = await readFile("src/app/egzersizler/mental-aritmetik/cashRegisterGame.module.css", "utf8");
+const cashLogic = await readFile("src/lib/exercises/cashRegister.ts", "utf8");
 
 assert.match(source, /ChainOperationGameClient/);
 assert.match(chainLogic, /milliseconds: 1800/);
@@ -18,10 +21,14 @@ assert.match(chainLogic, /CHAIN_OPERATION_ANSWER_DELAY_MS = 350/);
 assert.match(chainSource, /setActiveStep\(index\)/);
 assert.match(chainSource, /getChainOperationProgress\(index \+ 1/);
 assert.match(chainSource, /phase === "answer" &&/);
-assert.match(source, /mode === "shopping"|mode === "budget"/);
-assert.match(source, /Toplamı sen hesapla/);
-assert.match(source, /mode === "change"/);
-assert.match(source, /setSelected\(kind === "market" && mode === "change"/);
+assert.match(source, /CashRegisterGameClient/);
+assert.match(cashSource, /mode === "shopping"/);
+assert.match(cashSource, /Sepet Toplamı/);
+assert.match(cashSource, /Sen hesapla/);
+assert.match(cashSource, /mode === "change"/);
+assert.match(cashSource, /disabled=\{answered \|\| mode === "change"\}/);
+assert.match(cashLogic, /CASH_REGISTER_CATALOG/);
+assert.match(cashLogic, /CASH_REGISTER_PAYMENT_OPTIONS/);
 assert.match(source, /TargetTotalGameClient/);
 assert.match(targetSource, /Doğru kombinasyon/);
 assert.match(targetSource, /feedback\?\.good/);
@@ -35,5 +42,9 @@ assert.match(chainCss, /\.answerArea/);
 assert.match(chainCss, /@media\(prefers-reduced-motion: reduce\)/);
 assert.match(css, /@keyframes vaultShake/);
 assert.match(css, /@keyframes scoreRise/);
+assert.match(cashCss, /\.modeCard/);
+assert.match(cashCss, /\.selectedProduct/);
+assert.match(cashCss, /\.receiptTotal/);
+assert.match(cashCss, /@media\(prefers-reduced-motion:reduce\)/);
 
 console.log("mental arithmetic prototype parity checks passed");
