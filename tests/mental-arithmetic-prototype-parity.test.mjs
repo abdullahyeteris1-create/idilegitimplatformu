@@ -5,13 +5,19 @@ const source = await readFile("src/app/egzersizler/mental-aritmetik/MentalArithm
 const css = await readFile("src/app/egzersizler/mental-aritmetik/mentalArithmetic.module.css", "utf8");
 const targetSource = await readFile("src/app/egzersizler/mental-aritmetik/TargetTotalGameClient.tsx", "utf8");
 const targetCss = await readFile("src/app/egzersizler/mental-aritmetik/targetTotalGame.module.css", "utf8");
+const chainSource = await readFile("src/app/egzersizler/mental-aritmetik/ChainOperationGameClient.tsx", "utf8");
+const chainCss = await readFile("src/app/egzersizler/mental-aritmetik/chainOperationGame.module.css", "utf8");
+const chainLogic = await readFile("src/lib/exercises/chainOperation.ts", "utf8");
 
-assert.match(source, /CHAIN_SPEED_MS = \{ relaxed: 1800, normal: 1200, fast: 800 \}/);
-assert.match(source, /const initial = 1300/);
-assert.match(source, /\+ 350/);
-assert.match(source, /chainStep/);
-assert.match(source, /chainSteps/);
-assert.match(source, /setChainStep\(index \+ 1\)/);
+assert.match(source, /ChainOperationGameClient/);
+assert.match(chainLogic, /milliseconds: 1800/);
+assert.match(chainLogic, /milliseconds: 1200/);
+assert.match(chainLogic, /milliseconds: 800/);
+assert.match(chainLogic, /CHAIN_OPERATION_MIN_START_MS = 1300/);
+assert.match(chainLogic, /CHAIN_OPERATION_ANSWER_DELAY_MS = 350/);
+assert.match(chainSource, /setActiveStep\(index\)/);
+assert.match(chainSource, /getChainOperationProgress\(index \+ 1/);
+assert.match(chainSource, /phase === "answer" &&/);
 assert.match(source, /mode === "shopping"|mode === "budget"/);
 assert.match(source, /Toplamı sen hesapla/);
 assert.match(source, /mode === "change"/);
@@ -24,7 +30,9 @@ assert.match(targetCss, /\.numberCardSolution/);
 assert.match(targetCss, /\.scoreRing/);
 assert.match(css, /\.marketLayout/);
 assert.match(css, /\.receipt/);
-assert.match(css, /\.chainStage/);
+assert.match(chainCss, /\.focusBox/);
+assert.match(chainCss, /\.answerArea/);
+assert.match(chainCss, /@media\(prefers-reduced-motion: reduce\)/);
 assert.match(css, /@keyframes vaultShake/);
 assert.match(css, /@keyframes scoreRise/);
 

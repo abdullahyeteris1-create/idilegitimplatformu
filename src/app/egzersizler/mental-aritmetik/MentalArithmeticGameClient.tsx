@@ -8,6 +8,7 @@ import type { EducationProgramExerciseLaunchProps } from "@/lib/education-progra
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
 import { clampPercent, randomInt, shuffle, type MentalLevel } from "@/lib/exercises/mentalArithmetic";
 import styles from "./mentalArithmetic.module.css";
+import { ChainOperationGameClient } from "./ChainOperationGameClient";
 import { TargetTotalGameClient } from "./TargetTotalGameClient";
 
 type Kind = "target" | "chain" | "market" | "vault";
@@ -41,6 +42,9 @@ function vaultRound(level: MentalLevel, mode: GameMode, digits: number): Round {
 export function MentalArithmeticGameClient(props: Props) {
   if (props.kind === "target") {
     return <TargetTotalGameClient educationProgramLaunch={props.educationProgramLaunch} />;
+  }
+  if (props.kind === "chain") {
+    return <ChainOperationGameClient educationProgramLaunch={props.educationProgramLaunch} />;
   }
   return <OtherMentalArithmeticGameClient {...props} />;
 }
