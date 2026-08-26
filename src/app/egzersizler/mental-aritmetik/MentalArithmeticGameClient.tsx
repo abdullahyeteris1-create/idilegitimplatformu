@@ -12,6 +12,7 @@ import styles from "./mentalArithmetic.module.css";
 import { ChainOperationGameClient } from "./ChainOperationGameClient";
 import { CashRegisterGameClient } from "./CashRegisterGameClient";
 import { TargetTotalGameClient } from "./TargetTotalGameClient";
+import { VaultGameClient } from "./VaultGameClient";
 
 type Kind = "target" | "chain" | "market" | "vault";
 type Props = { kind: Kind; educationProgramLaunch?: EducationProgramExerciseLaunchProps };
@@ -46,6 +47,9 @@ export function MentalArithmeticGameClient(props: Props) {
   }
   if (props.kind === "market") {
     return <CashRegisterGameClient educationProgramLaunch={props.educationProgramLaunch} />;
+  }
+  if (props.kind === "vault") {
+    return <VaultGameClient educationProgramLaunch={props.educationProgramLaunch} />;
   }
   return <OtherMentalArithmeticGameClient {...props} />;
 }

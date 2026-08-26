@@ -11,6 +11,9 @@ const chainLogic = await readFile("src/lib/exercises/chainOperation.ts", "utf8")
 const cashSource = await readFile("src/app/egzersizler/mental-aritmetik/CashRegisterGameClient.tsx", "utf8");
 const cashCss = await readFile("src/app/egzersizler/mental-aritmetik/cashRegisterGame.module.css", "utf8");
 const cashLogic = await readFile("src/lib/exercises/cashRegister.ts", "utf8");
+const vaultSource = await readFile("src/app/egzersizler/mental-aritmetik/VaultGameClient.tsx", "utf8");
+const vaultCss = await readFile("src/app/egzersizler/mental-aritmetik/vaultGame.module.css", "utf8");
+const vaultLogic = await readFile("src/lib/exercises/vault.ts", "utf8");
 
 assert.match(source, /ChainOperationGameClient/);
 assert.match(chainLogic, /milliseconds: 1800/);
@@ -48,3 +51,25 @@ assert.match(cashCss, /\.receiptTotal/);
 assert.match(cashCss, /@media\(prefers-reduced-motion:reduce\)/);
 
 console.log("mental arithmetic prototype parity checks passed");
+
+assert.match(source, /VaultGameClient/);
+assert.match(vaultLogic, /VAULT_LEVEL_CONFIG/);
+assert.match(vaultLogic, /VAULT_DIGITS/);
+assert.match(vaultLogic, /VAULT_TIMES/);
+assert.match(vaultLogic, /VAULT_TOTAL_ROUNDS = 10/);
+for (const type of ["twoStepHard", "divAdd", "mulSub", "sequence", "reverse", "digitLogic"]) assert.match(vaultLogic, new RegExp(type));
+assert.match(vaultLogic, /Math\.pow\(ratio, \.72\)/);
+assert.match(vaultSource, /inputMode="numeric"/);
+assert.match(vaultSource, /event\.key === "Enter"/);
+assert.match(vaultSource, /Backspace/);
+assert.match(vaultSource, /Temizle/);
+assert.match(vaultSource, /KASAYI A/);
+assert.match(vaultSource, /saveExerciseResultSecure/);
+assert.match(vaultSource, /submissionKey: `mental-mental-arithmetic-vault-/);
+assert.match(vaultSource, /href="\/sonuc"/);
+assert.match(vaultCss, /\.vaultOpen/);
+assert.match(vaultCss, /\.correctFlash/);
+assert.match(vaultCss, /\.wrongShake/);
+assert.match(vaultCss, /@media\(max-width:800px\)/);
+assert.match(vaultCss, /@media\(max-width:480px\)/);
+assert.match(vaultCss, /prefers-reduced-motion:reduce/);
