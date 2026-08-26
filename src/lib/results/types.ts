@@ -27,7 +27,11 @@
   | "growing-shapes-hexagon"
   | "kayip-nesne"
   | "saray-dedektifi"
-  | "anlik-goruntu";
+  | "anlik-goruntu"
+  | "mental-arithmetic-target-total"
+  | "mental-arithmetic-chain"
+  | "mental-arithmetic-market"
+  | "mental-arithmetic-vault";
 
 export type ExerciseResult = {
   id: string;

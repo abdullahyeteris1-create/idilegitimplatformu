@@ -47,9 +47,13 @@ const EXERCISE_LABELS: Record<string, string> = {
   "growing-shapes-hexagon": "Büyüyen Şekiller",
   "square-vision": "Kare Görme Çalışması",
   "reading-speed-test": "Okuma Hızı Testi",
+  "mental-arithmetic-target-total": "Mental Aritmetik – Hedef Toplam",
+  "mental-arithmetic-chain": "Mental Aritmetik – Zincir İşlem",
+  "mental-arithmetic-market": "Mental Aritmetik – Para Kasası",
+  "mental-arithmetic-vault": "Mental Aritmetik – Hazine Kasası",
 };
 
-const RESTART_HREFS: Record<ExerciseType, string> = {
+const RESTART_HREFS: Partial<Record<ExerciseType, string>> = {
   "square-vision": "/egzersizler/kare-gorme-alani",
   tachistoscope: "/egzersizler/takistoskop",
   "similar-words": "/egzersizler/benzer-kelimeler",
@@ -79,6 +83,10 @@ const RESTART_HREFS: Record<ExerciseType, string> = {
   "kayip-nesne": "/egzersizler/kayip-nesne",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
   "anlik-goruntu": "/egzersizler/anlik-goruntu",
+  "mental-arithmetic-target-total": "/egzersizler/mental-aritmetik/hedef-toplam",
+  "mental-arithmetic-chain": "/egzersizler/mental-aritmetik/zincir-islem",
+  "mental-arithmetic-market": "/egzersizler/mental-aritmetik/para-kasasi",
+  "mental-arithmetic-vault": "/egzersizler/mental-aritmetik/hazine-kasasi",
 };
 
 /** Mevcut sonuçlardan benzersiz exerciseType'ları çıkarır ve "all" + label'lı liste döndürür */

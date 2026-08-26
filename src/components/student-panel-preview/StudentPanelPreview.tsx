@@ -99,6 +99,10 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "kayip-nesne": "/egzersizler/kayip-nesne",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
   "anlik-goruntu": "/egzersizler/anlik-goruntu",
+  "mental-arithmetic-target-total": "/egzersizler/mental-aritmetik/hedef-toplam",
+  "mental-arithmetic-chain": "/egzersizler/mental-aritmetik/zincir-islem",
+  "mental-arithmetic-market": "/egzersizler/mental-aritmetik/para-kasasi",
+  "mental-arithmetic-vault": "/egzersizler/mental-aritmetik/hazine-kasasi",
 };
 
 function toTimestamp(value: string): number {
@@ -286,7 +290,8 @@ function Sidebar({
   streakNote: string;
   xpSnapshot: StudentXpSnapshot;
 }) {
-  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={index === 0} onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><Badges xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
+  const pathname = usePathname();
+  return <aside className={styles.sidebar}><Brand/><nav aria-label="Ana menü">{navItems.map((item, index) => <NavAction key={item.label} item={item} active={item.href ? pathname === item.href || pathname.startsWith(`${item.href}/`) : index === 0} onDemo={onDemo} onAccountMenu={onAccountMenu} accountMenuOpen={accountMenuOpen}/>)}</nav><LevelCard compact xpSnapshot={xpSnapshot}/><Badges xpSnapshot={xpSnapshot}/><div className={styles.streakCard}><span>🔥</span><div><small>Günlük Seri</small><strong>{streakValue}</strong><p>{streakNote}</p></div></div><button type="button" className={styles.support} onClick={() => onDemo("Bu özellik önizleme aşamasında.")}><Icon name="help"/> Yardım &amp; Destek</button></aside>;
 }
 
 function Badges({ xpSnapshot }: { xpSnapshot: StudentXpSnapshot }) {

@@ -277,6 +277,10 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     assignmentEnabled: true,
     supportedSettings: ["speed", "level"],
   },
+  { slug: "hedef-toplam", title: "Mental Aritmetik – Hedef Toplam", route: "/egzersizler/mental-aritmetik/hedef-toplam", resultExerciseType: "mental-arithmetic-target-total", category: "attention", assignmentEnabled: true, supportedSettings: ["level", "speed", "rounds"] },
+  { slug: "zincir-islem", title: "Mental Aritmetik – Zincir İşlem", route: "/egzersizler/mental-aritmetik/zincir-islem", resultExerciseType: "mental-arithmetic-chain", category: "attention", assignmentEnabled: true, supportedSettings: ["level", "speed", "rounds"] },
+  { slug: "para-kasasi", title: "Mental Aritmetik – Para Kasası", route: "/egzersizler/mental-aritmetik/para-kasasi", resultExerciseType: "mental-arithmetic-market", category: "attention", assignmentEnabled: true, supportedSettings: ["level", "mode", "rounds"] },
+  { slug: "hazine-kasasi", title: "Mental Aritmetik – Hazine Kasası", route: "/egzersizler/mental-aritmetik/hazine-kasasi", resultExerciseType: "mental-arithmetic-vault", category: "attention", assignmentEnabled: true, supportedSettings: ["level", "speed", "rounds"] },
   {
     slug: "parcali-resim-kelime",
     title: "Parçalı Resim Kelime",

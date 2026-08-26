@@ -26,6 +26,10 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "gruplama-calismasi": "/egzersizler/gruplama-calismasi",
   "anlama-testi": "/egzersizler/anlama-testi",
   "okuma-hizi-testi": "/egzersizler/okuma-hizi-testi",
+  "hedef-toplam": "/egzersizler/mental-aritmetik/hedef-toplam",
+  "zincir-islem": "/egzersizler/mental-aritmetik/zincir-islem",
+  "para-kasasi": "/egzersizler/mental-aritmetik/para-kasasi",
+  "hazine-kasasi": "/egzersizler/mental-aritmetik/hazine-kasasi",
 };
 
 export function resolveEducationProgramExerciseRoute(exerciseSlug: string): string | null {

@@ -405,6 +405,40 @@ const GROWING_SHAPES_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
   ],
 };
 
+const MENTAL_ARITHMETIC_TARGET_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "hedef-toplam",
+  fields: [
+    { key: "speed", label: "Hız", type: "enum", options: ["relaxed", "normal", "fast"], defaultValue: "normal" },
+    { key: "rounds", label: "Tur Sayısı", type: "integer", options: [5, 10, 15], defaultValue: 10 },
+  ],
+};
+
+const MENTAL_ARITHMETIC_CHAIN_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "zincir-islem",
+  fields: [
+    { key: "speed", label: "Hız", type: "enum", options: ["relaxed", "normal", "fast"], defaultValue: "relaxed" },
+    { key: "rounds", label: "Tur Sayısı", type: "integer", options: [5, 10, 15], defaultValue: 10 },
+  ],
+};
+
+const MENTAL_ARITHMETIC_MARKET_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "para-kasasi",
+  fields: [
+    { key: "mode", label: "Oyun Türü", type: "enum", options: ["shopping", "change", "budget"], defaultValue: "shopping" },
+    { key: "rounds", label: "Tur Sayısı", type: "integer", options: [5, 10, 15], defaultValue: 10 },
+  ],
+};
+
+const MENTAL_ARITHMETIC_VAULT_SETTINGS_SCHEMA: ExerciseSettingsSchema = {
+  exerciseSlug: "hazine-kasasi",
+  fields: [
+    { key: "speed", label: "Hız", type: "enum", options: ["relaxed", "normal", "fast"], defaultValue: "normal" },
+    { key: "mode", label: "Oyun Türü", type: "enum", options: ["mixed-operation", "logic-code"], defaultValue: "mixed-operation" },
+    { key: "digits", label: "Şifre Uzunluğu", type: "integer", options: [2, 3, 4], defaultValue: 2 },
+    { key: "rounds", label: "Tur Sayısı", type: "integer", options: [5, 10, 15], defaultValue: 10 },
+  ],
+};
+
 const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema>(
   [
     EYE_COLUMNS_SETTINGS_SCHEMA,
@@ -422,6 +456,10 @@ const EXERCISE_SETTINGS_SCHEMAS_BY_SLUG = new Map<string, ExerciseSettingsSchema
     TWO_SIDE_FOCUS_SETTINGS_SCHEMA,
     THIRTEEN_POINT_EMOJI_TRACKING_SETTINGS_SCHEMA,
     GROWING_SHAPES_SETTINGS_SCHEMA,
+    MENTAL_ARITHMETIC_TARGET_SETTINGS_SCHEMA,
+    MENTAL_ARITHMETIC_CHAIN_SETTINGS_SCHEMA,
+    MENTAL_ARITHMETIC_MARKET_SETTINGS_SCHEMA,
+    MENTAL_ARITHMETIC_VAULT_SETTINGS_SCHEMA,
   ].map((schema) => [schema.exerciseSlug, schema]),
 );
 

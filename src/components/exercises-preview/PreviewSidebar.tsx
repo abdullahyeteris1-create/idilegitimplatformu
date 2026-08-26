@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { CSSProperties } from "react";
 import { navItems } from "@/components/student-panel-preview/data";
 import { Icon } from "@/components/student-panel-preview/icons";
@@ -18,11 +19,12 @@ const HREF_OVERRIDES: Record<string, string> = {
 type NavListProps = { onDemo: (message: string) => void; onNavigate?: () => void; onAccountMenu?: () => void; accountMenuOpen?: boolean };
 
 export function PreviewNavLinks({ onDemo, onNavigate, onAccountMenu, accountMenuOpen = false }: NavListProps) {
+  const pathname = usePathname();
   return (
     <>
       {navItems.map((item) => {
         const href = HREF_OVERRIDES[item.label] ?? item.href;
-        const active = href === ACTIVE_HREF;
+        const active = href === ACTIVE_HREF || pathname === href || pathname.startsWith(`${href}/`);
         const content = (
           <>
             <Icon name={item.icon} />

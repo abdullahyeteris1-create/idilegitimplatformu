@@ -270,6 +270,10 @@ export const EDUCATION_PROGRAM_EXERCISE_CATALOG: readonly EducationProgramExerci
     settingsSchemaVersion: 1,
     settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER,
   },
+  { slug: "hedef-toplam", title: "Mental Aritmetik – Hedef Toplam", resultExerciseType: "mental-arithmetic-target-total", supportsLevel: true, levelMin: 1, levelMax: 4, defaultDurationSeconds: 300, settingsSchemaVersion: 1, settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER },
+  { slug: "zincir-islem", title: "Mental Aritmetik – Zincir İşlem", resultExerciseType: "mental-arithmetic-chain", supportsLevel: true, levelMin: 1, levelMax: 4, defaultDurationSeconds: 300, settingsSchemaVersion: 1, settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER },
+  { slug: "para-kasasi", title: "Mental Aritmetik – Para Kasası", resultExerciseType: "mental-arithmetic-market", supportsLevel: true, levelMin: 1, levelMax: 4, defaultDurationSeconds: 300, settingsSchemaVersion: 1, settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER },
+  { slug: "hazine-kasasi", title: "Mental Aritmetik – Hazine Kasası", resultExerciseType: "mental-arithmetic-vault", supportsLevel: true, levelMin: 1, levelMax: 4, defaultDurationSeconds: 300, settingsSchemaVersion: 1, settingsPlaceholder: READONLY_SETTINGS_PLACEHOLDER },
 ] as const;
 
 export const EDUCATION_PROGRAM_EXERCISE_BY_SLUG = new Map<

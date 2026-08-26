@@ -32,6 +32,10 @@ const READY_EXERCISE_COMPONENTS = {
   "saray-dedektifi": "../src/app/egzersizler/saray-dedektifi/SarayDedektifiExerciseClient.tsx",
   "anlik-goruntu": "../src/app/egzersizler/anlik-goruntu/AnlikGoruntuExerciseClient.tsx",
   takistoskop: "../src/components/exercises/TachistoscopeExerciseClient.tsx",
+  "hedef-toplam": "../src/app/egzersizler/mental-aritmetik/MentalArithmeticGameClient.tsx",
+  "zincir-islem": "../src/app/egzersizler/mental-aritmetik/MentalArithmeticGameClient.tsx",
+  "para-kasasi": "../src/app/egzersizler/mental-aritmetik/MentalArithmeticGameClient.tsx",
+  "hazine-kasasi": "../src/app/egzersizler/mental-aritmetik/MentalArithmeticGameClient.tsx",
 };
 
 const readComponent = (slug) => readFile(new URL(READY_EXERCISE_COMPONENTS[slug], import.meta.url), "utf8");

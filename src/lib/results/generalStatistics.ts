@@ -234,6 +234,10 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "kayip-nesne": { categoryId: "word-games", route: "/egzersizler/kayip-nesne" },
   "saray-dedektifi": { categoryId: "attention", route: "/egzersizler/saray-dedektifi" },
   "anlik-goruntu": { categoryId: "attention", route: "/egzersizler/anlik-goruntu" },
+  "mental-arithmetic-target-total": { categoryId: "attention", route: "/egzersizler/mental-aritmetik/hedef-toplam" },
+  "mental-arithmetic-chain": { categoryId: "attention", route: "/egzersizler/mental-aritmetik/zincir-islem" },
+  "mental-arithmetic-market": { categoryId: "attention", route: "/egzersizler/mental-aritmetik/para-kasasi" },
+  "mental-arithmetic-vault": { categoryId: "attention", route: "/egzersizler/mental-aritmetik/hazine-kasasi" },
 };
 
 const OTHER_CATEGORY_ID = "other";

@@ -51,6 +51,10 @@ function parseExerciseType(value: string | undefined): ExerciseType | undefined 
     value === "hangman" ||
     value === "reading-speed-test"
     || value === "thirteen-point-emoji-tracking"
+    || value === "mental-arithmetic-target-total"
+    || value === "mental-arithmetic-chain"
+    || value === "mental-arithmetic-market"
+    || value === "mental-arithmetic-vault"
   ) {
     return value;
   }

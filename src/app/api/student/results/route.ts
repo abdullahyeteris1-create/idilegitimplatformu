@@ -401,6 +401,10 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     activeReadingSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
     completedAt: { type: "string", maxLength: 40 },
   },
+  "mental-arithmetic-target-total": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, speed: { type: "string", values: ["relaxed", "normal", "fast"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
+  "mental-arithmetic-chain": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, bestStreak: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
+  "mental-arithmetic-market": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, mode: { type: "string", values: ["shopping", "change", "budget"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
+  "mental-arithmetic-vault": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, speed: { type: "string", values: ["relaxed", "normal", "fast"] }, mode: { type: "string", values: ["mixed-operation", "logic-code"] }, digits: { type: "integer", min: 2, max: 4 }, totalRounds: { type: "integer", min: 0, max: 100000 }, bestStreak: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
 };
 
 type ValidatedResultBody = {

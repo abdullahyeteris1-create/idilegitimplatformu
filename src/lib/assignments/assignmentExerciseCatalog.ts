@@ -471,6 +471,10 @@ const ALLOWLIST_METADATA: readonly AllowlistMetadata[] = [
     },
     defaultSettings: { fontSize: 18 },
   },
+  { exerciseSlug: "hedef-toplam", assignmentEligible: true, integrationStatus: "ready", supportsLevel: true, levelMin: 1, levelMax: 4, supportsSpeed: true, settingsSchema: { speed: { kind: "enum", values: ["relaxed", "normal", "fast"] }, rounds: { kind: "enum", values: [5, 10, 15] } }, defaultSettings: { speed: "normal", rounds: 10 } },
+  { exerciseSlug: "zincir-islem", assignmentEligible: true, integrationStatus: "ready", supportsLevel: true, levelMin: 1, levelMax: 4, supportsSpeed: true, settingsSchema: { speed: { kind: "enum", values: ["relaxed", "normal", "fast"] }, rounds: { kind: "enum", values: [5, 10, 15] } }, defaultSettings: { speed: "relaxed", rounds: 10 } },
+  { exerciseSlug: "para-kasasi", assignmentEligible: true, integrationStatus: "ready", supportsLevel: true, levelMin: 1, levelMax: 4, supportsSpeed: false, settingsSchema: { mode: { kind: "enum", values: ["shopping", "change", "budget"] }, rounds: { kind: "enum", values: [5, 10, 15] } }, defaultSettings: { mode: "shopping", rounds: 10 } },
+  { exerciseSlug: "hazine-kasasi", assignmentEligible: true, integrationStatus: "ready", supportsLevel: true, levelMin: 1, levelMax: 4, supportsSpeed: true, settingsSchema: { speed: { kind: "enum", values: ["relaxed", "normal", "fast"] }, mode: { kind: "enum", values: ["mixed-operation", "logic-code"] }, digits: { kind: "enum", values: [2, 3, 4] }, rounds: { kind: "enum", values: [5, 10, 15] } }, defaultSettings: { speed: "normal", mode: "mixed-operation", digits: 2, rounds: 10 } },
 ];
 
 function buildCatalog(): AssignmentExerciseDefinition[] {

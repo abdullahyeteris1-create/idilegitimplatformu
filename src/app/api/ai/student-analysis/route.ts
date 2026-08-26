@@ -44,6 +44,10 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "kayip-nesne": "Kayıp Nesne",
   "saray-dedektifi": "Saray Dedektifi",
   "anlik-goruntu": "Anlık Görüntü",
+  "mental-arithmetic-target-total": "Mental Aritmetik – Hedef Toplam",
+  "mental-arithmetic-chain": "Mental Aritmetik – Zincir İşlem",
+  "mental-arithmetic-market": "Mental Aritmetik – Para Kasası",
+  "mental-arithmetic-vault": "Mental Aritmetik – Hazine Kasası",
 };
 
 const EXERCISE_TYPES = new Set<ExerciseType>(Object.keys(EXERCISE_TITLES) as ExerciseType[]);
