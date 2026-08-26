@@ -124,6 +124,10 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "kayip-nesne": "/egzersizler/kayip-nesne",
   "saray-dedektifi": "/egzersizler/saray-dedektifi",
   "anlik-goruntu": "/egzersizler/anlik-goruntu",
+  "mental-arithmetic-target-total": "/egzersizler/mental-aritmetik/hedef-toplam",
+  "mental-arithmetic-chain": "/egzersizler/mental-aritmetik/zincir-islem",
+  "mental-arithmetic-market": "/egzersizler/mental-aritmetik/para-kasasi",
+  "mental-arithmetic-vault": "/egzersizler/mental-aritmetik/hazine-kasasi",
 };
 
 const quickLinks = [
