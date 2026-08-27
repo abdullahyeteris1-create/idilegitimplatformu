@@ -48,6 +48,17 @@ export type TwoSideFocusResultPayload = {
   wrongCount: number;
   score: number;
   successRate: number;
+  details: {
+    totalRounds: number;
+    levels: string;
+  };
+};
+
+export type TwoSideFocusLevelBreakdown = {
+  level: number;
+  correct: number;
+  wrong: number;
+  score: number;
 };
 
 /** Doğal süre bitişinde (tek seferlik) sunucuya gönderilecek sonuç payload'ı. */
@@ -55,19 +66,28 @@ export function buildTwoSideFocusResultPayload(params: {
   durationSeconds: number;
   correctCount: number;
   wrongCount: number;
+  levelBreakdown?: readonly TwoSideFocusLevelBreakdown[];
 }): TwoSideFocusResultPayload {
-  const { durationSeconds, correctCount, wrongCount } = params;
-  const answeredCount = correctCount + wrongCount;
-  const successRate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
-  const netCount = correctCount - wrongCount;
+  const levelBreakdown = params.levelBreakdown?.length
+    ? params.levelBreakdown
+    : [{ level: 0, correct: params.correctCount, wrong: params.wrongCount, score: params.correctCount - params.wrongCount }];
+  const totalCorrect = levelBreakdown.reduce((total, item) => total + item.correct, 0);
+  const totalWrong = levelBreakdown.reduce((total, item) => total + item.wrong, 0);
+  const totalScore = levelBreakdown.reduce((total, item) => total + item.score, 0);
+  const answeredCount = totalCorrect + totalWrong;
+  const successRate = answeredCount > 0 ? Math.round((totalCorrect / answeredCount) * 100) : 0;
 
   return {
     exerciseType: EXPECTED_RESULT_EXERCISE_TYPE,
     exerciseTitle: EXERCISE_TITLE,
-    durationSeconds,
-    correctCount,
-    wrongCount,
-    score: Math.max(0, netCount),
+    durationSeconds: params.durationSeconds,
+    correctCount: totalCorrect,
+    wrongCount: totalWrong,
+    score: Math.max(0, totalScore),
     successRate,
+    details: {
+      totalRounds: answeredCount,
+      levels: JSON.stringify(levelBreakdown.filter((item) => item.level > 0)),
+    },
   };
 }

@@ -16,6 +16,7 @@ import {
   isTwoSideFocusTimedMode,
   resolveTwoSideFocusDurationSeconds,
 } from "./twoSideFocusDuration";
+import type { TwoSideFocusLevelBreakdown } from "./twoSideFocusDuration";
 import styles from "@/components/exercises/two-side-focus-theme.module.css";
 
 type ExerciseLevel = 1 | 2 | 3 | 4 | 5;
@@ -261,6 +262,7 @@ export function TwoSideFocusExerciseClient({
   const saveInFlightRef = useRef(false);
   const saveCompletedRef = useRef(false);
   const pendingResultRef = useRef<SecureExerciseResultInput | null>(null);
+  const sessionLevelsRef = useRef<Map<number, TwoSideFocusLevelBreakdown>>(new Map());
 
   const netCount = correctCount - wrongCount;
   const wordCount = useMemo(() => getWordCount(level), [level]);
@@ -330,6 +332,7 @@ export function TwoSideFocusExerciseClient({
       durationSeconds,
       correctCount,
       wrongCount,
+      levelBreakdown: Array.from(sessionLevelsRef.current.values()).sort((left, right) => left.level - right.level),
     }) satisfies SecureExerciseResultInput;
 
     pendingResultRef.current = payload;
@@ -357,6 +360,16 @@ export function TwoSideFocusExerciseClient({
     answerLockedRef.current = false;
   }, [clearRoundTimeout]);
 
+  const recordAnswer = useCallback((isCorrect: boolean) => {
+    const current = sessionLevelsRef.current.get(level) ?? { level, correct: 0, wrong: 0, score: 0 };
+    sessionLevelsRef.current.set(level, {
+      ...current,
+      correct: current.correct + (isCorrect ? 1 : 0),
+      wrong: current.wrong + (isCorrect ? 0 : 1),
+      score: current.score + (isCorrect ? 1 : -1),
+    });
+  }, [level]);
+
   const prepareLevel = useCallback(
     (
       nextLevel: ExerciseLevel,
@@ -364,13 +377,15 @@ export function TwoSideFocusExerciseClient({
       type: "success" | "info" = "info",
     ) => {
       clearRoundTimeout();
+      if (lastResumedAtRef.current !== null) {
+        accumulatedActiveMsRef.current += Date.now() - lastResumedAtRef.current;
+        lastResumedAtRef.current = null;
+      }
       setLevel(nextLevel);
       setIsRunning(false);
       setCorrectCount(0);
       setWrongCount(0);
       setHasStarted(false);
-      accumulatedActiveMsRef.current = 0;
-      lastResumedAtRef.current = null;
       setRoundData(createRound(nextLevel, wordSets));
       answerLockedRef.current = false;
       setFeedback({
@@ -435,6 +450,7 @@ export function TwoSideFocusExerciseClient({
       clearRoundTimeout();
 
       const isCorrect = answer === roundData.correctAnswer;
+      recordAnswer(isCorrect);
 
       if (isCorrect) {
         const nextCorrect = correctCount + 1;
@@ -482,6 +498,7 @@ export function TwoSideFocusExerciseClient({
       correctCount,
       createNextRound,
       isRunning,
+      recordAnswer,
       roundData.correctAnswer,
       wrongCount,
     ],
@@ -493,6 +510,7 @@ export function TwoSideFocusExerciseClient({
 
     answerLockedRef.current = true;
 
+    recordAnswer(false);
     setWrongCount((previous) => previous + 1);
     setFeedback({
       type: "error",
@@ -504,7 +522,7 @@ export function TwoSideFocusExerciseClient({
     window.setTimeout(() => {
       createNextRound();
     }, 250);
-  }, [createNextRound, isRunning, roundData.correctAnswer]);
+  }, [createNextRound, isRunning, recordAnswer, roundData.correctAnswer]);
 
   useEffect(() => {
     clearRoundTimeout();
@@ -617,6 +635,7 @@ export function TwoSideFocusExerciseClient({
     saveInFlightRef.current = false;
     saveCompletedRef.current = false;
     pendingResultRef.current = null;
+    sessionLevelsRef.current.clear();
     setSaveStatus("idle");
     setSaveMessage("");
     setFeedback({

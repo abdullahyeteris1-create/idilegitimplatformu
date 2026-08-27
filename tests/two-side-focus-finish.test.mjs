@@ -39,5 +39,9 @@ test("Çift Taraflı Odak sonucu doğru exercise type/title ve mevcut metriklerl
     wrongCount: 2,
     score: 6,
     successRate: 80,
+    details: {
+      totalRounds: 10,
+      levels: "[]",
+    },
   });
 });

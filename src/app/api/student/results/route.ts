@@ -300,6 +300,20 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     livesRemaining: { type: "integer", min: 0, max: 10 },
     completionReason: { type: "string", values: ["game-over", "completed"] },
   },
+  "cevresel-gorus": {
+    startLevel: { type: "integer", min: 1, max: 5 },
+    reachedLevel: { type: "integer", min: 1, max: 5 },
+    completedLevels: { type: "integer", min: 0, max: 5 },
+    totalRounds: { type: "integer", min: 0, max: 100_000 },
+    totalCorrect: { type: "integer", min: 0, max: 100_000 },
+    maxCombo: { type: "integer", min: 0, max: 100_000 },
+    leftAccuracy: { type: "integer", min: 0, max: 100 },
+    rightAccuracy: { type: "integer", min: 0, max: 100 },
+    maxReliableLevel: { type: "integer", min: 0, max: 5 },
+    maxReliableDistancePercent: { type: "integer", min: 0, max: 100 },
+    averageResponseTimeMs: { type: "integer", min: 0, max: 600_000 },
+    completionReason: { type: "string", values: ["completed", "game-over"] },
+  },
   "anlik-goruntu": {
     speed: { type: "string", values: ["beginner", "comfortable", "normal", "fast", "very-fast", "expert", "master"] },
     exposureMs: { type: "integer", min: 10, max: 5_000 },
@@ -405,6 +419,7 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
   "mental-arithmetic-chain": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, bestStreak: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
   "mental-arithmetic-market": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, mode: { type: "string", values: ["shopping", "change", "budget"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
   "mental-arithmetic-vault": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, speed: { type: "string", values: ["relaxed", "normal", "fast"] }, mode: { type: "string", values: ["mixed-operation", "logic-code"] }, digits: { type: "integer", min: 2, max: 4 }, totalRounds: { type: "integer", min: 0, max: 100000 }, bestStreak: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
+  "two-side-focus": { totalRounds: { type: "integer", min: 0, max: 100000 }, levels: { type: "string", maxLength: 6000 } },
 };
 
 type ValidatedResultBody = {
