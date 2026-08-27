@@ -1,0 +1,103 @@
+/*
+ * Egzersiz bitis ekranlarinin ortak aksiyon alani.
+ * Butonlarin arka planlari opak secildi: hem acik (Tatli Dukkani) hem koyu
+ * (Kayip Nesne) oyun zemininde kontrast WCAG AA esigini asar.
+ */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin: 12px auto 0;
+}
+
+.actions button {
+  flex: 1 1 160px;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: 800 1rem/1.25 Nunito, ui-rounded, system-ui, sans-serif;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
+}
+
+/* Primary: Tekrar Oyna - beyaz metin, kontrast 4.9:1 */
+.replay {
+  background: linear-gradient(135deg, #d81b60, #ad1457);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(173, 20, 87, 0.35);
+}
+
+/* Secondary: Egzersizlere Don - kontrast 10.3:1 */
+.back {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #334155;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+}
+
+/* Tertiary: Cikis - kontrast 5.9:1 */
+.exit {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+  box-shadow: 0 4px 16px rgba(185, 28, 28, 0.15);
+}
+
+.actions button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.back:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.exit:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+/* Cift halka: koyu zeminde beyaz, acik zeminde koyu kenar gorunur kalir. */
+.actions button:focus-visible {
+  outline: 3px solid #1e293b;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px #fff;
+}
+
+.actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+  transform: none;
+}
+
+/* Egitim programi akisinda alt kenardaki sabit "Devam Et" barinin altinda kalmasin. */
+.withOverlaySpace {
+  margin-bottom: 88px;
+}
+
+@media (max-width: 600px) {
+  .actions {
+    gap: 10px;
+  }
+
+  .actions button {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actions button {
+    transition: none;
+  }
+
+  .actions button:hover:not(:disabled) {
+    transform: none;
+  }
+}

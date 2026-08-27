@@ -73,3 +73,13 @@ test("client sonuclari guvenli akistan kaydeder ve gorev tamamlamasini tetikler"
   assert.match(source, /exerciseType: RESULT_TYPE/);
   assert.doesNotMatch(source, /\bsaveExerciseResult\b(?!Secure)/);
 });
+
+test("saray-dedektifi bitis ekraninda ortak egzersiz ve ogrenci paneli cikislarini kullanir", async () => {
+  const source = await readFile(CLIENT_PATH, "utf8");
+  const navigationHook = await readFile("src/components/exercises/useExerciseExitNavigation.ts", "utf8");
+
+  assert.match(source, /import \{ ExerciseEndScreenActions \} from "@\/components\/exercises\/ExerciseEndScreenActions";/);
+  assert.match(source, /<ExerciseEndScreenActions[\s\S]*onReplay=\{startGame\}[\s\S]*showReplay=\{false\}[\s\S]*exitLabel="Anasayfaya Dön"[\s\S]*reserveBottomOverlaySpace=\{Boolean\(educationProgramLaunch\)\}/);
+  assert.match(navigationHook, /EXERCISE_LIST_HREF = "\/egzersizler"/);
+  assert.match(navigationHook, /EXERCISE_EXIT_HREF = "\/ogrenci"/);
+});

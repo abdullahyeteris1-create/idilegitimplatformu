@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useEducationProgramExerciseRunning } from "@/components/education-programs/EducationProgramExerciseChrome";
+import { ExerciseEndScreenActions } from "@/components/exercises/ExerciseEndScreenActions";
 import type { EducationProgramExerciseLaunchProps } from "@/lib/education-programs/exerciseLaunchProps";
 import { useEducationProgramTaskCompletion } from "@/lib/education-programs/useEducationProgramTaskCompletion";
 import { saveExerciseResultSecure } from "@/lib/results/secureResultStorage";
@@ -242,6 +243,12 @@ export function SarayDedektifiExerciseClient({ educationProgramLaunch }: { educa
               <button type="button" className={styles.primary} onClick={startGame}>Yeni Dosyalarla Oyna</button>
               <button type="button" className={styles.secondary} onClick={() => { clearTimers(); setPhase("intro"); }}>Zorluk Değiştir</button>
             </div>
+            <ExerciseEndScreenActions
+              onReplay={startGame}
+              showReplay={false}
+              exitLabel="Anasayfaya Dön"
+              reserveBottomOverlaySpace={Boolean(educationProgramLaunch)}
+            />
           </section>
         </div>
       </main>
