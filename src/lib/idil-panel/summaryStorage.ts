@@ -570,7 +570,9 @@ export async function listStudentsForLessonRecords(): Promise<LessonRecordStuden
   try {
     const { data, error } = await supabase
       .from(STUDENTS_TABLE)
-      .select("*");
+      .select("*")
+      .eq("status", "active")
+      .eq("is_active", true);
 
     if (error || !Array.isArray(data)) {
       if (error) {
