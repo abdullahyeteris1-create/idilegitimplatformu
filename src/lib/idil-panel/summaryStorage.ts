@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { isValidLessonNo, MAX_LESSON_NO } from "@/lib/idil-panel/lessonRecordValidation";
 
 type SupabaseRow = Record<string, unknown>;
 
@@ -417,6 +418,12 @@ function assertSupabaseForWrite(): void {
   }
 }
 
+function assertValidLessonNo(lessonNo: number): void {
+  if (!isValidLessonNo(lessonNo)) {
+    throw new Error(`Ders gunu 1 ile ${MAX_LESSON_NO} arasinda olmalidir.`);
+  }
+}
+
 function buildDateRangeFilter(startDate: string, endDate: string): { start: string; end: string } {
   const start = startDate.trim();
   const end = endDate.trim();
@@ -599,6 +606,7 @@ export async function listStudentsForLessonRecords(): Promise<LessonRecordStuden
 }
 
 export async function createLesson(payload: CreateLessonPayload): Promise<LessonRecord> {
+  assertValidLessonNo(payload.lessonNo);
   assertSupabaseForWrite();
   const client = supabase;
 
@@ -637,6 +645,9 @@ export async function createLesson(payload: CreateLessonPayload): Promise<Lesson
 }
 
 export async function updateLesson(id: string, payload: UpdateLessonPayload): Promise<LessonRecord> {
+  if (payload.lessonNo !== undefined) {
+    assertValidLessonNo(payload.lessonNo);
+  }
   assertSupabaseForWrite();
   const client = supabase;
 

@@ -31,6 +31,7 @@ import type { ExerciseResult } from "@/lib/results/types";
 import { getStudentsWithRemote } from "@/lib/students/studentStorage";
 import { getStudentStatusLabel } from "@/lib/students/studentStatus";
 import type { Student } from "@/lib/students/types";
+import { MAX_LESSON_NO, parseLessonNo } from "@/lib/idil-panel/lessonRecordValidation";
 import {
   compareTurkishTextTitles,
   getDisplayTextTitle,
@@ -120,16 +121,9 @@ const DEFAULT_INLINE_EDIT_FORM: InlineEditFormState = {
   teacherNote: "",
 };
 
-const LESSON_DAY_OPTIONS = Array.from({ length: 16 }, (_, index) => index + 1);
+const LESSON_DAY_OPTIONS = Array.from({ length: MAX_LESSON_NO }, (_, index) => index + 1);
 
-function toLessonNo(value: string): number | null {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 16) {
-    return null;
-  }
-
-  return parsed;
-}
+const toLessonNo = parseLessonNo;
 
 function toFocusScore(value: string): number | null {
   const parsed = Number(value);
@@ -156,7 +150,7 @@ function normalizeTitle(value: string): string {
 
 function resolveLessonNo(lesson: LessonRecord, fallbackLessonNoByDate: Map<string, number>): number {
   const currentLessonNo = Number(lesson.lessonNo);
-  if (Number.isInteger(currentLessonNo) && currentLessonNo >= 1 && currentLessonNo <= 16) {
+  if (Number.isInteger(currentLessonNo) && currentLessonNo >= 1 && currentLessonNo <= MAX_LESSON_NO) {
     return currentLessonNo;
   }
 
@@ -646,7 +640,7 @@ function LessonRecordsContent() {
       return 1;
     }
 
-    return Math.min(16, maxLessonNo + 1);
+    return Math.min(MAX_LESSON_NO, maxLessonNo + 1);
   }, [fallbackLessonNoByDate, selectedStudentLessons]);
 
   const sortedByDateAsc = useMemo(() => {
@@ -933,7 +927,7 @@ function LessonRecordsContent() {
 
     const lessonNo = toLessonNo(inlineEditForm.lessonNo);
     if (lessonNo === null) {
-      setErrorMessage("Kacinci ders gunu 1 ile 16 arasinda olmalidir.");
+      setErrorMessage(`Kacinci ders gunu 1 ile ${MAX_LESSON_NO} arasinda olmalidir.`);
       return;
     }
 
@@ -1012,7 +1006,7 @@ function LessonRecordsContent() {
 
     const lessonNo = toLessonNo(form.lessonNo);
     if (lessonNo === null) {
-      setErrorMessage("Kacinci ders gunu 1 ile 16 arasinda olmalidir.");
+      setErrorMessage(`Kacinci ders gunu 1 ile ${MAX_LESSON_NO} arasinda olmalidir.`);
       return;
     }
 
