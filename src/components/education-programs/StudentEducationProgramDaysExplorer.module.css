@@ -29,10 +29,14 @@
 
 .dayNavList {
   display: flex;
+  box-sizing: border-box;
+  min-width: 0;
   flex-direction: column;
   gap: 8px;
   max-height: 62vh;
+  padding: 2px 10px 8px 2px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .navItem {
@@ -40,6 +44,7 @@
   min-height: 44px;
   width: 100%;
   align-items: center;
+  flex-shrink: 0;
   gap: 10px;
   border: 1px solid var(--idil-border);
   border-radius: 14px;
@@ -119,14 +124,18 @@
 
 .navItemBody {
   display: flex;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 52px;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 4px;
 }
 
 .navItemDayNumber {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -134,6 +143,8 @@
 }
 
 .navItemStatusLabel {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   color: var(--idil-muted);
   font-size: 11px;
   font-weight: 700;
@@ -141,6 +152,8 @@
 }
 
 .navItemProgress {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   color: var(--idil-muted);
   font-size: 11px;
   line-height: 14px;
@@ -176,8 +189,10 @@
   .dayNavList {
     flex-direction: row;
     max-height: none;
+    padding: 2px 8px 8px 2px;
     overflow-x: auto;
     overflow-y: visible;
+    scrollbar-gutter: auto;
     padding-bottom: 8px;
     -webkit-overflow-scrolling: touch;
     /*
