@@ -19,6 +19,8 @@ const DASHBOARD_OVERVIEW_URL = new URL(
 );
 const STUDENT_STORAGE_URL = new URL("../src/lib/students/studentStorage.ts", import.meta.url);
 const ACCESS_CHECK_URL = new URL("../src/lib/auth/verifyStudentAccess.ts", import.meta.url);
+const ACCESS_DATES_URL = new URL("../src/lib/students/studentAccessDates.ts", import.meta.url);
+const STATUS_RUNTIME_URL = new URL("../src/lib/students/studentStatus.ts", import.meta.url);
 
 async function read(url) {
   return readFile(url, "utf8");
@@ -76,4 +78,30 @@ test("local student cache ve access kontrolu completed'i korur", async () => {
   assert.match(storageSource, /status: normalizeStudentStatus\(studentInput\.status, "active"\)/);
   assert.match(storageSource, /status,\s*educationStatus:/s);
   assert.match(accessSource, /status === "completed"/);
+});
+
+test("completed erisimi is_active degeri false olsa bile passive sayilmaz", async () => {
+  const { isStudentActiveStatus } = await import(ACCESS_CHECK_URL);
+
+  assert.equal(isStudentActiveStatus(true, "active"), true);
+  assert.equal(isStudentActiveStatus(false, "completed"), true);
+  assert.equal(isStudentActiveStatus(true, "completed"), true);
+  assert.equal(isStudentActiveStatus(true, "passive"), false);
+  assert.equal(isStudentActiveStatus(false, "active"), false);
+});
+
+test("completed status kaydi is_active true olarak yazilir, passive false kalir", async () => {
+  const { getStudentIsActiveValue } = await import(STATUS_RUNTIME_URL);
+
+  assert.equal(getStudentIsActiveValue("active"), true);
+  assert.equal(getStudentIsActiveValue("completed"), true);
+  assert.equal(getStudentIsActiveValue("passive"), false);
+});
+
+test("active ve completed erisim tarihi gecerliyken, gecmis tarih reddedilir", async () => {
+  const { checkStudentDateAccess } = await import(ACCESS_DATES_URL);
+
+  assert.equal(checkStudentDateAccess("2026-01-01", "2026-12-31", "2026-08-30").allowed, true);
+  assert.equal(checkStudentDateAccess("2026-01-01", "2026-08-30", "2026-08-30").allowed, true);
+  assert.equal(checkStudentDateAccess("2026-01-01", "2026-08-29", "2026-08-30").allowed, false);
 });

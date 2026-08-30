@@ -39,7 +39,15 @@ function sessionFailure(reason: "session_invalid" | "session_version_mismatch" =
 }
 
 export function isStudentActiveStatus(isActive: unknown, status: unknown): boolean {
-  if (isActive === false || status === "passive" || status === "completed") {
+  // `completed` is an education lifecycle state, not an access revocation.
+  // Legacy rows may still carry is_active=false from before completed became
+  // a first-class status, so status is authoritative for this case. The
+  // access date check below still gates the session by access_end_date.
+  if (status === "completed") {
+    return true;
+  }
+
+  if (isActive === false || status === "passive") {
     return false;
   }
 

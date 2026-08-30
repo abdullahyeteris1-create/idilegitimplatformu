@@ -40,7 +40,7 @@ export function isCurrentStudentStatus(status: StudentStatus): boolean {
 }
 
 export function getStudentIsActiveValue(status: StudentStatus): boolean {
-  return status === "active";
+  return status !== "passive";
 }
 
 export function getStudentStatusFilterLabel(filter: StudentStatusFilter): string {
