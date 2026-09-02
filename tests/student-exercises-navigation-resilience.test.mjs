@@ -6,6 +6,8 @@ const shellSource = await readFile("src/components/exercises-preview/ExercisesCe
 const headerSource = await readFile("src/components/exercises-preview/PreviewHeader.tsx", "utf8");
 const sidebarSource = await readFile("src/components/exercises-preview/PreviewSidebar.tsx", "utf8");
 const dataSource = await readFile("src/components/student-panel-preview/data.ts", "utf8");
+const panelCss = await readFile("src/components/student-panel-preview/student-panel-preview.module.css", "utf8");
+const exercisesCss = await readFile("src/components/exercises-preview/exercises-preview.module.css", "utf8");
 
 test("kategori seçimi URL tabanlı kalır ve aynı kategori için replace çağırmaz", () => {
   assert.match(shellSource, /router\.replace\(`\$\{pathname\}\?\$\{nextParams\.toString\(\)\}`/);
@@ -28,4 +30,14 @@ test("Ayarlar tüm öğrenci navigation kaynaklarında profil route'una gider", 
   assert.match(headerSource, /aria-haspopup="menu"/);
   assert.match(headerSource, /onClick=\{onProfileMenu\}/);
   assert.match(sidebarSource, /if \(href\)/);
+});
+
+test("egzersiz kategori grid'i dashboard kolonlarindan etkilenmez", () => {
+  assert.match(shellSource, /className=\{panelStyles\.content\}/);
+  assert.doesNotMatch(shellSource, /HeroThemeProvider/);
+  assert.doesNotMatch(panelCss, /(?:^|\})\.content\{display:grid;grid-template-columns:minmax\(0,1fr\) 300px/);
+  assert.match(panelCss, /\.dashboardThemeShell \.content\{display:grid;grid-template-columns:minmax\(0,1fr\) 300px/);
+  assert.match(exercisesCss, /\.categoryCardGrid\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(exercisesCss, /@media\(max-width:1024px\)\{\.categoryCardGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}\}/);
+  assert.match(exercisesCss, /@media\(max-width:560px\)[\s\S]*\.categoryCardGrid\{grid-template-columns:1fr/);
 });
