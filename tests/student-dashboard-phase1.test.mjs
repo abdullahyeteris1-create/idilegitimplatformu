@@ -11,10 +11,14 @@ test("öğrenci paneli recommendation aynı gün deterministik ve katalog route 
   assert.match(first.href, /^\/egzersizler\//);
 });
 
-test("saÄŸ sÃ¼tun Hero Ã¼st hizasÄ±na Ã§ekilir, mobilde normal akÄ±ÅŸ korunur", async () => {
+test("ana sayfa gerçek iki kolonlu grid kullanır ve mobilde normal akışa döner", async () => {
   const css = await readFile("src/components/student-panel-preview/student-panel-preview.module.css", "utf8");
-  assert.match(css, /\.dashboardGrid>\.rightColumn\{position:relative;margin-top:-421px\}/);
-  assert.match(css, /@media\(max-width:900px\)\{\.dashboardGrid>\.rightColumn\{margin-top:0\}\}/);
+  assert.match(css, /\.content\{display:grid;grid-template-columns:minmax\(0,1fr\) 300px;column-gap:16px;align-content:start\}/);
+  assert.match(css, /\.usageGuideCard\{grid-column:1;min-width:0\}/);
+  assert.match(css, /\.dashboardGrid\{display:contents\}/);
+  assert.match(css, /\.dashboardGrid>\.rightColumn\{grid-column:2;grid-row:2\/span 3;align-self:start;min-width:0\}/);
+  assert.doesNotMatch(css, /margin-top:-421px/);
+  assert.match(css, /@media\(max-width:900px\)\{\.content\{display:block\}\.dashboardGrid\{display:grid;grid-template-columns:minmax\(0,1fr\);gap:12px;margin-top:16px\}/);
 });
 
 test("Seviye + recommendation kartÄ± recommendation alanÄ±nÄ± okunabilir tutar", async () => {
