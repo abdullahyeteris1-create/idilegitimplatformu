@@ -2,7 +2,11 @@ import "server-only";
 
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
 import { requireTeacherSession } from "@/lib/auth/teacherSession";
-import { calculateDailyDevelopmentAverages, calculateDevelopmentMetric } from "./developmentReportCalculations";
+import {
+  calculateDailyDevelopmentAverages,
+  calculateDevelopmentMetric,
+  resolveDevelopmentEducationStartDate,
+} from "./developmentReportCalculations";
 import type { DevelopmentReport, DevelopmentReportLesson } from "./developmentReportTypes";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
@@ -78,12 +82,16 @@ export async function getDevelopmentReport(studentId: string): Promise<Developme
     .filter((lesson): lesson is DevelopmentReportLesson => lesson !== null)
     .sort((a, b) => a.lessonNo - b.lessonNo || a.lessonDate.localeCompare(b.lessonDate));
   const dailyAverages = calculateDailyDevelopmentAverages(lessons);
+  const storedEducationStartDate = readString(studentRow as Row, ["education_start_date"]);
 
   return {
     student: {
       id: safeStudentId,
       name: readString(studentRow as Row, ["name"]) ?? "İsimsiz öğrenci",
-      educationStartDate: readString(studentRow as Row, ["education_start_date"]),
+      educationStartDate: resolveDevelopmentEducationStartDate(
+        lessons,
+        storedEducationStartDate,
+      ),
       accessEndDate: readString(studentRow as Row, ["access_end_date"]),
     },
     reportDate: new Date().toISOString(),

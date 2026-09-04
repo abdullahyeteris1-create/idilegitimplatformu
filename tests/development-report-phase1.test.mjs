@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateDailyDevelopmentAverages, calculateDevelopmentMetric, getDevelopmentDateKey } from "../src/lib/reports/developmentReportCalculations.ts";
+import {
+  calculateDailyDevelopmentAverages,
+  calculateDevelopmentMetric,
+  getDevelopmentDateKey,
+  resolveDevelopmentEducationStartDate,
+} from "../src/lib/reports/developmentReportCalculations.ts";
 
 function lesson(id, lessonDate, wordsPerMinute, comprehensionScore, focusScore) {
   return { id, lessonNo: Number(id), lessonDate, wordsPerMinute, comprehensionScore, focusScore, teacherNote: "" };
@@ -53,6 +58,42 @@ test("development report supports arbitrary lesson counts", () => {
   assert.equal(metric.first, 100);
   assert.equal(metric.last, 420);
   assert.equal(metric.percent, 320);
+});
+
+test("education start uses the earliest valid lesson one date", () => {
+  const lessons = [
+    { ...lesson("1", "2026-08-05", 100, 80, 80), lessonNo: 1 },
+    { ...lesson("2", "2026-08-03", 110, 82, 82), lessonNo: 1 },
+    { ...lesson("3", "2026-08-04", 120, 84, 84), lessonNo: 1 },
+    { ...lesson("4", "2026-08-01", 130, 86, 86), lessonNo: 4 },
+  ];
+
+  assert.equal(resolveDevelopmentEducationStartDate(lessons, "2026-07-01"), "2026-08-03");
+});
+
+test("education start falls back to the earliest lesson when lesson one is missing", () => {
+  const lessons = [
+    { ...lesson("3", "2026-08-10", 100, 80, 80), lessonNo: 3 },
+    { ...lesson("4", "2026-08-15", 110, 82, 82), lessonNo: 4 },
+  ];
+
+  assert.equal(resolveDevelopmentEducationStartDate(lessons, "2026-07-01"), "2026-08-10");
+});
+
+test("education start uses the stored fallback only when no valid lesson date exists", () => {
+  assert.equal(resolveDevelopmentEducationStartDate([], "2026-07-01"), "2026-07-01");
+  assert.equal(
+    resolveDevelopmentEducationStartDate(
+      [
+        { ...lesson("1", null, 100, 80, 80), lessonNo: 1 },
+        { ...lesson("2", "not-a-date", 100, 80, 80), lessonNo: 2 },
+      ],
+      "2026-07-01",
+    ),
+    "2026-07-01",
+  );
+  assert.equal(resolveDevelopmentEducationStartDate([], "invalid"), null);
+  assert.equal(resolveDevelopmentEducationStartDate([], null), null);
 });
 
 test("development report has no overall score or radar benchmark contract", async () => {
@@ -112,9 +153,19 @@ test("development report keeps the two-page PDF structure and compact A4 capture
   assert.match(source, /reportPageOne/);
   assert.match(source, /reportPageTwo/);
   assert.match(source, /classList\.add\(styles\.pdfMode\)/);
-  assert.match(source, /maxWidth = "794px"/);
+  assert.match(source, /const PDF_CONTENT_WIDTH_PX = 718/);
+  assert.match(source, /maxWidth = `\$\{PDF_CONTENT_WIDTH_PX\}px`/);
+  assert.doesNotMatch(source, /794px/);
+  assert.match(source, /margin: \[PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_MARGIN_MM, PDF_MARGIN_MM\]/);
+  assert.match(source, /scale: 2/);
+  assert.match(source, /format: "a4", orientation: "portrait"/);
   assert.match(source, /Sayfa 1 \/ 2/);
   assert.match(source, /Sayfa 2 \/ 2/);
+  assert.equal((source.match(/<MetricCard title=/g) ?? []).length, 3);
+  assert.equal((source.match(/<ProfileBar label=/g) ?? []).length, 3);
+  assert.equal((source.match(/<Chart title=/g) ?? []).length, 3);
+  assert.equal((source.match(/<footer className=\{styles\.footer\}>/g) ?? []).length, 2);
+  assert.match(source, /<table><thead><tr><th>Ders<\/th><th>Tarih<\/th>/);
   assert.match(source, /calculateDailyDevelopmentAverages/);
   assert.match(source, /formatShortDate/);
 });
@@ -126,6 +177,11 @@ test("development report does not clip the compact first PDF page", async () => 
   assert.match(css, /\.pdfMode \.chartSvg \{ height: 160px; max-height: 160px/);
   assert.match(css, /\.pdfMode \.profileRow \{ grid-template-columns: 165px minmax\(0, 1fr\) 135px/);
   assert.match(css, /\.pdfMode \.assessmentCard \{ margin-top: 8px/);
+  assert.doesNotMatch(css, /794px/);
+  assert.match(css, /\.pdfMode \.studentBox > div \{[\s\S]*?align-items: start/);
+  assert.match(css, /\.pdfMode \.metricMain \{[\s\S]*?grid-template-rows/);
+  assert.match(css, /\.pdfMode \.tableWrap th,[\s\S]*?vertical-align: middle/);
+  assert.match(css, /\.pdfMode \.detailGrid \{[\s\S]*?align-items: stretch/);
 });
 
 test("development report provides direct PDF download without changing print flow", async () => {

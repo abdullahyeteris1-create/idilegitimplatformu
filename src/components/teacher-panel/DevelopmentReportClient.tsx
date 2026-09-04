@@ -19,7 +19,14 @@ const RECOMMENDATIONS = [
 
 function date(value: string | null): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return "—";
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Istanbul",
+  }).format(parsed);
 }
 
 function signed(value: number | null, suffix = "%", decimals = 0): string {

@@ -18,12 +18,36 @@ const ISTANBUL_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
 });
 
-export function getDevelopmentDateKey(value: string): string | null {
+export function getDevelopmentDateKey(value: string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (dateOnly) return dateOnly[0];
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return null;
   return ISTANBUL_DATE_FORMATTER.format(date);
+}
+
+export function resolveDevelopmentEducationStartDate(
+  lessons: ReadonlyArray<Pick<DevelopmentReportLesson, "lessonNo" | "lessonDate">>,
+  fallback: string | null,
+): string | null {
+  const earliestDate = (
+    candidates: ReadonlyArray<Pick<DevelopmentReportLesson, "lessonDate">>,
+  ): string | null => {
+    const dates = candidates
+      .map((lesson) => getDevelopmentDateKey(lesson.lessonDate))
+      .filter((value): value is string => value !== null)
+      .sort((left, right) => left.localeCompare(right));
+
+    return dates[0] ?? null;
+  };
+
+  return (
+    earliestDate(lessons.filter((lesson) => lesson.lessonNo === 1)) ??
+    earliestDate(lessons) ??
+    (fallback ? getDevelopmentDateKey(fallback) : null)
+  );
 }
 
 function average(values: Array<number | null>): number | null {

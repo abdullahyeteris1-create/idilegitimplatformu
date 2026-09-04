@@ -10,7 +10,7 @@
 .assessmentCard { display: grid; grid-template-columns: 48px 1fr; gap: 15px; margin: 24px 34px 0; padding: 17px 20px; border: 1px solid #dce5f2; border-radius: 14px; background: #f8fbff; }.assessmentIcon { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #2563eb; color: white; font-size: 22px; }.assessmentCard .sectionHeading { margin-bottom: 5px; }.assessmentCard p { margin: 0; color: #304365; font-size: 12px; line-height: 1.6; }.pageBreak { break-before: page; page-break-before: always; }
 .lessonSection { margin-top: 30px; }.tableWrap { overflow-x: auto; }.tableWrap table { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid #dce5f2; border-radius: 12px; font-size: 11px; }.tableWrap th, .tableWrap td { padding: 10px 9px; border-bottom: 1px solid #e7edf5; text-align: left; }.tableWrap th { background: #102b61; color: white; font-size: 10px; line-height: 1.25; }.tableWrap tbody tr:nth-child(even) { background: #fbfdff; }.tableWrap tbody tr:last-child td { border-bottom: 0; }.latestRow { background: #effaf6 !important; }.lessonNumber { display: inline-grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: #eff5ff; color: #244a9b; }.latestRow .lessonNumber { background: #d1fae5; color: #047857; }.detailGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 34px 0; }.detailCard { min-height: 150px; padding: 16px 18px; border: 1px solid #dce5f2; border-radius: 14px; background: #fff; }.detailCard .sectionHeading h2 { font-size: 12px; }.comment { margin: 10px 0 0; color: #304365; font-size: 12px; line-height: 1.65; white-space: pre-wrap; }.recommendationList { display: grid; gap: 9px; margin: 12px 0 0; padding: 0; list-style: none; }.recommendationList li { display: flex; gap: 8px; color: #304365; font-size: 11px; line-height: 1.4; }.recommendationList li span { display: grid; width: 17px; height: 17px; flex: 0 0 auto; place-items: center; border: 1px solid #8ed8bd; border-radius: 50%; color: #059669; font-weight: 800; }.editorSection { margin: 22px 34px; padding: 16px; border: 1px dashed #94a3b8; }.editorSection h2 { margin: 0 0 12px; color: #12306b; font-size: 15px; }.editorSection label { display: grid; gap: 6px; font-size: 12px; font-weight: 700; }.editorSection textarea, .custom input { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font: inherit; }.editorSection fieldset { margin: 16px 0 0; padding: 0; border: 0; }.editorSection legend { font-size: 12px; font-weight: 800; }.check { display: flex !important; grid-template-columns: auto 1fr; grid-auto-flow: column; justify-content: start; margin-top: 8px; font-weight: 500 !important; }.custom { display: flex; gap: 8px; margin-top: 12px; }.custom button { border: 0; border-radius: 8px; background: #12306b; color: white; padding: 8px 12px; font-weight: 700; }.footer { display: flex; align-items: center; gap: 16px; margin-top: 28px; padding: 15px 34px; background: #102b61; color: white; font-size: 10px; }.footer strong { font-size: 12px; }.footer span:nth-last-child(2) { margin-left: auto; }.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }.printOnly { display: block; }
 @media (max-width: 780px) { .page { padding: 12px; }.brand { gap: 13px; padding: 22px 18px; }.logo { min-width: 62px; padding-right: 10px; font-size: 22px; }.brandTitle h1 { font-size: 22px; }.brandTitle span { font-size: 10px; }.reportDate { min-width: 90px; padding: 9px; }.studentBox, .section, .assessmentCard, .detailGrid, .editorSection { margin-left: 18px; margin-right: 18px; }.studentBox > div, .metricGrid, .chartGrid, .detailGrid { grid-template-columns: 1fr; }.profileRow { grid-template-columns: 145px minmax(0, 1fr); gap: 10px; }.profileChange { grid-column: 2; text-align: left; }.legend { display: none; }.footer { flex-wrap: wrap; padding: 14px 18px; }.footer span:nth-last-child(2) { margin-left: 0; }.toolbar { flex-wrap: wrap; }.toolbarActions { width: 100%; }.toolbarActions button { flex: 1; } }
-.report, .report * { box-sizing: border-box; }.reportPageOne, .reportPageTwo { width: 100%; max-width: 100%; min-width: 0; }.reportPageOne { break-after: page; page-break-after: always; }.pdfMode .reportPageOne, .pdfMode .reportPageTwo { width: 794px; max-width: 794px; min-width: 0; overflow: hidden; }.pdfMode .reportPageOne { height: 1038px; break-after: page; page-break-after: always; }.pdfMode .reportPageTwo { min-height: 1038px; break-after: auto; page-break-after: auto; }.pdfMode .brand { padding: 20px 24px 14px; }.pdfMode .studentBox { margin-top: 14px; padding: 12px 16px; }.pdfMode .section { margin-top: 16px; }.pdfMode .sectionHeading { margin-bottom: 8px; }.pdfMode .metricCard { padding: 11px 10px; gap: 7px; grid-template-columns: 30px minmax(0, 1fr) 62px; }.pdfMode .metricIcon { width: 28px; height: 28px; font-size: 19px; }.pdfMode .metricValues { gap: 4px; }.pdfMode .metricValues strong { font-size: 19px; }.pdfMode .metricValues span { font-size: 15px; }.pdfMode .metricDelta { margin-top: 6px; padding: 5px 9px; font-size: 10px; }.pdfMode .successBanner { margin-top: 11px; padding: 9px 13px; }.pdfMode .profileCard { gap: 10px; padding: 11px 14px; }.pdfMode .profileRow { grid-template-columns: 170px minmax(0, 1fr) 100px; gap: 11px; }.pdfMode .chartCard { padding: 9px; }.pdfMode .chartSvg { max-height: 126px; }.pdfMode .assessmentCard { margin-top: 15px; padding: 11px 15px; }.pdfMode .assessmentCard p { line-height: 1.4; }.pdfMode .footer { margin-top: 14px; padding: 10px 24px; width: 100%; max-width: 100%; }
+.report, .report * { box-sizing: border-box; }.reportPageOne, .reportPageTwo { width: 100%; max-width: 100%; min-width: 0; }.reportPageOne { break-after: page; page-break-after: always; }.pdfMode .reportPageOne, .pdfMode .reportPageTwo { width: 718px; max-width: 718px; min-width: 0; overflow: visible; }.pdfMode .reportPageOne { height: 1038px; break-after: page; page-break-after: always; }.pdfMode .reportPageTwo { min-height: 1038px; break-after: auto; page-break-after: auto; }.pdfMode .brand { padding: 20px 24px 14px; }.pdfMode .studentBox { margin-top: 14px; padding: 12px 16px; }.pdfMode .section { margin-top: 16px; }.pdfMode .sectionHeading { margin-bottom: 8px; }.pdfMode .metricCard { padding: 11px 10px; gap: 7px; grid-template-columns: 30px minmax(0, 1fr) 62px; }.pdfMode .metricIcon { width: 28px; height: 28px; font-size: 19px; }.pdfMode .metricValues { gap: 4px; }.pdfMode .metricValues strong { font-size: 19px; }.pdfMode .metricValues span { font-size: 15px; }.pdfMode .metricDelta { margin-top: 6px; padding: 5px 9px; font-size: 10px; }.pdfMode .successBanner { margin-top: 11px; padding: 9px 13px; }.pdfMode .profileCard { gap: 10px; padding: 11px 14px; }.pdfMode .profileRow { grid-template-columns: 170px minmax(0, 1fr) 100px; gap: 11px; }.pdfMode .chartCard { padding: 9px; }.pdfMode .chartSvg { max-height: 126px; }.pdfMode .assessmentCard { margin-top: 15px; padding: 11px 15px; }.pdfMode .assessmentCard p { line-height: 1.4; }.pdfMode .footer { margin-top: 14px; padding: 10px 24px; width: 100%; max-width: 100%; }
 @media print { @page { size: A4 portrait; margin: 8mm; } .page { padding: 0; background: white; }.toolbar, .noPrint { display: none !important; }.report { width: 100%; max-width: 100%; min-width: 0; box-shadow: none; overflow: visible; }.reportPageOne, .reportPageTwo { width: 100%; max-width: 100%; min-width: 0; overflow: visible; }.reportPageOne { break-after: page; page-break-after: always; }.reportPageTwo { break-after: auto; page-break-after: auto; }.brand { padding: 16px 20px 12px; }.studentBox, .section, .assessmentCard, .detailGrid { margin-left: 20px; margin-right: 20px; }.studentBox, .section, .metricGrid, .profileCard, .chartGrid, .chartCard, .assessmentCard, .detailCard, .tableWrap, .footer { break-inside: avoid; page-break-inside: avoid; }.section { margin-top: 15px; }.studentBox { margin-top: 14px; padding: 12px 16px; }.metricGrid, .chartGrid { gap: 8px; }.metricCard { padding: 10px 9px; gap: 6px; grid-template-columns: 28px minmax(0, 1fr) 58px; }.metricIcon { width: 26px; height: 26px; font-size: 18px; }.metricValues { gap: 3px; }.metricValues strong { font-size: 18px; }.metricValues span { font-size: 14px; }.metricCard small { font-size: 8px; }.metricDelta { margin-top: 5px; padding: 4px 8px; font-size: 9px; }.metricCard em { margin-top: 4px; font-size: 9px; }.successBanner { margin-top: 10px; padding: 8px 12px; }.profileCard { gap: 9px; padding: 10px 12px; }.profileRow { grid-template-columns: 165px minmax(0, 1fr) 96px; gap: 9px; }.profileLabel strong { font-size: 11px; }.profileLabel small, .profileChange small, .scaleLabels { font-size: 8px; }.profileChange { font-size: 11px; }.chartCard { padding: 8px; }.chartCard h3 { font-size: 11px; }.chartSvg { max-height: 116px; margin-top: 4px; }.chartCard text { font-size: 8px; }.chartCard .dataLabel { font-size: 9px; }.assessmentCard { margin-top: 13px; padding: 10px 13px; }.assessmentCard p { font-size: 10px; line-height: 1.35; }.footer { margin-top: 12px; padding: 9px 20px; width: 100%; max-width: 100%; font-size: 9px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }.lessonSection { margin-top: 14px; }.tableWrap { overflow: visible; }.tableWrap table { width: 100%; max-width: 100%; font-size: 9px; }.tableWrap th, .tableWrap td { padding: 6px 5px; }.detailGrid { gap: 8px; margin-top: 14px; }.detailCard { padding: 10px; min-height: 100px; }.comment { font-size: 10px; line-height: 1.45; }.recommendationList { gap: 6px; margin-top: 8px; }.recommendationList li { font-size: 9px; }.editorSection { display: none !important; }.report, .reportPageOne, .reportPageTwo, .metricCard, .profileCard, .chartCard, .assessmentCard, .detailCard, .latestRow { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 .chartHeading { align-items: flex-start; }.chartCard h3 { font-size: 13px; }.chartHeading small { display: block; margin-top: 3px; color: #71809a; font-size: 9px; }.chartCurrent { display: flex; align-items: center; gap: 7px; color: #172b63; }.chartCurrent strong { font-size: 15px; }.chartSummary { margin-top: 5px; color: #71809a; font-size: 10px; font-weight: 700; }.chartSummary span { padding: 0 4px; color: #4768ab; }
 .chartSvg { height: 210px; }.pdfMode .chartCard { min-height: 238px; }.pdfMode .chartSvg { height: 210px; max-height: 210px; }
@@ -286,4 +286,108 @@
   bottom: 8px;
   width: 50px;
   height: 22px;
+}
+
+/* Canonical PDF alignment rules. Keep these scoped to the cloned export tree. */
+.pdfMode .studentBox > div {
+  grid-template-columns: minmax(0, 1.35fr) repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+.pdfMode .studentBox span {
+  grid-template-rows: 14px minmax(18px, auto);
+  align-content: start;
+  overflow-wrap: anywhere;
+}
+
+.pdfMode .metricGrid,
+.pdfMode .chartGrid {
+  align-items: stretch;
+}
+
+.pdfMode .metricCard {
+  min-height: 104px;
+  align-items: start;
+}
+
+.pdfMode .metricMain {
+  display: grid;
+  grid-template-rows: 13px 24px 12px 20px 12px;
+  align-content: start;
+  min-width: 0;
+}
+
+.pdfMode .metricDelta {
+  align-self: start;
+  justify-self: start;
+}
+
+.pdfMode .profileRow {
+  grid-template-columns: 165px minmax(0, 1fr) 135px;
+  min-height: 42px;
+  align-items: center;
+}
+
+.pdfMode .profileChange {
+  min-width: 0;
+  align-self: center;
+  overflow-wrap: anywhere;
+}
+
+.pdfMode .chartCard {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-self: stretch;
+}
+
+.pdfMode .chartHeading {
+  min-height: 25px;
+}
+
+.pdfMode .chartCurrent {
+  min-width: 48px;
+  justify-content: flex-end;
+}
+
+.pdfMode .chartSvg {
+  align-self: end;
+}
+
+.pdfMode .assessmentCard p,
+.pdfMode .comment,
+.pdfMode .recommendationList li {
+  overflow-wrap: anywhere;
+}
+
+.pdfMode .tableWrap table {
+  table-layout: fixed;
+}
+
+.pdfMode .tableWrap th,
+.pdfMode .tableWrap td {
+  height: 25px;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.pdfMode .tableWrap th {
+  height: 34px;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.pdfMode .detailGrid {
+  align-items: stretch;
+}
+
+.pdfMode .detailCard {
+  display: flex;
+  min-height: 122px;
+  flex-direction: column;
+}
+
+.pdfMode .footer {
+  align-items: center;
+  overflow-wrap: anywhere;
 }
