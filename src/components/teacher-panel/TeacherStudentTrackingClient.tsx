@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PanelCard } from "@/components/ui/PanelCard";
 import type { TeacherStudentListItem } from "@/lib/teachers/studentTrackingTypes";
+import {
+  getTeacherStudentTrackingSummary,
+  matchesTeacherStudentStatusFilter,
+} from "@/lib/teachers/studentTrackingPresentation";
 import type { StudentStatus, StudentStatusFilter } from "@/lib/students/studentStatus";
 import {
   getStudentStatusBadgeClass,
   getStudentStatusLabel,
-  isCurrentStudentStatus,
 } from "@/lib/students/studentStatus";
 
 type StatusFilter = StudentStatusFilter;
@@ -234,34 +237,13 @@ export function TeacherStudentTrackingClient({
     return values.sort((left, right) => left - right);
   }, [students]);
 
-  const summary = useMemo(() => {
-    const activeCount = students.filter((student) => student.status === "active").length;
-    const passiveCount = students.filter((student) => student.status === "passive").length;
-    const completedCount = students.filter((student) => student.status === "completed").length;
-    const totalXp = students.reduce((sum, student) => sum + student.totalXp, 0);
-    const activePrograms = students.filter((student) => Boolean(student.activeProgramName)).length;
-
-    return {
-      total: students.length,
-      active: activeCount,
-      passive: passiveCount,
-      completed: completedCount,
-      current: activeCount + passiveCount,
-      totalXp,
-      activePrograms,
-    };
-  }, [students]);
+  const summary = useMemo(() => getTeacherStudentTrackingSummary(students), [students]);
 
   const filteredStudents = useMemo(() => {
     const normalizedSearch = normalizeSearchValue(searchText).trim();
 
     return students.filter((student) => {
-      const matchesStatus =
-        statusFilter === "all"
-          ? true
-          : statusFilter === "current"
-            ? isCurrentStudentStatus(student.status)
-            : student.status === statusFilter;
+      const matchesStatus = matchesTeacherStudentStatusFilter(student, statusFilter);
       const matchesClass = classFilter === "all" || (student.classLabel ?? "") === classFilter;
       const matchesLevel = levelFilter === "all" || String(student.level) === levelFilter;
       const searchableText = normalizeSearchValue(
@@ -395,10 +377,11 @@ export function TeacherStudentTrackingClient({
         </div>
       </PanelCard>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {[
           ["Toplam Öğrenci", summary.total],
           ["Aktif Öğrenci", summary.active],
+          ["Eğitimi Tamamlanan", summary.completed],
           ["Pasif Öğrenci", summary.passive],
           ["Toplam XP", summary.totalXp],
           ["Aktif Program", summary.activePrograms],
