@@ -70,6 +70,27 @@ const TOUCH_STYLE: CSSProperties = {
 
 const FONT_SIZE_OPTIONS: FontSizePx[] = [12, 14, 16, 18, 20, 22, 24, 26, 28];
 const ALL_CATEGORIES = "all";
+const OPTION_LABELS = ["A", "B", "C", "D", "E"] as const;
+
+function getOptionLabel(optionIndex: number): string {
+  return OPTION_LABELS[optionIndex] ?? String.fromCharCode(65 + optionIndex);
+}
+
+function getOptionBadgeClass(evaluation: AnswerEvaluation | undefined, optionIndex: number): string {
+  if (!evaluation) {
+    return styles.optionBadgeDefault;
+  }
+
+  if (optionIndex === evaluation.correctAnswerIndex) {
+    return styles.optionBadgeCorrect;
+  }
+
+  if (optionIndex === evaluation.selectedAnswerIndex && !evaluation.isCorrect) {
+    return styles.optionBadgeWrong;
+  }
+
+  return styles.optionBadgeDefault;
+}
 
 const EMPTY_TEXT: ReadingComprehensionText = {
   id: "",
@@ -688,7 +709,7 @@ export function ReadingComprehensionTestClient({
                   </h3>
                   <div className="mt-3 grid gap-2">
                     {question.options.map((option, optionIndex) => (
-                      <label key={option} className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800 ${styles.optionLabel}`} style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
+                      <label key={option} className={`flex min-h-[48px] cursor-pointer items-center gap-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-2 font-semibold text-slate-800 ${styles.optionLabel} ${styles.optionRow}`} style={{ fontSize: `${Math.min(fontSize, 18)}px`, lineHeight: 1.45 }}>
                         <input
                           type="radio"
                           name={question.id}
@@ -696,7 +717,8 @@ export function ReadingComprehensionTestClient({
                           onChange={() => handleAnswerSelect(question.id, optionIndex)}
                           className="h-4 w-4 accent-red-600"
                         />
-                        <span>{option}</span>
+                        <span className={styles.optionBadge} aria-hidden="true">{getOptionLabel(optionIndex)}</span>
+                        <span className={styles.optionText}>{option}</span>
                       </label>
                     ))}
                   </div>
@@ -816,8 +838,11 @@ export function ReadingComprehensionTestClient({
                   </div>
                   <div className="mt-3 grid gap-2">
                     {question.options.map((option, optionIndex) => (
-                      <div key={option} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${getOptionClass(evaluation, optionIndex)}`}>
-                        {option}
+                      <div key={option} className={`rounded-xl border px-3 py-2 text-sm font-semibold ${styles.optionRow} ${getOptionClass(evaluation, optionIndex)}`}>
+                        <span className={`${styles.optionBadge} ${getOptionBadgeClass(evaluation, optionIndex)}`} aria-hidden="true">
+                          {getOptionLabel(optionIndex)}
+                        </span>
+                        <span className={styles.optionText}>{option}</span>
                       </div>
                     ))}
                   </div>

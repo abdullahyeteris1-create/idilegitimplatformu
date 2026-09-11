@@ -159,6 +159,29 @@ test("Anlama Testi: exerciseType payload'inda tam olarak reading-comprehension",
   assert.match(source, /exerciseType: "reading-comprehension",/);
 });
 
+test("Anlama Testi: secenek badge'leri index'ten A-B-C-D-E uretilir ve secenek metni/sirasi degismez", async () => {
+  const source = await read(COMPREHENSION_PATH);
+
+  assert.match(source, /const OPTION_LABELS = \["A", "B", "C", "D", "E"\] as const;/);
+  assert.match(source, /function getOptionLabel\(optionIndex: number\): string/);
+  assert.match(source, /OPTION_LABELS\[optionIndex\]/);
+  assert.equal((source.match(/getOptionLabel\(optionIndex\)/g) ?? []).length, 2);
+  assert.match(source, /aria-hidden="true"[^>]*>\s*\{getOptionLabel\(optionIndex\)\}/);
+  assert.match(source, /<span className=\{styles\.optionText\}>\{option\}<\/span>/);
+  assert.match(source, /question\.options\.map\(\(option, optionIndex\) =>/);
+});
+
+test("Anlama Testi: badge CSS'i cevaplama ve degerlendirme state'lerini destekler, mobilde kuculur", async () => {
+  const css = await read("src/components/exercises/reading-comprehension-theme.module.css");
+
+  assert.match(css, /\.optionBadge\s*\{/);
+  assert.match(css, /flex:\s*0 0 36px/);
+  assert.match(css, /\.optionBadgeCorrect/);
+  assert.match(css, /\.optionBadgeWrong/);
+  assert.match(css, /\.optionLabel:has\(input:checked\) \.optionBadge/);
+  assert.match(css, /@media \(max-width: 480px\)/);
+});
+
 test("Okuma Hizi Testi: exerciseType payload'inda tam olarak reading-speed-test", async () => {
   const source = await read(SPEED_TEST_PATH);
   assert.match(source, /exerciseType: "reading-speed-test",/);

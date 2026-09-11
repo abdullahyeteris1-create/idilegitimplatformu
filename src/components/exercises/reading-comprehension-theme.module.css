@@ -492,3 +492,67 @@
 .readingArticle {
   scrollbar-gutter: stable;
 }
+
+.optionBadge {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 0.82em;
+  font-weight: 800;
+  line-height: 1;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.optionRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.optionText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.optionBadgeDefault {
+  color: currentColor;
+}
+
+.optionBadgeCorrect {
+  border-color: color-mix(in srgb, var(--rc-green) 55%, transparent);
+  background: color-mix(in srgb, var(--rc-green) 18%, transparent);
+  color: var(--rc-green);
+}
+
+.optionBadgeWrong {
+  border-color: color-mix(in srgb, var(--rc-red) 55%, transparent);
+  background: color-mix(in srgb, var(--rc-red) 18%, transparent);
+  color: var(--rc-red);
+}
+
+.optionLabel:hover .optionBadge {
+  border-color: color-mix(in srgb, currentColor 38%, transparent);
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.optionLabel:has(input:checked) .optionBadge {
+  border-color: color-mix(in srgb, var(--rc-purple) 58%, transparent);
+  background: color-mix(in srgb, var(--rc-purple) 16%, transparent);
+  color: var(--rc-purple);
+}
+
+@media (max-width: 480px) {
+  .optionBadge {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 9px;
+  }
+}
