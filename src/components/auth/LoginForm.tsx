@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { setCurrentStudent, setCurrentUser } from "@/lib/auth/auth";
 import type { Student } from "@/lib/students/types";
@@ -18,6 +18,8 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setIsMounted(true), 0);
@@ -33,43 +35,62 @@ export function LoginForm() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage("");
-    const cleanUsername = username.trim();
-    const cleanPassword = password.trim();
-    if (!cleanUsername || !cleanPassword) {
-      setMessage("Lütfen kullanıcı adı ve şifre alanlarını doldurun.");
+    if (submittingRef.current) {
       return;
     }
 
-    if (mode === "teacher") {
-      const response = await fetch("/api/admin-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: cleanUsername, password: cleanPassword }) });
-      if (response.ok) {
-        const nextParam = searchParams.get("next");
-        setCurrentUser({ role: "teacher", username: cleanUsername });
-        router.replace(nextParam?.startsWith("/") ? nextParam : "/ogretmen");
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    let keepLockedForNavigation = false;
+
+    try {
+      setMessage("");
+      const cleanUsername = username.trim();
+      const cleanPassword = password.trim();
+      if (!cleanUsername || !cleanPassword) {
+        setMessage("Lütfen kullanıcı adı ve şifre alanlarını doldurun.");
         return;
       }
-      setMessage("Kullanıcı adı veya şifre hatalı.");
-      return;
-    }
 
-    console.info("[student-login] submit_started");
-    const response = await fetch("/api/student-session", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ username: cleanUsername, password: cleanPassword }) });
-    const payload = (await response.json()) as { ok?: boolean; message?: string; student?: Student };
-    if (!response.ok || !payload.ok || !payload.student) {
-      setMessage(payload.message ?? "Kullanıcı adı veya şifre hatalı.");
-      return;
-    }
-    console.info("[student-login] api_success");
-    setCurrentStudent(payload.student);
-    setCurrentUser({ role: "student", username: payload.student.username, studentId: payload.student.id, studentName: payload.student.name });
-    try {
-      window.sessionStorage.setItem(STUDENT_LOGIN_GENERATION_KEY, String(Date.now()));
+      if (mode === "teacher") {
+        const response = await fetch("/api/admin-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: cleanUsername, password: cleanPassword }) });
+        if (response.ok) {
+          const nextParam = searchParams.get("next");
+          setCurrentUser({ role: "teacher", username: cleanUsername });
+          keepLockedForNavigation = true;
+          router.replace(nextParam?.startsWith("/") ? nextParam : "/ogretmen");
+          return;
+        }
+        setMessage("Kullanıcı adı veya şifre hatalı.");
+        return;
+      }
+
+      console.info("[student-login] submit_started");
+      const response = await fetch("/api/student-session", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ username: cleanUsername, password: cleanPassword }) });
+      const payload = (await response.json()) as { ok?: boolean; message?: string; student?: Student };
+      if (!response.ok || !payload.ok || !payload.student) {
+        setMessage(payload.message ?? "Kullanıcı adı veya şifre hatalı.");
+        return;
+      }
+      console.info("[student-login] api_success");
+      setCurrentStudent(payload.student);
+      setCurrentUser({ role: "student", username: payload.student.username, studentId: payload.student.id, studentName: payload.student.name });
+      try {
+        window.sessionStorage.setItem(STUDENT_LOGIN_GENERATION_KEY, String(Date.now()));
+      } catch {
+        // Session storage is an optimization for suppressing stale watcher races.
+      }
+      console.info("[student-login] replace_ogrenci");
+      keepLockedForNavigation = true;
+      router.replace("/ogrenci");
     } catch {
-      // Session storage is an optimization for suppressing stale watcher races.
+      setMessage("Giriş işlemi tamamlanamadı. Lütfen tekrar deneyin.");
+    } finally {
+      if (!keepLockedForNavigation) {
+        submittingRef.current = false;
+        setIsSubmitting(false);
+      }
     }
-    console.info("[student-login] replace_ogrenci");
-    router.replace("/ogrenci");
   };
 
   const reasonMessage = searchParams.get("reason") === "password-changed" ? "Şifreniz değiştirildi. Yeni şifrenizle tekrar giriş yapın." : "";
@@ -86,7 +107,7 @@ export function LoginForm() {
         <div className="login-form__options"><label className="login-check"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /> <span>Beni hatırla</span></label><button type="button" onClick={() => setMessage("Bu özellik yakında eklenecek.")} className="login-forgot">Şifremi unuttum</button></div>
         {reasonMessage ? <p className="login-message login-message--success" role="status">{reasonMessage}</p> : null}
         {message ? <p className="login-message" role="alert">{message}</p> : null}
-        <button type="submit" disabled={!isMounted} className="login-submit">Giriş yap <span aria-hidden="true">→</span></button>
+        <button type="submit" disabled={!isMounted || isSubmitting} className="login-submit">{isSubmitting ? "Giriş yapılıyor..." : "Giriş yap"} <span aria-hidden="true">→</span></button>
       </form>
     </div>
   );
