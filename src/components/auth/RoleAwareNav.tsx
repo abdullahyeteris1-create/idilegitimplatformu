@@ -120,7 +120,7 @@ export function RoleAwareNav({ fallbackItems, compactHeader = false, variant = "
           }
           style={{ touchAction: "manipulation" }}
         >
-          {isLoggingOut ? "Çıkış yapılıyor..." : isVibrant ? "Çıkış" : "Cikis"}
+          {isLoggingOut ? "Çıkış yapılıyor..." : isVibrant ? "Çıkış" : "Çıkış"}
         </button>
       ) : null}
       {logoutError ? <span role="alert" className={`w-full text-sm font-semibold ${isVibrant ? "text-red-100" : "text-red-700"}`}>{logoutError}</span> : null}
