@@ -7,6 +7,7 @@ import { PanelCard } from "@/components/ui/PanelCard";
 import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
+import { TeacherParagraphAnalysis } from "@/components/teacher-panel/TeacherParagraphAnalysis";
 import type {
   TeacherStudentActivity,
   TeacherStudentDetail,
@@ -964,6 +965,8 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
         <MetricCard title="Son Çalışma" value={formatDateTime(detail.performanceSummary.lastStudyAt)} />
         <MetricCard title="Rozet Sayısı" value={detail.gamificationSummary.badgeCount} subtitle="Kazanılan rozet sayısı" />
       </section>
+
+      <TeacherParagraphAnalysis results={detail.results} />
 
       <section className="grid gap-3 xl:grid-cols-2">
         <PanelCard title="Performans Özeti" subtitle="Okuma hızları ve anlama puanları">
