@@ -44,7 +44,7 @@ const FORBIDDEN_DETAIL_KEYS = new Set([
 ]);
 
 type DetailRule = {
-  type: "boolean" | "integer" | "number" | "string";
+  type: "array" | "boolean" | "integer" | "number" | "string";
   min?: number;
   max?: number;
   maxLength?: number;
@@ -415,6 +415,16 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     activeReadingSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
     completedAt: { type: "string", maxLength: 40 },
   },
+  paragraph: {
+    category: { type: "string", values: ["main_idea", "supporting_idea", "inference", "completion", "flow", "mixed"] },
+    totalQuestions: { type: "integer", min: 1, max: 100 },
+    averageResponseTimeMs: { type: "integer", min: 1, max: 21_600_000 },
+    completedAt: { type: "string", maxLength: 40 },
+    questionIds: { type: "string", maxLength: 2_000 },
+    correctAnswers: { type: "integer", min: 0, max: 100 },
+    wrongAnswers: { type: "integer", min: 0, max: 100 },
+    answers: { type: "array", min: 1, max: 100 },
+  },
   "mental-arithmetic-target-total": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, speed: { type: "string", values: ["relaxed", "normal", "fast"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
   "mental-arithmetic-chain": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, bestStreak: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
   "mental-arithmetic-market": { level: { type: "string", values: ["beginner", "advanced", "master", "expert"] }, mode: { type: "string", values: ["shopping", "change", "budget"] }, totalRounds: { type: "integer", min: 0, max: 100000 }, averageAnswerSeconds: { type: "number", min: 0, max: 21600 }, completionReason: { type: "string", values: ["manual", "natural"] } },
@@ -433,7 +443,7 @@ type ValidatedResultBody = {
   completedAt: string;
   submissionKey: string;
   assignmentItemId: string | null;
-  details: Record<string, string | number | boolean>;
+  details: Record<string, string | number | boolean | unknown[]>;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -471,7 +481,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-function validateDetails(exerciseType: string, value: unknown): Record<string, string | number | boolean> | null {
+function validateDetails(exerciseType: string, value: unknown): Record<string, string | number | boolean | unknown[]> | null {
   if (value === undefined) return {};
   if (!isPlainObject(value)) return null;
 
@@ -486,7 +496,7 @@ function validateDetails(exerciseType: string, value: unknown): Record<string, s
   const schema = DETAIL_SCHEMAS[exerciseType];
   if (!schema) return null;
 
-  const cleaned: Record<string, string | number | boolean> = {};
+  const cleaned: Record<string, string | number | boolean | unknown[]> = {};
   for (const [key, raw] of Object.entries(value)) {
     if (FORBIDDEN_DETAIL_KEYS.has(key.toLowerCase())) return null;
     const rule = schema[key];
@@ -501,6 +511,16 @@ function validateDetails(exerciseType: string, value: unknown): Record<string, s
       if (typeof raw !== "string" || raw.length > (rule.maxLength ?? 120)) return null;
       if (rule.values && !rule.values.includes(raw)) return null;
       cleaned[key] = raw;
+      continue;
+    }
+    if (rule.type === "array") {
+      if (!Array.isArray(raw) || raw.length < (rule.min ?? 0) || raw.length > (rule.max ?? 100)) return null;
+      const answers = raw.map((item) => {
+        if (!isPlainObject(item) || typeof item.questionId !== "string" || item.questionId.length > 128 || typeof item.correct !== "boolean" || typeof item.responseTimeMs !== "number" || !Number.isInteger(item.responseTimeMs) || item.responseTimeMs < 1 || item.responseTimeMs > 21_600_000) return null;
+        return { questionId: item.questionId, correct: item.correct, responseTimeMs: item.responseTimeMs };
+      });
+      if (answers.some((item) => item === null)) return null;
+      cleaned[key] = answers;
       continue;
     }
     if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
