@@ -8,6 +8,7 @@ import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
 import { downloadResultsXlsx } from "@/lib/results/resultExport";
 import { createReadingTestStatistics } from "@/lib/results/readingTestStatistics";
 import { TeacherParagraphAnalysis } from "@/components/teacher-panel/TeacherParagraphAnalysis";
+import { TeacherParagraphAccess } from "@/components/teacher-panel/TeacherParagraphAccess";
 import type {
   TeacherStudentActivity,
   TeacherStudentDetail,
@@ -826,6 +827,11 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
           ) : null}
         </PanelCard>
       </section>
+
+      <TeacherParagraphAccess
+        studentId={detail.profile.studentId}
+        initialEnabled={detail.profile.paragraphExercisesEnabled}
+      />
 
       <section>
         <PanelCard title="Program İlerlemesi" subtitle="Günler, görevler ve son tamamlanan adımlar">

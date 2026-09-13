@@ -38,6 +38,7 @@ const PATCH_ALLOWED_FIELDS = new Set([
   "accessEndDate",
   "welcomeEmailStatus",
   "welcomeEmailSentAt",
+  "paragraphExercisesEnabled",
 ]);
 
 function errorResponse(message: string, status: number) {
@@ -83,6 +84,7 @@ function mapStudentResponse(row: Record<string, unknown>) {
     accessEndDate: optionalString(row.access_end_date),
     createdAt: optionalString(row.created_at) ?? new Date().toISOString(),
     notes: optionalString(row.notes) ?? undefined,
+    paragraphExercisesEnabled: row.paragraph_exercises_enabled === true,
   };
 }
 
@@ -165,7 +167,9 @@ export async function PATCH(
     return errorResponse(`'${unsupportedField}' alanı istemciden gönderilemez.`, 400);
   }
 
-  const invalidStringField = bodyFields.find((field) => typeof body[field] !== "string");
+  const invalidStringField = bodyFields.find((field) =>
+    field !== "paragraphExercisesEnabled" && typeof body[field] !== "string",
+  );
   if (invalidStringField) {
     return errorResponse(`'${invalidStringField}' alanı string olmalıdır.`, 400);
   }
@@ -303,6 +307,12 @@ export async function PATCH(
   if (Object.hasOwn(body, "parentEmail")) payload.parent_email = parentEmail;
   if (Object.hasOwn(body, "birthDate")) payload.birth_date = birthDate;
   if (Object.hasOwn(body, "notes")) payload.notes = optionalString(body.notes);
+  if (Object.hasOwn(body, "paragraphExercisesEnabled")) {
+    if (typeof body.paragraphExercisesEnabled !== "boolean") {
+      return errorResponse("Paragraf erişim değeri geçersiz.", 400);
+    }
+    payload.paragraph_exercises_enabled = body.paragraphExercisesEnabled;
+  }
   if (Object.hasOwn(body, "educationLevel")) payload.education_level = body.educationLevel;
   if (Object.hasOwn(body, "educationStatus")) payload.education_status = body.educationStatus;
   if (Object.hasOwn(body, "status")) {

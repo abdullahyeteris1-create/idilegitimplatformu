@@ -39,6 +39,7 @@ export type TeacherStudentProfile = {
   educationLevel: string | null;
   educationStatus: string | null;
   notes: string | null;
+  paragraphExercisesEnabled: boolean;
   createdAt: string | null;
 };
 

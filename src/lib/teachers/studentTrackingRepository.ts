@@ -57,6 +57,7 @@ type StudentRow = {
   education_level: string | null;
   education_status: string | null;
   notes: string | null;
+  paragraph_exercises_enabled: boolean;
   created_at: string | null;
 };
 
@@ -175,6 +176,7 @@ function mapStudentRow(row: DatabaseRow): StudentRow | null {
     education_level: readString(row, ["education_level", "educationLevel"]),
     education_status: readString(row, ["education_status", "educationStatus"]),
     notes: readString(row, ["notes"]),
+    paragraph_exercises_enabled: readBoolean(row, ["paragraph_exercises_enabled", "paragraphExercisesEnabled"]) ?? false,
     created_at: readDateString(row, ["created_at", "createdAt"]),
   };
 }
@@ -404,6 +406,7 @@ function mapProfile(student: StudentRow): TeacherStudentProfile {
     educationLevel: student.education_level,
     educationStatus: student.education_status,
     notes: student.notes,
+    paragraphExercisesEnabled: student.paragraph_exercises_enabled,
     createdAt: student.created_at,
   };
 }
@@ -564,12 +567,17 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     }
 
     const studentRow = studentResult.data ? (studentResult.data as DatabaseRow) : null;
-    const student = studentRow ? mapStudentRow(studentRow) : null;
-    if (!student) {
+    const studentBase = studentRow ? mapStudentRow(studentRow) : null;
+    if (!studentBase) {
       return null;
     }
 
-    const [xpResult, resultsResult, activeProgramResult, xpEventsResult, programTasksResult] = await Promise.all([
+    const [paragraphAccessResult, xpResult, resultsResult, activeProgramResult, xpEventsResult, programTasksResult] = await Promise.all([
+      supabase
+        .from(STUDENTS_TABLE)
+        .select("paragraph_exercises_enabled")
+        .eq("id", safeStudentId)
+        .maybeSingle(),
       supabase
         .from(STUDENT_XP_SUMMARY_TABLE)
         .select("student_id,total_xp")
@@ -598,10 +606,20 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     ]);
 
     logSupplementaryTeacherQueryError("student_xp_summary(detail)", xpResult.error);
+    logSupplementaryTeacherQueryError("students(paragraph_exercises_enabled)", paragraphAccessResult.error);
     logSupplementaryTeacherQueryError("exercise_results(detail)", resultsResult.error);
     logSupplementaryTeacherQueryError("student_xp_events", xpEventsResult.error);
     logSupplementaryTeacherQueryError("student_education_program_tasks(detail)", programTasksResult.error);
 
+    const student = mapStudentRow({
+      ...(studentRow ?? {}),
+      paragraph_exercises_enabled: paragraphAccessResult.data
+        ? (paragraphAccessResult.data as DatabaseRow).paragraph_exercises_enabled
+        : false,
+    });
+    if (!student) {
+      return null;
+    }
     const xpRow = xpResult.data ? (xpResult.data as DatabaseRow) : null;
     const totalXp = xpRow ? (mapXpSummaryRow(xpRow)?.total_xp ?? 0) : 0;
     const results = toDatabaseRows(resultsResult.data)

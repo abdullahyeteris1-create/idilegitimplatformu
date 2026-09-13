@@ -12,7 +12,7 @@ import { PreviewHeader } from "./PreviewHeader";
 import { PreviewNavLinks, PreviewSidebar } from "./PreviewSidebar";
 import { StudentAccountMenu } from "@/components/student-panel-preview/StudentAccountMenu";
 import { logoutCurrentStudent } from "@/lib/auth/auth";
-import { PREVIEW_EXERCISE_GROUPS, resolvePreviewGroupId } from "./exercisePreviewGroups";
+import { buildPreviewExerciseGroups, resolvePreviewGroupId } from "./exercisePreviewGroups";
 import previewStyles from "./exercises-preview.module.css";
 
 const STUDENT_NAME = "Öğrenci";
@@ -20,7 +20,7 @@ const CLASS_LABEL = "Hızlı Okuma";
 const COMING_SOON_MESSAGE = "Bu özellik yakında eklenecek.";
 const EXERCISES_HREF = "/egzersizler";
 
-export function ExercisesCenterShell() {
+export function ExercisesCenterShell({ paragraphExercisesEnabled = false }: { paragraphExercisesEnabled?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -33,13 +33,14 @@ export function ExercisesCenterShell() {
   const [logoutError, setLogoutError] = useState("");
   const toastTimer = useRef<number | null>(null);
 
+  const groups = useMemo(() => buildPreviewExerciseGroups(paragraphExercisesEnabled), [paragraphExercisesEnabled]);
   const activeGroupId = useMemo(
-    () => resolvePreviewGroupId(searchParams.get("category")),
-    [searchParams],
+    () => resolvePreviewGroupId(searchParams.get("category"), groups),
+    [groups, searchParams],
   );
   const activeGroup = useMemo(
-    () => PREVIEW_EXERCISE_GROUPS.find((group) => group.id === activeGroupId) ?? PREVIEW_EXERCISE_GROUPS[0],
-    [activeGroupId],
+    () => groups.find((group) => group.id === activeGroupId) ?? groups[0],
+    [activeGroupId, groups],
   );
   const searchParamsKey = searchParams.toString();
 
@@ -140,7 +141,7 @@ export function ExercisesCenterShell() {
             </div>
           </div>
 
-          <CategoryCards groups={PREVIEW_EXERCISE_GROUPS} activeGroupId={activeGroupId} onSelect={handleSelectGroup} />
+          <CategoryCards groups={groups} activeGroupId={activeGroupId} onSelect={handleSelectGroup} />
 
           <ExerciseGroupPanel group={activeGroup} />
         </div>

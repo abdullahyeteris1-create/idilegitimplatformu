@@ -143,10 +143,32 @@ export const PREVIEW_EXERCISE_GROUPS: PreviewExerciseGroup[] = panelCategories.m
   };
 });
 
+const PARAGRAPH_EXERCISE_GROUP: PreviewExerciseGroup = {
+  id: "paragraph-exercises",
+  title: "Paragraf Çalışmaları",
+  description: "Okuduğunu anlama, ana fikir, çıkarım ve paragraf becerilerini geliştir.",
+  icon: "book",
+  toneColor: "#31def6",
+  href: "/egzersizler?category=paragraph-exercises",
+  exercises: [
+    {
+      slug: "paragraf-calismalari",
+      title: "Paragraf Çalışmaları",
+      href: "/egzersizler/paragraf-calismalari",
+      description: "Ana fikir, yardımcı düşünce, çıkarım ve paragraf bütünlüğü üzerine çalış.",
+      tags: ["Ana Fikir", "Çıkarım", "Tamamlama"],
+    },
+  ],
+};
+
+export function buildPreviewExerciseGroups(paragraphExercisesEnabled = false): PreviewExerciseGroup[] {
+  return paragraphExercisesEnabled ? [...PREVIEW_EXERCISE_GROUPS, PARAGRAPH_EXERCISE_GROUP] : PREVIEW_EXERCISE_GROUPS;
+}
+
 export const DEFAULT_PREVIEW_GROUP_ID = PREVIEW_EXERCISE_GROUPS[0]?.id ?? "eye";
 
-export function resolvePreviewGroupId(value: string | null): string {
-  if (value && PREVIEW_EXERCISE_GROUPS.some((group) => group.id === value)) {
+export function resolvePreviewGroupId(value: string | null, groups = PREVIEW_EXERCISE_GROUPS): string {
+  if (value && groups.some((group) => group.id === value)) {
     return value;
   }
 

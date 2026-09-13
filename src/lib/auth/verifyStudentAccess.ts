@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/studentSession";
 import { checkStudentDateAccess } from "@/lib/students/studentAccessDates";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/server";
+import { canAccessParagraphExercises } from "@/lib/paragraph-exercises/paragraphAccessPolicy";
 
 const STUDENTS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_STUDENTS_TABLE ?? "students";
 const PASSIVE_STUDENT_MESSAGE = "Bu ogrenci hesabi pasif durumda.";
@@ -16,6 +17,7 @@ export type StudentAccessSuccess = {
   ok: true;
   studentId: string;
   username: string;
+  paragraphExercisesEnabled: boolean;
 };
 
 export type StudentAccessFailure = {
@@ -78,7 +80,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
   try {
     const { data: student, error } = await supabase
       .from(STUDENTS_TABLE)
-      .select("id,username,session_version,is_active,status,education_start_date,access_end_date")
+      .select("id,username,session_version,is_active,status,education_start_date,access_end_date,paragraph_exercises_enabled")
       .eq("id", session.studentId)
       .maybeSingle();
 
@@ -140,6 +142,9 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
       ok: true,
       studentId: session.studentId,
       username,
+      paragraphExercisesEnabled: canAccessParagraphExercises({
+        paragraphExercisesEnabled: student.paragraph_exercises_enabled,
+      }),
     };
   } catch {
     return {
