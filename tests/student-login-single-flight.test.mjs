@@ -31,7 +31,9 @@ function createDeferred() {
 function createLoginFormHarness() {
   const slots = [];
   const routerReplaceCalls = [];
+  const locationReplaceCalls = [];
   const sessionStorage = new Map();
+  const windowListeners = new Map();
   let cursor = 0;
   let fetchImplementation = () => Promise.reject(new Error("fetch mock tanimlanmadi"));
 
@@ -90,7 +92,17 @@ function createLoginFormHarness() {
       throw new Error(`Beklenmeyen import: ${specifier}`);
     },
     window: {
+      addEventListener(type, listener) {
+        windowListeners.set(type, listener);
+      },
       clearTimeout() {},
+      location: {
+        pathname: "/giris",
+        replace: (href) => locationReplaceCalls.push(href),
+      },
+      removeEventListener(type, listener) {
+        if (windowListeners.get(type) === listener) windowListeners.delete(type);
+      },
       sessionStorage: {
         getItem: (key) => sessionStorage.get(key) ?? null,
         setItem: (key, value) => sessionStorage.set(key, value),
@@ -112,6 +124,10 @@ function createLoginFormHarness() {
 
   return {
     render,
+    emitPageShow() {
+      windowListeners.get("pageshow")?.();
+    },
+    locationReplaceCalls,
     routerReplaceCalls,
     setFetchImplementation(nextImplementation) {
       fetchImplementation = nextImplementation;
@@ -178,12 +194,12 @@ test("deferred login surerken hizli cift ve uclu submit yalnizca bir POST gonder
 
   pendingResponse.resolve(successfulLoginResponse());
   await Promise.all([firstSubmit, secondSubmit, thirdSubmit]);
-  assert.deepEqual(harness.routerReplaceCalls, ["/ogrenci"]);
+  assert.deepEqual(harness.locationReplaceCalls, ["/ogrenci"]);
 
   const formBeforeUnmount = findAll(harness.render(), (node) => node.type === "form")[0];
   await formBeforeUnmount.props.onSubmit(submitEvent());
   assert.equal(fetchCallCount, 1);
-  assert.deepEqual(harness.routerReplaceCalls, ["/ogrenci"]);
+  assert.deepEqual(harness.locationReplaceCalls, ["/ogrenci"]);
 });
 
 test("basarisiz login kilidi acar ve sonraki submit yeni POST gonderebilir", async () => {
@@ -207,7 +223,7 @@ test("basarisiz login kilidi acar ve sonraki submit yeni POST gonderebilir", asy
   form = findAll(tree, (node) => node.type === "form")[0];
   await form.props.onSubmit(submitEvent());
   assert.equal(fetchCallCount, 2);
-  assert.deepEqual(harness.routerReplaceCalls, ["/ogrenci"]);
+  assert.deepEqual(harness.locationReplaceCalls, ["/ogrenci"]);
 });
 
 test("network hatasi kilidi acar ve tekrar girise izin verir", async () => {
@@ -229,14 +245,42 @@ test("network hatasi kilidi acar ve tekrar girise izin verir", async () => {
   form = findAll(tree, (node) => node.type === "form")[0];
   await form.props.onSubmit(submitEvent());
   assert.equal(fetchCallCount, 2);
-  assert.deepEqual(harness.routerReplaceCalls, ["/ogrenci"]);
+  assert.deepEqual(harness.locationReplaceCalls, ["/ogrenci"]);
+});
+
+test("login route'una geri donuldugunde navigation kilidi acilir", async () => {
+  const harness = createLoginFormHarness();
+  let fetchCallCount = 0;
+  harness.setFetchImplementation(async () => {
+    fetchCallCount += 1;
+    return successfulLoginResponse();
+  });
+
+  const form = prepareStudentForm(harness);
+  await form.props.onSubmit(submitEvent());
+
+  let tree = harness.render();
+  let submitButton = findAll(tree, (node) => node.type === "button" && node.props.type === "submit")[0];
+  assert.equal(submitButton.props.disabled, true);
+  assert.equal(fetchCallCount, 1);
+
+  harness.emitPageShow();
+  tree = harness.render();
+  submitButton = findAll(tree, (node) => node.type === "button" && node.props.type === "submit")[0];
+  assert.equal(submitButton.props.disabled, false);
+
+  const returnedForm = findAll(tree, (node) => node.type === "form")[0];
+  await returnedForm.props.onSubmit(submitEvent());
+  assert.equal(fetchCallCount, 2);
 });
 
 test("single-flight kaynak kurallari ref kilidi ve basari kilidini korur", () => {
   assert.match(loginFormSource, /const submittingRef = useRef\(false\)/);
   assert.match(loginFormSource, /if \(submittingRef\.current\) \{\s*return;\s*\}/);
   assert.match(loginFormSource, /submittingRef\.current = true;\s*setIsSubmitting\(true\)/);
-  assert.match(loginFormSource, /if \(!keepLockedForNavigation\) \{\s*submittingRef\.current = false;\s*setIsSubmitting\(false\)/);
-  assert.match(loginFormSource, /keepLockedForNavigation = true;\s*router\.replace\("\/ogrenci"\)/);
+  assert.match(loginFormSource, /window\.location\.replace\("\/ogrenci"\)/);
+  assert.match(loginFormSource, /window\.addEventListener\("pageshow", releaseReturnedNavigationLock\)/);
+  assert.match(loginFormSource, /if \(!keepLockedForNavigation\) \{\s*navigationLockRef\.current = false;\s*submittingRef\.current = false;\s*setIsSubmitting\(false\)/);
+  assert.match(loginFormSource, /navigationLockRef\.current = true;\s*keepLockedForNavigation = true/);
   assert.match(loginFormSource, /disabled=\{!isMounted \|\| isSubmitting\}/);
 });

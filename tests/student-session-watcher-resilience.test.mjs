@@ -24,8 +24,14 @@ test("session-status güvenli reason kodunu döndürür", () => {
   assert.doesNotMatch(statusRouteSource, /clearStudentSessionCookie/);
 });
 
+test("session-status transient access failure'i unauthorized saymaz", () => {
+  assert.match(statusRouteSource, /status: access\.status/);
+  assert.match(statusRouteSource, /if \(access\.status === 401\)/);
+  assert.doesNotMatch(statusRouteSource, /access\.status === 503[^]*clear/);
+});
+
 test("başarılı öğrenci login'i generation işareti koyup panel navigasyonu yapar", () => {
   assert.match(loginSource, /STUDENT_LOGIN_GENERATION_KEY/);
   assert.match(loginSource, /window\.sessionStorage\.setItem\(STUDENT_LOGIN_GENERATION_KEY/);
-  assert.match(loginSource, /router\.replace\("\/ogrenci"\)/);
+  assert.match(loginSource, /window\.location\.replace\("\/ogrenci"\)/);
 });

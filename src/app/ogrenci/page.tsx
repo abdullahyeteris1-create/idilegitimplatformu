@@ -11,6 +11,11 @@ export default async function StudentDashboardPage() {
   const cookieStore = await cookies();
   const access = await verifyStudentAccessToken(cookieStore.get(STUDENT_SESSION_COOKIE_NAME)?.value ?? "");
   if (!access.ok) {
+    if (access.status >= 500) {
+      console.warn(`[student-page] access_temporarily_unavailable reason=${access.reason}`);
+      return <StudentAccessUnavailable />;
+    }
+
     console.info(`[student-page] redirect_giris reason=${access.reason}`);
     redirect("/giris");
   }
@@ -40,5 +45,24 @@ export default async function StudentDashboardPage() {
         }}
       />
     </div>
+  );
+}
+
+function StudentAccessUnavailable() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[var(--idil-page-bg)] px-6 text-[var(--idil-text)]">
+      <section className="w-full max-w-lg rounded-3xl border border-[var(--idil-border)] bg-[var(--idil-surface-strong)] p-8 text-center shadow-xl" role="alert">
+        <h1 className="text-2xl font-semibold">Hesabın şu anda doğrulanamadı</h1>
+        <p className="mt-3 text-sm leading-6 text-[var(--idil-muted)]">
+          Şu anda hesabın doğrulanırken geçici bir bağlantı sorunu oluştu. Lütfen birazdan tekrar dene.
+        </p>
+        <a
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--idil-accent)] px-5 py-3 font-semibold text-[var(--idil-strong-contrast)]"
+          href="/ogrenci"
+        >
+          Tekrar Dene
+        </a>
+      </section>
+    </main>
   );
 }

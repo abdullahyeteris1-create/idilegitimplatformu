@@ -20,10 +20,26 @@ export function LoginForm() {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const navigationLockRef = useRef(false);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setIsMounted(true), 0);
     return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    const releaseReturnedNavigationLock = () => {
+      if (window.location.pathname !== "/giris" || !navigationLockRef.current) {
+        return;
+      }
+
+      navigationLockRef.current = false;
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener("pageshow", releaseReturnedNavigationLock);
+    return () => window.removeEventListener("pageshow", releaseReturnedNavigationLock);
   }, []);
 
   const resetForm = (nextMode: LoginMode) => {
@@ -81,12 +97,14 @@ export function LoginForm() {
         // Session storage is an optimization for suppressing stale watcher races.
       }
       console.info("[student-login] replace_ogrenci");
+      window.location.replace("/ogrenci");
+      navigationLockRef.current = true;
       keepLockedForNavigation = true;
-      router.replace("/ogrenci");
     } catch {
       setMessage("Giriş işlemi tamamlanamadı. Lütfen tekrar deneyin.");
     } finally {
       if (!keepLockedForNavigation) {
+        navigationLockRef.current = false;
         submittingRef.current = false;
         setIsSubmitting(false);
       }
