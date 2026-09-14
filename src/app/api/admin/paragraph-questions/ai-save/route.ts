@@ -1,3 +1,72 @@
-import { NextResponse, type NextRequest } from "next/server"; import { isAdminSessionValid } from "@/lib/auth/adminSession"; import { createQuestion, listQuestions, validateQuestionInput } from "@/lib/paragraph-exercises/paragraphQuestionAdminRepository";
-const normalize=(value:string)=>value.normalize("NFKC").toLocaleLowerCase("tr-TR").replace(/\s+/gu," ").trim();
-export async function POST(req:NextRequest){if(!isAdminSessionValid(req))return NextResponse.json({ok:false,error:"Yetkisiz erişim."},{status:401});try{const body=await req.json();const v=validateQuestionInput(body);if(!v.ok)return NextResponse.json({ok:false,error:v.error},{status:400});const existing=await listQuestions({page:1,pageSize:100,category:v.value.category,difficulty:v.value.difficulty,gradeBand:v.value.gradeBand});const duplicate=existing.items.some((q)=>normalize(q.paragraph)===normalize(v.value.passage)||normalize(q.question)===normalize(v.value.question));if(duplicate)return NextResponse.json({ok:false,error:"Bu soru mevcut havuzdaki bir soruya çok benziyor/aynı."},{status:409});return NextResponse.json({ok:true,question:await createQuestion({...v.value,isActive:body.isActive===true},"ai")},{status:201});}catch(e){console.error("paragraph_question_ai_save_failed",e);return NextResponse.json({ok:false,error:"Soru kaydedilemedi."},{status:500})}}
+import { NextResponse, type NextRequest } from "next/server";
+import { isAdminSessionValid } from "@/lib/auth/adminSession";
+import {
+  createQuestion,
+  listQuestions,
+  isParagraphQuestionIdempotencyConflict,
+  validateQuestionInput,
+} from "@/lib/paragraph-exercises/paragraphQuestionAdminRepository";
+const normalize = (value: string) =>
+  value
+    .normalize("NFKC")
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s+/gu, " ")
+    .trim();
+export async function POST(req: NextRequest) {
+  if (!isAdminSessionValid(req))
+    return NextResponse.json(
+      { ok: false, error: "Yetkisiz erişim." },
+      { status: 401 },
+    );
+  try {
+    const body = await req.json();
+    const v = validateQuestionInput(body);
+    if (!v.ok)
+      return NextResponse.json({ ok: false, error: v.error }, { status: 400 });
+    const existing = await listQuestions({
+      page: 1,
+      pageSize: 100,
+      category: v.value.category,
+      difficulty: v.value.difficulty,
+      gradeBand: v.value.gradeBand,
+    });
+    const duplicate = existing.items.some(
+      (q) =>
+        normalize(q.paragraph) === normalize(v.value.passage) ||
+        normalize(q.question) === normalize(v.value.question),
+    );
+    if (duplicate)
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Bu soru mevcut havuzdaki bir soruya çok benziyor/aynı.",
+        },
+        { status: 409 },
+      );
+    return NextResponse.json(
+      {
+        ok: true,
+        question: await createQuestion(
+          { ...v.value, isActive: body.isActive === true },
+          "ai",
+        ),
+      },
+      { status: 201 },
+    );
+  } catch (e) {
+    if (isParagraphQuestionIdempotencyConflict(e)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Bu soru mevcut havuzdaki bir soruya çok benziyor/aynı.",
+        },
+        { status: 409 },
+      );
+    }
+    console.error("paragraph_question_ai_save_failed", e);
+    return NextResponse.json(
+      { ok: false, error: "Soru kaydedilemedi." },
+      { status: 500 },
+    );
+  }
+}
