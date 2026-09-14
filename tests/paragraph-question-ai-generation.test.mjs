@@ -1,0 +1,15 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { validateQuestionInput } from "../src/lib/paragraph-exercises/paragraphQuestionAdminRepository.ts";
+const good={category:"main_idea",difficulty:"medium",gradeBand:"6-7",passage:"Bilgi veren ve yeterli uzunlukta Ã¶rnek paragraf metni.",question:"ParagrafÄ±n ana dÃ¼ÅŸÃ¼ncesi nedir?",options:["Birinci seÃ§enek","Ä°kinci seÃ§enek","ÃœÃ§Ã¼ncÃ¼ seÃ§enek","DÃ¶rdÃ¼ncÃ¼ seÃ§enek","BeÅŸinci seÃ§enek"],correctIndex:0,explanation:"AÃ§Ä±klama metni burada yer alÄ±r."};
+const gen=await readFile("src/app/api/admin/paragraph-questions/generate/route.ts","utf8"); const save=await readFile("src/app/api/admin/paragraph-questions/ai-save/route.ts","utf8"); const ui=await readFile("src/app/ogretmen/icerik-yonetimi/paragraf-sorulari/ParagraphQuestionAIGenerator.tsx","utf8");
+test("generate and ai-save require admin auth and keep secrets server-side",()=>{assert.match(gen,/isAdminSessionValid/);assert.match(save,/isAdminSessionValid/);assert.doesNotMatch(ui,/OPENAI_API_KEY|SUPABASE_SERVICE_ROLE/);assert.match(gen,/OPENAI_API_KEY/)});
+test("request limits and model fallback exist",()=>{assert.match(gen,/questionCount.*10/);assert.match(gen,/questionCount.*1/);assert.match(gen,/topic\.length>160/);assert.match(gen,/customInstruction\.length>500/);assert.match(gen,/OPENAI_CONTENT_MODEL.*OPENAI_ANALYSIS_MODEL/)});
+for(const [name,patch] of [["four options",{options:good.options.slice(0,4)}],["six options",{options:[...good.options,"alt"]}],["duplicate option",{options:["aynÄ±","aynÄ±","Ã¼Ã§","dÃ¶rt","beÅŸ"]}],["empty passage",{passage:""}],["empty question",{question:""}],["bad index",{correctIndex:7}],["missing explanation",{explanation:""}]])test(`AI output ${name} rejected by shared validator`,()=>assert.equal(validateQuestionInput({...good,...patch}).ok,false));
+test("structured schema and five-option contract",()=>{assert.match(gen,/json_schema/);assert.match(gen,/minItems:5/);assert.match(gen,/maximum:4/);assert.match(gen,/correctIndex/)});
+test("category prompt rules and answer diversity exist",()=>{for(const text of ["BÃ¼tÃ¼n paragrafÄ± Ã¶lÃ§","Destekleyici ayrÄ±ntÄ±yÄ± Ã¶lÃ§","birebir yazÄ±lÄ± olmasÄ±n","anlam akÄ±ÅŸÄ±nÄ± tamamlasÄ±n","BeÅŸ numaralÄ± cÃ¼mle","DoÄŸru indeksleri 0-4 arasÄ±nda dengeli daÄŸÄ±t"])assert.match(gen,new RegExp(text))});
+test("duplicate normalization and save-time recheck exist",()=>{assert.match(gen,/normalize\("NFKC"\)/);assert.match(gen,/duplicateFlags/);assert.match(save,/normalize\("NFKC"\)/);assert.match(save,/status:409/)});
+test("AI save revalidates, forces ai source and passive default",()=>{assert.match(save,/validateQuestionInput/);assert.match(save,/createQuestion\(\{\.\.\.v\.value,isActive:body\.isActive===true\},"ai"\)/)});
+test("retry is bounded and concurrency is process-local",()=>{assert.equal((gen.match(/await call\(o/g)||[]).length,2);assert.match(gen,/active\.has/);assert.match(gen,/finally/)});
+test("preview supports save and remove actions",()=>{assert.match(ui,/Bu Soruyu Kaydet/);assert.match(ui,/Çıkar/);assert.match(ui,/duplicateFlags/)});

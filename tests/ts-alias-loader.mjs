@@ -12,6 +12,9 @@ const SRC_ROOT = pathToFileURL(`${path.resolve(process.cwd(), "src")}/`).href;
 const HAS_EXTENSION = /\.[a-zA-Z]+$/;
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier === "server-only") {
+    return { url: "data:text/javascript,export default {}", shortCircuit: true };
+  }
   if (specifier.startsWith("@/")) {
     const withoutAlias = specifier.slice(2);
     const rewritten = HAS_EXTENSION.test(withoutAlias) ? withoutAlias : `${withoutAlias}.ts`;

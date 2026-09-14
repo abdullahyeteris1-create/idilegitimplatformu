@@ -38,6 +38,17 @@ export const CONTENT_GROUPS: ContentGroup[] = [
     panelClass: "border-rose-200 bg-[linear-gradient(135deg,#fff1f2_0%,#ffffff_52%,#fdf2f8_100%)]",
     modules: [
       {
+        id: "paragraph-questions",
+        title: "Paragraf Soruları",
+        description: "Paragraf soru havuzunu, seçenekleri ve yayın durumlarını yönetin.",
+        href: "/ogretmen/icerik-yonetimi/paragraf-sorulari",
+        status: "active",
+        icon: "PS",
+        tone: "from-red-600 to-indigo-600",
+        tags: ["Paragraf", "Soru", "Aktif"],
+        actionLabel: "Soruları Yönet",
+      },
+      {
         id: "tachistoscope-settings",
         title: "Takistoskop İçerikleri",
         description: "Takistoskop çalışmasında kullanılacak tek kelimelik havuzu yönetin.",

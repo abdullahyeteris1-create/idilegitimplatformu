@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { ExerciseEndScreenActions } from "@/components/exercises/ExerciseEndScreenActions";
 import { saveExerciseResultSecure, type SecureExerciseResultInput } from "@/lib/results/secureResultStorage";
-import { PARAGRAPH_CATEGORIES, selectParagraphQuestions, type ParagraphCategory, type ParagraphQuestion } from "@/lib/paragraph-exercises/paragraphQuestions";
+import { PARAGRAPH_CATEGORIES, selectParagraphQuestionsFromPool, type ParagraphCategory, type ParagraphQuestion } from "@/lib/paragraph-exercises/paragraphQuestions";
 import { calculateAverageResponseTimeMs, calculateParagraphAccuracy } from "@/lib/paragraph-exercises/paragraphExerciseMetrics";
 import styles from "./paragraph-exercises.module.css";
 
@@ -16,7 +16,7 @@ const now = () => performance.now();
 
 function formatTime(ms: number) { return `${Math.max(1, Math.round(ms / 1000))} sn`; }
 
-export function ParagraphExercisesClient() {
+export function ParagraphExercisesClient({ questionPool }: { questionPool: ParagraphQuestion[] }) {
   const [phase, setPhase] = useState<Phase>("categories");
   const [category, setCategory] = useState<ParagraphCategory | "mixed">("mixed");
   const [questions, setQuestions] = useState<ParagraphQuestion[]>([]);
@@ -33,9 +33,9 @@ export function ParagraphExercisesClient() {
   const totalTime = Object.values(answers).reduce((sum, a) => sum + a.responseTimeMs, 0);
 
   const start = useCallback((nextCategory: ParagraphCategory | "mixed") => {
-    const selected = selectParagraphQuestions(nextCategory, 10);
+    const selected = selectParagraphQuestionsFromPool(questionPool, nextCategory, 10);
     setCategory(nextCategory); setQuestions(selected); setIndex(0); setAnswers({}); answeredIds.current.clear(); pendingPayload.current = null; setSaveStatus("idle"); setPhase("quiz"); startedAt.current = now();
-  }, []);
+  }, [questionPool]);
 
   const persistResult = useCallback(async (payload: SecureExerciseResultInput) => {
     setSaving(true); setSaveStatus("saving");
@@ -58,7 +58,7 @@ export function ParagraphExercisesClient() {
     const completedAt = new Date().toISOString();
     const wrongCount = questions.length - correctCount;
     const averageResponseTimeMs = calculateAverageResponseTimeMs(Object.values(answers).map((item) => item.responseTimeMs), questions.length);
-    const payload: SecureExerciseResultInput = { exerciseType: "paragraph", exerciseTitle: "Paragraf Çalışmaları", score: calculateParagraphAccuracy(correctCount, questions.length), successRate: calculateParagraphAccuracy(correctCount, questions.length), correctCount, wrongCount, durationSeconds: Math.max(1, Math.round(totalTime / 1000)), completedAt, details: { category, totalQuestions: questions.length, averageResponseTimeMs, completedAt, questionIds: questions.map((item) => item.id).join(","), correctAnswers: correctCount, wrongAnswers: wrongCount, answers: questions.map((item) => ({ questionId: item.id, correct: answers[item.id]?.correct ?? false, responseTimeMs: answers[item.id]?.responseTimeMs ?? 1 })) } };
+    const payload: SecureExerciseResultInput = { exerciseType: "paragraph", exerciseTitle: "Paragraf Çalışmaları", score: calculateParagraphAccuracy(correctCount, questions.length), successRate: calculateParagraphAccuracy(correctCount, questions.length), correctCount, wrongCount, durationSeconds: Math.max(1, Math.round(totalTime / 1000)), completedAt, details: { category, totalQuestions: questions.length, averageResponseTimeMs, completedAt, questionIds: questions.map((item) => item.id).join(","), correctAnswers: correctCount, wrongAnswers: wrongCount, answers: questions.map((item) => ({ questionId: item.id, category: item.category, correct: answers[item.id]?.correct ?? false, responseTimeMs: answers[item.id]?.responseTimeMs ?? 1 })) } };
     pendingPayload.current = payload;
     await persistResult(payload);
     setPhase("result");

@@ -1,0 +1,13 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { validateQuestionInput } from "../src/lib/paragraph-exercises/paragraphQuestionAdminRepository.ts";
+const good={category:"main_idea",difficulty:"medium",gradeBand:"6-7",passage:"Yeterince uzun ve anlamlı bir paragraf metni.",question:"Bu paragrafın ana düşüncesi nedir?",options:["Birinci seçenek","İkinci seçenek","Üçüncü seçenek","Dördüncü seçenek","Beşinci seçenek"],correctIndex:0,explanation:"Paragrafın bütünü bu seçeneği destekler."};
+const source=await readFile("src/app/api/admin/paragraph-questions/route.ts","utf8"); const detail=await readFile("src/app/api/admin/paragraph-questions/[id]/route.ts","utf8"); const status=await readFile("src/app/api/admin/paragraph-questions/[id]/archive/route.ts","utf8"); const restore=await readFile("src/app/api/admin/paragraph-questions/[id]/restore/route.ts","utf8");
+test("CRUD API auth and methods are protected",()=>{assert.equal((source.match(/isAdminSessionValid/g)||[]).length>=2,true);assert.match(detail,/isAdminSessionValid/);assert.doesNotMatch(detail,/DELETE/)});
+test("manual create validator accepts valid payload and rejects source/id overrides",()=>{assert.equal(validateQuestionInput({...good,id:"evil",source:"ai"}).ok,true);assert.equal(validateQuestionInput({...good,category:"bad"}).ok,false);});
+for(const [name,key] of [["difficulty","difficulty"],["grade","gradeBand"]])test(`${name} validation`,()=>assert.equal(validateQuestionInput({...good,[key]:"bad"}).ok,false));
+test("empty fields and option cardinality validation",()=>{for(const patch of [{passage:""},{question:""},{explanation:""},{options:good.options.slice(0,4)},{options:[...good.options,"alt"]},{options:["aynı","aynı","üç","dört","beş"]},{correctIndex:5}])assert.equal(validateQuestionInput({...good,...patch}).ok,false)});
+test("filters, pagination and server search are present",()=>{assert.match(source,/pageSize/);assert.match(source,/listQuestions/);assert.match(source,/category/);assert.match(source,/difficulty/);assert.match(source,/gradeBand/);assert.match(source,/status/);assert.match(source,/source/);assert.match(source,/search/)});
+test("archive and restore routes exist without delete",()=>{assert.match(status,/archiveQuestion/);assert.match(restore,/restoreQuestion/);assert.doesNotMatch(status,/DELETE/);assert.doesNotMatch(restore,/DELETE/)});
+test("student pool excludes inactive and archived rows",async()=>{const repo=await readFile("src/lib/paragraph-exercises/paragraphQuestionRepository.ts","utf8");assert.match(repo,/eq\("is_active", true\)/);assert.match(repo,/is\("archived_at", null\)/)});

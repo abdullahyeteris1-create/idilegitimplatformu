@@ -95,13 +95,25 @@ export const PARAGRAPH_CATEGORIES = [
   { key: "flow" as const, title: "Akışı Bozan Cümle", description: "Paragrafın düşünce akışını bozan cümleyi belirle." },
   { key: "mixed" as const, title: "Karma Test", description: "Farklı paragraf soru türlerinden oluşan karışık çalışma." },
 ];
-export function selectParagraphQuestions(category: ParagraphCategory | "mixed", count = 10, random = Math.random): ParagraphQuestion[] {
+export function selectParagraphQuestionsFromPool(
+  pool: readonly ParagraphQuestion[],
+  category: ParagraphCategory | "mixed",
+  count = 10,
+  random = Math.random,
+): ParagraphQuestion[] {
   if (category === "mixed") {
-    const balanced = (["main_idea", "supporting_idea", "inference", "completion", "flow"] as ParagraphCategory[]).flatMap((item) => selectParagraphQuestions(item, Math.max(1, Math.floor(count / 5)), random));
+    const balanced = (["main_idea", "supporting_idea", "inference", "completion", "flow"] as ParagraphCategory[]).flatMap((item) =>
+      selectParagraphQuestionsFromPool(pool, item, Math.max(1, Math.floor(count / 5)), random),
+    );
     return balanced.sort(() => random() - 0.5).slice(0, count);
   }
-  const pool = paragraphQuestions.filter((question) => question.category === category);
+  const categoryPool = pool.filter((question) => question.category === category);
   const selected: ParagraphQuestion[] = [];
-  while (pool.length && selected.length < count) selected.push(pool.splice(Math.floor(random() * pool.length), 1)[0]);
+  const available = [...categoryPool];
+  while (available.length && selected.length < count) selected.push(available.splice(Math.floor(random() * available.length), 1)[0]);
   return selected;
+}
+
+export function selectParagraphQuestions(category: ParagraphCategory | "mixed", count = 10, random = Math.random): ParagraphQuestion[] {
+  return selectParagraphQuestionsFromPool(paragraphQuestions, category, count, random);
 }

@@ -2,7 +2,7 @@ import { paragraphQuestions, type ParagraphCategory } from "./paragraphQuestions
 
 export const PARAGRAPH_ANALYSIS_MIN_SAMPLE = 5;
 export const PARAGRAPH_CATEGORY_LABELS: Record<ParagraphCategory, string> = { main_idea: "Ana Fikir", supporting_idea: "Yardımcı Düşünce", inference: "Çıkarım Yapma", completion: "Paragraf Tamamlama", flow: "Akışı Bozan Cümle" };
-export type ParagraphAnalysisAnswer = { questionId: string; correct: boolean; responseTimeMs: number };
+export type ParagraphAnalysisAnswer = { questionId: string; category?: ParagraphCategory; correct: boolean; responseTimeMs: number };
 export type ParagraphAnalysisResult = { id: string; date: string; exerciseType: string; correctCount: number; wrongCount: number; successRate: number; details?: Record<string, unknown> };
 export type ParagraphCategoryStats = { category: ParagraphCategory; label: string; answeredQuestions: number; correct: number; wrong: number; accuracy: number; averageResponseTimeMs: number | null; hasEnoughData: boolean };
 export type ParagraphSession = { id: string; date: string; category: ParagraphCategory | "mixed" | "unknown"; categoryLabel: string; answeredQuestions: number; correct: number; wrong: number; accuracy: number; averageResponseTimeMs: number | null };
@@ -20,7 +20,8 @@ function readAnswers(details: Record<string, unknown> | undefined): ParagraphAna
     const questionId = typeof answer.questionId === "string" ? answer.questionId : null;
     const responseTimeMs = finiteNumber(answer.responseTimeMs);
     if (!questionId || typeof answer.correct !== "boolean" || responseTimeMs === null || responseTimeMs <= 0) return [];
-    return [{ questionId, correct: answer.correct, responseTimeMs }];
+    const category = CATEGORY_ORDER.includes(answer.category as ParagraphCategory) ? answer.category as ParagraphCategory : undefined;
+    return [{ questionId, ...(category ? { category } : {}), correct: answer.correct, responseTimeMs }];
   });
 }
 function summaryCount(result: ParagraphAnalysisResult, key: string, fallback: number): number { const value = finiteNumber(result.details?.[key]); return value !== null && value >= 0 ? Math.round(value) : fallback; }
@@ -42,7 +43,7 @@ export function buildParagraphAnalysis(results: ParagraphAnalysisResult[]): Para
   for (const result of results) {
     if (result.exerciseType !== "paragraph") continue;
     for (const answer of readAnswers(result.details)) {
-      const category = QUESTION_METADATA.get(answer.questionId)?.category;
+      const category = answer.category ?? QUESTION_METADATA.get(answer.questionId)?.category;
       if (category) categoryAnswers.get(category)?.push(answer);
     }
   }
@@ -59,4 +60,6 @@ export function buildParagraphAnalysis(results: ParagraphAnalysisResult[]): Para
   const averageResponseTimeMs = allAnswers.length ? Math.round(allAnswers.reduce((sum, answer) => sum + answer.responseTimeMs, 0) / allAnswers.length) : fallbackTimeTotals.questions ? Math.round(fallbackTimeTotals.time / fallbackTimeTotals.questions) : null;
   return { sessions, categories, overall: { ...overall, accuracy: overall.answeredQuestions ? Math.round(overall.correct / overall.answeredQuestions * 100) : null, averageResponseTimeMs, completedSessions: sessions.length }, strongestCategory, needsImprovementCategory, trend: { status, recentAverage, previousAverage }, comment: strongestCategory && needsImprovementCategory ? `Öğrenci ${strongestCategory.label.toLocaleLowerCase("tr-TR")} sorularında güçlü, ${needsImprovementCategory.label.toLocaleLowerCase("tr-TR")} sorularında ise daha fazla çalışmaya ihtiyaç duyuyor.` : "Henüz ayrıntılı değerlendirme için yeterli paragraf çalışması bulunmuyor." };
 }
-export function getParagraphQuestionCategory(questionId: string): ParagraphCategory | null { return QUESTION_METADATA.get(questionId)?.category ?? null; }
+export function getParagraphQuestionCategory(questionId: string, category?: ParagraphCategory): ParagraphCategory | null {
+  return category && CATEGORY_ORDER.includes(category) ? category : QUESTION_METADATA.get(questionId)?.category ?? null;
+}

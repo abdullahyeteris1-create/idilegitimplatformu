@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ParagraphExercisesClient } from "./ParagraphExercisesClient";
 import { getParagraphExerciseAccess } from "@/lib/paragraph-exercises/paragraphAccess";
+import { loadActiveParagraphQuestions } from "@/lib/paragraph-exercises/paragraphQuestionRepository";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Paragraf Çalışmaları | İDİL Eğitim", description: "Paragraf becerilerini geliştiren 10 soruluk çalışmalar." };
@@ -13,7 +14,11 @@ export default async function ParagraphExercisesPage() {
   if (!access.enabled) {
     return <AccessMessage title="Paragraf Çalışmaları henüz hesabın için aktif değil." description="Öğretmenin uygun gördüğünde bu çalışma alanını açacaktır." href="/egzersizler" label="Egzersizlere Dön" />;
   }
-  return <ParagraphExercisesClient />;
+  const questionPool = await loadActiveParagraphQuestions();
+  if (questionPool.dbState === "empty") {
+    return <AccessMessage title="Paragraf soru havuzu hazırlanıyor." description="Sorular henüz kullanıma açılmadı. Lütfen daha sonra tekrar deneyin." href="/egzersizler" label="Egzersizlere Dön" />;
+  }
+  return <ParagraphExercisesClient questionPool={questionPool.questions} />;
 }
 
 function AccessMessage({ title, description, href, label }: { title: string; description: string; href: string; label: string }) {

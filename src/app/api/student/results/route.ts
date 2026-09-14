@@ -517,7 +517,8 @@ function validateDetails(exerciseType: string, value: unknown): Record<string, s
       if (!Array.isArray(raw) || raw.length < (rule.min ?? 0) || raw.length > (rule.max ?? 100)) return null;
       const answers = raw.map((item) => {
         if (!isPlainObject(item) || typeof item.questionId !== "string" || item.questionId.length > 128 || typeof item.correct !== "boolean" || typeof item.responseTimeMs !== "number" || !Number.isInteger(item.responseTimeMs) || item.responseTimeMs < 1 || item.responseTimeMs > 21_600_000) return null;
-        return { questionId: item.questionId, correct: item.correct, responseTimeMs: item.responseTimeMs };
+        if (item.category !== undefined && (typeof item.category !== "string" || !["main_idea", "supporting_idea", "inference", "completion", "flow"].includes(item.category))) return null;
+        return { questionId: item.questionId, ...(item.category !== undefined ? { category: item.category } : {}), correct: item.correct, responseTimeMs: item.responseTimeMs };
       });
       if (answers.some((item) => item === null)) return null;
       cleaned[key] = answers;
