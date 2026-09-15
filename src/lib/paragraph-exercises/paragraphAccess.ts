@@ -16,17 +16,19 @@ export async function getParagraphExerciseAccess() {
   const session = readStudentSessionToken(token);
 
   if (!session) {
-    return { authenticated: false, enabled: false };
+    return { authenticated: false, enabled: false, studentId: null, studentClass: null };
   }
 
   const access = await verifyStudentAccessToken(token);
   if (!access.ok) {
-    return { authenticated: false, enabled: false };
+    return { authenticated: false, enabled: false, studentId: null, studentClass: null };
   }
 
   return {
     authenticated: true,
     enabled: canAccessParagraphExercises(access),
+    studentId: access.studentId,
+    studentClass: access.studentClass,
   };
 }
 

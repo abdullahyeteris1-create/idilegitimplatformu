@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { paragraphQuestions, type ParagraphCategory, type ParagraphQuestion } from "./paragraphQuestions";
+import { resolveParagraphGradeBand, type ParagraphGradeBand } from "./paragraphGradeBand";
 
 const PARAGRAPH_QUESTIONS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_PARAGRAPH_QUESTIONS_TABLE ?? "paragraph_questions";
 const VALID_CATEGORIES = new Set<ParagraphCategory>(["main_idea", "supporting_idea", "inference", "completion", "flow"]);
@@ -12,6 +13,11 @@ export type ParagraphQuestionLoadResult = {
   source: "db" | "static-fallback";
   dbState: "success" | "empty" | "error";
   error: string | null;
+};
+
+export type StudentParagraphQuestionLoadResult = ParagraphQuestionLoadResult & {
+  gradeBand: ParagraphGradeBand | null;
+  seenQuestionIds: string[];
 };
 
 type ParagraphQuestionRow = {
@@ -99,4 +105,73 @@ export async function loadActiveParagraphQuestions(
   }
 
   return { questions: questions as ParagraphQuestion[], source: "db", dbState: "success", error: null };
+}
+
+function collectSeenQuestionIds(rows: unknown[]): Set<string> {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const details = (row as { details?: unknown }).details;
+    if (!details || typeof details !== "object" || Array.isArray(details)) continue;
+    const value = details as { questionIds?: unknown; answers?: unknown };
+    if (typeof value.questionIds === "string") {
+      value.questionIds.split(",").forEach((id) => { const trimmed = id.trim(); if (trimmed) seen.add(trimmed); });
+    } else if (Array.isArray(value.questionIds)) {
+      value.questionIds.forEach((id) => { if (typeof id === "string" && id.trim()) seen.add(id.trim()); });
+    }
+    if (Array.isArray(value.answers)) {
+      value.answers.forEach((answer) => {
+        if (answer && typeof answer === "object" && typeof (answer as { questionId?: unknown }).questionId === "string") {
+          const id = (answer as { questionId: string }).questionId.trim();
+          if (id) seen.add(id);
+        }
+      });
+    }
+  }
+  return seen;
+}
+
+export async function loadStudentParagraphQuestions(
+  studentId: string,
+  studentClass: unknown,
+  client: SupabaseClient | null = getSupabaseServerClient(),
+): Promise<StudentParagraphQuestionLoadResult> {
+  const gradeBand = resolveParagraphGradeBand(studentClass);
+  if (!gradeBand) {
+    return { questions: [], source: "db", dbState: "empty", error: null, gradeBand: null, seenQuestionIds: [] };
+  }
+  if (!client) {
+    const seenQuestionIds: string[] = [];
+    return {
+      questions: [],
+      source: "static-fallback",
+      dbState: "error",
+      error: "Supabase server istemcisi kullanılamıyor.",
+      gradeBand,
+      seenQuestionIds,
+    };
+  }
+  const [questionsResult, historyResult] = await Promise.all([
+    client.from(PARAGRAPH_QUESTIONS_TABLE)
+      .select("id,category,difficulty,grade_band,passage,question,options,correct_index,explanation")
+      .eq("is_active", true).is("archived_at", null).eq("grade_band", gradeBand).order("id", { ascending: true }),
+    client.from(process.env.NEXT_PUBLIC_SUPABASE_RESULTS_TABLE ?? "exercise_results")
+      .select("details").eq("student_id", studentId).eq("exercise_type", "paragraph"),
+  ]);
+  const seen = collectSeenQuestionIds(Array.isArray(historyResult.data) ? historyResult.data : []);
+  if (historyResult.error) {
+    console.error("paragraph_question_history_load_failed", { message: historyResult.error.message });
+    return { questions: [], source: "db", dbState: "error", error: historyResult.error.message, gradeBand, seenQuestionIds: [...seen] };
+  }
+  if (questionsResult.error || !Array.isArray(questionsResult.data)) {
+    return {
+      questions: paragraphQuestions.filter((question) => question.gradeBand === gradeBand && !seen.has(question.id)),
+      source: "static-fallback", dbState: "error", error: questionsResult.error?.message ?? "Paragraf soruları okunamadı.", gradeBand, seenQuestionIds: [...seen],
+    };
+  }
+  const mapped = questionsResult.data.map((row) => mapParagraphQuestionRow(row as ParagraphQuestionRow));
+  if (mapped.some((question) => question === null)) {
+    return { questions: [], source: "db", dbState: "error", error: "Paragraf soru havuzunda geçersiz kayıt bulundu.", gradeBand, seenQuestionIds: [...seen] };
+  }
+  return { questions: (mapped as ParagraphQuestion[]).filter((question) => !seen.has(question.id)), source: "db", dbState: questionsResult.data.length ? "success" : "empty", error: null, gradeBand, seenQuestionIds: [...seen] };
 }

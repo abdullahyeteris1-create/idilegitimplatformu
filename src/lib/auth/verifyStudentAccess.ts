@@ -124,6 +124,7 @@ export type StudentAccessSuccess = {
   studentId: string;
   username: string;
   paragraphExercisesEnabled: boolean;
+  studentClass: string | null;
 };
 
 export type StudentAccessFailure = {
@@ -207,7 +208,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
     const { data: student, error, status } = await runStudentAccessQueryWithRetry(() =>
       supabase
         .from(STUDENTS_TABLE)
-        .select("id,username,session_version,is_active,status,education_start_date,access_end_date,paragraph_exercises_enabled")
+        .select("id,username,class_name,session_version,is_active,status,education_start_date,access_end_date,paragraph_exercises_enabled")
         .eq("id", session.studentId)
         .maybeSingle(),
     );
@@ -271,6 +272,7 @@ export async function verifyStudentAccessToken(token: string): Promise<StudentAc
       paragraphExercisesEnabled: canAccessParagraphExercises({
         paragraphExercisesEnabled: student.paragraph_exercises_enabled,
       }),
+      studentClass: typeof student.class_name === "string" ? student.class_name : null,
     };
   } catch (error) {
     if (isTransientStudentAccessError(error)) {

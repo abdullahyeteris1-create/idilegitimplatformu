@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ParagraphExercisesClient } from "./ParagraphExercisesClient";
 import { getParagraphExerciseAccess } from "@/lib/paragraph-exercises/paragraphAccess";
-import { loadActiveParagraphQuestions } from "@/lib/paragraph-exercises/paragraphQuestionRepository";
+import { loadStudentParagraphQuestions } from "@/lib/paragraph-exercises/paragraphQuestionRepository";
 import Link from "next/link";
 
 export const metadata: Metadata = { title: "Paragraf Çalışmaları | İDİL Eğitim", description: "Paragraf becerilerini geliştiren 10 soruluk çalışmalar." };
@@ -14,9 +14,15 @@ export default async function ParagraphExercisesPage() {
   if (!access.enabled) {
     return <AccessMessage title="Paragraf Çalışmaları henüz hesabın için aktif değil." description="Öğretmenin uygun gördüğünde bu çalışma alanını açacaktır." href="/egzersizler" label="Egzersizlere Dön" />;
   }
-  const questionPool = await loadActiveParagraphQuestions();
-  if (questionPool.dbState === "empty") {
-    return <AccessMessage title="Paragraf soru havuzu hazırlanıyor." description="Sorular henüz kullanıma açılmadı. Lütfen daha sonra tekrar deneyin." href="/egzersizler" label="Egzersizlere Dön" />;
+  if (!access.studentId) {
+    return <AccessMessage title="Öğrenci bilgileri doğrulanamadı." description="Paragraf çalışmaları şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin." href="/egzersizler" label="Egzersizlere Dön" />;
+  }
+  const questionPool = await loadStudentParagraphQuestions(access.studentId, access.studentClass);
+  if (!questionPool.gradeBand) {
+    return <AccessMessage title="Bu çalışma sınıf seviyen için hazır değil." description="Öğretmenin yeni çalışmalar eklediğinde burada uygun soruları görebilirsin." href="/egzersizler" label="Egzersizlere Dön" />;
+  }
+  if (questionPool.dbState === "error" && questionPool.questions.length === 0) {
+    return <AccessMessage title="Paragraf soruları şu anda yüklenemiyor." description="Lütfen biraz sonra tekrar deneyin." href="/egzersizler" label="Egzersizlere Dön" />;
   }
   return <ParagraphExercisesClient questionPool={questionPool.questions} />;
 }

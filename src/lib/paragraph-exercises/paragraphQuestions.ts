@@ -100,14 +100,22 @@ export function selectParagraphQuestionsFromPool(
   category: ParagraphCategory | "mixed",
   count = 10,
   random = Math.random,
+  excludedIds: ReadonlySet<string> = new Set(),
 ): ParagraphQuestion[] {
+  const unseen = pool.filter((question) => !excludedIds.has(question.id));
   if (category === "mixed") {
-    const balanced = (["main_idea", "supporting_idea", "inference", "completion", "flow"] as ParagraphCategory[]).flatMap((item) =>
-      selectParagraphQuestionsFromPool(pool, item, Math.max(1, Math.floor(count / 5)), random),
-    );
-    return balanced.sort(() => random() - 0.5).slice(0, count);
+    const categories = ["main_idea", "supporting_idea", "inference", "completion", "flow"] as ParagraphCategory[];
+    const selected: ParagraphQuestion[] = [];
+    const selectedIds = new Set<string>();
+    for (const item of categories) {
+      const categoryQuestions = selectParagraphQuestionsFromPool(unseen.filter((question) => question.category === item), item, Math.min(2, Math.floor(count / categories.length)), random);
+      categoryQuestions.forEach((question) => { if (!selectedIds.has(question.id)) { selected.push(question); selectedIds.add(question.id); } });
+    }
+    const remainder = unseen.filter((question) => !selectedIds.has(question.id)).sort(() => random() - 0.5);
+    remainder.slice(0, Math.max(0, count - selected.length)).forEach((question) => { selected.push(question); selectedIds.add(question.id); });
+    return selected.slice(0, count).sort(() => random() - 0.5);
   }
-  const categoryPool = pool.filter((question) => question.category === category);
+  const categoryPool = unseen.filter((question) => question.category === category);
   const selected: ParagraphQuestion[] = [];
   const available = [...categoryPool];
   while (available.length && selected.length < count) selected.push(available.splice(Math.floor(random() * available.length), 1)[0]);
