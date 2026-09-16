@@ -157,8 +157,8 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
       if (source !== "all" && row.source !== source) return false;
       if (sample !== "all" && row.sampleStatus !== sample) return false;
       if (calibration !== "all" && row.calibrationStatus !== calibration) return false;
-      if (optionCoverage === "tracked" && row.optionTrackedAttemptCount === 0) return false;
-      if (optionCoverage === "untracked" && row.optionTrackedAttemptCount > 0) return false;
+      if (optionCoverage === "tracked" && row.optionTrackedAttemptCount < 10) return false;
+      if (optionCoverage === "untracked" && row.optionTrackedAttemptCount >= 10) return false;
       return true;
     }).toSorted((left, right) => {
       if (sort === "attempts-asc") return left.attemptCount - right.attemptCount || left.questionId.localeCompare(right.questionId);
@@ -209,7 +209,7 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
           <select aria-label="Etiket filtresi" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm etiketler</option>{Object.entries(paragraphDifficultyLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
           <select aria-label="Kaynak filtresi" value={source} onChange={(event) => setSource(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm kaynaklar</option>{[...new Set(initialAnalytics.questions.map((row) => row.source))].map((value) => <option key={value} value={value}>{sourceLabel(value)}</option>)}</select>
           <select aria-label="Örneklem filtresi" value={sample} onChange={(event) => setSample(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm örneklemler</option><option value="insufficient">Yetersiz veri</option><option value="preliminary">Ön veri</option><option value="analyzable">Analiz edilebilir</option></select>
-          <select aria-label="Şık verisi filtresi" value={optionCoverage} onChange={(event) => setOptionCoverage(event.target.value as "all" | "tracked" | "untracked")} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm şık verisi</option><option value="tracked">Şık verisi olan</option><option value="untracked">Şık verisi olmayan</option></select>
+          <select aria-label="Şık verisi filtresi" value={optionCoverage} onChange={(event) => setOptionCoverage(event.target.value as "all" | "tracked" | "untracked")} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm şık verisi</option><option value="tracked">Yeterli şık verisi</option><option value="untracked">Şık verisi yok/yetersiz</option></select>
           <select aria-label="Kalibrasyon filtresi" value={calibration} onChange={(event) => setCalibration(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm kalibrasyonlar</option><option value="easy">Beklenenden kolay</option><option value="hard">Beklenenden zor</option><option value="aligned">Beklentiyle uyumlu</option><option value="insufficient">Yetersiz veri</option></select>
           <select aria-label="Sıralama" value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm md:col-span-2"><option value="attempts-desc">En çok çözülen</option><option value="attempts-asc">En az çözülen</option><option value="accuracy-desc">En yüksek doğruluk</option><option value="accuracy-asc">En düşük doğruluk</option><option value="time-asc">En hızlı</option><option value="time-desc">En yavaş</option></select>
         </div>
