@@ -72,25 +72,50 @@ function GroupTable({ title, rows }: { title: string; rows: ParagraphAnalytics["
   );
 }
 
+type DistractorEntry = { question: ParagraphQuestionAnalytics; option: ParagraphQuestionAnalytics["optionStats"][number] };
+
+function OptionBreakdown({ row }: { row: ParagraphQuestionAnalytics }) {
+  const flagLabels = { "never-selected": "Hiç seçilmiyor", "very-low": "Çok az seçiliyor", working: "Çalışıyor", strong: "Güçlü çeldirici" } as const;
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold text-slate-700">Şık dağılımı</p><span className="text-[11px] text-slate-500">{row.optionTrackedAttemptCount} geçerli şık seçimi</span>{row.distractorQualitySignal && <Pill className="border-rose-200 bg-rose-50 text-rose-800">{row.distractorQualitySignal}</Pill>}</div>
+      <div className="space-y-2">
+        {row.optionStats.map((option) => {
+          const rate = option.selectionRate;
+          const rateLabel = rate === null ? "—" : "%" + rate.toLocaleString("tr-TR", { maximumFractionDigits: 1 });
+          return <div key={option.optionIndex} className="rounded-lg bg-white p-2">
+            <div className="flex items-start justify-between gap-2 text-xs"><span className="font-semibold text-slate-800">{option.label}. {option.optionText ?? "Şık metni yok"}</span><span className="whitespace-nowrap text-slate-500">{option.selectionCount} · {rateLabel}</span></div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200"><span className="block h-full rounded-full bg-slate-500" style={{ width: String(Math.min(100, rate ?? 0)) + "%" }} /></div>
+            <div className="mt-1 flex flex-wrap gap-1">{option.isCorrectOption && <Pill className="border-emerald-200 bg-emerald-50 text-emerald-800">Doğru cevap</Pill>}{option.distractorQualityFlag && <Pill className="border-amber-200 bg-amber-50 text-amber-800">{flagLabels[option.distractorQualityFlag]}</Pill>}</div>
+          </div>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DistractorSection({ title, description, rows, empty }: { title: string; description: string; rows: DistractorEntry[]; empty: string }) {
+  return <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3"><h3 className="text-base font-bold text-slate-950">{title}</h3><p className="mt-1 text-sm text-slate-500">{description}</p></div>{rows.length ? <div className="space-y-2">{rows.map(({ question, option }) => <div key={question.questionId + "-" + option.optionIndex} className="rounded-xl border border-slate-100 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><p className="text-sm font-semibold text-slate-800">{option.label}. {option.optionText ?? "Şık metni yok"}</p><Pill className="border-amber-200 bg-amber-50 text-amber-800">{option.selectionCount} seçim · {option.selectionRate === null ? "—" : "%" + option.selectionRate.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}</Pill></div><p className="mt-1 text-xs text-slate-500">{question.questionPreview}</p></div>)}</div> : <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{empty}</div>}</section>;
+}
 function QuestionTable({ rows, compact = false }: { rows: ParagraphQuestionAnalytics[]; compact?: boolean }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200">
       <table className="w-full min-w-[1060px] text-left text-sm">
         <thead className="bg-slate-50 text-[11px] uppercase tracking-[0.08em] text-slate-500">
           <tr>
-            <th className="px-3 py-3 font-bold">Soru</th><th className="px-3 py-3 font-bold">Sınıf</th><th className="px-3 py-3 font-bold">Kategori</th><th className="px-3 py-3 font-bold">Etiket</th><th className="px-3 py-3 font-bold">Çözüm</th><th className="px-3 py-3 font-bold">Doğru %</th><th className="px-3 py-3 font-bold">Ort. süre</th>{!compact && <th className="px-3 py-3 font-bold">Gerçek performans</th>}<th className="px-3 py-3 font-bold">Kalibrasyon</th>
+            <th className="px-3 py-3 font-bold">Soru</th><th className="px-3 py-3 font-bold">Sınıf</th><th className="px-3 py-3 font-bold">Kategori</th><th className="px-3 py-3 font-bold">Etiket</th><th className="px-3 py-3 font-bold">Çözüm</th><th className="px-3 py-3 font-bold">Doğru %</th><th className="px-3 py-3 font-bold">Ort. süre</th><th className="px-3 py-3 font-bold">En çok seçilen yanlış</th>{!compact && <th className="px-3 py-3 font-bold">Gerçek performans</th>}<th className="px-3 py-3 font-bold">Kalibrasyon</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.questionId} className="border-t border-slate-100 align-top hover:bg-slate-50/70">
-              <td className="max-w-[310px] px-3 py-3"><p className="font-semibold text-slate-900">{row.questionPreview}</p><p className="mt-1 font-mono text-[10px] text-slate-400">{row.questionId}</p></td>
+              <td className="max-w-[310px] px-3 py-3"><p className="font-semibold text-slate-900">{row.questionPreview}</p><p className="mt-1 font-mono text-[10px] text-slate-400">{row.questionId}</p>{!compact && <details className="mt-2"><summary className="cursor-pointer text-xs font-semibold text-red-700">Şık dağılımını göster</summary><OptionBreakdown row={row} /></details>}</td>
               <td className="whitespace-nowrap px-3 py-3 text-slate-600">{row.gradeBand === "unknown" ? "—" : paragraphGradeLabels[row.gradeBand]}</td>
               <td className="whitespace-nowrap px-3 py-3 text-slate-600">{row.category === "unknown" ? "—" : paragraphCategoryLabels[row.category]}</td>
               <td className="whitespace-nowrap px-3 py-3"><Pill className="border-slate-200 bg-slate-50 text-slate-700">{row.storedDifficulty === "unknown" ? "—" : paragraphDifficultyLabels[row.storedDifficulty]}</Pill><p className="mt-1 text-[10px] text-slate-400">{sourceLabel(row.source)}</p></td>
               <td className="whitespace-nowrap px-3 py-3 font-semibold text-slate-700">{row.attemptCount}</td>
               <td className="whitespace-nowrap px-3 py-3 font-semibold text-slate-800">{formatPercent(row.accuracyRate)}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-slate-600">{formatMs(row.averageResponseTimeMs)}</td>
+              <td className="whitespace-nowrap px-3 py-3 text-slate-600">{formatMs(row.averageResponseTimeMs)}</td><td className="whitespace-nowrap px-3 py-3">{row.mostSelectedWrongOption ? <><span className="font-semibold text-slate-700">{row.mostSelectedWrongOption.label}</span><span className="ml-1 text-xs text-slate-500">{row.mostSelectedWrongOption.selectionCount} · {formatPercent(row.mostSelectedWrongOption.selectionRate)}</span></> : <span className="text-slate-400">—</span>}</td>
               {!compact && <td className="whitespace-nowrap px-3 py-3"><Pill className={sampleClasses[row.sampleStatus]}>{row.empiricalPerformance === "insufficient" ? sampleLabels[row.sampleStatus] : `${row.empiricalPerformance === "easy" ? "Kolay" : row.empiricalPerformance === "medium" ? "Orta" : "Zor"} performans`}</Pill></td>}
               <td className="whitespace-nowrap px-3 py-3"><Pill className={calibrationClasses[row.calibrationStatus]}>{row.calibrationLabel}</Pill></td>
             </tr>
@@ -119,6 +144,7 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
   const [source, setSource] = useState<SelectValue>("all");
   const [sample, setSample] = useState<SelectValue>("all");
   const [calibration, setCalibration] = useState<SelectValue>("all");
+  const [optionCoverage, setOptionCoverage] = useState<"all" | "tracked" | "untracked">("all");
   const [sort, setSort] = useState<SortKey>("attempts-desc");
 
   const filteredQuestions = useMemo(() => {
@@ -131,6 +157,8 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
       if (source !== "all" && row.source !== source) return false;
       if (sample !== "all" && row.sampleStatus !== sample) return false;
       if (calibration !== "all" && row.calibrationStatus !== calibration) return false;
+      if (optionCoverage === "tracked" && row.optionTrackedAttemptCount === 0) return false;
+      if (optionCoverage === "untracked" && row.optionTrackedAttemptCount > 0) return false;
       return true;
     }).toSorted((left, right) => {
       if (sort === "attempts-asc") return left.attemptCount - right.attemptCount || left.questionId.localeCompare(right.questionId);
@@ -140,10 +168,13 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
       if (sort === "time-desc") return (right.averageResponseTimeMs ?? -1) - (left.averageResponseTimeMs ?? -1);
       return right.attemptCount - left.attemptCount || left.questionId.localeCompare(right.questionId);
     });
-  }, [calibration, category, difficulty, grade, initialAnalytics.questions, sample, search, sort, source]);
+  }, [calibration, category, difficulty, grade, initialAnalytics.questions, optionCoverage, sample, search, sort, source]);
 
   const v2Answered = initialAnalytics.questions.some((row) => row.questionId.startsWith("v2-") && row.attemptCount > 0);
   const analyzableQuestionCount = initialAnalytics.questions.filter((row) => row.sampleStatus === "analyzable").length;
+  const distractors = useMemo<DistractorEntry[]>(() => initialAnalytics.questions.flatMap((question) => question.optionStats.filter((option) => !option.isCorrectOption && question.optionTrackedAttemptCount >= 10).map((option) => ({ question, option }))), [initialAnalytics.questions]);
+  const strongestDistractors = distractors.toSorted((left, right) => (right.option.selectionRate ?? -1) - (left.option.selectionRate ?? -1) || right.option.selectionCount - left.option.selectionCount || left.question.questionId.localeCompare(right.question.questionId) || left.option.optionIndex - right.option.optionIndex).slice(0, 10);
+  const neverSelectedDistractors = distractors.filter(({ option }) => option.selectionCount === 0).toSorted((left, right) => left.question.questionId.localeCompare(right.question.questionId) || left.option.optionIndex - right.option.optionIndex).slice(0, 10);
 
   return (
     <div className="space-y-4">
@@ -159,11 +190,13 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
         <MetricCard label="Analiz edilen soru" value={String(initialAnalytics.kpis.analyzedQuestionCount)} detail="En az bir cevap bulunan" tone="border-amber-200 bg-amber-50 text-amber-950" />
         <MetricCard label="Aktif öğrenci" value={String(initialAnalytics.kpis.activeStudentCount)} detail="Paragraf sonucu bulunan" tone="border-rose-200 bg-rose-50 text-rose-950" />
         <MetricCard label="Toplam oturum" value={String(initialAnalytics.kpis.sessionCount)} detail="exercise_results kaydı" tone="border-slate-200 bg-slate-50 text-slate-950" />
+        <MetricCard label="Şık verisi kapsamı" value={String(initialAnalytics.kpis.optionTrackedAnswers) + " / " + String(initialAnalytics.kpis.validAnswers)} detail={initialAnalytics.kpis.optionCoverageRate === null ? "Henüz geçerli şık seçimi yok" : "%" + initialAnalytics.kpis.optionCoverageRate.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) + " cevapta şık verisi var"} tone="border-cyan-200 bg-cyan-50 text-cyan-950" />
       </section>
 
+      {initialAnalytics.kpis.optionTrackedAnswers === 0 && <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950"><strong>Şık verisi kapsamı</strong><p className="mt-1">Mevcut eski cevap kayıtlarında selectedIndex bulunmadığı için şık dağılımı henüz hesaplanamıyor. Yeni çözümler bu veriyi kademeli olarak doldurur; doğruluk ve süre analizleri korunur.</p></div>}
       {analyzableQuestionCount === 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><strong>Henüz sınırlı öğrenci verisi bulunuyor.</strong><p className="mt-1">Soru bazlı performans değerlendirmeleri yeterli deneme sayısına ulaştığında gösterilir.</p></div>}
       {!v2Answered && <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900"><strong>V2 soruları için henüz yeterli öğrenci verisi oluşmadı.</strong><p className="mt-1 text-sky-800">V2 soru bankası tabloda görünür; gerçek performans etiketi en az 10 cevap sonrasında hesaplanır.</p></div>}
-      {(initialAnalytics.diagnostics.legacyAnswerCount > 0 || initialAnalytics.diagnostics.malformedAnswerCount > 0 || initialAnalytics.diagnostics.invalidResponseTimeCount > 0) && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><strong>Veri kalitesi notu</strong><p className="mt-1">Legacy kategori eksik cevap: {initialAnalytics.diagnostics.legacyAnswerCount} · Malformed cevap: {initialAnalytics.diagnostics.malformedAnswerCount} · Geçersiz süre: {initialAnalytics.diagnostics.invalidResponseTimeCount}. Geçersiz kayıtlar aggregate dışında tutuldu.</p></div>}
+      {(initialAnalytics.diagnostics.legacyAnswerCount > 0 || initialAnalytics.diagnostics.malformedAnswerCount > 0 || initialAnalytics.diagnostics.invalidResponseTimeCount > 0 || initialAnalytics.diagnostics.legacySelectedIndexCount > 0 || initialAnalytics.diagnostics.invalidSelectedIndexCount > 0 || initialAnalytics.diagnostics.correctnessMismatchCount > 0) && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><strong>Veri kalitesi notu</strong><p className="mt-1">Legacy kategori eksik cevap: {initialAnalytics.diagnostics.legacyAnswerCount} · Malformed cevap: {initialAnalytics.diagnostics.malformedAnswerCount} · Geçersiz süre: {initialAnalytics.diagnostics.invalidResponseTimeCount} · Legacy şık alanı: {initialAnalytics.diagnostics.legacySelectedIndexCount} · Geçersiz şık alanı: {initialAnalytics.diagnostics.invalidSelectedIndexCount} · Doğruluk uyuşmazlığı: {initialAnalytics.diagnostics.correctnessMismatchCount}. Geçersiz kayıtlar aggregate dışında tutuldu.</p></div>}
 
       <section className="grid gap-4 xl:grid-cols-3"><GroupTable title="Kategori analizi" rows={initialAnalytics.categories} /><GroupTable title="Sınıf analizi" rows={initialAnalytics.grades} /><GroupTable title="Etiket analizi" rows={initialAnalytics.difficulties} /></section>
 
@@ -176,11 +209,14 @@ export function ParagraphAnalyticsClient({ initialAnalytics }: { initialAnalytic
           <select aria-label="Etiket filtresi" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm etiketler</option>{Object.entries(paragraphDifficultyLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
           <select aria-label="Kaynak filtresi" value={source} onChange={(event) => setSource(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm kaynaklar</option>{[...new Set(initialAnalytics.questions.map((row) => row.source))].map((value) => <option key={value} value={value}>{sourceLabel(value)}</option>)}</select>
           <select aria-label="Örneklem filtresi" value={sample} onChange={(event) => setSample(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm örneklemler</option><option value="insufficient">Yetersiz veri</option><option value="preliminary">Ön veri</option><option value="analyzable">Analiz edilebilir</option></select>
+          <select aria-label="Şık verisi filtresi" value={optionCoverage} onChange={(event) => setOptionCoverage(event.target.value as "all" | "tracked" | "untracked")} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm şık verisi</option><option value="tracked">Şık verisi olan</option><option value="untracked">Şık verisi olmayan</option></select>
           <select aria-label="Kalibrasyon filtresi" value={calibration} onChange={(event) => setCalibration(event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">Tüm kalibrasyonlar</option><option value="easy">Beklenenden kolay</option><option value="hard">Beklenenden zor</option><option value="aligned">Beklentiyle uyumlu</option><option value="insufficient">Yetersiz veri</option></select>
           <select aria-label="Sıralama" value={sort} onChange={(event) => setSort(event.target.value as SortKey)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm md:col-span-2"><option value="attempts-desc">En çok çözülen</option><option value="attempts-asc">En az çözülen</option><option value="accuracy-desc">En yüksek doğruluk</option><option value="accuracy-asc">En düşük doğruluk</option><option value="time-asc">En hızlı</option><option value="time-desc">En yavaş</option></select>
         </div>
         <div className="mt-4"><QuestionTable rows={filteredQuestions} /></div>
       </section>
+
+      <section className="grid gap-4 xl:grid-cols-2"><DistractorSection title="En Güçlü Çeldiriciler" description="En az 10 geçerli şık seçimi olan sorularda en yüksek paya sahip yanlış seçenekler." rows={strongestDistractors} empty="Henüz yeterli şık verisi yok." /><DistractorSection title="Hiç Seçilmeyen Çeldiriciler" description="En az 10 geçerli şık seçimi olan sorularda hiç işaretlenmeyen yanlış seçenekler." rows={neverSelectedDistractors} empty="Hiç seçilmeyen çeldirici bulunamadı." /></section>
 
       <section className="grid gap-4 xl:grid-cols-3"><RankedSection title="Öğrencilerin en çok zorlandığı sorular" description="En az 10 cevaplı sorular arasından doğruluğu en düşük ilk 10." rows={initialAnalytics.hardestQuestions} empty="Henüz analiz edilebilir örneklem yok." /><RankedSection title="Beklenenden kolay görünen HARD sorular" description="Stored HARD ve en az %80 doğruluk gösteren sorular." rows={initialAnalytics.tooEasyHardQuestions} empty="Bu koşullara uyan soru yok." /><RankedSection title="En uzun süren sorular" description="En az 10 cevap ve en az 5 geçerli süre örneği olan ilk 10." rows={initialAnalytics.slowQuestions} empty="Henüz yeterli süre örneklemi yok." /></section>
     </div>

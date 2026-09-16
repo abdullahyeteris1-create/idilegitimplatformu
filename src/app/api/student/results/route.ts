@@ -518,7 +518,8 @@ function validateDetails(exerciseType: string, value: unknown): Record<string, s
       const answers = raw.map((item) => {
         if (!isPlainObject(item) || typeof item.questionId !== "string" || item.questionId.length > 128 || typeof item.correct !== "boolean" || typeof item.responseTimeMs !== "number" || !Number.isInteger(item.responseTimeMs) || item.responseTimeMs < 1 || item.responseTimeMs > 21_600_000) return null;
         if (item.category !== undefined && (typeof item.category !== "string" || !["main_idea", "supporting_idea", "inference", "completion", "flow"].includes(item.category))) return null;
-        return { questionId: item.questionId, ...(item.category !== undefined ? { category: item.category } : {}), correct: item.correct, responseTimeMs: item.responseTimeMs };
+        if (item.selectedIndex !== undefined && (typeof item.selectedIndex !== "number" || !Number.isInteger(item.selectedIndex) || item.selectedIndex < 0 || item.selectedIndex > 4)) return null;
+        return { questionId: item.questionId, ...(item.category !== undefined ? { category: item.category } : {}), correct: item.correct, responseTimeMs: item.responseTimeMs, ...(item.selectedIndex !== undefined ? { selectedIndex: item.selectedIndex } : {}) };
       });
       if (answers.some((item) => item === null)) return null;
       cleaned[key] = answers;

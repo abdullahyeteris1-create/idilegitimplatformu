@@ -16,6 +16,8 @@ type DatabaseQuestionRow = {
   grade_band: unknown;
   question: unknown;
   source: unknown;
+  correct_index: unknown;
+  options: unknown;
 };
 
 type DatabaseResultRow = {
@@ -23,7 +25,7 @@ type DatabaseResultRow = {
   details: unknown;
 };
 
-const QUESTION_FIELDS = "id,category,difficulty,grade_band,question,source";
+const QUESTION_FIELDS = "id,category,difficulty,grade_band,question,source,correct_index,options";
 const RESULT_FIELDS = "student_id,details";
 
 function staticQuestionMetadata(): ParagraphQuestionMetadata[] {
@@ -34,6 +36,8 @@ function staticQuestionMetadata(): ParagraphQuestionMetadata[] {
     gradeBand: question.gradeBand,
     question: question.question,
     source: "legacy-static",
+    correctIndex: question.correctIndex,
+    options: question.options,
   }));
 }
 
@@ -49,6 +53,9 @@ function mapDatabaseQuestion(row: DatabaseQuestionRow): ParagraphQuestionMetadat
     return null;
   }
 
+  const options = Array.isArray(row.options) && row.options.every((option) => typeof option === "string") ? row.options : undefined;
+  const correctIndex = typeof row.correct_index === "number" && Number.isInteger(row.correct_index) && row.correct_index >= 0 && row.correct_index < 5 ? row.correct_index : undefined;
+
   return {
     id: row.id,
     category: row.category as ParagraphQuestionMetadata["category"],
@@ -56,6 +63,8 @@ function mapDatabaseQuestion(row: DatabaseQuestionRow): ParagraphQuestionMetadat
     gradeBand: row.grade_band as ParagraphQuestionMetadata["gradeBand"],
     question: row.question,
     source: row.source,
+    ...(correctIndex !== undefined ? { correctIndex } : {}),
+    ...(options ? { options } : {}),
   };
 }
 

@@ -14,6 +14,8 @@ export const PARAGRAPH_DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export const MIN_RESPONSE_TIME_MS = 1_000;
 export const MAX_RESPONSE_TIME_MS = 600_000;
 export const MIN_SLOW_TIME_SAMPLE = 5;
+export const OPTION_COUNT = 5;
+export const OPTION_LABELS = ["A", "B", "C", "D", "E"] as const;
 
 export type ParagraphCategory = (typeof PARAGRAPH_CATEGORIES)[number];
 export type ParagraphGradeBand = (typeof PARAGRAPH_GRADE_BANDS)[number];
@@ -27,6 +29,8 @@ export type ParagraphQuestionMetadata = {
   gradeBand: ParagraphGradeBand;
   question: string;
   source: string;
+  correctIndex?: number;
+  options?: readonly string[];
 };
 
 export type ParagraphSessionInput = {
@@ -34,11 +38,25 @@ export type ParagraphSessionInput = {
   details?: unknown;
 };
 
+export type DistractorQualityFlag = "never-selected" | "very-low" | "working" | "strong";
+
+export type ParagraphOptionStat = {
+  optionIndex: number;
+  label: string;
+  optionText?: string;
+  selectionCount: number;
+  selectionRate: number | null;
+  isCorrectOption: boolean;
+  distractorQualityFlag: DistractorQualityFlag | null;
+};
+
 export type ParagraphQuestionAnalytics = {
   questionId: string;
   gradeBand: ParagraphGradeBand | "unknown";
   category: ParagraphCategory | "unknown";
   storedDifficulty: ParagraphDifficulty | "unknown";
+  correctIndex?: number;
+  options?: readonly string[];
   source: string;
   questionPreview: string;
   attemptCount: number;
@@ -51,6 +69,10 @@ export type ParagraphQuestionAnalytics = {
   empiricalPerformance: "easy" | "medium" | "hard" | "insufficient";
   calibrationStatus: "easy" | "hard" | "aligned" | "insufficient" | "unknown";
   calibrationLabel: string;
+  optionStats: ParagraphOptionStat[];
+  optionTrackedAttemptCount: number;
+  mostSelectedWrongOption: Omit<ParagraphOptionStat, "optionText" | "isCorrectOption" | "distractorQualityFlag"> | null;
+  distractorQualitySignal: string | null;
 };
 
 export type ParagraphGroupAnalytics = {
@@ -72,6 +94,8 @@ export type ParagraphAnalytics = {
     analyzedQuestionCount: number;
     activeStudentCount: number;
     sessionCount: number;
+    optionTrackedAnswers: number;
+    optionCoverageRate: number | null;
   };
   diagnostics: {
     malformedAnswerCount: number;
@@ -79,6 +103,9 @@ export type ParagraphAnalytics = {
     legacyAnswerCount: number;
     invalidResponseTimeCount: number;
     categorySnapshotCount: number;
+    legacySelectedIndexCount: number;
+    invalidSelectedIndexCount: number;
+    correctnessMismatchCount: number;
   };
   questions: ParagraphQuestionAnalytics[];
   categories: ParagraphGroupAnalytics[];
@@ -92,6 +119,8 @@ export type ParagraphAnalytics = {
 type MutableQuestion = {
   metadata: ParagraphQuestionAnalytics;
   responseTimeTotal: number;
+  optionSelectionCounts: number[];
+  optionTrackedAttemptCount: number;
 };
 
 const CATEGORY_LABELS: Record<ParagraphCategory, string> = {
@@ -177,12 +206,59 @@ export function getCalibration(
   return { calibrationStatus: "aligned", calibrationLabel: "Beklentiyle uyumlu" };
 }
 
+const isSelectedIndex = (value: unknown): value is number => (
+  typeof value === "number" && Number.isInteger(value) && value >= 0 && value < OPTION_COUNT
+);
+
+function distractorQualityFlag(selectionCount: number, trackedAttemptCount: number, isCorrectOption: boolean): DistractorQualityFlag | null {
+  if (isCorrectOption || trackedAttemptCount < 10) return null;
+  if (selectionCount === 0) return "never-selected";
+  const rate = selectionCount / trackedAttemptCount * 100;
+  if (rate < 5) return "very-low";
+  if (rate < 20) return "working";
+  return "strong";
+}
+
+function buildOptionStats(
+  metadata: Pick<ParagraphQuestionMetadata, "correctIndex" | "options">,
+  selectionCounts: readonly number[],
+  trackedAttemptCount: number,
+): ParagraphOptionStat[] {
+  const canonicalCorrectIndex = isSelectedIndex(metadata.correctIndex) ? metadata.correctIndex : null;
+  return OPTION_LABELS.map((label, optionIndex) => {
+    const selectionCount = selectionCounts[optionIndex] ?? 0;
+    const isCorrectOption = canonicalCorrectIndex === optionIndex;
+    return {
+      optionIndex,
+      label,
+      ...(metadata.options?.[optionIndex] ? { optionText: metadata.options[optionIndex] } : {}),
+      selectionCount,
+      selectionRate: trackedAttemptCount > 0 ? roundRate(selectionCount, trackedAttemptCount) : null,
+      isCorrectOption,
+      distractorQualityFlag: canonicalCorrectIndex === null ? null : distractorQualityFlag(selectionCount, trackedAttemptCount, isCorrectOption),
+    };
+  });
+}
+
+function getMostSelectedWrongOption(optionStats: readonly ParagraphOptionStat[]): ParagraphQuestionAnalytics["mostSelectedWrongOption"] {
+  const wrongOptions = optionStats.filter((option) => !option.isCorrectOption && option.selectionCount > 0);
+  if (wrongOptions.length === 0) return null;
+  const selected = [...wrongOptions].sort((left, right) => right.selectionCount - left.selectionCount || left.optionIndex - right.optionIndex)[0];
+  return {
+    optionIndex: selected.optionIndex,
+    label: selected.label,
+    selectionCount: selected.selectionCount,
+    selectionRate: selected.selectionRate,
+  };
+}
 function makeMetadataRow(metadata: ParagraphQuestionMetadata): ParagraphQuestionAnalytics {
   const row = {
     questionId: metadata.id,
     gradeBand: metadata.gradeBand,
     category: metadata.category,
     storedDifficulty: metadata.difficulty,
+    ...(isSelectedIndex(metadata.correctIndex) ? { correctIndex: metadata.correctIndex } : {}),
+    ...(metadata.options ? { options: metadata.options } : {}),
     source: metadata.source,
     questionPreview: metadata.question.replace(/\s+/gu, " ").trim().slice(0, 140),
     attemptCount: 0,
@@ -195,6 +271,10 @@ function makeMetadataRow(metadata: ParagraphQuestionMetadata): ParagraphQuestion
     empiricalPerformance: "insufficient" as ParagraphQuestionAnalytics["empiricalPerformance"],
     calibrationStatus: "insufficient" as ParagraphQuestionAnalytics["calibrationStatus"],
     calibrationLabel: "Yetersiz veri",
+    optionStats: buildOptionStats(metadata, [0, 0, 0, 0, 0], 0),
+    optionTrackedAttemptCount: 0,
+    mostSelectedWrongOption: null,
+    distractorQualitySignal: null,
   };
   return row;
 }
@@ -255,7 +335,7 @@ export function aggregateParagraphAnalytics(
   for (const metadata of questionMetadata) metadataById.set(metadata.id, metadata);
 
   const mutableById = new Map<string, MutableQuestion>();
-  for (const metadata of metadataById.values()) mutableById.set(metadata.id, { metadata: makeMetadataRow(metadata), responseTimeTotal: 0 });
+  for (const metadata of metadataById.values()) mutableById.set(metadata.id, { metadata: makeMetadataRow(metadata), responseTimeTotal: 0, optionSelectionCounts: [0, 0, 0, 0, 0], optionTrackedAttemptCount: 0 });
 
   const studentIds = new Set<string>();
   let sessionCount = 0;
@@ -268,6 +348,9 @@ export function aggregateParagraphAnalytics(
   let legacyAnswerCount = 0;
   let invalidResponseTimeCount = 0;
   let categorySnapshotCount = 0;
+  let legacySelectedIndexCount = 0;
+  let invalidSelectedIndexCount = 0;
+  let correctnessMismatchCount = 0;
   const answeredQuestionIds = new Set<string>();
 
   for (const session of sessions) {
@@ -298,14 +381,24 @@ export function aggregateParagraphAnalytics(
       if (snapshotCategory) categorySnapshotCount += 1;
       if (!snapshotCategory) legacyAnswerCount += 1;
 
+      const hasSelectedIndex = Object.prototype.hasOwnProperty.call(rawAnswer, "selectedIndex");
+      const selectedIndex = isSelectedIndex(rawAnswer.selectedIndex) ? rawAnswer.selectedIndex : null;
+      if (!hasSelectedIndex) legacySelectedIndexCount += 1;
+      else if (selectedIndex === null) invalidSelectedIndexCount += 1;
+
       let mutable = mutableById.get(questionId);
       if (!mutable) {
-        mutable = { metadata: makeUnknownRow(questionId), responseTimeTotal: 0 };
+        mutable = { metadata: makeUnknownRow(questionId), responseTimeTotal: 0, optionSelectionCounts: [0, 0, 0, 0, 0], optionTrackedAttemptCount: 0 };
         mutableById.set(questionId, mutable);
       }
 
       const row = mutable.metadata;
       if (snapshotCategory) row.category = snapshotCategory;
+      if (selectedIndex !== null) {
+        mutable.optionSelectionCounts[selectedIndex] += 1;
+        mutable.optionTrackedAttemptCount += 1;
+        if (isSelectedIndex(row.correctIndex) && correct !== (selectedIndex === row.correctIndex)) correctnessMismatchCount += 1;
+      }
       row.attemptCount += 1;
       validAnswerCount += 1;
       answeredQuestionIds.add(questionId);
@@ -329,12 +422,17 @@ export function aggregateParagraphAnalytics(
     }
   }
 
-  const questions = [...mutableById.values()].map(({ metadata, responseTimeTotal }) => {
+  const questions = [...mutableById.values()].map(({ metadata, responseTimeTotal, optionSelectionCounts, optionTrackedAttemptCount }) => {
     metadata.accuracyRate = roundRate(metadata.correctCount, metadata.attemptCount);
     metadata.averageResponseTimeMs = average(responseTimeTotal, metadata.validResponseTimeCount);
     metadata.sampleStatus = getSampleStatus(metadata.attemptCount);
     metadata.empiricalPerformance = getEmpiricalPerformance(metadata.attemptCount, metadata.accuracyRate);
     Object.assign(metadata, getCalibration(metadata.attemptCount, metadata.storedDifficulty, metadata.accuracyRate));
+    metadata.optionStats = buildOptionStats(metadata, optionSelectionCounts, optionTrackedAttemptCount);
+    metadata.optionTrackedAttemptCount = optionTrackedAttemptCount;
+    metadata.mostSelectedWrongOption = isSelectedIndex(metadata.correctIndex) ? getMostSelectedWrongOption(metadata.optionStats) : null;
+    const strongestWrongRate = isSelectedIndex(metadata.correctIndex) ? Math.max(...metadata.optionStats.filter((option) => !option.isCorrectOption).map((option) => option.selectionRate ?? 0), 0) : 0;
+    metadata.distractorQualitySignal = metadata.attemptCount >= 10 && optionTrackedAttemptCount >= 10 && (metadata.accuracyRate ?? 100) < 60 && strongestWrongRate >= 40 ? "Belirli bir çeldiricide yoğunlaşma var" : null;
     return metadata;
   });
 
@@ -364,6 +462,8 @@ export function aggregateParagraphAnalytics(
       analyzedQuestionCount: answeredQuestionIds.size,
       activeStudentCount: studentIds.size,
       sessionCount,
+      optionTrackedAnswers: questions.reduce((sum, row) => sum + row.optionTrackedAttemptCount, 0),
+      optionCoverageRate: validAnswerCount > 0 ? roundRate(questions.reduce((sum, row) => sum + row.optionTrackedAttemptCount, 0), validAnswerCount) : null,
     },
     diagnostics: {
       malformedAnswerCount,
@@ -371,6 +471,9 @@ export function aggregateParagraphAnalytics(
       legacyAnswerCount,
       invalidResponseTimeCount,
       categorySnapshotCount,
+      legacySelectedIndexCount,
+      invalidSelectedIndexCount,
+      correctnessMismatchCount,
     },
     questions: questions.toSorted((left, right) => left.questionId.localeCompare(right.questionId)),
     categories,
