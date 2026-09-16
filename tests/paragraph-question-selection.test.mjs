@@ -8,7 +8,7 @@ test("grade band resolver accepts stored class formats and fails closed", () => 
   for (const [value, expected] of [[4,"4-5"],[5,"4-5"],["6","6-7"],["7. Sınıf","6-7"],[8,"8"],["9. Sınıf","high-school"],[10,"high-school"],["11 Sınıf","high-school"],[12,"high-school"]]) {
     assert.equal(resolveParagraphGradeBand(value), expected);
   }
-  for (const value of [null, "", "3", "13", "6A", "sınıf 6", {}, 6.5]) assert.equal(resolveParagraphGradeBand(value), null);
+  for (const value of [null, "", "3", "13", "sınıf 6", {}, 6.5]) assert.equal(resolveParagraphGradeBand(value), null);
 });
 
 test("category selection excludes seen and returns only remaining questions", () => {
@@ -79,4 +79,8 @@ test("student loader does not fallback to all grades on a successful empty DB qu
   const result = await loadStudentParagraphQuestions("student-1", 8, mockSupabase([], []));
   assert.equal(result.dbState, "empty");
   assert.deepEqual(result.questions, []);
+});
+test('grade band resolver accepts safe class-section formats without scanning arbitrary digits', () => {
+  for (const [value, expected] of [['4/A','4-5'],['4-A','4-5'],['4 A','4-5'],['4A','4-5'],[' 4/A ','4-5'],['5/B','4-5'],['6/A','6-7'],['7-B','6-7'],['8/C','8'],['9/A','high-school'],['10-B','high-school'],['11 C','high-school'],['12D','high-school'],[' 11-B ','high-school']]) assert.equal(resolveParagraphGradeBand(value), expected);
+  for (const value of ['1/A', '2-B', '3 C', '14/A', '24', '16-B', '104', 'abc4', '4abcxyz', 'Demo4', 'Sınıf 4 test', 'Demo']) assert.equal(resolveParagraphGradeBand(value), null);
 });

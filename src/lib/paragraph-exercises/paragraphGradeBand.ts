@@ -7,7 +7,7 @@ export function resolveParagraphGradeBand(studentClass: unknown): ParagraphGrade
   if (typeof studentClass !== "string") return null;
   const value = studentClass.trim().normalize("NFKC").toLocaleLowerCase("tr-TR");
   if (!value) return null;
-  const match = value.match(/^(\d{1,2})(?:\.?\s*(?:sınıf|sinif))?$/u);
+  const match = value.match(/^(\d{1,2})(?:\.?\s*(?:sınıf|sinif))?(?:\s*[/\-]?\s*[a-zçğıöşü])?$/u);
   return match ? mapGrade(Number(match[1])) : null;
 }
 
