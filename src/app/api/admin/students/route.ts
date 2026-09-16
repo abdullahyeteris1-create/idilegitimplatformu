@@ -10,6 +10,7 @@ import {
 } from "@/lib/students/studentAccessDates";
 import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
 import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
+import { requiresIndividualClass, validateStudentClassValue } from "@/lib/students/studentClassValidation";
 
 export const runtime = "nodejs";
 
@@ -148,6 +149,13 @@ export async function POST(request: NextRequest) {
     return errorResponse("Eğitim düzeyi seçimi zorunludur.", 400);
   }
 
+  const classValidation = validateStudentClassValue(body.classLevel, {
+    required: requiresIndividualClass(body.educationLevel),
+  });
+  if (!classValidation.ok) {
+    return errorResponse(classValidation.message, 400);
+  }
+
   if (body.status !== undefined && !isStudentStatus(body.status)) {
     return errorResponse("Geçersiz öğrenci durumu.", 400);
   }
@@ -205,7 +213,7 @@ export async function POST(request: NextRequest) {
     password_hash: passwordHash,
     password_hash_version: 1,
     password_changed_at: null,
-    class_name: optionalString(body.classLevel),
+    class_name: classValidation.value,
     parent_name: optionalString(body.parentName),
     phone: optionalString(body.parentPhone),
     parent_email: parentEmail,

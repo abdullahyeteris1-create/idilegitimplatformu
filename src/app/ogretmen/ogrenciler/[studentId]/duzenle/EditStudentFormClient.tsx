@@ -14,6 +14,7 @@ import {
 import { isEducationDateRangeValid } from "@/lib/students/studentAccessDates";
 import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
 import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
+import { getIndividualClassOptions, requiresIndividualClass, validateStudentClassValue } from "@/lib/students/studentClassValidation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -111,6 +112,14 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
       return;
     }
 
+    const classValidation = validateStudentClassValue(classLevel, {
+      required: requiresIndividualClass(educationLevel),
+    });
+    if (!classValidation.ok) {
+      setError(classValidation.message);
+      return;
+    }
+
     if (password.trim()) {
       const passwordValidation = validateStudentPassword(password, { username, name });
       if (!passwordValidation.ok) {
@@ -185,12 +194,21 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          Sinif Duzeyi (Opsiyonel)
+          Sınıf (Gerçek sınıf, zorunlu)
           <input
             value={classLevel}
             onChange={(event) => setClassLevel(event.target.value)}
+            list="student-class-options"
+            required={requiresIndividualClass(educationLevel)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
+            placeholder="Örnek: 4/A veya 7"
           />
+          <datalist id="student-class-options">
+            {(educationLevel ? getIndividualClassOptions(educationLevel) : Array.from({ length: 12 }, (_, index) => index + 1)).map((grade) => (
+              <option key={grade} value={String(grade)}>{grade}. Sınıf</option>
+            ))}
+          </datalist>
+          <span className="text-xs font-normal text-slate-500">Eğitim seviyesinden ayrı olarak öğrencinin gerçek sınıfını seçin.</span>
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
@@ -344,6 +362,8 @@ function EditStudentForm({ studentId, student }: { studentId: string; student: S
           className="min-h-[120px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
         />
       </label>
+
+      {!classLevel.trim() ? <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">Öğrencinin gerçek sınıfı belirtilmemiş. Sınıf seviyesine göre hazırlanan çalışmaların açılabilmesi için sınıfını seçin.</p> : null}
 
       {error ? <p className="text-sm font-semibold text-[var(--bad)]">{error}</p> : null}
 

@@ -11,6 +11,7 @@ import {
 } from "@/lib/students/studentAccessDates";
 import { getStudentIsActiveValue, isStudentStatus, normalizeStudentStatus } from "@/lib/students/studentStatus";
 import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
+import { requiresIndividualClass, validateStudentClassValue } from "@/lib/students/studentClassValidation";
 
 export const runtime = "nodejs";
 
@@ -198,6 +199,23 @@ export async function PATCH(
   }
 
   const existing = existingData as Record<string, unknown>;
+
+  const nextEducationLevel = isEducationLevel(body.educationLevel)
+    ? body.educationLevel
+    : isEducationLevel(existing.education_level)
+      ? existing.education_level
+      : null;
+  const hasClassLevel = Object.hasOwn(body, "classLevel");
+  if (hasClassLevel) {
+    const classValidation = validateStudentClassValue(body.classLevel, {
+      required: nextEducationLevel ? requiresIndividualClass(nextEducationLevel) : false,
+    });
+    if (!classValidation.ok) {
+      return errorResponse(classValidation.message, 400);
+    }
+  } else if (Object.hasOwn(body, "educationLevel") && nextEducationLevel && requiresIndividualClass(nextEducationLevel) && !optionalString(existing.class_name)) {
+    return errorResponse("Gerçek sınıf seçimi zorunludur.", 400);
+  }
   const hasStartDate = Object.hasOwn(body, "educationStartDate");
   const hasEndDate = Object.hasOwn(body, "accessEndDate");
   const educationStartDate = hasStartDate

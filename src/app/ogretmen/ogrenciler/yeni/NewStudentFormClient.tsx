@@ -16,6 +16,7 @@ import {
 } from "@/lib/students/studentAccessDates";
 import type { EducationStatus, Student, StudentStatus } from "@/lib/students/types";
 import { validateStudentPassword } from "@/lib/students/studentPasswordValidation";
+import { getIndividualClassOptions, requiresIndividualClass, validateStudentClassValue } from "@/lib/students/studentClassValidation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -81,6 +82,14 @@ export function NewStudentFormClient() {
 
     if (!educationLevel) {
       setError("Egitim duzeyi secimi zorunludur.");
+      return;
+    }
+
+    const classValidation = validateStudentClassValue(classLevel, {
+      required: requiresIndividualClass(educationLevel),
+    });
+    if (!classValidation.ok) {
+      setError(classValidation.message);
       return;
     }
 
@@ -240,13 +249,21 @@ export function NewStudentFormClient() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
-          Sinif Duzeyi (Opsiyonel)
+          Sınıf (Gerçek sınıf, zorunlu)
           <input
             value={classLevel}
             onChange={(event) => setClassLevel(event.target.value)}
+            list="student-class-options"
+            required={requiresIndividualClass(educationLevel)}
             className="min-h-[56px] rounded-xl border border-red-200 bg-white px-4 py-3 text-base outline-none ring-red-200 transition focus:ring"
-            placeholder="Ornek: 4-A"
+            placeholder="Örnek: 4/A veya 7"
           />
+          <datalist id="student-class-options">
+            {(educationLevel ? getIndividualClassOptions(educationLevel) : Array.from({ length: 12 }, (_, index) => index + 1)).map((grade) => (
+              <option key={grade} value={String(grade)}>{grade}. Sınıf</option>
+            ))}
+          </datalist>
+          <span className="text-xs font-normal text-slate-500">Eğitim seviyesinden ayrı olarak öğrencinin gerçek sınıfını seçin.</span>
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-semibold">
