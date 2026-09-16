@@ -40,12 +40,12 @@ export const CONTENT_GROUPS: ContentGroup[] = [
       {
         id: "paragraph-questions",
         title: "Paragraf Soruları",
-        description: "Paragraf soru havuzunu, seçenekleri ve yayın durumlarını yönetin.",
+        description: "Paragraf soru havuzunu, seçenekleri, yayın durumlarını ve performans analizini yönetin.",
         href: "/ogretmen/icerik-yonetimi/paragraf-sorulari",
         status: "active",
         icon: "PS",
         tone: "from-red-600 to-indigo-600",
-        tags: ["Paragraf", "Soru", "Aktif"],
+        tags: ["Paragraf", "Soru", "Analiz"],
         actionLabel: "Soruları Yönet",
       },
       {
