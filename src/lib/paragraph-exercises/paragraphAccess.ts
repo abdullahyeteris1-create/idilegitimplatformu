@@ -32,9 +32,13 @@ export async function getParagraphExerciseAccess() {
   };
 }
 
-export async function requireParagraphExerciseAccess(): Promise<void> {
+export async function requireParagraphExerciseAccess() {
   const access = await getParagraphExerciseAccess();
   if (!access.authenticated) {
     redirect("/giris");
   }
+  if (!access.enabled || !access.studentId) {
+    redirect("/egzersizler");
+  }
+  return access;
 }

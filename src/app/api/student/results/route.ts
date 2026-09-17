@@ -691,11 +691,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data, error } = await supabase
+    let resultsQuery = supabase
       .from(RESULTS_TABLE)
       .select("id,student_id,exercise_type,exercise_title,correct_count,wrong_count,score,success_rate,details,completed_at,created_at")
-      .eq("student_id", access.studentId)
-      .order("completed_at", { ascending: false });
+      .eq("student_id", access.studentId);
+    if (!access.paragraphExercisesEnabled) {
+      resultsQuery = resultsQuery.neq("exercise_type", "paragraph");
+    }
+    const { data, error } = await resultsQuery.order("completed_at", { ascending: false });
 
     if (error || !Array.isArray(data)) {
       return jsonResponse({ message: "Sonuçlar şu anda yüklenemiyor." }, 500);
@@ -703,6 +706,7 @@ export async function GET(request: NextRequest) {
 
     const results = data
       .filter((row) => String(row.student_id ?? "") === access.studentId)
+      .filter((row) => access.paragraphExercisesEnabled || row.exercise_type !== "paragraph")
       .map((row) => mapResult(row as Record<string, unknown>, access.studentId));
 
     return jsonResponse({ results });
@@ -727,6 +731,10 @@ export async function POST(request: NextRequest) {
   const body = validateResultBody(rawBody);
   if (!body) {
     return jsonResponse({ message: "Geçersiz sonuç verisi." }, 400);
+  }
+
+  if (body.exerciseType === "paragraph" && !access.paragraphExercisesEnabled) {
+    return jsonResponse({ message: "Paragraf çalışmaları bu öğrenci için aktif değil." }, 403);
   }
 
   if (!hasServiceRoleConfiguration()) {

@@ -7,6 +7,8 @@ const migration = await readFile("supabase/migrations/20260914100000_add_paragra
 const previewGroups = await readFile("src/components/exercises-preview/exercisePreviewGroups.ts", "utf8");
 const centerPage = await readFile("src/app/egzersizler/page.tsx", "utf8");
 const paragraphPage = await readFile("src/app/egzersizler/paragraf-calismalari/page.tsx", "utf8");
+const paragraphAccess = await readFile("src/lib/paragraph-exercises/paragraphAccess.ts", "utf8");
+const studentResults = await readFile("src/app/api/student/results/route.ts", "utf8");
 const accessApi = await readFile("src/app/api/admin/students/[studentId]/route.ts", "utf8");
 const teacherDetail = await readFile("src/components/teacher-panel/TeacherParagraphAccess.tsx", "utf8");
 const tracking = await readFile("src/lib/teachers/studentTrackingRepository.ts", "utf8");
@@ -65,4 +67,21 @@ test("diğer exercise grupları mevcut katalogdan korunur", () => {
   assert.match(previewGroups, /panelCategories\.map/);
   assert.match(previewGroups, /PREVIEW_EXERCISE_GROUPS/);
   assert.match(previewGroups, /return paragraphExercisesEnabled \? \[\.\.\.PREVIEW_EXERCISE_GROUPS/);
+});
+
+test("requireParagraphExerciseAccess enforces auth, current student and flag", () => {
+  assert.match(paragraphAccess, /verifyStudentAccessToken\(token\)/);
+  assert.match(paragraphAccess, /if \(!access\.authenticated\)[\s\S]*redirect\("\/giris"\)/);
+  assert.match(paragraphAccess, /if \(!access\.enabled \|\| !access\.studentId\)[\s\S]*redirect\("\/egzersizler"\)/);
+});
+
+test("student result route applies paragraph flag checks server-side", () => {
+  assert.match(studentResults, /resultsQuery\.neq\("exercise_type", "paragraph"\)/);
+  assert.match(studentResults, /body\.exerciseType === "paragraph" && !access\.paragraphExercisesEnabled/);
+  assert.match(studentResults, /return jsonResponse\([^;]+, 403\)/);
+});
+
+test("teacher history query is independent from the student paragraph flag", () => {
+  assert.match(tracking, /EXERCISE_RESULTS_TABLE/);
+  assert.doesNotMatch(tracking, /paragraph_exercises_enabled[^\n]+EXERCISE_RESULTS_TABLE|EXERCISE_RESULTS_TABLE[^\n]+paragraph_exercises_enabled/i);
 });
