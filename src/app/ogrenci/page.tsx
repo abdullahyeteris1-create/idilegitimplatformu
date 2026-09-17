@@ -36,6 +36,7 @@ export default async function StudentDashboardPage() {
       <StudentPanelPreview
         showReadingTestsCard={true}
         showStatisticsCard={true}
+        showParagraphAnalyticsCard={access.paragraphExercisesEnabled === true}
         xpSnapshot={xpSnapshot}
         authenticatedStudent={{
           id: access.studentId,
