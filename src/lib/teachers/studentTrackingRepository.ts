@@ -683,3 +683,11 @@ export async function getTeacherStudentDetail(studentId: string): Promise<Teache
     return null;
   }
 }
+/** Server-only adapter for authorized teacher student-detail analytics. */
+export async function loadTeacherParagraphAnalytics(
+  authorizedStudentId: string,
+  client = getSupabaseServiceRoleClient(),
+) {
+  const { loadParagraphStudentAnalyticsForVerifiedStudent } = await import(String.raw`@/lib/paragraph-exercises/paragraphStudentAnalyticsRepository`);
+  return loadParagraphStudentAnalyticsForVerifiedStudent(authorizedStudentId, client);
+}

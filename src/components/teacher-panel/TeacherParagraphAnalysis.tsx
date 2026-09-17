@@ -1,5 +1,5 @@
 import { PanelCard } from "@/components/ui/PanelCard";
-import { buildParagraphAnalysis, type ParagraphAnalysisResult } from "@/lib/paragraph-exercises/paragraphAnalysis";
+import { buildParagraphAnalysis, type ParagraphAnalysisResult, type ParagraphAnalysis } from "@/lib/paragraph-exercises/paragraphAnalysis";
 
 function formatSeconds(milliseconds: number | null): string {
   return milliseconds === null || !Number.isFinite(milliseconds)
@@ -14,8 +14,8 @@ function formatDate(value: string): string {
     : new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 }
 
-export function TeacherParagraphAnalysis({ results }: { results: ParagraphAnalysisResult[] }) {
-  const analysis = buildParagraphAnalysis(results);
+export function TeacherParagraphAnalysis({ results, paragraphAnalysis }: { results?: ParagraphAnalysisResult[]; paragraphAnalysis?: ParagraphAnalysis | null }) {
+  const analysis = paragraphAnalysis ?? buildParagraphAnalysis(results ?? []);
   const recentSessions = [...analysis.sessions].reverse().slice(0, 5);
 
   return (

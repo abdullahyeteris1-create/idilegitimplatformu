@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
+import type { ParagraphAnalysis } from "@/lib/paragraph-exercises/paragraphAnalysis";
 import { useRouter } from "next/navigation";
 import { PanelCard } from "@/components/ui/PanelCard";
 import { EDUCATION_LEVEL_LABELS } from "@/lib/assignments/educationLevels";
@@ -598,7 +599,7 @@ function PerformanceMetricCard({
   );
 }
 
-export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentDetail }) {
+export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { detail: TeacherStudentDetail; paragraphAnalysis?: ParagraphAnalysis | null }) {
   const router = useRouter();
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -972,7 +973,7 @@ export function TeacherStudentDetailClient({ detail }: { detail: TeacherStudentD
         <MetricCard title="Rozet Sayısı" value={detail.gamificationSummary.badgeCount} subtitle="Kazanılan rozet sayısı" />
       </section>
 
-      <TeacherParagraphAnalysis results={detail.results} />
+      <TeacherParagraphAnalysis results={detail.results} paragraphAnalysis={paragraphAnalysis} />
 
       <section className="grid gap-3 xl:grid-cols-2">
         <PanelCard title="Performans Özeti" subtitle="Okuma hızları ve anlama puanları">
