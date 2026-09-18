@@ -6,7 +6,9 @@ import { TEACHER_NAV_ITEMS } from "@/lib/constants/teacherNavigation";
 import {
   getTeacherStudentDetail,
   isTeacherStudentId,
+  loadTeacherParagraphAnalytics,
 } from "@/lib/teachers/studentTrackingRepository";
+
 
 type StudentDetailPageProps = {
   params: Promise<{
@@ -26,6 +28,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
   if (!detail) {
     notFound();
   }
+  const paragraphAnalysis = await loadTeacherParagraphAnalytics(detail.profile.studentId).catch(() => null);
 
   return (
     <AppShell
@@ -34,7 +37,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
       navItems={TEACHER_NAV_ITEMS}
       wide
     >
-      <TeacherStudentDetailClient detail={detail} />
+      <TeacherStudentDetailClient detail={detail} paragraphAnalysis={paragraphAnalysis ?? undefined} />
     </AppShell>
   );
 }
