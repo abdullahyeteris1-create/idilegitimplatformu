@@ -148,6 +148,33 @@ function EmptyCard({ text }: { text: string }) {
   );
 }
 
+function SectionToggleButton({
+  expanded,
+  controls,
+  onClick,
+  showLabel,
+  hideLabel,
+}: {
+  expanded: boolean;
+  controls: string;
+  onClick: () => void;
+  showLabel: string;
+  hideLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      aria-controls={controls}
+      onClick={onClick}
+      className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 [data-idil-theme=dark]:border-red-400/30 [data-idil-theme=dark]:bg-red-400/10 [data-idil-theme=dark]:text-red-100"
+    >
+      {expanded ? hideLabel : showLabel}
+      <span aria-hidden="true" className={`ml-2 transition-transform ${expanded ? "rotate-180" : ""}`}>⌄</span>
+    </button>
+  );
+}
+
 function getActivityMeta(activityType: TeacherStudentActivity["activityType"]): {
   label: string;
   icon: string;
@@ -538,9 +565,11 @@ function PerformanceBars({
 function PerformanceMetricCard({
   metric,
   summary,
+  detailsExpanded,
 }: {
   metric: PerformanceSectionMetric;
   summary: TeacherStudentPerformanceMetricSummary;
+  detailsExpanded: boolean;
 }) {
   const label = getPerformanceMetricLabel(metric);
 
@@ -589,12 +618,14 @@ function PerformanceMetricCard({
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Trend</p>
-        <div className="mt-3">
-          <PerformanceBars metric={metric} summary={summary} />
+      {detailsExpanded ? (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Trend</p>
+          <div className="mt-3">
+            <PerformanceBars metric={metric} summary={summary} />
+          </div>
         </div>
-      </div>
+      ) : null}
     </article>
   );
 }
@@ -604,10 +635,18 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
+  const [programExpanded, setProgramExpanded] = useState(false);
+  const [performanceDetailsExpanded, setPerformanceDetailsExpanded] = useState(false);
+  const [activitiesExpanded, setActivitiesExpanded] = useState(false);
+  const [readingTestsExpanded, setReadingTestsExpanded] = useState(false);
+  const [resultsExpanded, setResultsExpanded] = useState(false);
+  const [showAllResults, setShowAllResults] = useState(false);
 
   const sortedResults = useMemo(() => {
     return [...detail.results].sort((left, right) => right.date.localeCompare(left.date));
   }, [detail.results]);
+
+  const visibleResults = showAllResults ? sortedResults : sortedResults.slice(0, 5);
 
   const readingStats = useMemo(() => createReadingTestStatistics(sortedResults), [sortedResults]);
 
@@ -840,6 +879,36 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
             <EmptyCard text={programProgressError} />
           ) : programProgressDetail ? (
             <div className="grid gap-4">
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-base font-black text-slate-950 [data-idil-theme=dark]:text-slate-50">
+                      {programProgressDetail.visibleName}
+                    </p>
+                    <ProgramBadge
+                      tone={programProgressDetail.status === "completed" ? "green" : programProgressDetail.status === "cancelled" ? "amber" : "sky"}
+                    >
+                      {getProgramStatusBadge(programProgressDetail.status)}
+                    </ProgramBadge>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    {programProgressDetail.completedDays}/{programProgressDetail.totalDays} gün · {programProgressDetail.completedTasks}/{programProgressDetail.totalTasks} görev · %{programProgressDetail.overallProgressPercent} tamamlandı
+                  </p>
+                  <p className="mt-1 truncate text-sm text-slate-600 [data-idil-theme=dark]:text-slate-300">
+                    Sonraki görev: {programProgressDetail.nextPendingTask ? programProgressDetail.nextPendingTask.exerciseTitle : "Hepsi tamamlandı"}
+                  </p>
+                </div>
+                <SectionToggleButton
+                  expanded={programExpanded}
+                  controls="teacher-program-details"
+                  onClick={() => setProgramExpanded((current) => !current)}
+                  showLabel="Programı Gör"
+                  hideLabel="Programı Gizle"
+                />
+              </div>
+
+              {programExpanded ? (
+                <div id="teacher-program-details" className="grid gap-4">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 [data-idil-theme=dark]:text-slate-400">Program</p>
@@ -946,6 +1015,8 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
                   </div>
                 </div>
               </div>
+                </div>
+              ) : null}
             </div>
           ) : (
             <EmptyCard text="Aktif program bulunmuyor." />
@@ -958,9 +1029,20 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
           {performanceHistoryError ? (
             <EmptyCard text={performanceHistoryError} />
           ) : (
-            <div className="grid gap-4 xl:grid-cols-2">
-              <PerformanceMetricCard metric="reading" summary={performanceHistory.reading} />
-              <PerformanceMetricCard metric="comprehension" summary={performanceHistory.comprehension} />
+            <div className="grid gap-4">
+              <div className="flex justify-end">
+                <SectionToggleButton
+                  expanded={performanceDetailsExpanded}
+                  controls="teacher-performance-details"
+                  onClick={() => setPerformanceDetailsExpanded((current) => !current)}
+                  showLabel="Detayları Gör"
+                  hideLabel="Detayları Gizle"
+                />
+              </div>
+              <div id="teacher-performance-details" className="grid gap-4 xl:grid-cols-2">
+                <PerformanceMetricCard metric="reading" summary={performanceHistory.reading} detailsExpanded={performanceDetailsExpanded} />
+                <PerformanceMetricCard metric="comprehension" summary={performanceHistory.comprehension} detailsExpanded={performanceDetailsExpanded} />
+              </div>
             </div>
           )}
         </PanelCard>
@@ -1008,7 +1090,24 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
 
       <section className="grid gap-3 xl:grid-cols-[1fr_1.05fr]">
         <PanelCard title="Son Aktiviteler" subtitle="En yeni çalışmalar ve giriş hareketleri">
-          {detail.activityFeedError ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                {detail.activityFeed.length} aktivite
+              </p>
+              <p className="mt-1 text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">En yeni çalışma ve giriş hareketleri korunur.</p>
+            </div>
+            <SectionToggleButton
+              expanded={activitiesExpanded}
+              controls="teacher-activity-details"
+              onClick={() => setActivitiesExpanded((current) => !current)}
+              showLabel="Son Aktiviteleri Gör"
+              hideLabel="Son Aktiviteleri Gizle"
+            />
+          </div>
+          {activitiesExpanded ? (
+            <div id="teacher-activity-details">
+            {detail.activityFeedError ? (
             <EmptyCard text={detail.activityFeedError} />
           ) : detail.activityFeed.length === 0 ? (
             <EmptyCard text="Henüz çalışma bulunmuyor." />
@@ -1032,10 +1131,31 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
               </div>
             </>
           )}
+            </div>
+          ) : null}
         </PanelCard>
 
         <PanelCard title="Okuma Testleri" subtitle="Okuma hızı ve anlama testleri geçmişi">
-          {readingStats.recordsNewestFirst.length === 0 ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                {readingStats.recordsNewestFirst.length} test sonucu
+              </p>
+              <p className="mt-1 truncate text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
+                {readingStats.recordsNewestFirst[0] ? `Son test: ${readingStats.recordsNewestFirst[0].title}` : "Henüz okuma testi sonucu yok."}
+              </p>
+            </div>
+            <SectionToggleButton
+              expanded={readingTestsExpanded}
+              controls="teacher-reading-test-details"
+              onClick={() => setReadingTestsExpanded((current) => !current)}
+              showLabel="Okuma Testlerini Gör"
+              hideLabel="Okuma Testlerini Gizle"
+            />
+          </div>
+          {readingTestsExpanded ? (
+            <div id="teacher-reading-test-details">
+            {readingStats.recordsNewestFirst.length === 0 ? (
             <EmptyCard text="Bu öğrencinin henüz okuma testi sonucu yok." />
           ) : (
             <>
@@ -1092,17 +1212,41 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
               </div>
             </>
           )}
+            </div>
+          ) : null}
         </PanelCard>
       </section>
 
       <section>
         <PanelCard title="Sonuç Geçmişi" subtitle="Son kayıtlar en yeni tarihten eskiye sıralanır">
-          {sortedResults.length === 0 ? (
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 [data-idil-theme=dark]:text-slate-100">
+                {sortedResults.length} sonuç
+              </p>
+              <p className="mt-1 truncate text-xs text-slate-500 [data-idil-theme=dark]:text-slate-400">
+                {sortedResults[0] ? `Son sonuç: ${sortedResults[0].exerciseTitle} · ${formatDateTime(sortedResults[0].date)} · Başarı %${sortedResults[0].successRate}` : "Henüz egzersiz sonucu yok."}
+              </p>
+            </div>
+            <SectionToggleButton
+              expanded={resultsExpanded}
+              controls="teacher-result-history-details"
+              onClick={() => {
+                setResultsExpanded((current) => !current);
+                if (resultsExpanded) setShowAllResults(false);
+              }}
+              showLabel="Sonuçları Gör"
+              hideLabel="Sonuçları Gizle"
+            />
+          </div>
+          {resultsExpanded ? (
+            <div id="teacher-result-history-details">
+            {sortedResults.length === 0 ? (
             <EmptyCard text="Bu öğrenci henüz egzersiz tamamlamadı." />
           ) : (
             <>
               <div className="grid gap-3 md:hidden">
-                {sortedResults.map((result) => (
+                {visibleResults.map((result) => (
                   <article key={result.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm [data-idil-theme=dark]:border-slate-700 [data-idil-theme=dark]:bg-slate-900">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -1137,7 +1281,7 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedResults.map((result) => (
+                    {visibleResults.map((result) => (
                       <tr key={result.id} className="border-b border-slate-100 last:border-0 [data-idil-theme=dark]:border-slate-800">
                         <td className="px-4 py-3 text-slate-700 [data-idil-theme=dark]:text-slate-300">{formatDateTime(result.date)}</td>
                         <td className="px-4 py-3">
@@ -1155,8 +1299,21 @@ export function TeacherStudentDetailClient({ detail, paragraphAnalysis }: { deta
                   </tbody>
                 </table>
               </div>
+              {sortedResults.length > 5 ? (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllResults((current) => !current)}
+                    className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-slate-100"
+                  >
+                    {showAllResults ? "Yalnızca Son 5 Sonucu Göster" : "Tüm Sonuçları Göster"}
+                  </button>
+                </div>
+              ) : null}
             </>
           )}
+            </div>
+          ) : null}
         </PanelCard>
       </section>
 
