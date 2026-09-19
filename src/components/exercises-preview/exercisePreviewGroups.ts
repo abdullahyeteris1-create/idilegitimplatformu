@@ -158,6 +158,13 @@ const PARAGRAPH_EXERCISE_GROUP: PreviewExerciseGroup = {
       description: "Ana fikir, yardımcı düşünce, çıkarım ve paragraf bütünlüğü üzerine çalış.",
       tags: ["Ana Fikir", "Çıkarım", "Tamamlama"],
     },
+    {
+      slug: "paragraf-denemeleri",
+      title: "Paragraf Denemeleri",
+      href: "/ogrenci/paragraf-denemeleri",
+      description: "Süreli denemelerle paragraf becerilerini ölç ve sonuçlarını incele.",
+      tags: ["Süreli", "Deneme", "Paragraf"],
+    },
   ],
 };
 

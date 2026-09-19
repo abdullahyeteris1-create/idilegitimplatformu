@@ -49,6 +49,17 @@ export const CONTENT_GROUPS: ContentGroup[] = [
         actionLabel: "Soruları Yönet",
       },
       {
+        id: "paragraph-exams",
+        title: "Paragraf Denemeleri",
+        description: "\u00d6\u011fretmen deneme setlerini ve soru snapshotlar\u0131n\u0131 y\u00f6netin.",
+        href: "/ogretmen/icerik-yonetimi/paragraf-denemeleri",
+        status: "active",
+        icon: "PD",
+        tone: "from-violet-600 to-indigo-600",
+        tags: ["Deneme", "Pasaj", "Soru"],
+        actionLabel: "Denemeleri Y\u00f6net",
+      },
+      {
         id: "tachistoscope-settings",
         title: "Takistoskop İçerikleri",
         description: "Takistoskop çalışmasında kullanılacak tek kelimelik havuzu yönetin.",
