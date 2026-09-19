@@ -3,17 +3,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ParagraphExam, ParagraphExamDifficulty, ParagraphExamGradeBand, ParagraphExamPassage, ParagraphExamQuestion, ParagraphExamStatus } from "@/lib/paragraph-exams/types";
 
 type ExamDetail = { exam: ParagraphExam; passages: ParagraphExamPassage[]; questions: ParagraphExamQuestion[] };
 type BankQuestion = { id: string; category: string; level: ParagraphExamDifficulty; gradeBand: ParagraphExamGradeBand; paragraph: string; question: string; options: string[]; correctIndex: number; explanation: string };
 type DraftQuestion = { id?: string; passageId: string; sourceQuestionId: string; questionText: string; options: string[]; correctOption: number; explanation: string; category: string; difficulty: ParagraphExamDifficulty; gradeBand: ParagraphExamGradeBand; points: number };
+type BulkAddFailure = { id: string; question: string; error: string };
+type BulkAddResult = { addedIds: string[]; failed: BulkAddFailure[] };
 
 const gradeLabels: Record<ParagraphExamGradeBand, string> = { "4-5": "4–5. sınıf", "6-7": "6–7. sınıf", "8": "8. sınıf", "high-school": "Lise" };
 const statusLabels: Record<ParagraphExamStatus, string> = { draft: "Taslak", published: "Yayında", archived: "Arşivlendi" };
 const categoryLabels: Record<string, string> = { main_idea: "Ana düşünce", supporting_idea: "Yardımcı düşünce", inference: "Çıkarım", completion: "Cümle tamamlama", flow: "Akış" };
 const difficultyLabels: Record<ParagraphExamDifficulty, string> = { easy: "Kolay", medium: "Orta", hard: "Zor" };
+const normalizePassage = (value: string) => value.trim().normalize("NFKC").replace(/\s+/gu, " ");
 
 async function api<T = any>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
@@ -57,10 +60,199 @@ function QuestionForm({ draft, passages, onChange, onSave, onCancel }: { draft: 
   return <div className="rounded-2xl border border-red-200 bg-red-50/50 p-4"><div className="flex items-center justify-between"><h4 className="font-semibold text-slate-950">{draft.id ? "Soruyu düzenle" : "Yeni soru"}</h4><Button type="button" onClick={onCancel} className="border-slate-200 bg-white text-slate-700">İptal</Button></div><div className="mt-3 grid gap-3 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Bağlı pasaj<select className={`${fieldClass()} mt-1`} value={draft.passageId} onChange={(e) => set("passageId", e.target.value)}><option value="">Pasajsız</option>{passages.map((passage) => <option key={passage.id} value={passage.id}>Pasaj {passage.position} · {passage.label || "Etiketsiz"}</option>)}</select></label><label className="text-sm font-semibold text-slate-700">Sınıf düzeyi<select className={`${fieldClass()} mt-1`} value={draft.gradeBand} onChange={(e) => set("gradeBand", e.target.value)}>{Object.entries(gradeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold text-slate-700">Kategori<select className={`${fieldClass()} mt-1`} value={draft.category} onChange={(e) => set("category", e.target.value)}>{Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold text-slate-700">Zorluk<select className={`${fieldClass()} mt-1`} value={draft.difficulty} onChange={(e) => set("difficulty", e.target.value)}>{Object.entries(difficultyLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label></div><label className="mt-3 block text-sm font-semibold text-slate-700">Soru metni<textarea className={`${fieldClass()} mt-1 min-h-20`} value={draft.questionText} onChange={(e) => set("questionText", e.target.value)} /></label><div className="mt-3 grid gap-2 md:grid-cols-2">{draft.options.map((option, index) => <label key={index} className="text-sm font-semibold text-slate-700">Seçenek {String.fromCharCode(65 + index)}<input className={`${fieldClass()} mt-1`} value={option} onChange={(e) => { const options = [...draft.options]; options[index] = e.target.value; set("options", options); }} /></label>)}</div><div className="mt-3 grid gap-3 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700">Doğru seçenek<select className={`${fieldClass()} mt-1`} value={draft.correctOption} onChange={(e) => set("correctOption", Number(e.target.value))}>{[0, 1, 2, 3, 4].map((value) => <option key={value} value={value}>{String.fromCharCode(65 + value)}</option>)}</select></label><label className="text-sm font-semibold text-slate-700">Puan<input className={`${fieldClass()} mt-1`} type="number" min={1} max={100} value={draft.points} onChange={(e) => set("points", Number(e.target.value))} /></label></div><label className="mt-3 block text-sm font-semibold text-slate-700">Açıklama<textarea className={`${fieldClass()} mt-1 min-h-20`} value={draft.explanation} onChange={(e) => set("explanation", e.target.value)} /></label><div className="mt-3 flex justify-end"><Button type="button" onClick={onSave} className="border-red-700 bg-[var(--brand)] text-white">Soruyu kaydet</Button></div></div>;
 }
 
-function BankModal({ gradeBand, onSelect, onClose }: { gradeBand: ParagraphExamGradeBand; onSelect: (question: BankQuestion) => void; onClose: () => void }) {
-  const [items, setItems] = useState<BankQuestion[]>([]), [search, setSearch] = useState(""), [category, setCategory] = useState(""), [difficulty, setDifficulty] = useState(""), [loading, setLoading] = useState(true), [error, setError] = useState("");
-  useEffect(() => { void (async () => { try { const params = new URLSearchParams({ page: "1", pageSize: "100", status: "active", gradeBand, ...(category ? { category } : {}), ...(difficulty ? { difficulty } : {}), ...(search ? { search } : {}) }); const data = await api<{ items: BankQuestion[] }>(`/api/admin/paragraph-questions?${params}`); setItems(data.items); } catch (e) { setError(e instanceof Error ? e.message : "Soru bankası alınamadı."); } finally { setLoading(false); } })(); }, [category, difficulty, gradeBand, search]);
-  return <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="bank-title"><div className="my-6 w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl"><div className="flex items-start justify-between gap-3"><div><h3 id="bank-title" className="text-xl font-semibold text-slate-950">Soru bankasından ekle</h3><p className="mt-1 text-sm text-slate-500">Seçtiğiniz soru denemeye snapshot olarak kopyalanır.</p></div><Button type="button" onClick={onClose} className="border-slate-200 bg-white text-slate-700">Kapat</Button></div><div className="mt-4 grid gap-2 md:grid-cols-3"><input className={fieldClass()} placeholder="Soru veya pasaj ara…" value={search} onChange={(e) => setSearch(e.target.value)} /><select className={fieldClass()} value={category} onChange={(e) => setCategory(e.target.value)}><option value="">Tüm kategoriler</option>{Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><select className={fieldClass()} value={difficulty} onChange={(e) => setDifficulty(e.target.value)}><option value="">Tüm zorluklar</option>{Object.entries(difficultyLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>{error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}{loading ? <p className="p-8 text-center text-sm text-slate-500">Soru bankası yükleniyor…</p> : <div className="mt-4 max-h-[55vh] space-y-3 overflow-y-auto">{items.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">Filtrelere uyan aktif soru yok.</p> : items.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 p-3"><div className="flex flex-wrap gap-2 text-xs text-slate-500"><span>{categoryLabels[item.category] ?? item.category}</span><span>·</span><span>{difficultyLabels[item.level]}</span></div><p className="mt-1 font-semibold text-slate-900">{item.question}</p><p className="mt-1 line-clamp-2 text-sm text-slate-600">{item.paragraph}</p><div className="mt-3 flex justify-end"><Button type="button" onClick={() => onSelect(item)} className="border-violet-200 bg-violet-50 text-violet-800">Snapshot olarak ekle</Button></div></article>)}</div>}</div></div>;
+function BankModal({
+  gradeBand,
+  existingSourceQuestionIds,
+  onSelect,
+  onBulkAdd,
+  onClose,
+}: {
+  gradeBand: ParagraphExamGradeBand;
+  existingSourceQuestionIds: string[];
+  onSelect: (question: BankQuestion) => void;
+  onBulkAdd: (questions: BankQuestion[]) => Promise<BulkAddResult>;
+  onClose: () => void;
+}) {
+  const [items, setItems] = useState<BankQuestion[]>([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [gradeFilter, setGradeFilter] = useState<ParagraphExamGradeBand | "">(gradeBand);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [addedIds, setAddedIds] = useState<Set<string>>(() => new Set(existingSourceQuestionIds));
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [isBulkAdding, setIsBulkAdding] = useState(false);
+  const [error, setError] = useState("");
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [bulkFailures, setBulkFailures] = useState<BulkAddFailure[]>([]);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    const currentRequestId = requestId.current + 1;
+    requestId.current = currentRequestId;
+    setLoading(true);
+    setError("");
+    void (async () => {
+      try {
+        const params = new URLSearchParams({
+          page: "1",
+          pageSize: "100",
+          status: "active",
+          ...(gradeFilter ? { gradeBand: gradeFilter } : {}),
+          ...(category ? { category } : {}),
+          ...(difficulty ? { difficulty } : {}),
+          ...(search.trim() ? { search: search.trim() } : {}),
+        });
+        const data = await api<{ items: BankQuestion[] }>("/api/admin/paragraph-questions?" + params.toString());
+        if (currentRequestId !== requestId.current) return;
+        setItems(data.items);
+        setSelectedIds((current) => new Set([...current].filter((id) => data.items.some((item) => item.id === id))));
+      } catch (e) {
+        if (currentRequestId === requestId.current) setError(e instanceof Error ? e.message : "Soru bankası alınamadı.");
+      } finally {
+        if (currentRequestId === requestId.current) setLoading(false);
+      }
+    })();
+  }, [category, difficulty, gradeFilter, search]);
+
+  const selectableItems = useMemo(() => items.filter((item) => !addedIds.has(item.id)), [addedIds, items]);
+  const selectableIds = useMemo(() => selectableItems.map((item) => item.id), [selectableItems]);
+  const allVisibleSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.has(id));
+
+  function toggleSelected(id: string): void {
+    if (addedIds.has(id) || isBulkAdding) return;
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllVisible(): void {
+    if (isBulkAdding || selectableIds.length === 0) return;
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) selectableIds.forEach((id) => next.delete(id));
+      else selectableIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  function clearSelection(): void {
+    if (isBulkAdding) return;
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkAdd(): Promise<void> {
+    if (isBulkAdding || selectedIds.size === 0) return;
+    const selectedItems = items.filter((item) => selectedIds.has(item.id) && !addedIds.has(item.id));
+    if (selectedItems.length === 0) return;
+    setIsBulkAdding(true);
+    setBulkMessage("");
+    setBulkFailures([]);
+    try {
+      const result = await onBulkAdd(selectedItems);
+      setBulkFailures(result.failed);
+      setAddedIds((current) => new Set([...current, ...result.addedIds]));
+      setSelectedIds((current) => new Set([...current].filter((id) => !result.addedIds.includes(id))));
+      if (result.failed.length > 0) {
+        setBulkMessage(result.addedIds.length + " soru denemeye eklendi. " + result.failed.length + " soru eklenemedi; başarısız sorular seçili bırakıldı.");
+      } else {
+        setBulkMessage(result.addedIds.length + " soru denemeye eklendi.");
+      }
+      if (result.failed.length === 0) setExpandedIds(new Set());
+    } catch (e) {
+      setBulkMessage(e instanceof Error ? e.message : "Sorular eklenemedi. Seçiminiz korunuyor.");
+    } finally {
+      setIsBulkAdding(false);
+    }
+  }
+
+  function toggleDetails(id: string): void {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="bank-title">
+      <div className="my-2 flex max-h-[calc(100vh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:my-6 sm:max-h-[calc(100vh-3rem)]">
+        <div className="shrink-0 border-b border-slate-200 bg-white p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 id="bank-title" className="text-xl font-semibold text-slate-950">Soru bankasından ekle</h3>
+              <p className="mt-1 text-sm text-slate-500">Soruları inceleyin, seçin ve denemeye ekleyin.</p>
+            </div>
+            <Button type="button" onClick={onClose} disabled={isBulkAdding} className="shrink-0 border-slate-200 bg-white text-slate-700">Kapat</Button>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="sr-only" htmlFor="bank-search">Soru veya pasaj ara</label>
+            <input id="bank-search" className={fieldClass()} placeholder="Soru veya pasaj ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <label className="sr-only" htmlFor="bank-category">Kategori filtresi</label>
+            <select id="bank-category" className={fieldClass()} value={category} onChange={(e) => setCategory(e.target.value)}><option value="">Tüm kategoriler</option>{Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+            <label className="sr-only" htmlFor="bank-difficulty">Zorluk filtresi</label>
+            <select id="bank-difficulty" className={fieldClass()} value={difficulty} onChange={(e) => setDifficulty(e.target.value)}><option value="">Tüm zorluklar</option>{Object.entries(difficultyLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+            <label className="sr-only" htmlFor="bank-grade">Sınıf filtresi</label>
+            <select id="bank-grade" className={fieldClass()} value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value as ParagraphExamGradeBand | "")}><option value="">Tüm sınıflar</option>{Object.entries(gradeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" onClick={toggleAllVisible} disabled={isBulkAdding || selectableIds.length === 0} className="border-slate-200 bg-white text-slate-700">{allVisibleSelected ? "Görünenlerin seçimini kaldır" : "Tümünü seç"}</Button>
+              <Button type="button" onClick={clearSelection} disabled={isBulkAdding || selectedIds.size === 0} className="border-slate-200 bg-white text-slate-700">Seçimi temizle</Button>
+              <span className="text-slate-500">{selectableItems.length} seçilebilir soru</span>
+            </div>
+            {bulkMessage && <p role="status" className="font-semibold text-slate-700">{bulkMessage}</p>}
+          </div>
+        </div>
+        {error && <p role="alert" className="mx-4 mt-3 shrink-0 rounded-lg bg-red-50 p-3 text-sm text-red-800 sm:mx-5">{error}</p>}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+          {loading ? <p className="p-8 text-center text-sm text-slate-500">Soru bankası yükleniyor…</p> : items.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">Filtrelere uyan aktif soru yok.</p> : <div className="space-y-3">{items.map((item) => {
+            const isAdded = addedIds.has(item.id);
+            const isSelected = selectedIds.has(item.id);
+            const isExpanded = expandedIds.has(item.id);
+            return <article key={item.id} className={"rounded-xl border p-3 transition " + (isSelected ? "border-red-300 bg-red-50/60 ring-2 ring-red-100" : "border-slate-200 bg-white") + (isAdded ? " opacity-70" : "")}>
+              <div className="flex items-start gap-3">
+                <input type="checkbox" checked={isSelected} disabled={isAdded || isBulkAdding} onChange={() => toggleSelected(item.id)} aria-label={"Soru seç: " + item.question} className="mt-1 h-5 w-5 shrink-0 accent-red-700" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap gap-1.5 text-xs">
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 font-semibold text-sky-800">{categoryLabels[item.category] ?? item.category}</span>
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-semibold text-amber-800">{difficultyLabels[item.level]}</span>
+                    <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 font-semibold text-violet-800">{gradeLabels[item.gradeBand]}</span>
+                    {isAdded && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-800">Denemede</span>}
+                  </div>
+                  <p className="mt-2 font-semibold text-slate-900">{item.question}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-600">{item.paragraph}</p>
+                  {isExpanded && <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                    <div><p className="font-semibold text-slate-800">Paragraf</p><p className="mt-1 whitespace-pre-wrap leading-6 text-slate-700">{item.paragraph}</p></div>
+                    <div><p className="font-semibold text-slate-800">Soru</p><p className="mt-1 leading-6 text-slate-700">{item.question}</p></div>
+                    <div><p className="font-semibold text-slate-800">Seçenekler</p><div className="mt-1 space-y-1.5">{item.options.map((option, optionIndex) => <p key={optionIndex} className={"rounded-lg border px-2.5 py-2 " + (optionIndex === item.correctIndex ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-white text-slate-700")}><span className="mr-2 font-bold">{String.fromCharCode(65 + optionIndex)}.</span>{option}</p>)}</div></div>
+                    <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-emerald-900"><strong>Doğru cevap:</strong> {String.fromCharCode(65 + item.correctIndex)}. {item.options[item.correctIndex]}</p>
+                    <div><p className="font-semibold text-slate-800">Açıklama</p><p className="mt-1 leading-6 text-slate-700">{item.explanation || "Açıklama eklenmemiş."}</p></div>
+                  </div>}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <Button type="button" onClick={() => toggleDetails(item.id)} aria-expanded={isExpanded} aria-label={isExpanded ? "Detayları gizle" : "Soruyu incele"} className="border-slate-200 bg-white text-slate-700">{isExpanded ? "Detayları gizle" : "Detayları göster"}</Button>
+                    <Button type="button" onClick={() => onSelect(item)} disabled={isAdded || isBulkAdding} className="border-violet-200 bg-violet-50 text-violet-800">{isAdded ? "Denemede" : "Denemeye Ekle"}</Button>
+                  </div>
+                </div>
+              </div>
+            </article>;
+          })}</div>}
+        </div>
+        <div className="shrink-0 border-t border-slate-200 bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-600"><strong className="text-slate-900">{selectedIds.size}</strong> soru seçildi</p>
+            <Button type="button" onClick={() => void handleBulkAdd()} disabled={isBulkAdding || selectedIds.size === 0} className="border-red-700 bg-[var(--brand)] text-white hover:bg-[var(--brand-strong)]">{isBulkAdding ? "Sorular ekleniyor…" : ("Seçilenleri Denemeye Ekle (" + selectedIds.size + ")")}</Button>
+          </div>
+          {bulkMessage && bulkMessage.includes("başarısız") ? <div className="mt-2 text-xs text-amber-800"><p>Başarısız sorular seçili kaldı; yalnızca onları tekrar deneyebilirsiniz.</p><ul className="mt-1 list-disc pl-5">{bulkFailures.map((failure) => <li key={failure.id}>{failure.question}: {failure.error}</li>)}</ul></div> : null}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const emptyQuestion = (gradeBand: ParagraphExamGradeBand): DraftQuestion => ({ passageId: "", sourceQuestionId: "", questionText: "", options: ["", "", "", "", ""], correctOption: 0, explanation: "", category: "main_idea", difficulty: "medium", gradeBand, points: 1 });
@@ -80,14 +272,44 @@ export function ExamEditorClient({ examId, createMode = false }: { examId?: stri
   const publish = async () => { if (!examId || !detail) return; const validation = detail.questions.length === 0 ? "En az bir soru ekleyin." : detail.questions.some((question) => question.options.length !== 5) ? "Her soru tam 5 seçenek içermelidir." : ""; if (validation) { setError(validation); return; } if (!window.confirm("Yayınlandığında deneme ve cevap anahtarı değiştirilemez. Yayınlamak istediğinize emin misiniz?")) return; try { await api(`/api/admin/paragraph-exams/${examId}/publish`, { method: "POST", body: "{}" }); await load(); } catch (e) { setError(e instanceof Error ? e.message : "Deneme yayınlanamadı."); } };
   const archive = async () => { if (!examId || !window.confirm("Deneme arşivlensin mi?")) return; try { await api(`/api/admin/paragraph-exams/${examId}/archive`, { method: "POST", body: "{}" }); await load(); } catch (e) { setError(e instanceof Error ? e.message : "Deneme arşivlenemedi."); } };
   const duplicate = async () => { if (!examId) return; try { const data = await api<{ exam: ParagraphExam }>(`/api/admin/paragraph-exams/${examId}/duplicate`, { method: "POST", body: "{}" }); router.push(`/ogretmen/icerik-yonetimi/paragraf-denemeleri/${data.exam.id}`); } catch (e) { setError(e instanceof Error ? e.message : "Deneme kopyalanamadı."); } };
-  const selectBankQuestion = (item: BankQuestion) => { const normalizePassage = (value: string) => value.trim().normalize("NFKC").replace(/\s+/gu, " "); const matchedPassage = detail?.passages.find((passage) => normalizePassage(passage.passageText) === normalizePassage(item.paragraph)); setQuestionDraft({ passageId: matchedPassage?.id ?? "", sourceQuestionId: item.id, questionText: item.question, options: item.options, correctOption: item.correctIndex, explanation: item.explanation, category: item.category, difficulty: item.level, gradeBand: item.gradeBand, points: 1 }); if (!matchedPassage) setPassageDraft((old) => old.text ? old : { label: "Soru bankası pasajı", text: item.paragraph }); setShowBank(false); };
+  const selectBankQuestion = (item: BankQuestion) => { const matchedPassage = detail?.passages.find((passage) => normalizePassage(passage.passageText) === normalizePassage(item.paragraph)); setQuestionDraft({ passageId: matchedPassage?.id ?? "", sourceQuestionId: item.id, questionText: item.question, options: item.options, correctOption: item.correctIndex, explanation: item.explanation, category: item.category, difficulty: item.level, gradeBand: item.gradeBand, points: 1 }); if (!matchedPassage) setPassageDraft((old) => old.text ? old : { label: "Soru bankası pasajı", text: item.paragraph }); setShowBank(false); };
+  const bulkAddBankQuestions = async (items: BankQuestion[]): Promise<BulkAddResult> => {
+    if (!examId || !detail) return { addedIds: [], failed: items.map((item) => ({ id: item.id, question: item.question, error: "Önce deneme taslağını oluşturun." })) };
+    const workingPassages = [...detail.passages];
+    const existingSourceIds = new Set(detail.questions.map((question) => question.sourceQuestionId).filter((id): id is string => Boolean(id)));
+    const addedIds: string[] = [];
+    const failed: BulkAddFailure[] = [];
+    let position = detail.questions.length + 1;
+    for (const item of items) {
+      if (existingSourceIds.has(item.id)) {
+        failed.push({ id: item.id, question: item.question, error: "Bu soru zaten denemede." });
+        continue;
+      }
+      try {
+        let matchedPassage = workingPassages.find((passage) => normalizePassage(passage.passageText) === normalizePassage(item.paragraph));
+        if (!matchedPassage) {
+          const passageData = await api<{ passage: ParagraphExamPassage }>("/api/admin/paragraph-exams/" + examId + "/passages", { method: "POST", body: JSON.stringify({ label: "Soru bankası pasajı", passageText: item.paragraph, position: workingPassages.length + 1 }) });
+          matchedPassage = passageData.passage;
+          workingPassages.push(matchedPassage);
+        }
+        const data = await api<{ question: ParagraphExamQuestion }>("/api/admin/paragraph-exams/" + examId + "/questions", { method: "POST", body: JSON.stringify({ passageId: matchedPassage.id, sourceQuestionId: item.id, questionText: item.question, options: item.options, correctOption: item.correctIndex, explanation: item.explanation, category: item.category, difficulty: item.level, gradeBand: item.gradeBand, points: 1, position }) });
+        setDetail((current) => current ? { ...current, passages: [...workingPassages], questions: [...current.questions, data.question] } : current);
+        existingSourceIds.add(item.id);
+        addedIds.push(item.id);
+        position += 1;
+      } catch (e) {
+        failed.push({ id: item.id, question: item.question, error: e instanceof Error ? e.message : "Soru eklenemedi." });
+      }
+    }
+    return { addedIds, failed };
+  };
   if (loading) return <p className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Deneme yükleniyor…</p>;
   if (error && !detail && !createMode) return <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>;
   return <div className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-2"><Link href="/ogretmen/icerik-yonetimi/paragraf-denemeleri" className="text-sm font-semibold text-red-700 hover:underline">← Deneme listesine dön</Link>{examId && <Link href={`/ogretmen/icerik-yonetimi/paragraf-denemeleri/${examId}/onizleme`} className="text-sm font-semibold text-slate-700 hover:underline">Öğretmen önizlemesi →</Link>}</div>{error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}{detail && <ExamHeader exam={detail.exam} readOnly={readOnly} onPreview={() => router.push("/ogretmen/icerik-yonetimi/paragraf-denemeleri/" + detail.exam.id + "/onizleme")} onSave={() => void saveExam()} onPublish={() => void publish()} onArchive={() => void archive()} onDuplicate={() => void duplicate()} saving={saving} />}
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><h3 className="text-base font-semibold text-slate-950">Deneme bilgileri</h3><div className="mt-3 grid gap-3 md:grid-cols-2"><label className="text-sm font-semibold text-slate-700 md:col-span-2">Başlık<input disabled={readOnly} className={`${fieldClass()} mt-1`} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></label><label className="text-sm font-semibold text-slate-700 md:col-span-2">Açıklama<textarea disabled={readOnly} className={`${fieldClass()} mt-1 min-h-20`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><label className="text-sm font-semibold text-slate-700">Sınıf düzeyi<select disabled={readOnly} className={`${fieldClass()} mt-1`} value={form.gradeBand} onChange={(e) => setForm({ ...form, gradeBand: e.target.value as ParagraphExamGradeBand })}>{Object.entries(gradeLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="text-sm font-semibold text-slate-700">Süre (dakika)<input disabled={readOnly} className={`${fieldClass()} mt-1`} type="number" min={1} max={120} value={form.durationMinutes} onChange={(e) => setForm({ ...form, durationMinutes: Number(e.target.value) })} /></label></div>{createMode && !detail && <div className="mt-4 flex justify-end"><Button type="button" onClick={() => void saveExam()} disabled={saving} className="border-red-700 bg-[var(--brand)] text-white">Taslağı oluştur</Button></div>}</section>
     {detail && <><section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-base font-semibold text-slate-950">Pasajlar</h3><p className="mt-1 text-sm text-slate-500">Sorular pasajlara bağlanabilir; aynı pasajı kullanan sorular gruplanır.</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{detail.passages.length} pasaj</span></div><div className="mt-4 space-y-3">{detail.passages.map((passage) => <PassageCard key={passage.id} passage={passage} readOnly={readOnly} onSave={(next) => void savePassage(next)} onDelete={(id) => void deletePassage(id)} />)}</div>{!readOnly && <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-3"><p className="text-sm font-semibold text-slate-800">Yeni pasaj ekle</p><div className="mt-2 grid gap-2"><input className={fieldClass()} placeholder="Pasaj etiketi (isteğe bağlı)" value={passageDraft.label} onChange={(e) => setPassageDraft({ ...passageDraft, label: e.target.value })} /><textarea className={`${fieldClass()} min-h-28`} placeholder="Pasaj metni (en az 10 karakter)" value={passageDraft.text} onChange={(e) => setPassageDraft({ ...passageDraft, text: e.target.value })} /><div className="flex flex-wrap gap-2"><Button type="button" onClick={() => void addPassage()} className="border-red-700 bg-[var(--brand)] text-white">Pasaj ekle</Button><Button type="button" onClick={() => setShowBank(true)} className="border-violet-200 bg-violet-50 text-violet-800">Soru bankasından başlat</Button></div></div></div>}</section>
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-base font-semibold text-slate-950">Sorular</h3><p className="mt-1 text-sm text-slate-500">Cevap anahtarı yalnızca öğretmen görünümünde gösterilir.</p></div>{!readOnly && <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => setQuestionDraft(emptyQuestion(form.gradeBand))} className="border-slate-900 bg-slate-900 text-white">+ Manuel soru</Button><Button type="button" onClick={() => setShowBank(true)} className="border-violet-200 bg-violet-50 text-violet-800">Soru bankası</Button></div>}</div>{questionDraft && !readOnly && <div className="mt-4"><QuestionForm draft={questionDraft} passages={detail.passages} onChange={setQuestionDraft} onSave={() => void saveQuestion()} onCancel={() => setQuestionDraft(null)} /></div>}<div className="mt-4 space-y-3">{detail.questions.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">Henüz soru eklenmedi.</p> : detail.questions.map((question, index) => <QuestionCard key={question.id} question={question} index={index} count={detail.questions.length} readOnly={readOnly} onEdit={() => setQuestionDraft({ id: question.id, passageId: question.passageId ?? "", sourceQuestionId: question.sourceQuestionId ?? "", questionText: question.questionText, options: [...question.options], correctOption: question.correctOption, explanation: question.explanation, category: question.category, difficulty: question.difficulty, gradeBand: question.gradeBand, points: question.points })} onDelete={() => void deleteQuestion(question.id)} onMove={(direction) => void reorder(index, direction)} />)}</div></section></>}
-    {showBank && <BankModal gradeBand={form.gradeBand} onSelect={selectBankQuestion} onClose={() => setShowBank(false)} />}</div>;
+    {showBank && <BankModal gradeBand={form.gradeBand} existingSourceQuestionIds={detail?.questions.map((question) => question.sourceQuestionId).filter((id): id is string => Boolean(id)) ?? []} onSelect={selectBankQuestion} onBulkAdd={bulkAddBankQuestions} onClose={() => setShowBank(false)} />}</div>;
 }
 
 export function ExamPreviewClient({ examId }: { examId: string }) {

@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -24,7 +24,7 @@ test("teacher UI uses existing admin APIs and no direct Supabase client", () => 
 
 test("publish preview and snapshot controls are represented", () => {
   const source = read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
-  for (const text of ["Yayınla", "Öğretmen cevaplarını göster", "sourceQuestionId", "Snapshot olarak ekle", "Kopyala", "Arşivle"]) assert.match(source, new RegExp(text));
+  for (const text of ["Yayınla", "Öğretmen cevaplarını göster", "sourceQuestionId", "Denemeye Ekle", "Kopyala", "Arşivle"]) assert.match(source, new RegExp(text));
 });
 
 test("editor separates create state from persisted status actions", () => {
