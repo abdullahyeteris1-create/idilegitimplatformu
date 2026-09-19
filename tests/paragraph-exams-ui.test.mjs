@@ -48,6 +48,18 @@ test("manual question form requires content and starts without a correct answer"
   assert.ok(source.indexOf("Object.keys(validationErrors)") < source.indexOf('"/api/admin/paragraph-exams/" + examId + "/questions"'));
 });
 
+test("teacher preview uses global question numbers and presentation passage labels", () => {
+  const source = read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
+  const presentation = read("src/lib/paragraph-exams/presentation.ts");
+  assert.match(presentation, /createQuestionNumberMap/);
+  assert.match(presentation, /index \+ 1/);
+  assert.match(presentation, /Soru bankası pasajı/);
+  assert.match(presentation, /Paragraf /);
+  assert.match(source, /const questionNumbers = createQuestionNumberMap\(detail\.questions\)/);
+  assert.match(source, /getPassageDisplayLabel\(passage\)/);
+  assert.match(source, /number=\{questionNumbers\.get\(question\.id\) \?\? 0\}/);
+  assert.doesNotMatch(source, /number=\{index \+ 1\}/);
+});
 test("manual question edit mode preserves the existing answer and passage labels stay short", () => {
   const source = read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
   assert.match(source, /correctOption: question\.correctOption/);
