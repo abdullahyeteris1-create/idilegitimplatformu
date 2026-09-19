@@ -21,6 +21,7 @@ import { isSelectedOption, isUuid } from "./validation";
 const EXAMS_TABLE = "paragraph_exams";
 const PASSAGES_TABLE = "paragraph_exam_passages";
 const QUESTIONS_TABLE = "paragraph_exam_questions";
+const ATTEMPTS_TABLE = "paragraph_exam_attempts";
 const ANSWERS_TABLE = "paragraph_exam_answers";
 
 const EXAM_FIELDS = "id,title,description,grade_band,duration_seconds,status,version,created_by,created_at,updated_at";
@@ -334,6 +335,28 @@ export async function archiveExam(examId: string): Promise<ParagraphExam> {
   return mapExam(result.data) ?? (() => { throw new ParagraphExamRepositoryError("Arşivlenen sınav doğrulanamadı."); })();
 }
 
+export async function deleteExam(examId: string): Promise<void> {
+  const exam = await getExam(examId);
+  if (exam.status === "published") {
+    throw new ParagraphExamRepositoryError("Yayınlanmış denemeler doğrudan silinemez. Önce arşivleyin.", { status: 409 });
+  }
+
+  const attempts = await client().from(ATTEMPTS_TABLE).select("id", { count: "exact", head: true }).eq("exam_id", examId);
+  if (attempts.error) throw mapError(attempts.error, "Öğrenci kayıtları doğrulanamadı.");
+  if ((attempts.count ?? 0) > 0) {
+    throw new ParagraphExamRepositoryError("Bu denemeye ait öğrenci kayıtları bulunduğu için deneme silinemez. Denemeyi arşivleyebilirsiniz.", { status: 409 });
+  }
+  if (exam.status === "archived") {
+    throw new ParagraphExamRepositoryError("Arşivlenmiş denemeler kalıcı olarak silinemez.", { status: 409 });
+  }
+
+  const questions = await client().from(QUESTIONS_TABLE).delete().eq("exam_id", examId);
+  if (questions.error) throw mapError(questions.error, "Deneme soruları silinemedi.");
+  const passages = await client().from(PASSAGES_TABLE).delete().eq("exam_id", examId);
+  if (passages.error) throw mapError(passages.error, "Deneme pasajları silinemedi.");
+  const deleted = await client().from(EXAMS_TABLE).delete().eq("id", examId);
+  if (deleted.error) throw mapError(deleted.error, "Deneme silinemedi.");
+}
 export async function duplicateExam(examId: string, createdBy: string | null): Promise<ParagraphExam> {
   const source = await getExam(examId);
   const [passages, questions] = await Promise.all([getPassages(examId), getQuestions(examId)]);

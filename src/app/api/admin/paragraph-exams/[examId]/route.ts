@@ -1,6 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
+﻿import { NextResponse, type NextRequest } from "next/server";
 import { isAdminSessionValid } from "@/lib/auth/adminSession";
-import { getExam, getPassages, getQuestions, updateDraftExam } from "@/lib/paragraph-exams/repository";
+import { deleteExam, getExam, getPassages, getQuestions, updateDraftExam } from "@/lib/paragraph-exams/repository";
 import { repositoryErrorResponse } from "@/lib/paragraph-exams/http";
 import { isUuid, validateExamInput } from "@/lib/paragraph-exams/validation";
 
@@ -34,5 +34,17 @@ export async function PATCH(request: NextRequest, context: Context) {
     return NextResponse.json({ ok: true, exam: await updateDraftExam(examId, validated.value) });
   } catch (error) {
     return repositoryErrorResponse(error, "Taslak sınav güncellenemedi.");
+  }
+}
+
+export async function DELETE(request: NextRequest, context: Context) {
+  if (!isAdminSessionValid(request)) return unauthorized();
+  try {
+    const { examId } = await context.params;
+    if (!isUuid(examId)) return NextResponse.json({ ok: false, error: "Sınav kimliği geçersiz." }, { status: 400 });
+    await deleteExam(examId);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return repositoryErrorResponse(error, "Deneme silinemedi.");
   }
 }
