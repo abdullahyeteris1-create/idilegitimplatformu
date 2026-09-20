@@ -8,8 +8,8 @@ function textXml(text) {
   const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return "<w:p><w:r><w:t>" + escaped + "</w:t></w:r></w:p>";
 }
-function makeDocx(text) {
-  const xml = "<?xml version=\"1.0\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>" + text.split("\n").map(textXml).join("") + "</w:body></w:document>";
+function makeDocxFromBodyXml(bodyXml) {
+  const xml = "<?xml version=\"1.0\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>" + bodyXml + "</w:body></w:document>";
   const name = Buffer.from("word/document.xml");
   const data = Buffer.from(xml);
   const local = Buffer.alloc(30 + name.length + data.length);
@@ -25,6 +25,21 @@ function makeDocx(text) {
   const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10);
   eocd.writeUInt32LE(central.length, 12); eocd.writeUInt32LE(local.length, 16);
   return Buffer.concat([local, central, eocd]);
+}
+function makeDocx(text) {
+  return makeDocxFromBodyXml(text.split("\n").map(textXml).join(""));
+}
+function makeWordRunBreakDocx() {
+  const optionXml = ["A) Alpha", "B) Bravo", "C) Charlie", "D) Delta"].map((line, index) =>
+    "<w:r>" + (index > 0 ? "<w:br/>" : "") + "<w:t>" + line + "</w:t></w:r>").join("");
+  return makeDocxFromBodyXml([
+    textXml("1. Soru"),
+    textXml("Bu paragraf metni Word run ve line-break sırasını test etmek için yeterince uzundur."),
+    textXml("Bu soru için doğru seçenek hangisidir?"),
+    "<w:p>" + optionXml + "</w:p>",
+    textXml("CEVAP ANAHTARI"),
+    textXml("1 B"),
+  ].join(""));
 }
 const variants = ["1. Soru", "2.Soru", "Soru 3.", "4) Soru", "5. Soru", "6. Soru", "7. Soru", "8. Soru", "9. Soru", "10. Soru", "11. Soru", "12. Soru", "13. Soru", "14. Soru", "15. Soru", "16. Soru", "17. Soru", "18. Soru", "19. Soru", "20. Soru"];
 const letters = ["A", "B", "C", "D", "E"];
@@ -54,6 +69,20 @@ test("DOCX importer parses 20-question reference-shaped fixture and maps answer 
   const fromDocx = await parseDocxFile({ name: "yeni-deneme.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: buffer.length, arrayBuffer: async () => buffer });
   assert.equal(fromDocx.questionCount, 20);
   assert.equal(fromDocx.questions[4].options.length, 5);
+});
+
+test("Word run line-breaks preserve option label/content order and answer label", async () => {
+  const buffer = makeWordRunBreakDocx();
+  const preview = await parseDocxFile({
+    name: "word-run-breaks.docx",
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    size: buffer.length,
+    arrayBuffer: async () => buffer,
+  });
+  assert.deepEqual(preview.questions[0].options, ["Alpha", "Bravo", "Charlie", "Delta"]);
+  assert.equal(preview.questions[0].answerLetter, "B");
+  assert.equal(preview.questions[0].correctOption, 1);
+  assert.equal(preview.questions[0].status, "ready");
 });
 
 test("parser marks missing/invalid answers, missing D, duplicate numbers and uncertain split", () => {

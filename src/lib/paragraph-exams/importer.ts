@@ -10,6 +10,8 @@ const MAX_UNCOMPRESSED_BYTES = 40 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 20 * 1024 * 1024;
 const MAX_QUESTIONS = 100;
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const OPTION_LABELS = ["A", "B", "C", "D", "E"] as const;
+type OptionLabel = (typeof OPTION_LABELS)[number];
 
 export type ImportQuestionStatus = "ready" | "review" | "error";
 export type ImportWarning = { code: string; message: string };
@@ -188,19 +190,18 @@ function parseBlock(block: ParsedQuestionBlock, answer: string | undefined): Par
   const optionLines = block.lines.map((line, index) => ({ line, index, match: line.match(/^\s*([A-E])\s*(?:\)|\.|:|-)\s*(.*)$/iu) })).filter((item) => item.match);
   const firstOptionIndex = optionLines[0]?.index ?? -1;
   const preamble = firstOptionIndex >= 0 ? block.lines.slice(0, firstOptionIndex) : block.lines;
-  const options: string[] = [];
-  let currentLabel = "";
+  const optionsByLabel: Partial<Record<OptionLabel, string>> = {};
+  let currentLabel: OptionLabel | null = null;
   for (const line of block.lines.slice(Math.max(0, firstOptionIndex))) {
     const optionMatch = line.match(/^\s*([A-E])\s*(?:\)|\.|:|-)\s*(.*)$/iu);
     if (optionMatch) {
-      currentLabel = optionMatch[1].toUpperCase();
-      while (options.length < currentLabel.charCodeAt(0) - 65) options.push("");
-      options[currentLabel.charCodeAt(0) - 65] = normalizeText(optionMatch[2] ?? "");
+      currentLabel = optionMatch[1].toUpperCase() as OptionLabel;
+      optionsByLabel[currentLabel] = normalizeText(optionMatch[2] ?? "");
     } else if (currentLabel) {
-      const optionIndex = currentLabel.charCodeAt(0) - 65;
-      options[optionIndex] = normalizeText((options[optionIndex] ?? "") + " " + line);
+      optionsByLabel[currentLabel] = normalizeText((optionsByLabel[currentLabel] ?? "") + " " + line);
     }
   }
+  const options = OPTION_LABELS.map((label) => optionsByLabel[label] ?? "");
   while (options.length > 0 && !options.at(-1)) options.pop();
   if (options.length > 5) warnings.push(warning("too_many_options"));
   if (options.length < 4 || options.slice(0, 4).some((option) => !option)) warnings.push(warning("missing_option"));
@@ -213,7 +214,7 @@ function parseBlock(block: ParsedQuestionBlock, answer: string | undefined): Par
   if (!answer) warnings.push(warning("missing_answer"));
   else if (!/^[A-E]$/u.test(answer)) warnings.push(warning("invalid_answer"));
   else {
-    correctOption = answer.charCodeAt(0) - 65;
+    correctOption = OPTION_LABELS.indexOf(answer as OptionLabel);
     if (correctOption >= options.length) {
       warnings.push(warning("answer_option_missing"));
       correctOption = null;
