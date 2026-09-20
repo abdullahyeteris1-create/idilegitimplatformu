@@ -361,6 +361,63 @@ export async function deleteExam(examId: string): Promise<void> {
   const deleted = await client().from(EXAMS_TABLE).delete().eq("id", examId);
   if (deleted.error) throw mapError(deleted.error, "Deneme silinemedi.");
 }
+
+type ImportedDraftQuestion = {
+  passageText: string;
+  questionText: string;
+  options: ParagraphExamQuestionOptions;
+  correctOption: number;
+  explanation: string;
+  category: ParagraphCategory;
+  difficulty: ParagraphExamDifficulty;
+  position: number;
+};
+
+type ImportedDraftDependencies = {
+  createExam: typeof createDraftExam;
+  upsertPassage: typeof upsertPassage;
+  upsertQuestion: typeof upsertQuestion;
+  deleteExam: typeof deleteExam;
+};
+
+export async function createImportedDraftExam(
+  input: ParagraphExamInput,
+  questions: ImportedDraftQuestion[],
+  createdBy: string | null,
+  dependencies: ImportedDraftDependencies = { createExam: createDraftExam, upsertPassage, upsertQuestion, deleteExam },
+): Promise<ParagraphExam> {
+  const exam = await dependencies.createExam(input, createdBy);
+  try {
+    for (const question of questions) {
+      const passage = await dependencies.upsertPassage(exam.id, null, {
+        label: "Soru " + question.position,
+        passageText: question.passageText,
+        position: question.position,
+      });
+      await dependencies.upsertQuestion(exam.id, null, {
+        passageId: passage.id,
+        sourceQuestionId: null,
+        questionText: question.questionText,
+        options: [...question.options],
+        correctOption: question.correctOption,
+        explanation: question.explanation,
+        category: question.category,
+        difficulty: question.difficulty,
+        gradeBand: input.gradeBand,
+        position: question.position,
+        points: 1,
+      });
+    }
+    return exam;
+  } catch (error) {
+    try {
+      await dependencies.deleteExam(exam.id);
+    } catch (cleanupError) {
+      console.error("paragraph_exam_import_cleanup_failed", { examId: exam.id, cleanupError });
+    }
+    throw error;
+  }
+}
 export async function duplicateExam(examId: string, createdBy: string | null): Promise<ParagraphExam> {
   const source = await getExam(examId);
   const [passages, questions] = await Promise.all([getPassages(examId), getQuestions(examId)]);
