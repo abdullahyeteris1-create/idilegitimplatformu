@@ -1,6 +1,6 @@
 ﻿import { NextResponse, type NextRequest } from "next/server";
 import { isAdminSessionValid } from "@/lib/auth/adminSession";
-import { deleteExam, getExam, getPassages, getQuestions, updateDraftExam } from "@/lib/paragraph-exams/repository";
+import { deleteExam, getDeleteExamImpact, getExam, getPassages, getQuestions, updateDraftExam } from "@/lib/paragraph-exams/repository";
 import { repositoryErrorResponse } from "@/lib/paragraph-exams/http";
 import { isUuid, validateExamInput } from "@/lib/paragraph-exams/validation";
 
@@ -17,6 +17,9 @@ export async function GET(request: NextRequest, context: Context) {
   try {
     const { examId } = await context.params;
     if (!isUuid(examId)) return NextResponse.json({ ok: false, error: "Sınav kimliği geçersiz." }, { status: 400 });
+    if (request.nextUrl.searchParams.get("view") === "delete-impact") {
+      return NextResponse.json({ ok: true, impact: await getDeleteExamImpact(examId) });
+    }
     const [exam, passages, questions] = await Promise.all([getExam(examId), getPassages(examId), getQuestions(examId)]);
     return NextResponse.json({ ok: true, exam, passages, questions });
   } catch (error) {
@@ -42,8 +45,8 @@ export async function DELETE(request: NextRequest, context: Context) {
   try {
     const { examId } = await context.params;
     if (!isUuid(examId)) return NextResponse.json({ ok: false, error: "Sınav kimliği geçersiz." }, { status: 400 });
-    await deleteExam(examId);
-    return NextResponse.json({ ok: true });
+    const deleted = await deleteExam(examId);
+    return NextResponse.json({ ok: true, deleted, message: "Deneme ve bağlı öğrenci sonuçları kalıcı olarak silindi." });
   } catch (error) {
     return repositoryErrorResponse(error, "Deneme silinemedi.");
   }

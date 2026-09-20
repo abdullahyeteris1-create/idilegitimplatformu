@@ -29,6 +29,19 @@ const EXAM_FIELDS = "id,title,description,grade_band,duration_seconds,status,ver
 const PASSAGE_FIELDS = "id,exam_id,label,passage_text,position,created_at,updated_at";
 const QUESTION_FIELDS = "id,exam_id,passage_id,source_question_id,question_text,options,correct_option,explanation,category,difficulty,grade_band,position,points,created_at,updated_at";
 const ANSWER_FIELDS = "id,attempt_id,exam_question_id,selected_option,saved_at,created_at,updated_at";
+export type ParagraphExamDeleteImpact = {
+  exam: Pick<ParagraphExam, "id" | "title" | "status">;
+  attemptCount: number;
+  answerCount: number;
+};
+
+export type ParagraphExamDeleteResult = ParagraphExamDeleteImpact & {
+  deleted: true;
+};
+
+type DeleteExamDependencies = {
+  rpc?: (functionName: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: ParagraphExamDatabaseError | null }>;
+};
 
 export class ParagraphExamRepositoryError extends Error {
   code?: string;
@@ -205,6 +218,19 @@ export async function getQuestions(examId: string): Promise<ParagraphExamQuestio
   return (result.data ?? []).map(mapQuestion).filter((question): question is ParagraphExamQuestion => question !== null);
 }
 
+export async function getDeleteExamImpact(examId: string): Promise<ParagraphExamDeleteImpact> {
+  const exam = await getExam(examId);
+  const attempts = await client().from(ATTEMPTS_TABLE).select("id").eq("exam_id", examId);
+  if (attempts.error) throw mapError(attempts.error, "Öğrenci kayıtları doğrulanamadı.");
+  const attemptIds = (attempts.data ?? []).map((row) => stringValue(record(row), "id")).filter(Boolean);
+  let answerCount = 0;
+  if (attemptIds.length > 0) {
+    const answers = await client().from(ANSWERS_TABLE).select("id", { count: "exact", head: true }).in("attempt_id", attemptIds);
+    if (answers.error) throw mapError(answers.error, "Öğrenci cevapları doğrulanamadı.");
+    answerCount = answers.count ?? 0;
+  }
+  return { exam: { id: exam.id, title: exam.title, status: exam.status }, attemptCount: attemptIds.length, answerCount };
+}
 export async function getAnswers(attemptId: string): Promise<ParagraphExamAnswer[]> {
   const result = await client().from(ANSWERS_TABLE).select(ANSWER_FIELDS).eq("attempt_id", attemptId);
   if (result.error) throw mapError(result.error, "Cevaplar alınamadı.");
@@ -339,29 +365,22 @@ export async function archiveExam(examId: string): Promise<ParagraphExam> {
   return mapExam(result.data) ?? (() => { throw new ParagraphExamRepositoryError("Arşivlenen sınav doğrulanamadı."); })();
 }
 
-export async function deleteExam(examId: string): Promise<void> {
-  const exam = await getExam(examId);
-  if (exam.status === "published") {
-    throw new ParagraphExamRepositoryError("Yayınlanmış denemeler doğrudan silinemez. Önce arşivleyin.", { status: 409 });
+export async function deleteExam(examId: string, dependencies: DeleteExamDependencies = {}): Promise<ParagraphExamDeleteResult> {
+  if (!isUuid(examId)) throw new ParagraphExamRepositoryError("Sınav kimliği geçersiz.", { status: 400 });
+  const rpc = dependencies.rpc ?? ((functionName, args) => client().rpc(functionName, args));
+  const result = await rpc("delete_paragraph_exam_force", { p_exam_id: examId });
+  if (result.error) {
+    if (result.error.code === "P0002") throw new ParagraphExamRepositoryError("Sınav bulunamadı.", { status: 404, code: result.error.code });
+    throw mapError(result.error, "Deneme silinemedi.");
   }
-
-  const attempts = await client().from(ATTEMPTS_TABLE).select("id", { count: "exact", head: true }).eq("exam_id", examId);
-  if (attempts.error) throw mapError(attempts.error, "Öğrenci kayıtları doğrulanamadı.");
-  if ((attempts.count ?? 0) > 0) {
-    throw new ParagraphExamRepositoryError("Bu denemeye ait öğrenci kayıtları bulunduğu için deneme silinemez. Denemeyi arşivleyebilirsiniz.", { status: 409 });
-  }
-  if (exam.status === "archived") {
-    throw new ParagraphExamRepositoryError("Arşivlenmiş denemeler kalıcı olarak silinemez.", { status: 409 });
-  }
-
-  const questions = await client().from(QUESTIONS_TABLE).delete().eq("exam_id", examId);
-  if (questions.error) throw mapError(questions.error, "Deneme soruları silinemedi.");
-  const passages = await client().from(PASSAGES_TABLE).delete().eq("exam_id", examId);
-  if (passages.error) throw mapError(passages.error, "Deneme pasajları silinemedi.");
-  const deleted = await client().from(EXAMS_TABLE).delete().eq("id", examId);
-  if (deleted.error) throw mapError(deleted.error, "Deneme silinemedi.");
+  const value = record(result.data);
+  return {
+    deleted: true,
+    exam: { id: stringValue(value, "exam_id"), title: stringValue(value, "title"), status: stringValue(value, "status") as ParagraphExamStatus },
+    attemptCount: numberValue(value, "attempt_count"),
+    answerCount: numberValue(value, "answer_count"),
+  };
 }
-
 type ImportedDraftQuestion = {
   passageText: string;
   questionText: string;
