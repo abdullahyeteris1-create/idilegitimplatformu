@@ -15,6 +15,7 @@ import {
   type ParagraphExamStatus,
   type ParagraphExamDatabaseError,
   type ParagraphExamGradeBand,
+  type ParagraphExamQuestionOptions,
 } from "./types";
 import { isSelectedOption, isUuid } from "./validation";
 
@@ -116,9 +117,12 @@ function mapPassage(row: unknown): ParagraphExamPassage | null {
   };
 }
 
-function mapOptions(value: unknown): [string, string, string, string, string] | null {
-  if (!Array.isArray(value) || value.length !== 5 || value.some((option) => typeof option !== "string")) return null;
-  return value as [string, string, string, string, string];
+function mapOptions(value: unknown): ParagraphExamQuestionOptions | null {
+  if (!Array.isArray(value) || (value.length !== 4 && value.length !== 5) || value.some((option) => typeof option !== "string")) return null;
+  const options = value.map((option) => option.trim());
+  if (options.slice(0, 4).some((option) => !option)) return null;
+  if (options.length === 5 && !options[4]) return options.slice(0, 4) as ParagraphExamQuestionOptions;
+  return options as ParagraphExamQuestionOptions;
 }
 
 function mapQuestion(row: unknown): ParagraphExamQuestion | null {
@@ -127,7 +131,7 @@ function mapQuestion(row: unknown): ParagraphExamQuestion | null {
   const examId = stringValue(value, "exam_id");
   const options = mapOptions(value.options);
   const correctOption = numberValue(value, "correct_option");
-  if (!isUuid(id) || !isUuid(examId) || !options || correctOption < 0 || correctOption > 4) return null;
+  if (!isUuid(id) || !isUuid(examId) || !options || !Number.isInteger(correctOption) || correctOption < 0 || correctOption >= options.length) return null;
   return {
     id,
     examId,

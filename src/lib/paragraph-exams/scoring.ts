@@ -2,6 +2,7 @@ export type ScoreQuestion = {
   id: string;
   correctOption: number;
   points: number;
+  optionCount?: number;
 };
 
 export type ScoreAnswer = {
@@ -44,6 +45,10 @@ export function scoreParagraphExam(
     const selectedOption = answerByQuestion.get(question.id) ?? null;
     if (selectedOption === null || selectedOption === undefined) {
       blankCount += 1;
+      continue;
+    }
+    if (question.optionCount !== undefined && selectedOption >= question.optionCount) {
+      wrongCount += 1;
       continue;
     }
     if (selectedOption === question.correctOption) {

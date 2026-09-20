@@ -133,9 +133,60 @@ test("validation rejects unsafe exam/question payloads", () => {
   }).ok, false);
 });
 
+test("manual questions support four options and normalize an empty E", () => {
+  const base = {
+    questionText: "Soru",
+    explanation: "Açıklama",
+    category: "main_idea",
+    difficulty: "easy",
+    gradeBand: "8",
+    position: 1,
+  };
+  const four = validateQuestionInput({ ...base, options: ["A", "B", "C", "D"], correctOption: 3 });
+  assert.equal(four.ok, true);
+  if (four.ok) assert.deepEqual(four.value.options, ["A", "B", "C", "D"]);
+  const whitespaceE = validateQuestionInput({ ...base, options: ["A", "B", "C", "D", "   "], correctOption: 3 });
+  assert.equal(whitespaceE.ok, true);
+  if (whitespaceE.ok) assert.deepEqual(whitespaceE.value.options, ["A", "B", "C", "D"]);
+  assert.equal(validateQuestionInput({ ...base, options: ["A", "B", "C"], correctOption: 2 }).ok, false);
+  assert.equal(validateQuestionInput({ ...base, options: ["A", "B", "C", "D", "E", "F"], correctOption: 2 }).ok, false);
+  assert.equal(validateQuestionInput({ ...base, options: ["A", "B", "C", ""], correctOption: 2 }).ok, false);
+  assert.equal(validateQuestionInput({ ...base, options: ["A", "B", "C", "D"], correctOption: 4 }).ok, false);
+  const five = validateQuestionInput({ ...base, options: ["A", "B", "C", "D", "E"], correctOption: 4 });
+  assert.equal(five.ok, true);
+  if (five.ok) assert.deepEqual(five.value.options, ["A", "B", "C", "D", "E"]);
+});
+
+test("student autosave and scoring enforce the stored option count", () => {
+  const repository = readFileSync(new URL("../src/lib/paragraph-exams/studentRepository.ts", import.meta.url), "utf8");
+  assert.match(repository, /id,options/u);
+  assert.match(repository, /selectedOption >= optionCount/u);
+  const fourCorrect = scoreParagraphExam([{ id: "four-correct", correctOption: 3, points: 1, optionCount: 4 }], [{ examQuestionId: "four-correct", selectedOption: 3 }]);
+  assert.equal(fourCorrect.correctCount, 1);
+  const fiveCorrect = scoreParagraphExam([{ id: "five-correct", correctOption: 4, points: 1, optionCount: 5 }], [{ examQuestionId: "five-correct", selectedOption: 4 }]);
+  assert.equal(fiveCorrect.correctCount, 1);
+  const result = scoreParagraphExam([{ id: "four", correctOption: 3, points: 1, optionCount: 4 }], [{ examQuestionId: "four", selectedOption: 4 }]);
+  assert.deepEqual(result, { correctCount: 0, wrongCount: 1, blankCount: 0, totalPoints: 1, score: 0, accuracy: 0 });
+});
+
+test("question-bank mapping keeps four and five option source questions", () => {
+  const repository = readFileSync(new URL("../src/lib/paragraph-exercises/paragraphQuestionRepository.ts", import.meta.url), "utf8");
+  assert.match(repository, /options.length !== 4/u);
+  const teacher = readFileSync(new URL("../src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx", import.meta.url), "utf8");
+  assert.match(teacher, /sourceQuestionId/u);
+});
+
 test("server duration is bounded by the stored expiry window", () => {
   assert.equal(calculateAttemptDurationSeconds("2026-09-18T10:00:00.000Z", new Date("2026-09-18T10:05:00.000Z")), 300);
   assert.equal(calculateAttemptDurationSeconds("2026-09-18T10:00:00.000Z", new Date("2026-09-18T09:59:00.000Z")), 0);
+});
+
+test("optional-E migration changes only option cardinality and correct-index bounds", () => {
+  const migration = readFileSync(new URL("../supabase/migrations/20260920100000_allow_four_option_paragraph_questions.sql", import.meta.url), "utf8");
+  assert.match(migration, /between 4 and 5/u);
+  assert.match(migration, /correct_option >= 0 and correct_option < jsonb_array_length/u);
+  assert.match(migration, /correct_index >= 0 and correct_index < jsonb_array_length/u);
+  assert.doesNotMatch(migration, /insert|update|delete|truncate/iu);
 });
 
 test("migration enforces isolated tables, active-attempt uniqueness, and forced RLS", () => {

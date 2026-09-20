@@ -16,6 +16,9 @@ export type ParagraphExamGradeBand = (typeof PARAGRAPH_EXAM_GRADE_BANDS)[number]
 
 export const PARAGRAPH_EXAM_DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type ParagraphExamDifficulty = (typeof PARAGRAPH_EXAM_DIFFICULTIES)[number];
+export type ParagraphExamQuestionOptions =
+  | [string, string, string, string]
+  | [string, string, string, string, string];
 
 export type ParagraphExam = {
   id: string;
@@ -46,7 +49,7 @@ export type ParagraphExamQuestion = {
   passageId: string | null;
   sourceQuestionId: string | null;
   questionText: string;
-  options: [string, string, string, string, string];
+  options: ParagraphExamQuestionOptions;
   correctOption: number;
   explanation: string;
   category: ParagraphCategory;
@@ -120,7 +123,7 @@ export type SafeParagraphExamQuestion = {
   id: string;
   passageId: string | null;
   questionText: string;
-  options: [string, string, string, string, string];
+  options: ParagraphExamQuestionOptions;
   position: number;
   selectedOption: number | null;
 };
@@ -157,7 +160,7 @@ export type ParagraphExamResultQuestionDto = {
   id: string;
   passageId: string | null;
   questionText: string;
-  options: [string, string, string, string, string];
+  options: ParagraphExamQuestionOptions;
   selectedOption: number | null;
   correctOption: number;
   explanation: string;

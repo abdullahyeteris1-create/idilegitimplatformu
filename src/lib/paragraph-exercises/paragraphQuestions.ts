@@ -1,5 +1,6 @@
 export type ParagraphCategory = "main_idea" | "supporting_idea" | "inference" | "completion" | "flow";
-export type ParagraphQuestion = { id: string; category: ParagraphCategory; level: "easy" | "medium" | "hard"; gradeBand: "4-5" | "6-7" | "8" | "high-school"; paragraph: string; question: string; options: [string, string, string, string, string]; correctIndex: number; explanation: string };
+export type ParagraphQuestionOptions = [string, string, string, string] | [string, string, string, string, string];
+export type ParagraphQuestion = { id: string; category: ParagraphCategory; level: "easy" | "medium" | "hard"; gradeBand: "4-5" | "6-7" | "8" | "high-school"; paragraph: string; question: string; options: ParagraphQuestionOptions; correctIndex: number; explanation: string };
 type Row = [string, string, [string, string, string, string, string], number, ParagraphQuestion["level"], string];
 const make = (category: ParagraphCategory, prefix: string, rows: Row[]): ParagraphQuestion[] => rows.map((row, index) => {
   const options = [...row[2]];

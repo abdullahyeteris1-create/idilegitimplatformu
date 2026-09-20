@@ -48,6 +48,16 @@ test("manual question form requires content and starts without a correct answer"
   assert.ok(source.indexOf("Object.keys(validationErrors)") < source.indexOf('"/api/admin/paragraph-exams/" + examId + "/questions"'));
 });
 
+test("optional E is reflected in teacher editor and dynamic option rendering", () => {
+  const teacher = read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
+  assert.match(teacher, /index === 4/u);
+  assert.ok(teacher.includes("draft.options[4]"));
+  assert.match(teacher, /question.options/u);
+  const student = read("src/app/ogrenci/paragraf-denemeleri/StudentParagraphExamsClient.tsx");
+  assert.match(student, /question.options/u);
+  assert.match(student, /review.options/u);
+});
+
 test("teacher preview uses global question numbers and presentation passage labels", () => {
   const source = read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
   const presentation = read("src/lib/paragraph-exams/presentation.ts");

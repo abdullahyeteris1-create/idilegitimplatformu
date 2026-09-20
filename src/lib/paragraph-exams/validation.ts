@@ -11,6 +11,7 @@ import {
   type ParagraphExamQuestionInput,
   type ParagraphExamGradeBand,
   type ParagraphExamDifficulty,
+  type ParagraphExamQuestionOptions,
 } from "./types";
 
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -27,6 +28,18 @@ function nonEmptyString(value: unknown, min: number, max: number): value is stri
   return typeof value === "string" && value.trim().length >= min && value.length <= max;
 }
 
+export function normalizeQuestionOptions(value: unknown): ParagraphExamQuestionOptions | null {
+  if (!Array.isArray(value) || (value.length !== 4 && value.length !== 5)) return null;
+  const options = value.map((option) => typeof option === "string" ? option.trim().normalize("NFKC") : null);
+  if (options.slice(0, 4).some((option) => !option || option.length > 500)) return null;
+  const e = options[4];
+  if (e !== undefined && e !== null && e.length > 0 && e.length > 500) return null;
+  const normalized = e ? [...options.slice(0, 4), e] : options.slice(0, 4);
+  if (normalized.some((option) => !option)) return null;
+  const comparable = (normalized as string[]).map((option) => option.toLocaleLowerCase("tr-TR"));
+  if (new Set(comparable).size !== normalized.length) return null;
+  return normalized as ParagraphExamQuestionOptions;
+}
 export function validateExamInput(value: unknown):
   | { ok: true; value: ParagraphExamInput }
   | { ok: false; error: string } {
@@ -77,13 +90,10 @@ export function validateQuestionInput(value: unknown):
   if (!value || typeof value !== "object") return { ok: false, error: "Geçersiz soru verisi." };
   const body = value as Record<string, unknown>;
   if (!nonEmptyString(body.questionText, 1, 2000)) return { ok: false, error: "Soru metni geçersiz." };
-  if (!Array.isArray(body.options) || body.options.length !== 5 || body.options.some((option) => !nonEmptyString(option, 1, 500))) {
-    return { ok: false, error: "Tam olarak 5 geçerli seçenek gerekir." };
-  }
-  const normalizedOptions = body.options.map((option) => String(option).trim().normalize("NFKC").toLocaleLowerCase("tr-TR"));
-  if (new Set(normalizedOptions).size !== 5) return { ok: false, error: "Seçenekler birbirinden farklı olmalıdır." };
-  if (!Number.isInteger(body.correctOption) || Number(body.correctOption) < 0 || Number(body.correctOption) > 4) {
-    return { ok: false, error: "Doğru seçenek 0-4 arasında olmalıdır." };
+  const normalizedOptions = normalizeQuestionOptions(body.options);
+  if (!normalizedOptions) return { ok: false, error: "A-D seçenekleri zorunludur; E seçeneği isteğe bağlıdır." };
+  if (!Number.isInteger(body.correctOption) || Number(body.correctOption) < 0 || Number(body.correctOption) >= normalizedOptions.length) {
+    return { ok: false, error: "Doğru seçenek mevcut seçenekler arasında olmalıdır." };
   }
   if (!nonEmptyString(body.explanation, 1, 4000)) return { ok: false, error: "Açıklama geçersiz." };
   if (!isOneOf(body.category, PARAGRAPH_CATEGORIES.filter((item) => item.key !== "mixed").map((item) => item.key))) return { ok: false, error: "Kategori geçersiz." };
@@ -103,7 +113,7 @@ export function validateQuestionInput(value: unknown):
       passageId: typeof body.passageId === "string" ? body.passageId.trim() : null,
       sourceQuestionId: typeof body.sourceQuestionId === "string" ? body.sourceQuestionId.trim() : null,
       questionText: body.questionText.trim(),
-      options: body.options.map((option) => String(option).trim()),
+      options: normalizedOptions,
       correctOption: Number(body.correctOption),
       explanation: body.explanation.trim(),
       category: body.category as ParagraphCategory,

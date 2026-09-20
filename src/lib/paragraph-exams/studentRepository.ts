@@ -10,7 +10,7 @@ import {
   type ParagraphExamQuestion,
   type ParagraphExamPassage,
 } from "./types";
-import { isSelectedOption, isUuid } from "./validation";
+import { isSelectedOption, isUuid, normalizeQuestionOptions } from "./validation";
 import {
   ParagraphExamRepositoryError,
   getExam,
@@ -216,9 +216,13 @@ export async function saveStudentAnswer(
     throw new ParagraphExamRepositoryError("Attempt süresi doldu.", { status: 409 });
   }
   if (!isSelectedOption(selectedOption)) throw new ParagraphExamRepositoryError("Seçilen seçenek geçersiz.", { status: 400 });
-  const question = await client().from(QUESTIONS_TABLE).select("id").eq("id", examQuestionId).eq("exam_id", examId).maybeSingle();
+  const question = await client().from(QUESTIONS_TABLE).select("id,options").eq("id", examQuestionId).eq("exam_id", examId).maybeSingle();
   if (question.error) throw new ParagraphExamRepositoryError(question.error.message || "Soru doğrulanamadı.", { code: question.error.code });
   if (!question.data) throw new ParagraphExamRepositoryError("Soru bu sınava ait değil.", { status: 400 });
+  const optionCount = normalizeQuestionOptions((question.data as { options?: unknown }).options)?.length;
+  if (!optionCount || (selectedOption !== null && selectedOption >= optionCount)) {
+    throw new ParagraphExamRepositoryError("Seçilen seçenek bu soru için geçersiz.", { status: 400 });
+  }
   const result = await client().from(ANSWERS_TABLE).upsert({
     attempt_id: attemptId,
     exam_question_id: examQuestionId,
@@ -249,7 +253,10 @@ export async function finalizeStudentAttempt(
   if (current.examId !== examId) throw new ParagraphExamRepositoryError("Attempt sınavla eşleşmiyor.", { status: 400 });
   if (current.status !== "in_progress") return { ...bundle, attempt: current, answers: await loadStudentAnswers(current.id) };
   const answers = await loadStudentAnswers(current.id);
-  const score = scoreParagraphExam(bundle.questions, answers.map<ScoreAnswer>((answer) => ({
+  const score = scoreParagraphExam(bundle.questions.map((question) => ({
+    ...question,
+    optionCount: question.options.length,
+  })), answers.map<ScoreAnswer>((answer) => ({
     examQuestionId: answer.examQuestionId,
     selectedOption: answer.selectedOption,
   })));

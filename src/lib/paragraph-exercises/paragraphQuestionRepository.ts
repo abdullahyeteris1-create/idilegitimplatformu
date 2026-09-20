@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { paragraphQuestions, type ParagraphCategory, type ParagraphQuestion } from "./paragraphQuestions";
+import { paragraphQuestions, type ParagraphCategory, type ParagraphQuestion, type ParagraphQuestionOptions } from "./paragraphQuestions";
 import { resolveParagraphGradeBand, type ParagraphGradeBand } from "./paragraphGradeBand";
 
 const PARAGRAPH_QUESTIONS_TABLE = process.env.NEXT_PUBLIC_SUPABASE_PARAGRAPH_QUESTIONS_TABLE ?? "paragraph_questions";
@@ -54,11 +54,12 @@ export function mapParagraphQuestionRow(row: ParagraphQuestionRow): ParagraphQue
     typeof row.passage !== "string" ||
     typeof row.question !== "string" ||
     !options ||
-    options.length !== 5 ||
-    !options.every((option) => typeof option === "string" && option.trim().length > 0) ||
+    (options.length !== 4 && options.length !== 5) ||
+    !options.slice(0, 4).every((option) => typeof option === "string" && option.trim().length > 0) ||
+    (options.length === 5 && typeof options[4] !== "string") ||
     !Number.isInteger(correctIndex) ||
     correctIndex < 0 ||
-    correctIndex > 4 ||
+    correctIndex >= (options[4]?.trim() ? 5 : 4) ||
     typeof row.explanation !== "string"
   ) {
     return null;
@@ -71,7 +72,7 @@ export function mapParagraphQuestionRow(row: ParagraphQuestionRow): ParagraphQue
     gradeBand: row.grade_band as ParagraphQuestion["gradeBand"],
     paragraph: row.passage,
     question: row.question,
-    options: options as [string, string, string, string, string],
+    options: (options[4]?.trim() ? options.map((option) => String(option).trim()) : options.slice(0, 4).map((option) => String(option).trim())) as ParagraphQuestionOptions,
     correctIndex,
     explanation: row.explanation,
   };
