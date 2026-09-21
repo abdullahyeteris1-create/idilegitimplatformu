@@ -12,6 +12,7 @@ import type {
   SafeParagraphExamPassage,
   SafeParagraphExamQuestion,
 } from "./types";
+import { deriveResultTiming } from "./resultTiming";
 
 export function toExamSummaryDto(exam: ParagraphExam, includeStatus = false): ParagraphExamSummaryDto {
   return {
@@ -102,6 +103,7 @@ export function toResultDto(
 ): ParagraphExamResultDto | null {
   if ((attempt.status !== "submitted" && attempt.status !== "expired") || !attempt.submittedAt) return null;
   const answerByQuestion = new Map(answers.map((answer) => [answer.examQuestionId, answer]));
+  const timing = deriveResultTiming(attempt.durationSeconds, questions.length);
   return {
     attemptId: attempt.id,
     exam: toExamSummaryDto(exam),
@@ -109,7 +111,7 @@ export function toResultDto(
     startedAt: attempt.startedAt,
     expiresAt: attempt.expiresAt,
     submittedAt: attempt.submittedAt,
-    durationSeconds: attempt.durationSeconds ?? 0,
+    ...timing,
     correctCount: attempt.correctCount ?? 0,
     wrongCount: attempt.wrongCount ?? 0,
     blankCount: attempt.blankCount ?? 0,

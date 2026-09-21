@@ -117,6 +117,9 @@ test("finalized result exposes review data only after finalization", () => {
   }, passages, questions, []);
   assert.equal(finalized?.questions[0].correctOption, 1);
   assert.equal(finalized?.questions[0].explanation, "Açıklama");
+  assert.equal(finalized?.durationSeconds, 300);
+  assert.equal(finalized?.totalQuestions, 2);
+  assert.equal(finalized?.averageSecondsPerQuestion, 150);
 });
 
 test("validation rejects unsafe exam/question payloads", () => {
@@ -210,4 +213,16 @@ test("student and management routes require their existing session guards", () =
   assert.match(studentRoute, /verifyStudentAccess/u);
   assert.match(studentRoute, /access\.studentId/u);
   assert.match(adminRoute, /isAdminSessionValid/u);
+});
+
+test("historical expired results preserve stored timing and derive the actual question count", () => {
+  const expired = toResultDto(exam, {
+    ...attempt,
+    status: "expired",
+    submittedAt: "2026-09-18T10:10:00.000Z",
+    durationSeconds: 600,
+  }, passages, questions.slice(0, 1), []);
+  assert.equal(expired?.durationSeconds, 600);
+  assert.equal(expired?.totalQuestions, 1);
+  assert.equal(expired?.averageSecondsPerQuestion, 600);
 });

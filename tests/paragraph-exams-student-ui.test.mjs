@@ -102,3 +102,11 @@ test("student wording is paragraph-oriented and technical persistence wording is
   assert.doesNotMatch(source, /snapshot|sourceQuestionId|repository/iu);
   assert.doesNotMatch(source, /Pasaj/u);
 });
+test("completed result presents total and average completion time metrics", () => {
+  const source = client();
+  assert.match(source, /formatDuration/);
+  assert.match(source, /formatAverageSecondsPerQuestion/);
+  assert.match(source, /Toplam Süre/);
+  assert.match(source, /Soru Başına Ortalama/);
+  assert.match(source, /sm:grid-cols-3 lg:grid-cols-6/);
+});

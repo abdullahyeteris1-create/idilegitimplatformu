@@ -192,7 +192,9 @@ export type ParagraphExamResultDto = {
   startedAt: string;
   expiresAt: string;
   submittedAt: string;
-  durationSeconds: number;
+  durationSeconds: number | null;
+  totalQuestions: number;
+  averageSecondsPerQuestion: number | null;
   correctCount: number;
   wrongCount: number;
   blankCount: number;
