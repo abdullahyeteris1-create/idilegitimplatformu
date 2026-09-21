@@ -9,6 +9,7 @@ const repository = () => read("src/lib/paragraph-exams/repository.ts");
 const route = () => read("src/app/api/admin/paragraph-exams/[examId]/route.ts");
 const ui = () => read("src/app/ogretmen/icerik-yonetimi/paragraf-denemeleri/ParagraphExamsClient.tsx");
 const migration = () => read("supabase/migrations/20260921120000_paragraph_exam_force_delete.sql");
+const statusGuardRepairMigration = () => read("supabase/migrations/20260921150000_repair_paragraph_exam_force_delete_status_guard.sql");
 const has = (source, fragment) => assert.ok(source.includes(fragment), "missing: " + fragment);
 const notHas = (source, fragment) => assert.equal(source.includes(fragment), false, "unexpected: " + fragment);
 const ordered = (source, fragments) => {
@@ -60,6 +61,16 @@ test("force-delete bypass is limited to DELETE and normal published/archived gua
   has(original, "create or replace function public.guard_paragraph_exam_status_mutation");
   has(original, "old.status = 'published' and new.status = 'archived'");
   has(original, "old.status <> 'draft'");
+  const repair = statusGuardRepairMigration();
+  has(repair, "create or replace function public.guard_paragraph_exam_status_mutation()");
+  has(repair, "if tg_op = 'DELETE' then");
+  has(repair, "current_setting('app.paragraph_exam_force_delete', true)");
+  has(repair, "return old;");
+  has(repair, "Paragraph exams cannot be deleted; archive them instead");
+  has(repair, "old.status = 'published' and new.status = 'archived'");
+  has(repair, "old.status <> 'draft'");
+  notHas(repair, "drop trigger if exists paragraph_exams_status_guard");
+  notHas(repair, "create trigger paragraph_exams_status_guard");
 });
 
 test("attempt creation is serialized against exam deletion", () => {
