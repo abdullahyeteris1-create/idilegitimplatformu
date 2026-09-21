@@ -26,8 +26,9 @@ const buttonClass = "inline-flex min-h-[42px] items-center justify-center rounde
 const statusLabel = (status: ImportedQuestion["status"]) => status === "ready" ? "Hazır" : status === "review" ? "Kontrol gerekli" : "Hata";
 
 function questionHasCriticalError(question: ImportedQuestion): boolean {
+  const missingRequiredPassage = Boolean(question.sharedGroupId && !question.passageText.trim());
   return question.options.length < 4 || question.options.slice(0, 4).some((option) => !option.trim()) ||
-    !question.passageText.trim() || !question.questionText.trim() || question.correctOption === null ||
+    missingRequiredPassage || !question.questionText.trim() || question.correctOption === null ||
     question.correctOption < 0 || question.correctOption >= question.options.length;
 }
 function statusClass(status: ImportedQuestion["status"]): string {

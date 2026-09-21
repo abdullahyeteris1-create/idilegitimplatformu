@@ -187,7 +187,7 @@ function splitPassageAndStem(lines: string[]): { passageText: string; questionTe
   const stemIndex = cleaned.findLastIndex((line) => stemPattern.test(line));
   if (stemIndex >= 0) {
     const passageText = normalizeMultilineText(cleaned.slice(0, stemIndex).join("\n"));
-    return { passageText, questionText: normalizeMultilineText(cleaned.slice(stemIndex).join("\n")), uncertain: !passageText };
+    return { passageText, questionText: normalizeMultilineText(cleaned.slice(stemIndex).join("\n")), uncertain: false };
   }
   if (cleaned.length >= 2) return { passageText: normalizeMultilineText(cleaned.slice(0, -1).join("\n")), questionText: cleaned[cleaned.length - 1], uncertain: true };
   return { passageText: "", questionText: cleaned[0] ?? "", uncertain: true };
@@ -338,7 +338,7 @@ function parseBlock(block: ParsedQuestionBlock, answer: string | undefined, shar
     ? { passageText: sharedGroup.passageText, questionText: sharedQuestionText, uncertain: !sharedQuestionText }
     : splitPassageAndStem(preamble);
   if (split.uncertain) warnings.push(warning("question_stem_uncertain"));
-  if (!split.passageText) warnings.push(warning("passage_missing"));
+  if (!split.passageText && (sharedGroup !== undefined || split.uncertain)) warnings.push(warning("passage_missing"));
   let correctOption: number | null = null;
   const resolvedAnswer = answer ?? inlineAnswer;
   const answerLetter = resolvedAnswer ?? null;
@@ -409,7 +409,7 @@ export function validateImportCreateInput(value: unknown):
     if (sharedGroupId !== undefined && sharedGroupId !== null && (typeof sharedGroupId !== "string" || sharedGroupId.trim().length === 0 || sharedGroupId.length > 100)) return { ok: false, error: `${index + 1}. soru ortak içerik kimliği geçersiz.` };
     const result = validateQuestionInput({ passageId: null, sourceQuestionId: null, questionText: question.questionText, options: question.options, correctOption: question.correctOption, explanation: question.explanation, category: question.category, difficulty: question.difficulty, gradeBand: examResult.value.gradeBand, position: index + 1, points: 1 });
     if (!result.ok) return { ok: false, error: `${index + 1}. soru: ${result.error}` };
-    if (typeof question.passageText !== "string" || question.passageText.trim().length < 10 || question.passageText.length > 20000) return { ok: false, error: `${index + 1}. soru paragrafı geçersiz.` };
+    if (typeof question.passageText !== "string" || question.passageText.length > 20000 || (sharedGroupId && question.passageText.trim().length < 10) || (!sharedGroupId && question.passageText.trim().length > 0 && question.passageText.trim().length < 10)) return { ok: false, error: `${index + 1}. soru paragrafı geçersiz.` };
     questions.push({ passageText: question.passageText.trim().normalize("NFKC"), questionText: result.value.questionText, options: result.value.options as ParagraphExamQuestionOptions, correctOption: result.value.correctOption, explanation: result.value.explanation, category: result.value.category, difficulty: result.value.difficulty, position: index + 1, sharedGroupId: typeof sharedGroupId === "string" ? sharedGroupId.trim() : null });
   }
   return { ok: true, value: { exam: examResult.value, questions } };

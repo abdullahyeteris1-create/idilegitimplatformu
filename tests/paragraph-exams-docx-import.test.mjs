@@ -219,6 +219,60 @@ test("ambiguous shared marker produces a warning instead of inventing a group", 
   assert.equal(preview.sharedGroups.length, 0);
   assert.ok(preview.warnings.some((item) => item.code === "shared_marker_ambiguous"));
 });
+test("standalone question without a passage is ready and accepted by create validation", () => {
+  const preview = parseParagraphExamText([
+    "19. Aşağıdaki cümlelerin hangisinde eylemsiye yer verilmemiştir?",
+    "A) Birinci cümle",
+    "B) İkinci cümle",
+    "C) Üçüncü cümle",
+    "D) Dördüncü cümle",
+    "Doğru cevap: A",
+  ].join("\n"));
+  const question = preview.questions[0];
+  assert.equal(question.passageText, "");
+  assert.match(question.questionText, /eylemsiye/u);
+  assert.deepEqual(question.options, ["Birinci cümle", "İkinci cümle", "Üçüncü cümle", "Dördüncü cümle"]);
+  assert.equal(question.correctOption, 0);
+  assert.equal(question.status, "ready");
+  assert.equal(question.warnings.some((item) => item.code === "passage_missing"), false);
+  assert.equal(question.warnings.some((item) => item.code === "question_stem_uncertain"), false);
+  assert.equal(preview.readyCount, 1);
+  assert.equal(preview.reviewCount, 0);
+  assert.equal(preview.errorCount, 0);
+
+  const result = validateImportCreateInput({
+    exam: { title: "Standalone", gradeBand: "8", durationSeconds: 600 },
+    questions: [{
+      passageText: "", questionText: question.questionText, options: question.options, correctOption: 0,
+      explanation: "Açıklama", category: "main_idea", difficulty: "medium", sharedGroupId: null,
+    }],
+  });
+  assert.equal(result.ok, true);
+});
+
+test("missing stem and incomplete options remain blocking diagnostics", () => {
+  const missingStem = parseParagraphExamText("1.\nA) Bir\nB) İki\nC) Üç\nD) Dört\nCEVAP ANAHTARI\n1 A");
+  assert.equal(missingStem.questions[0].status, "error");
+  assert.ok(missingStem.questions[0].warnings.some((item) => item.code === "question_stem_uncertain"));
+
+  const incompleteOptions = parseParagraphExamText("1. Hangisi doğrudur?\nA) Bir\nB) İki\nC) Üç\nCEVAP ANAHTARI\n1 A");
+  assert.equal(incompleteOptions.questions[0].status, "error");
+  assert.ok(incompleteOptions.questions[0].warnings.some((item) => item.code === "missing_option"));
+});
+
+test("shared group without passage keeps missing-content warnings", () => {
+  const preview = parseParagraphExamText([
+    "7, 8. sorular aşağıdaki metne göre cevaplanacaktır.",
+    "7. Bu soru nedir?", "A) Bir", "B) İki", "C) Üç", "D) Dört",
+    "8. Bu soru nedir?", "A) Bir", "B) İki", "C) Üç", "D) Dört",
+    "CEVAP ANAHTARI", "7 A 8 B",
+  ].join("\n"));
+  assert.equal(preview.sharedGroups.length, 1);
+  assert.equal(preview.sharedGroups[0].passageText, "");
+  assert.ok(preview.warnings.some((item) => item.code === "shared_content_missing"));
+  assert.equal(preview.questions.every((question) => question.warnings.some((item) => item.code === "passage_missing")), true);
+  assert.equal(preview.questions.every((question) => question.status === "review"), true);
+});
 test("server create validation accepts four options, rejects E as correct when absent, and accepts E when present", () => {
   const base = { exam: { title: "İçe aktarılan deneme", gradeBand: "8", durationSeconds: 2400 }, questions: [{
     passageText: "Bu paragraf metni en az on karakter uzunluğundadır.",
@@ -283,6 +337,32 @@ test("shared import groups create one passage row and reuse its id", async () =>
   assert.equal(passages.length, 2);
   assert.equal(passages[0].label, "Ortak içerik");
   assert.deepEqual(questions.map((question) => question.passageId), ["passage-1", "passage-1", "passage-2"]);
+});
+test("standalone import creates a question without a passage row", async () => {
+  const { createImportedDraftExam } = await import("../src/lib/paragraph-exams/repository.ts");
+  const passages = [];
+  const questions = [];
+  const dependencies = {
+    createExam: async () => ({ id: "exam-standalone" }),
+    upsertPassage: async (_examId, _passageId, input) => {
+      passages.push(input);
+      return { id: "passage-should-not-exist", passageText: input.passageText };
+    },
+    upsertQuestion: async (_examId, _questionId, input) => {
+      questions.push(input);
+      return { id: "question-standalone" };
+    },
+    deleteExam: async () => { throw new Error("unexpected cleanup"); },
+  };
+  await createImportedDraftExam(
+    { title: "Standalone", gradeBand: "8", durationSeconds: 600 },
+    [{ passageText: "", questionText: "Bu soru nedir?", options: ["A", "B", "C", "D"], correctOption: 0, explanation: "Açıklama", category: "main_idea", difficulty: "medium", position: 19, sharedGroupId: null }],
+    "teacher",
+    dependencies,
+  );
+  assert.equal(passages.length, 0);
+  assert.equal(questions.length, 1);
+  assert.equal(questions[0].passageId, null);
 });
 test("import creation compensates all partial writes when question creation fails", async () => {
   const { createImportedDraftExam } = await import("../src/lib/paragraph-exams/repository.ts");

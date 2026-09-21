@@ -412,8 +412,9 @@ export async function createImportedDraftExam(
     for (const question of questions) {
       const sharedGroupId = question.sharedGroupId?.trim() || null;
       let passage = sharedGroupId ? sharedPassages.get(sharedGroupId) : undefined;
+      if (sharedGroupId && !question.passageText.trim()) throw new Error("Ortak içerik grubu pasaj metni içeriyor olmalı.");
       if (passage && passage.passageText !== question.passageText) throw new Error("Ortak içerik grubu farklı pasaj metinleri içeriyor.");
-      if (!passage) {
+      if (!passage && question.passageText.trim()) {
         passage = await dependencies.upsertPassage(exam.id, null, {
           label: sharedGroupId ? "Ortak içerik" : "Soru " + question.position,
           passageText: question.passageText,
@@ -422,7 +423,7 @@ export async function createImportedDraftExam(
         if (sharedGroupId) sharedPassages.set(sharedGroupId, { id: passage.id, passageText: question.passageText });
       }
       await dependencies.upsertQuestion(exam.id, null, {
-        passageId: passage.id,
+        passageId: passage?.id ?? null,
         sourceQuestionId: null,
         questionText: question.questionText,
         options: [...question.options],
