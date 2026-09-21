@@ -6,6 +6,7 @@ import type {
   ParagraphExamQuestion,
   ParagraphExamResultDto,
   ParagraphExamSummaryDto,
+  ParagraphExamStudentState,
   ParagraphExamAttemptDto,
   ParagraphExamResultQuestionDto,
   SafeParagraphExamPassage,
@@ -21,6 +22,17 @@ export function toExamSummaryDto(exam: ParagraphExam, includeStatus = false): Pa
     durationSeconds: exam.durationSeconds,
     version: exam.version,
     ...(includeStatus ? { status: exam.status } : {}),
+  };
+}
+
+export function toStudentExamSummaryDto(exam: ParagraphExam, state: ParagraphExamStudentState): ParagraphExamSummaryDto {
+  return {
+    ...toExamSummaryDto(exam),
+    studentStatus: state.status,
+    attemptId: state.attemptId,
+    completedAt: state.completedAt,
+    score: state.score,
+    resultAvailable: state.resultAvailable,
   };
 }
 

@@ -5,7 +5,7 @@ import { ParagraphExamRepositoryError } from "./repository";
 
 export function repositoryErrorResponse(error: unknown, fallback = "İşlem gerçekleştirilemedi."): NextResponse {
   if (error instanceof ParagraphExamRepositoryError) {
-    return NextResponse.json({ ok: false, error: error.message || fallback }, { status: error.status ?? (error.code === "23505" ? 409 : 500) });
+    return NextResponse.json({ ok: false, error: error.message || fallback, ...(error.details ? { details: error.details } : {}) }, { status: error.status ?? (error.code === "23505" ? 409 : 500) });
   }
   console.error("paragraph_exam_request_failed", error);
   return NextResponse.json({ ok: false, error: fallback }, { status: 500 });

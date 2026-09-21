@@ -9,6 +9,7 @@ import {
   type ParagraphExamAttempt,
   type ParagraphExamQuestion,
   type ParagraphExamPassage,
+  type ParagraphExamStudentState,
 } from "./types";
 import { isSelectedOption, isUuid, normalizeQuestionOptions } from "./validation";
 import {
@@ -17,6 +18,7 @@ import {
   getPassages,
   getQuestions,
 } from "./repository";
+import { deriveStudentExamState } from "./studentAttemptState";
 
 const ATTEMPTS_TABLE = "paragraph_exam_attempts";
 const ANSWERS_TABLE = "paragraph_exam_answers";
@@ -119,6 +121,32 @@ async function loadActiveAttempt(examId: string, studentId: string): Promise<Par
   return result.data ? mapAttempt(result.data) : null;
 }
 
+async function loadStudentAttempts(studentId: string, examIds?: readonly string[]): Promise<ParagraphExamAttempt[]> {
+  if (!isUuid(studentId)) throw new ParagraphExamRepositoryError("Öğrenci kimliği geçersiz.", { status: 400 });
+  if (examIds && examIds.length === 0) return [];
+  let query = client().from(ATTEMPTS_TABLE).select(ATTEMPT_FIELDS).eq("student_id", studentId).order("created_at", { ascending: false });
+  if (examIds) query = query.in("exam_id", [...examIds]);
+  const result = await query;
+  if (result.error) throw new ParagraphExamRepositoryError(result.error.message || "Öğrenci denemeleri alınamadı.", { code: result.error.code });
+  return (result.data ?? []).map(mapAttempt).filter((attempt): attempt is ParagraphExamAttempt => attempt !== null);
+}
+
+function emptyStudentExamState(): ParagraphExamStudentState {
+  return { status: "not_started", attemptId: null, completedAt: null, score: null, resultAvailable: false };
+}
+
+export async function getStudentExamStates(studentId: string, examIds: readonly string[]): Promise<Map<string, ParagraphExamStudentState>> {
+  const states = new Map(examIds.map((examId) => [examId, emptyStudentExamState()]));
+  const attempts = await loadStudentAttempts(studentId, examIds);
+  const grouped = new Map<string, ParagraphExamAttempt[]>();
+  for (const attempt of attempts) grouped.set(attempt.examId, [...(grouped.get(attempt.examId) ?? []), attempt]);
+  for (const examId of examIds) states.set(examId, deriveStudentExamState(grouped.get(examId) ?? []));
+  return states;
+}
+
+export async function getStudentExamState(examId: string, studentId: string): Promise<ParagraphExamStudentState> {
+  return (await getStudentExamStates(studentId, [examId])).get(examId) ?? emptyStudentExamState();
+}
 async function loadStudentAnswers(attemptId: string): Promise<ParagraphExamAnswer[]> {
   const result = await client().from(ANSWERS_TABLE).select(ANSWER_FIELDS).eq("attempt_id", attemptId);
   if (result.error) throw new ParagraphExamRepositoryError(result.error.message || "Cevaplar alınamadı.", { code: result.error.code });
@@ -159,6 +187,21 @@ export async function getStudentAttempt(attemptId: string, studentId: string): P
   return { ...bundle, attempt, answers: await loadStudentAnswers(attempt.id) };
 }
 
+export async function getStudentAttemptForPlay(attemptId: string, studentId: string): Promise<Awaited<ReturnType<typeof getStudentAttempt>>> {
+  const bundle = await getStudentAttempt(attemptId, studentId);
+  if (bundle.attempt.status === "in_progress") {
+    const state = await getStudentExamState(bundle.attempt.examId, studentId);
+    if (state.status === "completed" && state.attemptId && state.attemptId !== bundle.attempt.id) {
+      throw new ParagraphExamRepositoryError("Bu denemeyi daha önce tamamladınız.", {
+        code: "paragraph_exam_completed",
+        status: 409,
+        details: { completedAttemptId: state.attemptId },
+      });
+    }
+  }
+  return bundle;
+}
+
 export async function createOrResumeStudentAttempt(examId: string, studentId: string, now = new Date()): Promise<{
   exam: ParagraphExam;
   passages: ParagraphExamPassage[];
@@ -169,12 +212,26 @@ export async function createOrResumeStudentAttempt(examId: string, studentId: st
 }> {
   if (!isUuid(examId) || !isUuid(studentId)) throw new ParagraphExamRepositoryError("Sınav veya öğrenci kimliği geçersiz.", { status: 400 });
   const bundle = await loadPublishedBundle(examId);
-  const existing = await loadActiveAttempt(examId, studentId);
+  const state = await getStudentExamState(examId, studentId);
+  if (state.status === "completed") {
+    throw new ParagraphExamRepositoryError("Bu denemeyi daha önce tamamladınız.", {
+      code: "paragraph_exam_completed",
+      status: 409,
+      details: state.attemptId ? { completedAttemptId: state.attemptId } : undefined,
+    });
+  }
+
+  const existing = (await loadStudentAttempts(studentId, [examId])).find((attempt) => attempt.status === "in_progress") ?? null;
   if (existing) {
     if (Date.parse(existing.expiresAt) > now.getTime()) {
       return { ...bundle, attempt: existing, answers: await loadStudentAnswers(existing.id), resumed: true };
     }
-    await finalizeStudentAttempt(examId, existing.id, studentId, now);
+    const finalized = await finalizeStudentAttempt(examId, existing.id, studentId, now);
+    throw new ParagraphExamRepositoryError("Bu denemeyi daha önce tamamladınız.", {
+      code: "paragraph_exam_completed",
+      status: 409,
+      details: { completedAttemptId: finalized.attempt.id },
+    });
   }
 
   const startedAt = now.toISOString();
@@ -190,6 +247,14 @@ export async function createOrResumeStudentAttempt(examId: string, studentId: st
   }).select(ATTEMPT_FIELDS).single();
   if (result.error) {
     if (result.error.code === UNIQUE_VIOLATION) {
+      const racedState = await getStudentExamState(examId, studentId);
+      if (racedState.status === "completed") {
+        throw new ParagraphExamRepositoryError("Bu denemeyi daha önce tamamladınız.", {
+          code: "paragraph_exam_completed",
+          status: 409,
+          details: racedState.attemptId ? { completedAttemptId: racedState.attemptId } : undefined,
+        });
+      }
       const raced = await loadActiveAttempt(examId, studentId);
       if (raced) return { ...bundle, attempt: raced, answers: await loadStudentAnswers(raced.id), resumed: true };
     }

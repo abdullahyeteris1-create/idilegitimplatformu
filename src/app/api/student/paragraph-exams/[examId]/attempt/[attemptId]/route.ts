@@ -3,7 +3,7 @@ import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { toAttemptDto, toResultDto } from "@/lib/paragraph-exams/dto";
 import { repositoryErrorResponse } from "@/lib/paragraph-exams/http";
-import { getStudentAttempt, saveStudentAnswer, finalizeStudentAttempt } from "@/lib/paragraph-exams/studentRepository";
+import { getStudentAttemptForPlay, saveStudentAnswer, finalizeStudentAttempt } from "@/lib/paragraph-exams/studentRepository";
 import { isSelectedOption, isUuid } from "@/lib/paragraph-exams/validation";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, context: Context) {
     if (!isUuid(examId) || !isUuid(attemptId)) return NextResponse.json({ ok: false, error: "Attempt kimliği geçersiz." }, { status: 400 });
     const access = await verifyStudentAccess(request);
     if (!access.ok) return NextResponse.json({ ok: false, error: access.message }, { status: access.status });
-    let bundle = await getStudentAttempt(attemptId, access.studentId);
+    let bundle = await getStudentAttemptForPlay(attemptId, access.studentId);
     if (bundle.attempt.examId !== examId) return NextResponse.json({ ok: false, error: "Attempt sınavla eşleşmiyor." }, { status: 404 });
     if (bundle.attempt.status === "in_progress" && Date.parse(bundle.attempt.expiresAt) <= Date.now()) {
       bundle = await finalizeStudentAttempt(examId, attemptId, access.studentId);

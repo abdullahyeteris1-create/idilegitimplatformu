@@ -47,13 +47,15 @@ export class ParagraphExamRepositoryError extends Error {
   code?: string;
   constraint?: string;
   status?: number;
+  details?: Record<string, string>;
 
-  constructor(message: string, options: { code?: string; constraint?: string; status?: number } = {}) {
+  constructor(message: string, options: { code?: string; constraint?: string; status?: number; details?: Record<string, string> } = {}) {
     super(message);
     this.name = "ParagraphExamRepositoryError";
     this.code = options.code;
     this.constraint = options.constraint;
     this.status = options.status;
+    this.details = options.details;
   }
 }
 

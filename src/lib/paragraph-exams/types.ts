@@ -11,6 +11,17 @@ export const PARAGRAPH_EXAM_ATTEMPT_STATUSES = [
 ] as const;
 export type ParagraphExamAttemptStatus = (typeof PARAGRAPH_EXAM_ATTEMPT_STATUSES)[number];
 
+export const PARAGRAPH_EXAM_STUDENT_STATUSES = ["not_started", "in_progress", "completed"] as const;
+export type ParagraphExamStudentStatus = (typeof PARAGRAPH_EXAM_STUDENT_STATUSES)[number];
+
+export type ParagraphExamStudentState = {
+  status: ParagraphExamStudentStatus;
+  attemptId: string | null;
+  completedAt: string | null;
+  score: number | null;
+  resultAvailable: boolean;
+};
+
 export const PARAGRAPH_EXAM_GRADE_BANDS = ["4-5", "6-7", "8", "high-school"] as const;
 export type ParagraphExamGradeBand = (typeof PARAGRAPH_EXAM_GRADE_BANDS)[number];
 
@@ -143,6 +154,11 @@ export type ParagraphExamSummaryDto = {
   durationSeconds: number;
   version: number;
   status?: ParagraphExamStatus;
+  studentStatus?: ParagraphExamStudentStatus;
+  attemptId?: string | null;
+  completedAt?: string | null;
+  score?: number | null;
+  resultAvailable?: boolean;
 };
 
 export type ParagraphExamAttemptDto = {

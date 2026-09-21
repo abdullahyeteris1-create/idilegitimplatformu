@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -9,7 +9,17 @@ import type { ParagraphExamAttemptDto, ParagraphExamResultDto, ParagraphExamSumm
 
 type Mode = "list" | "start" | "player" | "result";
 type Props = { mode: Mode; examId?: string; attemptId?: string };
-type Failure = { ok?: false; error?: string };
+type Failure = { ok?: false; error?: string; details?: { completedAttemptId?: string } };
+class ApiError extends Error {
+  payload: Failure;
+  status: number;
+  constructor(message: string, payload: Failure, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.payload = payload;
+    this.status = status;
+  }
+}
 type AttemptResponse = { ok: true; resumed?: boolean; attempt: ParagraphExamAttemptDto };
 type ResultResponse = { ok: true; result: ParagraphExamResultDto };
 const labels = ["A", "B", "C", "D", "E"] as const;
@@ -17,7 +27,7 @@ const labels = ["A", "B", "C", "D", "E"] as const;
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, cache: "no-store", headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
   const payload = await response.json().catch(() => ({})) as T & Failure;
-  if (!response.ok || payload.ok === false) throw new Error(payload.error || "İşlem şu anda tamamlanamadı.");
+  if (!response.ok || payload.ok === false) throw new ApiError(payload.error || "İşlem şu anda tamamlanamadı.", payload, response.status);
   return payload as T;
 }
 function grade(gradeBand: ParagraphExamSummaryDto["gradeBand"]) { return { "4-5": "4–5. sınıf", "6-7": "6–7. sınıf", "8": "8. sınıf", "high-school": "Lise" }[gradeBand]; }
@@ -28,24 +38,50 @@ function Problem({ text }: { text: string }) { return <Shell><section className=
 function Meta({ exam, count }: { exam: ParagraphExamSummaryDto; count?: number }) { return <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold text-slate-700"><span className="rounded-full bg-slate-100 px-3 py-1">{grade(exam.gradeBand)}</span><span className="rounded-full bg-slate-100 px-3 py-1">{duration(exam.durationSeconds)}</span>{count !== undefined && <span className="rounded-full bg-slate-100 px-3 py-1">{count} soru</span>}</div>; }
 
 function List() {
-  const [exams, setExams] = useState<ParagraphExamSummaryDto[] | null>(null); const [error, setError] = useState("");
+  const [exams, setExams] = useState<ParagraphExamSummaryDto[] | null>(null);
+  const [error, setError] = useState("");
   useEffect(() => { void api<{ ok: true; exams: ParagraphExamSummaryDto[] }>("/api/student/paragraph-exams").then((data) => setExams(data.exams)).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Denemeler yüklenemedi.")); }, []);
-  if (error) return <Problem text={error} />; if (!exams) return <Loading>Paragraf denemeleri yükleniyor...</Loading>;
-  return <Shell><header className="mb-6"><Link href="/egzersizler?category=paragraph-exercises" className="text-sm font-bold text-blue-700 hover:underline">← Egzersizlere dön</Link><h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Paragraf Denemeleri</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Süreli denemelerle okuduğunu anlama becerini ölç. İşaretlediğin cevaplar güvenle kaydedilir.</p></header>{exams.length === 0 ? <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center"><h2 className="text-lg font-black">Henüz yayınlanmış deneme yok</h2><p className="mt-2 text-sm text-slate-600">Yeni bir deneme yayınlandığında burada görünecek.</p></section> : <div className="grid gap-4 md:grid-cols-2">{exams.map((exam) => <article key={exam.id} className="flex flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-xl font-black">{exam.title}</h2><p className="mt-2 text-sm leading-6 text-slate-600">{exam.description || "Paragraf becerilerini ölçen süreli deneme."}</p><Meta exam={exam} /><Link href={`/ogrenci/paragraf-denemeleri/${exam.id}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">Denemeye Başla</Link></article>)}</div>}</Shell>;
+  if (error) return <Problem text={error} />;
+  if (!exams) return <Loading>Paragraf denemeleri yükleniyor...</Loading>;
+  return <Shell><header className="mb-6"><Link href="/egzersizler?category=paragraph-exercises" className="text-sm font-bold text-blue-700 hover:underline">← Egzersizlere dön</Link><h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Paragraf Denemeleri</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Süreli denemelerle okuduğunu anlama becerini ölç. İşaretlediğin cevaplar güvenle kaydedilir.</p></header>{exams.length === 0 ? <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center"><h2 className="text-lg font-black">Henüz yayınlanmış deneme yok</h2><p className="mt-2 text-sm text-slate-600">Yeni bir deneme yayınlandığında burada görünecek.</p></section> : <div className="grid gap-4 md:grid-cols-2">{exams.map((exam) => {
+    const completed = exam.studentStatus === "completed";
+    const active = exam.studentStatus === "in_progress";
+    return <article key={exam.id} className={`flex flex-col rounded-3xl border p-5 shadow-sm ${completed ? "border-emerald-200 bg-emerald-50/60 opacity-90" : "border-slate-200 bg-white"}`}><div className="flex items-start justify-between gap-3"><h2 className="text-xl font-black">{exam.title}</h2>{completed && <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">✓ Deneme Çözüldü</span>}</div><p className="mt-2 text-sm leading-6 text-slate-600">{exam.description || "Paragraf becerilerini ölçen süreli deneme."}</p><Meta exam={exam} />{completed && exam.score !== null && exam.score !== undefined && <p className="mt-3 text-sm font-bold text-emerald-900">Puan: {exam.score}</p>}{completed ? exam.attemptId && exam.resultAvailable ? <Link href={`/ogrenci/paragraf-denemeleri/${exam.id}/sonuc/${exam.attemptId}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-700 px-4 py-3 text-sm font-bold text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-200">Sonucu Gör</Link> : <span className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-500">Sonuç mevcut değil</span> : <Link href={`/ogrenci/paragraf-denemeleri/${exam.id}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200">{active ? "Devam Et" : "Denemeye Başla"}</Link>}</article>;
+  })}</div>}</Shell>;
 }
 function Start({ examId }: { examId: string }) {
-  const router = useRouter(); const [exam, setExam] = useState<ParagraphExamSummaryDto | null>(null); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const [exam, setExam] = useState<ParagraphExamSummaryDto | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => { void api<{ ok: true; exam: ParagraphExamSummaryDto }>(`/api/student/paragraph-exams/${examId}`).then((data) => setExam(data.exam)).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Deneme yüklenemedi.")); }, [examId]);
-  const begin = async () => { if (busy) return; setBusy(true); setError(""); try { const data = await api<AttemptResponse>(`/api/student/paragraph-exams/${examId}/attempt`, { method: "POST" }); router.replace(`/ogrenci/paragraf-denemeleri/${examId}/deneme/${data.attempt.attemptId}`); } catch (reason) { setError(reason instanceof Error ? reason.message : "Deneme başlatılamadı."); setBusy(false); } };
-  if (!exam && !error) return <Loading>Deneme bilgileri yükleniyor...</Loading>; if (!exam) return <Problem text={error} />;
-  return <Shell><section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"><Link href="/ogrenci/paragraf-denemeleri" className="text-sm font-bold text-blue-700 hover:underline">← Denemelere dön</Link><h1 className="mt-4 text-3xl font-black">{exam.title}</h1>{exam.description && <p className="mt-3 leading-7 text-slate-600">{exam.description}</p>}<Meta exam={exam} /><div className="mt-6 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950"><strong>Başlamadan önce</strong><ul className="mt-2 list-disc space-y-1 pl-5"><li>Süre başladığında kalan zaman ekranda gösterilir.</li><li>Her cevap otomatik kaydedilir.</li><li>Süre bittiğinde deneme otomatik tamamlanır.</li></ul></div>{error && <p className="mt-4 text-sm font-semibold text-rose-700" role="alert">{error}</p>}<button type="button" disabled={busy} onClick={() => void begin()} className="mt-6 min-h-12 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-200">{busy ? "Hazırlanıyor..." : "Denemeye Başla"}</button></section></Shell>;
+  const begin = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await api<AttemptResponse>(`/api/student/paragraph-exams/${examId}/attempt`, { method: "POST" });
+      router.replace(`/ogrenci/paragraf-denemeleri/${examId}/deneme/${data.attempt.attemptId}`);
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.payload.details?.completedAttemptId) {
+        router.replace(`/ogrenci/paragraf-denemeleri/${examId}/sonuc/${reason.payload.details.completedAttemptId}`);
+        return;
+      }
+      setError(reason instanceof Error ? reason.message : "Deneme başlatılamadı.");
+      setBusy(false);
+    }
+  };
+  if (!exam && !error) return <Loading>Deneme bilgileri yükleniyor...</Loading>;
+  if (!exam) return <Problem text={error} />;
+  if (exam.studentStatus === "completed") return <Shell><section className="mx-auto max-w-2xl rounded-3xl border border-emerald-200 bg-emerald-50/60 p-6 shadow-sm sm:p-8"><Link href="/ogrenci/paragraf-denemeleri" className="text-sm font-bold text-blue-700 hover:underline">← Denemelere dön</Link><div className="mt-5 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-black text-emerald-800">✓ Deneme Çözüldü</div><h1 className="mt-4 text-3xl font-black">{exam.title}</h1><p className="mt-3 leading-7 text-slate-700">Bu denemeyi daha önce tamamladınız. Aynı deneme yeniden başlatılamaz.</p>{exam.completedAt && <p className="mt-2 text-sm text-slate-600">Tamamlanma: {new Date(exam.completedAt).toLocaleString("tr-TR")}</p>}{exam.attemptId && exam.resultAvailable && <Link href={`/ogrenci/paragraf-denemeleri/${exam.id}/sonuc/${exam.attemptId}`} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white focus:outline-none focus:ring-4 focus:ring-emerald-200">Sonucu Gör</Link>}</section></Shell>;
+  const active = exam.studentStatus === "in_progress";
+  return <Shell><section className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"><Link href="/ogrenci/paragraf-denemeleri" className="text-sm font-bold text-blue-700 hover:underline">← Denemelere dön</Link><h1 className="mt-4 text-3xl font-black">{exam.title}</h1>{exam.description && <p className="mt-3 leading-7 text-slate-600">{exam.description}</p>}<Meta exam={exam} /><div className="mt-6 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950"><strong>{active ? "Denemeye devam etmeden önce" : "Başlamadan önce"}</strong><ul className="mt-2 list-disc space-y-1 pl-5"><li>Süre başladığında kalan zaman ekranda gösterilir.</li><li>Her cevap otomatik kaydedilir.</li><li>Süre bittiğinde deneme otomatik tamamlanır.</li></ul></div>{error && <p className="mt-4 text-sm font-semibold text-rose-700" role="alert">{error}</p>}<button type="button" disabled={busy} onClick={() => void begin()} className="mt-6 min-h-12 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-200">{busy ? "Hazırlanıyor..." : active ? "Devam Et" : "Denemeye Başla"}</button></section></Shell>;
 }
-
 function Player({ examId, attemptId }: { examId: string; attemptId: string }) {
   const router = useRouter(); const resultPath = `/ogrenci/paragraf-denemeleri/${examId}/sonuc/${attemptId}`;
   const [attempt, setAttempt] = useState<ParagraphExamAttemptDto | null>(null); const [error, setError] = useState(""); const [index, setIndex] = useState(0); const [remaining, setRemaining] = useState(0); const [save, setSave] = useState<"saved" | "saving" | "failed">("saved"); const [finishOpen, setFinishOpen] = useState(false); const [finishing, setFinishing] = useState(false);
   const pending = useRef(new Map<string, number | null>()); const sending = useRef(false); const locked = useRef(false);
-  useEffect(() => { void api<AttemptResponse>(`/api/student/paragraph-exams/${examId}/attempt/${attemptId}`).then((data) => { if (data.attempt.status !== "in_progress") { router.replace(resultPath); return; } setAttempt(data.attempt); setRemaining(getRemainingSeconds(data.attempt.expiresAt)); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Deneme yüklenemedi.")); }, [attemptId, examId, resultPath, router]);
+  useEffect(() => { void api<AttemptResponse>(`/api/student/paragraph-exams/${examId}/attempt/${attemptId}`).then((data) => { if (data.attempt.status !== "in_progress") { router.replace(resultPath); return; } setAttempt(data.attempt); setRemaining(getRemainingSeconds(data.attempt.expiresAt)); }).catch((reason: unknown) => { if (reason instanceof ApiError && reason.payload.details?.completedAttemptId) { router.replace(`/ogrenci/paragraf-denemeleri/${examId}/sonuc/${reason.payload.details.completedAttemptId}`); return; } setError(reason instanceof Error ? reason.message : "Deneme yüklenemedi."); }); }, [attemptId, examId, resultPath, router]);
   const finish = useCallback(async () => { if (locked.current || finishing) return; locked.current = true; setFinishing(true); setFinishOpen(false); try { await api<ResultResponse>(`/api/student/paragraph-exams/${examId}/attempt/${attemptId}`, { method: "POST" }); router.replace(resultPath); } catch (reason) { locked.current = false; setFinishing(false); setError(reason instanceof Error ? reason.message : "Deneme tamamlanamadı."); } }, [attemptId, examId, finishing, resultPath, router]);
   useEffect(() => { if (!attempt) return; const tick = () => { const next = getRemainingSeconds(attempt.expiresAt); setRemaining(next); if (next === 0) void finish(); }; tick(); const timer = window.setInterval(tick, 1000); return () => window.clearInterval(timer); }, [attempt, finish]);
   const drain = async () => { if (sending.current || locked.current || !attempt) return; const entry = pending.current.entries().next().value as [string, number | null] | undefined; if (!entry) return; const [questionId, selectedOption] = entry; let saved = false; pending.current.delete(questionId); sending.current = true; setSave("saving"); try { await api(`/api/student/paragraph-exams/${examId}/attempt/${attemptId}`, { method: "PATCH", body: JSON.stringify({ questionId, selectedOption }) }); saved = true; setSave("saved"); } catch { pending.current.set(questionId, selectedOption); setSave("failed"); } finally { sending.current = false; if (saved && pending.current.size > 0) void drain(); } };

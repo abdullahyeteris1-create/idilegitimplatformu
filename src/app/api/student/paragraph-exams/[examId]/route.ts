@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { clearStudentSessionCookie } from "@/lib/auth/studentSession";
 import { verifyStudentAccess } from "@/lib/auth/verifyStudentAccess";
 import { getExam } from "@/lib/paragraph-exams/repository";
+import { getStudentExamState } from "@/lib/paragraph-exams/studentRepository";
 import { repositoryErrorResponse } from "@/lib/paragraph-exams/http";
-import { toExamSummaryDto } from "@/lib/paragraph-exams/dto";
+import { toStudentExamSummaryDto } from "@/lib/paragraph-exams/dto";
 import { isUuid } from "@/lib/paragraph-exams/validation";
 
 export const runtime = "nodejs";
@@ -19,6 +20,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ exa
   try {
     const { examId } = await context.params;
     if (!isUuid(examId)) return NextResponse.json({ ok: false, error: "Sınav kimliği geçersiz." }, { status: 400 });
-    return NextResponse.json({ ok: true, exam: toExamSummaryDto(await getExam(examId, { publishedOnly: true })) });
+    const exam = await getExam(examId, { publishedOnly: true });
+    const state = await getStudentExamState(exam.id, access.studentId);
+    return NextResponse.json({ ok: true, exam: toStudentExamSummaryDto(exam, state) });
   } catch (error) { return repositoryErrorResponse(error, "Deneme alınamadı."); }
 }
