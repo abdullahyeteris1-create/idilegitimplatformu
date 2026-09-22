@@ -107,7 +107,7 @@ function BankModal({
         const params = new URLSearchParams({
           page: "1",
           pageSize: "100",
-          status: "active",
+          status: "available",
           ...(gradeFilter ? { gradeBand: gradeFilter } : {}),
           ...(category ? { category } : {}),
           ...(difficulty ? { difficulty } : {}),
