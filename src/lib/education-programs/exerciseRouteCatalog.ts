@@ -26,6 +26,7 @@ const EDUCATION_PROGRAM_EXERCISE_ROUTE_BY_SLUG: Readonly<Record<string, string>>
   "gruplama-calismasi": "/egzersizler/gruplama-calismasi",
   "anlama-testi": "/egzersizler/anlama-testi",
   "okuma-hizi-testi": "/egzersizler/okuma-hizi-testi",
+  "dinle-sen-oku": "/egzersizler/dinle-sen-oku",
   "hedef-toplam": "/egzersizler/mental-aritmetik/hedef-toplam",
   "zincir-islem": "/egzersizler/mental-aritmetik/zincir-islem",
   "para-kasasi": "/egzersizler/mental-aritmetik/para-kasasi",

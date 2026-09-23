@@ -230,6 +230,7 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "color-match": { categoryId: "brain-exercises", route: "/egzersizler/renk-uyumu" },
   "reading-speed-test": { categoryId: "assessment", route: "/egzersizler/okuma-hizi-testi" },
   "one-minute-oral-reading": { categoryId: "assessment", route: "/egzersizler/bir-dakika-sesli-okuma" },
+  "listen-then-read": { categoryId: "assessment", route: "/egzersizler/dinle-sen-oku" },
   "thirteen-point-emoji-tracking": { categoryId: "eye", route: "/egzersizler/13-nokta-emoji-takip" },
   "growing-shapes-hexagon": { categoryId: "eye", route: "/egzersizler/buyuyen-sekiller-altigen" },
   "kayip-nesne": { categoryId: "word-games", route: "/egzersizler/kayip-nesne" },

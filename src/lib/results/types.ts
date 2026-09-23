@@ -24,6 +24,7 @@
   | "color-match"
   | "reading-speed-test"
   | "one-minute-oral-reading"
+  | "listen-then-read"
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"
   | "kayip-nesne"

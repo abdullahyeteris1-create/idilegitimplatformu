@@ -336,6 +336,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["grade", "textId"],
   },
   {
+    slug: "dinle-sen-oku",
+    title: "Dinle – Sen Oku",
+    route: "/egzersizler/dinle-sen-oku",
+    resultExerciseType: "listen-then-read",
+    category: "comprehension",
+    assignmentEnabled: true,
+    supportedSettings: ["grade", "textId"],
+  },
+  {
     slug: "renk-uyumu",
     title: "Renk Uyumu",
     route: "/egzersizler/renk-uyumu",

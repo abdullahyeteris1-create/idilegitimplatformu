@@ -384,6 +384,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Okuma", "Anlama"],
       },
       {
+        title: "Dinle – Sen Oku",
+        description: "Önce metni dinle, sonra aynı metni sesli oku ve anlama sorularını yanıtla.",
+        href: "/egzersizler/dinle-sen-oku",
+        icon: "DS",
+        image: "/exercise-visuals/exercises/comprehension.svg",
+        tags: ["Okuma", "Anlama"],
+      },
+      {
         title: "Sonuç",
         description: "Son çalışma performansını ve genel sonuç özetini incele.",
         href: "/sonuc",

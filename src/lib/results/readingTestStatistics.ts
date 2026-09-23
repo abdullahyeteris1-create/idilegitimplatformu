@@ -1,6 +1,6 @@
 import type { ExerciseResult } from "@/lib/results/types";
 
-export const READING_TEST_TYPES = ["reading-speed-test", "reading-comprehension", "one-minute-oral-reading"] as const;
+export const READING_TEST_TYPES = ["reading-speed-test", "reading-comprehension", "one-minute-oral-reading", "listen-then-read"] as const;
 
 export type ReadingTestType = (typeof READING_TEST_TYPES)[number];
 
@@ -41,7 +41,7 @@ export type ReadingTestStatistics = {
 };
 
 function isReadingTestType(value: ExerciseResult["exerciseType"]): value is ReadingTestType {
-  return value === "reading-speed-test" || value === "reading-comprehension";
+  return value === "reading-speed-test" || value === "reading-comprehension" || value === "one-minute-oral-reading" || value === "listen-then-read";
 }
 
 function readString(details: Record<string, unknown>, key: string): string | null {
@@ -94,7 +94,7 @@ export function normalizeReadingTestResult(result: ExerciseResult): NormalizedRe
 
   const details = result.details ?? {};
   const date = normalizeCompletedAt(result, details);
-  const isComprehension = result.exerciseType === "reading-comprehension" || result.exerciseType === "one-minute-oral-reading";
+  const isComprehension = result.exerciseType === "reading-comprehension" || result.exerciseType === "one-minute-oral-reading" || result.exerciseType === "listen-then-read";
   const durationSeconds = firstValue(
     readPositiveNumber(result.durationSeconds),
     readPositiveNumber(details.durationSeconds),
@@ -152,7 +152,7 @@ export function createReadingTestStatistics(results: ExerciseResult[], limit = 1
   const speedValues = speedTests.flatMap((record) =>
     record.readingSpeedWpm === null ? [] : [record.readingSpeedWpm],
   );
-  const latestComprehension = allRecords.find((record) => record.type === "reading-comprehension");
+  const latestComprehension = allRecords.find((record) => record.type === "reading-comprehension" || record.type === "one-minute-oral-reading" || record.type === "listen-then-read");
 
   return {
     recordsNewestFirst,
@@ -161,7 +161,7 @@ export function createReadingTestStatistics(results: ExerciseResult[], limit = 1
       (record) => record.timestamp !== null && record.readingSpeedWpm !== null,
     ),
     comprehensionPoints: recordsChronological.filter(
-      (record) => record.timestamp !== null && record.type === "reading-comprehension" && record.successRate !== null,
+      (record) => record.timestamp !== null && (record.type === "reading-comprehension" || record.type === "one-minute-oral-reading" || record.type === "listen-then-read") && record.successRate !== null,
     ),
     summary: {
       latestSpeedWpm: latestSpeed?.readingSpeedWpm ?? null,
