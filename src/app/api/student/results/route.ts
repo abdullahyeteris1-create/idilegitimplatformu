@@ -172,6 +172,18 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     speechRateMode: { type: "string", values: ["slow", "normal"] },
     completedAt: { type: "string", maxLength: 40 },
   },
+  "emotional-reading": {
+    grade: { type: "integer", min: 1, max: 4 },
+    mode: { type: "string", values: ["emotion-task", "acting"] },
+    completedRounds: { type: "integer", min: 0, max: 5 },
+    starsEarned: { type: "integer", min: 0, max: 5 },
+    emotionsEncountered: { type: "array", min: 0, max: 5 },
+    charactersEncountered: { type: "array", min: 0, max: 5 },
+    selfReflectionGood: { type: "integer", min: 0, max: 5 },
+    selfReflectionExcellent: { type: "integer", min: 0, max: 5 },
+    scoreMeaning: { type: "string", maxLength: 160 },
+    completedAt: { type: "string", maxLength: 40 },
+  },
   "thirteen-point-emoji-tracking": {
     durationSeconds: { type: "integer", min: 1, max: MAX_DURATION_SECONDS },
     speed: { type: "integer", min: 300, max: 5_000 },

@@ -51,7 +51,7 @@ export const CATEGORY_EXERCISE_SLUGS: Record<string, string[]> = {
   focus: ["cift-tarafli-odak", "harf-rakam-sayma", "ayni-olani-yakala", "sayi-tablosu"],
   "brain-exercises": ["renk-uyumu", "yeni-karti-bul"],
   "word-games": ["kelime-tahmin", "adam-asmaca", "gorsel-puzzle", "dikkat-labirenti", "kelime-yarisi", "hafiza-yarisi", "tatli-dukkani", "kayip-nesne", "moda-hafizasi"],
-  assessment: ["anlama-testi", "okuma-hizi-testi", "bir-dakika-sesli-okuma", "dinle-sen-oku"],
+  assessment: ["anlama-testi", "okuma-hizi-testi", "bir-dakika-sesli-okuma", "dinle-sen-oku", "duygulu-okuma"],
   memory: ["hafiza-gelistirme", "kart-hafiza", "kart-eslestirme"],
 };
 
@@ -87,6 +87,7 @@ const EXERCISE_CARD_TEXT: Record<string, { description: string; tags: string[] }
   "okuma-hizi-testi": { description: "Okuma sürenizi ve dakikadaki kelime hızınızı ölçün.", tags: ["Hız", "Okuma"] },
   "bir-dakika-sesli-okuma": { description: "1 dakika boyunca sesli oku, ulaştığın kelimeyi işaretle ve okuma sonucunu gör.", tags: ["Okuma", "Anlama"] },
   "dinle-sen-oku": { description: "Önce metni dinle, sonra aynı metni sesli oku ve anlama sorularını yanıtla.", tags: ["Okuma", "Anlama"] },
+  "duygulu-okuma": { description: "Çarkı çevir, duyguyu keşfet ve cümleyi canlandırarak sesli oku!", tags: ["Okuma", "Duygu", "Oyun"] },
   "kart-hafiza": { description: "Gördüğün kartları aklında tut, tekrar edeni doğru seç.", tags: ["Hafıza", "Odak"] },
   "kart-eslestirme": { description: "Aynı görselleri bularak görsel hafızanı güçlendir.", tags: ["Eşleştirme", "Hafıza"] },
   "parcali-resim-kelime": { description: "Parçalı görseli tamamlayarak kelime ve görsel hafızanı birlikte çalıştır.", tags: ["Hafıza", "Görsel"] },

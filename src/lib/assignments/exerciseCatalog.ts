@@ -345,6 +345,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["grade", "textId"],
   },
   {
+    slug: "duygulu-okuma",
+    title: "Duygulu Okuma",
+    route: "/egzersizler/duygulu-okuma",
+    resultExerciseType: "emotional-reading",
+    category: "comprehension",
+    assignmentEnabled: false,
+    supportedSettings: ["grade", "mode"],
+  },
+  {
     slug: "renk-uyumu",
     title: "Renk Uyumu",
     route: "/egzersizler/renk-uyumu",

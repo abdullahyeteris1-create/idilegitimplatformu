@@ -1,4 +1,4 @@
-﻿export type ExerciseType =
+export type ExerciseType =
   | "tachistoscope"
   | "similar-words"
   | "block-reading"
@@ -25,6 +25,7 @@
   | "reading-speed-test"
   | "one-minute-oral-reading"
   | "listen-then-read"
+  | "emotional-reading"
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"
   | "kayip-nesne"

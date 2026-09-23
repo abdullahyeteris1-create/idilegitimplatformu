@@ -40,6 +40,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "color-match": "Renk Uyumu",
   "one-minute-oral-reading": "1 Dakika Sesli Okuma",
   "listen-then-read": "Dinle – Sen Oku",
+  "emotional-reading": "Duygulu Okuma",
   "reading-speed-test": "Okuma Hızı Testi",
   "thirteen-point-emoji-tracking": "13 Nokta Emoji Takip Egzersizi",
   "growing-shapes-hexagon": "Büyüyen Şekiller",

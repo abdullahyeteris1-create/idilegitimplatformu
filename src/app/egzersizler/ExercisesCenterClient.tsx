@@ -392,6 +392,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Okuma", "Anlama"],
       },
       {
+        title: "Duygulu Okuma",
+        description: "Çarkı çevir, duyguyu keşfet ve cümleyi canlandırarak sesli oku!",
+        href: "/egzersizler/duygulu-okuma",
+        icon: "DO",
+        image: "/exercise-visuals/exercises/comprehension.svg",
+        tags: ["Okuma", "Duygu", "Oyun"],
+      },
+      {
         title: "Sonuç",
         description: "Son çalışma performansını ve genel sonuç özetini incele.",
         href: "/sonuc",
