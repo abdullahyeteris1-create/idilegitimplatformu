@@ -1,0 +1,143 @@
+export type OneMinuteReadingGrade = 1 | 2 | 3 | 4;
+
+export type OneMinuteComprehensionQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+};
+
+export type OneMinuteReadingText = {
+  id: string;
+  title: string;
+  grade: OneMinuteReadingGrade;
+  paragraphs: string[];
+  comprehensionQuestions: OneMinuteComprehensionQuestion[];
+};
+
+export const ONE_MINUTE_READING_GRADES: OneMinuteReadingGrade[] = [1, 2, 3, 4];
+
+export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
+  {
+    id: "ormanda-ilkbahar",
+    title: "Ormanda İlkbahar",
+    grade: 1,
+    paragraphs: [
+      "Güneş doğunca orman uyandı. Küçük kuşlar dallara kondu. Bir sincap, ağacın altında ceviz aradı.",
+      "Çocuklar ormana yürüyüşe geldi. Yerde sarı bir çiçek gördüler. Çiçeğe dokunmadan yanından geçip onu uzaktan izlediler.",
+    ],
+    comprehensionQuestions: [
+      { id: "ormanda-ilkbahar-1", question: "Sincap ne aradı?", options: ["Ceviz", "Çiçek", "Taş"], correctAnswer: 0 },
+      { id: "ormanda-ilkbahar-2", question: "Çocuklar ormanda ne yaptı?", options: ["Uyudu", "Yürüyüş yaptı", "Yüzdü"], correctAnswer: 1 },
+      { id: "ormanda-ilkbahar-3", question: "Çocuklar çiçeğe nasıl davrandı?", options: ["Kopardı", "Üzerine bastı", "Uzaktan izledi"], correctAnswer: 2 },
+    ],
+  },
+  {
+    id: "mavi-bisiklet",
+    title: "Mavi Bisiklet",
+    grade: 1,
+    paragraphs: [
+      "Ece'nin mavi bir bisikleti vardı. Bisikletinin zilini çok severdi. Her sabah kaskını takar ve bahçede birkaç tur atardı.",
+      "Bir gün zilin sesi çıkmadı. Ece bisikletini babasına gösterdi. Babası zili sıkıştırdı. Ece teşekkür etti ve güvenli yolda sürmeye devam etti.",
+    ],
+    comprehensionQuestions: [
+      { id: "mavi-bisiklet-1", question: "Ece'nin bisikleti ne renkti?", options: ["Kırmızı", "Mavi", "Yeşil"], correctAnswer: 1 },
+      { id: "mavi-bisiklet-2", question: "Ece bisiklete binerken ne takıyordu?", options: ["Kask", "Atkı", "Şemsiye"], correctAnswer: 0 },
+      { id: "mavi-bisiklet-3", question: "Zili kim düzeltti?", options: ["Ece'nin arkadaşı", "Ece'nin öğretmeni", "Ece'nin babası"], correctAnswer: 2 },
+    ],
+  },
+  {
+    id: "tohumdan-cicege",
+    title: "Tohumdan Çiçeğe",
+    grade: 2,
+    paragraphs: [
+      "Mert, sınıfta küçük bir saksıya fasulye tohumu ekti. Önce toprağı yumuşattı, sonra tohumu içine bıraktı. Üzerini ince bir toprakla kapattı.",
+      "Mert her gün saksıya biraz su verdi. Birkaç gün sonra topraktan yeşil bir filiz çıktı. Filiz büyüdükçe sınıftaki arkadaşları da onu merakla izledi.",
+    ],
+    comprehensionQuestions: [
+      { id: "tohumdan-cicege-1", question: "Mert saksıya hangi tohumu ekti?", options: ["Fasulye", "Ayçiçeği", "Mısır"], correctAnswer: 0 },
+      { id: "tohumdan-cicege-2", question: "Mert tohumu ektikten sonra ne yaptı?", options: ["Saksıyı kırdı", "Üzerini toprakla kapattı", "Tohumu çıkardı"], correctAnswer: 1 },
+      { id: "tohumdan-cicege-3", question: "Birkaç gün sonra ne oldu?", options: ["Yeşil bir filiz çıktı", "Saksı kayboldu", "Toprak kurudu"], correctAnswer: 0 },
+    ],
+  },
+  {
+    id: "kayip-sapka",
+    title: "Kayıp Şapka",
+    grade: 2,
+    paragraphs: [
+      "Ali, parktaki oyunlardan sonra kırmızı şapkasını bulamadı. Önce kaydırağın yanına baktı. Sonra bankın altını ve çantasının içini kontrol etti.",
+      "Şapka hiçbir yerde görünmüyordu. Ali, parka gelirken uğradığı kitaplığın önüne geri döndü. Şapkasını bir ağacın dalında görünce çok şaşırdı. Rüzgâr onu oraya taşımıştı.",
+    ],
+    comprehensionQuestions: [
+      { id: "kayip-sapka-1", question: "Ali neyi bulamıyordu?", options: ["Çantasını", "Şapkasını", "Kitabını"], correctAnswer: 1 },
+      { id: "kayip-sapka-2", question: "Ali önce nerelere baktı?", options: ["Kaydırak ve bankın çevresine", "Okulun bahçesine", "Evdeki dolaba"], correctAnswer: 0 },
+      { id: "kayip-sapka-3", question: "Şapka neredeydi?", options: ["Bir ağacın dalında", "Bankın altında", "Çantanın içinde"], correctAnswer: 0 },
+    ],
+  },
+  {
+    id: "arilarin-gorevi",
+    title: "Arıların Görevi",
+    grade: 3,
+    paragraphs: [
+      "Bahçedeki çiçekler açınca arılar da çalışmaya başladı. Bir arı, sarı bir çiçeğin üzerine kondu ve çiçekten nektar topladı. Sonra başka bir çiçeğe uçtu.",
+      "Arılar çiçekten çiçeğe giderken polenleri taşır. Bu hareket, bazı bitkilerin yeni tohumlar oluşturmasına yardım eder. Bahçıvan Zeynep, arıların bahçe için ne kadar önemli olduğunu çocuklara anlattı.",
+    ],
+    comprehensionQuestions: [
+      { id: "arilarin-gorevi-1", question: "Arı çiçekten ne topladı?", options: ["Su", "Nektar", "Kum"], correctAnswer: 1 },
+      { id: "arilarin-gorevi-2", question: "Arılar giderken ne taşır?", options: ["Polen", "Yaprak", "Çakıl"], correctAnswer: 0 },
+      { id: "arilarin-gorevi-3", question: "Arıların hareketi bitkilere nasıl yardım eder?", options: ["Yeni tohum oluşmasına yardım eder", "Çiçekleri kapatır", "Toprağı sertleştirir"], correctAnswer: 0 },
+    ],
+  },
+  {
+    id: "kutuphane-kurali",
+    title: "Kütüphanedeki Küçük Kural",
+    grade: 3,
+    paragraphs: [
+      "Deniz, okul kütüphanesinden bir macera kitabı seçti. Kitabı okumaya başlamadan önce görevli, kitapların sayfalarının dikkatle çevrilmesi gerektiğini söyledi. Deniz bu küçük kuralı arkadaşlarına da hatırlattı.",
+      "Okuma bitince kitabı masanın üzerinde bırakmak yerine görevliye teslim etti. Görevli, kitabın yerine konulabilmesi için üzerindeki etikete baktı. Deniz, düzenli bir kütüphanede aradığı kitabı bulmanın daha kolay olduğunu fark etti.",
+    ],
+    comprehensionQuestions: [
+      { id: "kutuphane-kurali-1", question: "Deniz kütüphaneden ne seçti?", options: ["Bir macera kitabı", "Bir harita", "Bir oyun"], correctAnswer: 0 },
+      { id: "kutuphane-kurali-2", question: "Görevli hangi konuda uyardı?", options: ["Sessizce yürümek", "Sayfaları dikkatle çevirmek", "Pencereyi açmak"], correctAnswer: 1 },
+      { id: "kutuphane-kurali-3", question: "Deniz düzenli bir kütüphane hakkında ne fark etti?", options: ["Kitap bulmanın kolay olduğunu", "Kitapların çok ağır olduğunu", "Masaların küçük olduğunu"], correctAnswer: 0 },
+    ],
+  },
+  {
+    id: "yagmurun-yolculugu",
+    title: "Yağmur Damlasının Yolculuğu",
+    grade: 4,
+    paragraphs: [
+      "Bir yağmur damlası, bulutun içindeki serin yolculuğunu tamamlayıp yeryüzüne düştü. Önce bir yaprağın üzerine kondu, sonra yaprağın kenarından süzülerek toprağa ulaştı. Toprak damlayı hemen içine çekmedi; küçük bir çukurda bir süre bekletti.",
+      "Güneş açınca suyun bir bölümü buharlaşıp yeniden gökyüzüne yükseldi. Başka bir bölümü ise bitkinin köklerine ilerledi. Böylece aynı su, doğada farklı yollar izleyerek canlıların yaşamına katkı sağladı.",
+    ],
+    comprehensionQuestions: [
+      { id: "yagmurun-yolculugu-1", question: "Yağmur damlası önce nereye kondu?", options: ["Bir yaprağın üzerine", "Bir taşın altına", "Bir kuş yuvasına"], correctAnswer: 0 },
+      { id: "yagmurun-yolculugu-2", question: "Güneş açınca suyun bir bölümü ne yaptı?", options: ["Buz oldu", "Buharlaşıp gökyüzüne yükseldi", "Rengini değiştirdi"], correctAnswer: 1 },
+      { id: "yagmurun-yolculugu-3", question: "Metne göre su canlılara nasıl katkı sağladı?", options: ["Farklı yollarla yaşamı destekledi", "Bütün bitkileri kuruttu", "Toprağı tamamen kapattı"], correctAnswer: 0 },
+    ],
+  },
+  {
+    id: "sokak-lambalari",
+    title: "Sokak Lambaları",
+    grade: 4,
+    paragraphs: [
+      "Mahallenin çocukları akşamüstü parktan dönerken sokak lambalarının birer birer yandığını gördü. Lambalar, hava tamamen kararmadan önce yolu aydınlatmaya başladı. Böylece yayalar ve bisikletliler birbirlerini daha kolay fark etti.",
+      "Apartman yöneticisi, lambaların düzenli kontrol edildiğini anlattı. Bir lamba sönükse görevliye haber veriliyordu. Çocuklar da güvenli bir sokak için yalnızca ışıkların değil, dikkatli davranmanın ve trafik kurallarına uymanın önemli olduğunu öğrendi.",
+    ],
+    comprehensionQuestions: [
+      { id: "sokak-lambalari-1", question: "Lambalar ne zaman yanmaya başladı?", options: ["Hava tamamen aydınlıkken", "Hava tamamen kararmadan önce", "Sabah erken"], correctAnswer: 1 },
+      { id: "sokak-lambalari-2", question: "Işıklar yayalara ve bisikletlilere nasıl yardım etti?", options: ["Birbirlerini fark etmelerini kolaylaştırdı", "Daha hızlı koşmalarını sağladı", "Yolu kapattı"], correctAnswer: 0 },
+      { id: "sokak-lambalari-3", question: "Güvenli bir sokak için başka ne gereklidir?", options: ["Dikkatli davranmak ve trafik kurallarına uymak", "Lambaları kapatmak", "Parkta daha uzun kalmak"], correctAnswer: 0 },
+    ],
+  },
+];
+
+export function getTextsForGrade(grade: OneMinuteReadingGrade): OneMinuteReadingText[] {
+  return ONE_MINUTE_READING_TEXTS.filter((text) => text.grade === grade);
+}
+
+export function getRandomTextForGrade(grade: OneMinuteReadingGrade, excludedId?: string): OneMinuteReadingText {
+  const candidates = getTextsForGrade(grade).filter((text) => text.id !== excludedId);
+  const pool = candidates.length > 0 ? candidates : getTextsForGrade(grade);
+  return pool[Math.floor(Math.random() * pool.length)] ?? ONE_MINUTE_READING_TEXTS[0];
+}

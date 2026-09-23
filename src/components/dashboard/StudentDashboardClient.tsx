@@ -118,6 +118,7 @@ const EXERCISE_ROUTE_BY_TYPE: Record<ExerciseType, string> = {
   "grouping-reading": "/egzersizler/gruplama-calismasi",
   "eye-columns": "/egzersizler/goz-egzersizleri-kolonlar",
   "color-match": "/egzersizler/renk-uyumu",
+  "one-minute-oral-reading": "/egzersizler/bir-dakika-sesli-okuma",
   "reading-speed-test": "/egzersizler/okuma-hizi-testi",
   "thirteen-point-emoji-tracking": "/egzersizler/13-nokta-emoji-takip",
   "growing-shapes-hexagon": "/egzersizler/buyuyen-sekiller-altigen",

@@ -327,6 +327,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["textId", "fontSize"],
   },
   {
+    slug: "bir-dakika-sesli-okuma",
+    title: "1 Dakika Sesli Okuma",
+    route: "/egzersizler/bir-dakika-sesli-okuma",
+    resultExerciseType: "one-minute-oral-reading",
+    category: "comprehension",
+    assignmentEnabled: true,
+    supportedSettings: ["grade", "textId"],
+  },
+  {
     slug: "renk-uyumu",
     title: "Renk Uyumu",
     route: "/egzersizler/renk-uyumu",

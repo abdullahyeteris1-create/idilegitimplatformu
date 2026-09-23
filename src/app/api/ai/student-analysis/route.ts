@@ -38,6 +38,7 @@ const EXERCISE_TITLES: Record<ExerciseType, string> = {
   "eye-columns": "Göz Egzersizleri: Kolonlar",
   "square-vision": "KAREL: Kare Görme Çalışması",
   "color-match": "Renk Uyumu",
+  "one-minute-oral-reading": "1 Dakika Sesli Okuma",
   "reading-speed-test": "Okuma Hızı Testi",
   "thirteen-point-emoji-tracking": "13 Nokta Emoji Takip Egzersizi",
   "growing-shapes-hexagon": "Büyüyen Şekiller",

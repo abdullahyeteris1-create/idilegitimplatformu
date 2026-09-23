@@ -23,6 +23,7 @@
   | "square-vision"
   | "color-match"
   | "reading-speed-test"
+  | "one-minute-oral-reading"
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"
   | "kayip-nesne"

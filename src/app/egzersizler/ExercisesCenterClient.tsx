@@ -376,6 +376,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Anlama", "Hiz"],
       },
       {
+        title: "1 Dakika Sesli Okuma",
+        description: "1 dakika boyunca sesli oku, ulaştığın kelimeyi işaretle ve okuma sonucunu gör.",
+        href: "/egzersizler/bir-dakika-sesli-okuma",
+        icon: "1D",
+        image: "/exercise-visuals/exercises/comprehension.svg",
+        tags: ["Okuma", "Anlama"],
+      },
+      {
         title: "Sonuç",
         description: "Son çalışma performansını ve genel sonuç özetini incele.",
         href: "/sonuc",

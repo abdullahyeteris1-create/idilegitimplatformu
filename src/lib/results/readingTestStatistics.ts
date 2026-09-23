@@ -1,6 +1,6 @@
 import type { ExerciseResult } from "@/lib/results/types";
 
-export const READING_TEST_TYPES = ["reading-speed-test", "reading-comprehension"] as const;
+export const READING_TEST_TYPES = ["reading-speed-test", "reading-comprehension", "one-minute-oral-reading"] as const;
 
 export type ReadingTestType = (typeof READING_TEST_TYPES)[number];
 
@@ -94,7 +94,7 @@ export function normalizeReadingTestResult(result: ExerciseResult): NormalizedRe
 
   const details = result.details ?? {};
   const date = normalizeCompletedAt(result, details);
-  const isComprehension = result.exerciseType === "reading-comprehension";
+  const isComprehension = result.exerciseType === "reading-comprehension" || result.exerciseType === "one-minute-oral-reading";
   const durationSeconds = firstValue(
     readPositiveNumber(result.durationSeconds),
     readPositiveNumber(details.durationSeconds),
@@ -114,10 +114,10 @@ export function normalizeReadingTestResult(result: ExerciseResult): NormalizedRe
       ? firstValue(readPercentage(result.successRate), readPercentage(details.comprehensionScore))
       : null,
     correctCount: isComprehension
-      ? firstValue(readNonNegativeNumber(result.correctCount), readNonNegativeNumber(details.correctAnswers))
+      ? firstValue(readNonNegativeNumber(details.comprehensionCorrect), readNonNegativeNumber(details.correctAnswers), readNonNegativeNumber(result.correctCount))
       : null,
     wrongCount: isComprehension
-      ? firstValue(readNonNegativeNumber(result.wrongCount), readNonNegativeNumber(details.wrongAnswers))
+      ? firstValue(readNonNegativeNumber(details.comprehensionWrong), readNonNegativeNumber(details.wrongAnswers), readNonNegativeNumber(result.wrongCount))
       : null,
     emptyCount: isComprehension ? readNonNegativeNumber(details.emptyAnswers) : null,
     questionCount: isComprehension ? readNonNegativeNumber(details.totalQuestions) : null,
