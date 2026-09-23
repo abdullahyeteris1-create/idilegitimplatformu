@@ -23,8 +23,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Ormanda İlkbahar",
     grade: 1,
     paragraphs: [
-      "Güneş doğunca orman uyandı. Küçük kuşlar dallara kondu. Bir sincap, ağacın altında ceviz aradı.",
-      "Çocuklar ormana yürüyüşe geldi. Yerde sarı bir çiçek gördüler. Çiçeğe dokunmadan yanından geçip onu uzaktan izlediler.",
+      "Sabah güneşi doğunca orman yavaşça uyandı. Küçük kuşlar dallara kondu ve neşeli sesler çıkardı. Bir sincap, ağacın altında ceviz aradı. Çocuklar öğretmenleriyle ormana yürüyüşe geldi. Yerde sarı bir çiçek gördüler. Çiçeğe dokunmadılar. Öğretmen, çiçeklerin korunması gerektiğini söyledi.",
+      "Çocuklar biraz ileride küçük bir dere buldu. Suyun yanında dinlenip kuşları dinlediler. Sonra çöplerini çantalarına koyarak ormandan ayrıldılar. Herkes doğayı temiz bırakmanın önemini öğrendi.",
     ],
     comprehensionQuestions: [
       { id: "ormanda-ilkbahar-1", question: "Sincap ne aradı?", options: ["Ceviz", "Çiçek", "Taş"], correctAnswer: 0 },
@@ -37,8 +37,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Mavi Bisiklet",
     grade: 1,
     paragraphs: [
-      "Ece'nin mavi bir bisikleti vardı. Bisikletinin zilini çok severdi. Her sabah kaskını takar ve bahçede birkaç tur atardı.",
-      "Bir gün zilin sesi çıkmadı. Ece bisikletini babasına gösterdi. Babası zili sıkıştırdı. Ece teşekkür etti ve güvenli yolda sürmeye devam etti.",
+      "Ece'nin mavi bir bisikleti vardı. Bisikletinin zilini çok severdi. Her sabah kaskını takar, bahçede birkaç tur atardı. Bir gün zilin sesi çıkmadı. Ece bisikletini babasına gösterdi. Babası zili dikkatle sıktı ve tekerlekleri kontrol etti.",
+      "Zil yeniden çalınca Ece babasına teşekkür etti. Sonra önce yavaşça sürdü. Kapının önünde durdu, iki yana baktı ve güvenli yolda devam etti. Ece, bisiklet sürerken kask takmanın ve dikkatli olmanın önemli olduğunu hatırladı.",
     ],
     comprehensionQuestions: [
       { id: "mavi-bisiklet-1", question: "Ece'nin bisikleti ne renkti?", options: ["Kırmızı", "Mavi", "Yeşil"], correctAnswer: 1 },
@@ -51,13 +51,13 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Tohumdan Çiçeğe",
     grade: 2,
     paragraphs: [
-      "Mert, sınıfta küçük bir saksıya fasulye tohumu ekti. Önce toprağı yumuşattı, sonra tohumu içine bıraktı. Üzerini ince bir toprakla kapattı.",
-      "Mert her gün saksıya biraz su verdi. Birkaç gün sonra topraktan yeşil bir filiz çıktı. Filiz büyüdükçe sınıftaki arkadaşları da onu merakla izledi.",
+      "Mert, sınıfta küçük bir saksıya fasulye tohumu ekti. Önce toprağı yumuşattı, sonra tohumu içine bıraktı. Üzerini ince bir toprakla kapattı. Saksıyı pencerenin yanına koydu. Böylece bitki gün içinde güneş ışığı alabilecekti.",
+      "Mert her gün saksıya biraz su verdi. Fazla suyun toprağı çamur yapabileceğini öğretmeninden öğrendi. Birkaç gün sonra topraktan yeşil bir filiz çıktı. Mert filizin boyunu cetvelle ölçüp defterine yazdı. Filiz büyüdükçe sınıftaki arkadaşları da onu merakla izledi. Bir süre sonra küçük beyaz çiçekler açtı.",
     ],
     comprehensionQuestions: [
       { id: "tohumdan-cicege-1", question: "Mert saksıya hangi tohumu ekti?", options: ["Fasulye", "Ayçiçeği", "Mısır"], correctAnswer: 0 },
-      { id: "tohumdan-cicege-2", question: "Mert tohumu ektikten sonra ne yaptı?", options: ["Saksıyı kırdı", "Üzerini toprakla kapattı", "Tohumu çıkardı"], correctAnswer: 1 },
-      { id: "tohumdan-cicege-3", question: "Birkaç gün sonra ne oldu?", options: ["Yeşil bir filiz çıktı", "Saksı kayboldu", "Toprak kurudu"], correctAnswer: 0 },
+      { id: "tohumdan-cicege-2", question: "Mert tohumu ektikten sonra saksıyı nereye koydu?", options: ["Dolabın içine", "Pencerenin yanına", "Koridora"], correctAnswer: 1 },
+      { id: "tohumdan-cicege-3", question: "Mert filizin boyunu nasıl takip etti?", options: ["Cetvelle ölçüp yazdı", "Filizi kopardı", "Saksıyı dışarı attı"], correctAnswer: 0 },
     ],
   },
   {
@@ -65,8 +65,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Kayıp Şapka",
     grade: 2,
     paragraphs: [
-      "Ali, parktaki oyunlardan sonra kırmızı şapkasını bulamadı. Önce kaydırağın yanına baktı. Sonra bankın altını ve çantasının içini kontrol etti.",
-      "Şapka hiçbir yerde görünmüyordu. Ali, parka gelirken uğradığı kitaplığın önüne geri döndü. Şapkasını bir ağacın dalında görünce çok şaşırdı. Rüzgâr onu oraya taşımıştı.",
+      "Ali, parktaki oyunlardan sonra kırmızı şapkasını bulamadı. Önce kaydırağın yanına baktı. Sonra bankın altını ve çantasının içini kontrol etti. Şapka hiçbir yerde görünmüyordu. Ali, nerelerden geçtiğini düşünmek için bir an durdu. Parka gelirken uğradığı kitaplığın önünü de hatırladı.",
+      "Ali kitaplığın önüne geri döndü. Şapkasını bir ağacın dalında görünce çok şaşırdı. Rüzgâr onu oraya taşımıştı. Ali, şapkasını alıp kenarındaki yaprakları temizledi. Sonra parka döndü ve arkadaşlarına eşyalarını oyun alanında bırakmamaları gerektiğini anlattı. Arkadaşları da onu dikkatle dinledi.",
     ],
     comprehensionQuestions: [
       { id: "kayip-sapka-1", question: "Ali neyi bulamıyordu?", options: ["Çantasını", "Şapkasını", "Kitabını"], correctAnswer: 1 },
@@ -79,8 +79,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Arıların Görevi",
     grade: 3,
     paragraphs: [
-      "Bahçedeki çiçekler açınca arılar da çalışmaya başladı. Bir arı, sarı bir çiçeğin üzerine kondu ve çiçekten nektar topladı. Sonra başka bir çiçeğe uçtu.",
-      "Arılar çiçekten çiçeğe giderken polenleri taşır. Bu hareket, bazı bitkilerin yeni tohumlar oluşturmasına yardım eder. Bahçıvan Zeynep, arıların bahçe için ne kadar önemli olduğunu çocuklara anlattı.",
+      "Bahçedeki çiçekler açınca arılar da çalışmaya başladı. Bir arı, sarı bir çiçeğin üzerine kondu ve çiçekten nektar topladı. Sonra başka bir çiçeğe uçtu. Arıların üzerinde ince tüyler vardı. Bu tüyler, çiçekten aldıkları polenlerin bir bölümünün taşınmasına yardım ediyordu.",
+      "Arılar çiçekten çiçeğe giderken polenleri taşır. Bu hareket, bazı bitkilerin yeni tohumlar oluşturmasına yardım eder. Bahçıvan Zeynep, arıların bahçe için ne kadar önemli olduğunu çocuklara anlattı. Çocuklar arıları rahatsız etmeden izledi. Ayrıca bahçeye renkli çiçekler dikmenin arılara yiyecek sağlayacağını öğrendiler. Zeynep, çiçeklerin arasına küçük bir su kabı da koydu. Böylece arılar sıcak günlerde dinlenebilecekti.",
     ],
     comprehensionQuestions: [
       { id: "arilarin-gorevi-1", question: "Arı çiçekten ne topladı?", options: ["Su", "Nektar", "Kum"], correctAnswer: 1 },
@@ -93,8 +93,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Kütüphanedeki Küçük Kural",
     grade: 3,
     paragraphs: [
-      "Deniz, okul kütüphanesinden bir macera kitabı seçti. Kitabı okumaya başlamadan önce görevli, kitapların sayfalarının dikkatle çevrilmesi gerektiğini söyledi. Deniz bu küçük kuralı arkadaşlarına da hatırlattı.",
-      "Okuma bitince kitabı masanın üzerinde bırakmak yerine görevliye teslim etti. Görevli, kitabın yerine konulabilmesi için üzerindeki etikete baktı. Deniz, düzenli bir kütüphanede aradığı kitabı bulmanın daha kolay olduğunu fark etti.",
+      "Deniz, okul kütüphanesinden bir macera kitabı seçti. Kitabı okumaya başlamadan önce görevli, kitapların sayfalarının dikkatle çevrilmesi gerektiğini söyledi. Deniz bu küçük kuralı arkadaşlarına da hatırlattı. Kitabı sessizce okurken önemli yerleri küçük ayraçlarla işaretledi. Sayfaları kıvırmamaya özellikle dikkat etti.",
+      "Okuma bitince kitabı masanın üzerinde bırakmak yerine görevliye teslim etti. Görevli, kitabın yerine konulabilmesi için üzerindeki etikete baktı. Deniz, kitaplığın raflarını karıştırmadan önce görevliye sormayı da öğrendi. Düzenli bir kütüphanede aradığı kitabı bulmanın daha kolay olduğunu fark etti. Böylece başka çocukların da kitaplara kolayca ulaşabileceğini düşündü. Deniz kitabı yerine koymadan önce masasını da topladı. Arkadaşları bu davranışı örnek aldı.",
     ],
     comprehensionQuestions: [
       { id: "kutuphane-kurali-1", question: "Deniz kütüphaneden ne seçti?", options: ["Bir macera kitabı", "Bir harita", "Bir oyun"], correctAnswer: 0 },
@@ -107,8 +107,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Yağmur Damlasının Yolculuğu",
     grade: 4,
     paragraphs: [
-      "Bir yağmur damlası, bulutun içindeki serin yolculuğunu tamamlayıp yeryüzüne düştü. Önce bir yaprağın üzerine kondu, sonra yaprağın kenarından süzülerek toprağa ulaştı. Toprak damlayı hemen içine çekmedi; küçük bir çukurda bir süre bekletti.",
-      "Güneş açınca suyun bir bölümü buharlaşıp yeniden gökyüzüne yükseldi. Başka bir bölümü ise bitkinin köklerine ilerledi. Böylece aynı su, doğada farklı yollar izleyerek canlıların yaşamına katkı sağladı.",
+      "Bir yağmur damlası, bulutun içindeki serin yolculuğunu tamamlayıp yeryüzüne düştü. Önce geniş bir yaprağın üzerine kondu, sonra yaprağın kenarından süzülerek toprağa ulaştı. Toprak damlayı hemen içine çekmedi; küçük bir çukurda bir süre bekletti. Çukur dolunca damla, toprağın içindeki ince boşluklara doğru ilerledi.",
+      "Güneş açınca suyun bir bölümü buharlaşıp yeniden gökyüzüne yükseldi. Başka bir bölümü ise bitkinin köklerine ilerledi. Kökler suyu gövdeye taşıdı ve bitkinin yaprakları canlı kaldı. Çukurda kalan suyun bir kısmı da yakındaki dereye karıştı. Böylece aynı su, doğada farklı yollar izleyerek canlıların yaşamına katkı sağladı. Bu döngü hiç durmadan devam eder. Bu olay çocuklara suyu boşa akıtmamanın neden önemli olduğunu düşündürdü. Öğretmenleri, her damlanın uzun bir yolculuk yaptığını söyledi.",
     ],
     comprehensionQuestions: [
       { id: "yagmurun-yolculugu-1", question: "Yağmur damlası önce nereye kondu?", options: ["Bir yaprağın üzerine", "Bir taşın altına", "Bir kuş yuvasına"], correctAnswer: 0 },
@@ -121,8 +121,8 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
     title: "Sokak Lambaları",
     grade: 4,
     paragraphs: [
-      "Mahallenin çocukları akşamüstü parktan dönerken sokak lambalarının birer birer yandığını gördü. Lambalar, hava tamamen kararmadan önce yolu aydınlatmaya başladı. Böylece yayalar ve bisikletliler birbirlerini daha kolay fark etti.",
-      "Apartman yöneticisi, lambaların düzenli kontrol edildiğini anlattı. Bir lamba sönükse görevliye haber veriliyordu. Çocuklar da güvenli bir sokak için yalnızca ışıkların değil, dikkatli davranmanın ve trafik kurallarına uymanın önemli olduğunu öğrendi.",
+      "Mahallenin çocukları akşamüstü parktan dönerken sokak lambalarının birer birer yandığını gördü. Lambalar, hava tamamen kararmadan önce yolu aydınlatmaya başladı. Böylece yayalar ve bisikletliler birbirlerini daha kolay fark etti. Çocuklar, karşıdan karşıya geçerken lambaların ışığına güvenmek yerine yaya geçidini kullanmaları gerektiğini de biliyordu.",
+      "Apartman yöneticisi, lambaların düzenli kontrol edildiğini anlattı. Bir lamba sönükse görevliye haber veriliyordu. Görevli bozuk lambayı değiştiriyor, sonra sokağın yeniden aydınlandığını kontrol ediyordu. Çocuklar da güvenli bir sokak için yalnızca ışıkların değil, dikkatli davranmanın ve trafik kurallarına uymanın önemli olduğunu öğrendi. O akşam eve giderken birbirlerine hatırlatma yaptılar. Çocuklardan biri yansıtıcı şerit takmıştı. Diğerleri de karanlıkta görünür olmanın yollarını konuştu. Eve yaklaşınca lambaların çevresinde uçan küçük böcekleri fark ettiler.",
     ],
     comprehensionQuestions: [
       { id: "sokak-lambalari-1", question: "Lambalar ne zaman yanmaya başladı?", options: ["Hava tamamen aydınlıkken", "Hava tamamen kararmadan önce", "Sabah erken"], correctAnswer: 1 },

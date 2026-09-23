@@ -37,6 +37,19 @@ export function isTimerFinished(startedAtMs: number, nowMs: number, durationSeco
   return nowMs - startedAtMs >= durationSeconds * 1000;
 }
 
+export function getElapsedReadingSeconds(startedAtMs: number, nowMs: number, durationSeconds = ONE_MINUTE_SECONDS): number {
+  const elapsedMs = Math.max(0, nowMs - startedAtMs);
+  return Math.min(durationSeconds, Math.max(1, Math.floor(elapsedMs / 1000)));
+}
+
+export function formatReadingDuration(durationSeconds: number): string {
+  const safeSeconds = Math.min(ONE_MINUTE_SECONDS, Math.max(1, Number.isFinite(durationSeconds) ? Math.floor(durationSeconds) : 1));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  if (minutes <= 0) return `${seconds} sn`;
+  return seconds > 0 ? `${minutes} dk ${seconds} sn` : `${minutes} dk`;
+}
+
 export function calculateWordsRead(lastWordIndex: number | null, totalWords: number): number {
   if (lastWordIndex === null || totalWords <= 0) return 0;
   return Math.min(totalWords, Math.max(0, lastWordIndex + 1));

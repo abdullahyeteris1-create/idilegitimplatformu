@@ -13,6 +13,8 @@ import {
   calculateComprehensionScore,
   calculateCorrectWords,
   calculateWordsRead,
+  formatReadingDuration,
+  getElapsedReadingSeconds,
   countReadingWords,
   getRemainingSeconds,
   isTimerFinished,
@@ -34,6 +36,7 @@ type Phase = "intro" | "grade" | "ready" | "reading" | "time-up" | "marking" | "
 
 type AttemptResult = {
   wordsRead: number;
+  readingDurationSeconds: number;
   readingErrors: number;
   correctWords: number;
   comprehensionCorrect: number;
@@ -66,12 +69,14 @@ export function OneMinuteOralReadingClient({
   const [selectedText, setSelectedText] = useState<OneMinuteReadingText>(() => getRandomTextForGrade(1));
   const [remainingSeconds, setRemainingSeconds] = useState(ONE_MINUTE_SECONDS);
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [readingDurationSeconds, setReadingDurationSeconds] = useState<number | null>(null);
   const [lastWordIndex, setLastWordIndex] = useState<number | null>(null);
   const [readingErrors, setReadingErrors] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveMessage, setSaveMessage] = useState("");
+  const [finishConfirmationOpen, setFinishConfirmationOpen] = useState(false);
   const savedAttemptRef = useRef(false);
   const timerFinishedRef = useRef(false);
 
@@ -88,6 +93,8 @@ export function OneMinuteOralReadingClient({
   const resetAttemptState = useCallback(() => {
     setRemainingSeconds(ONE_MINUTE_SECONDS);
     setStartedAt(null);
+    setReadingDurationSeconds(null);
+    setFinishConfirmationOpen(false);
     setLastWordIndex(null);
     setReadingErrors(0);
     setAnswers({});
@@ -113,12 +120,23 @@ export function OneMinuteOralReadingClient({
 
   const handleStartReading = () => {
     setRemainingSeconds(ONE_MINUTE_SECONDS);
+    setReadingDurationSeconds(null);
+    setFinishConfirmationOpen(false);
     timerFinishedRef.current = false;
     setStartedAt(Date.now());
     setPhase("reading");
   };
 
-  useEffect(() => {
+
+  const finishByTimeout = useCallback(() => {
+    if (timerFinishedRef.current) return;
+    timerFinishedRef.current = true;
+    setRemainingSeconds(0);
+    setReadingDurationSeconds(ONE_MINUTE_SECONDS);
+    setStartedAt(null);
+    setFinishConfirmationOpen(false);
+    setPhase("time-up");
+  }, []);  useEffect(() => {
     if (phase !== "reading" || startedAt === null) return;
 
     const updateTimer = () => {
@@ -126,10 +144,7 @@ export function OneMinuteOralReadingClient({
       const now = Date.now();
       setRemainingSeconds(getRemainingSeconds(startedAt, now));
       if (isTimerFinished(startedAt, now)) {
-        timerFinishedRef.current = true;
-        setRemainingSeconds(0);
-        setStartedAt(null);
-        setPhase("time-up");
+        finishByTimeout();
       }
     };
 
@@ -141,9 +156,33 @@ export function OneMinuteOralReadingClient({
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", updateTimer);
     };
-  }, [phase, startedAt]);
+  }, [finishByTimeout, phase, startedAt]);
 
-  const persistResult = useCallback(async (attempt: AttemptResult) => {
+
+  const handleOpenFinishConfirmation = () => {
+    if (phase !== "reading" || startedAt === null || timerFinishedRef.current) return;
+    setFinishConfirmationOpen(true);
+  };
+
+  const handleCancelFinishConfirmation = () => {
+    setFinishConfirmationOpen(false);
+  };
+
+  const handleConfirmEarlyFinish = () => {
+    if (phase !== "reading" || startedAt === null || timerFinishedRef.current) return;
+    const now = Date.now();
+    if (isTimerFinished(startedAt, now)) {
+      finishByTimeout();
+      return;
+    }
+
+    timerFinishedRef.current = true;
+    setReadingDurationSeconds(getElapsedReadingSeconds(startedAt, now));
+    setLastWordIndex(Math.max(0, totalWords - 1));
+    setStartedAt(null);
+    setFinishConfirmationOpen(false);
+    setPhase("errors");
+  };  const persistResult = useCallback(async (attempt: AttemptResult) => {
     if (savedAttemptRef.current) return;
     savedAttemptRef.current = true;
     setSaveStatus("saving");
@@ -162,6 +201,7 @@ export function OneMinuteOralReadingClient({
       comprehensionCorrect: attempt.comprehensionCorrect,
       comprehensionWrong: attempt.comprehensionTotal - attempt.comprehensionCorrect,
       comprehensionScore: attempt.comprehensionScore,
+      durationSeconds: attempt.readingDurationSeconds,
       completedAt,
     };
 
@@ -173,7 +213,7 @@ export function OneMinuteOralReadingClient({
         successRate: attempt.comprehensionScore,
         correctCount: attempt.correctWords,
         wrongCount: attempt.readingErrors,
-        durationSeconds: ONE_MINUTE_SECONDS,
+        durationSeconds: attempt.readingDurationSeconds,
         completedAt,
         details,
       });
@@ -187,7 +227,7 @@ export function OneMinuteOralReadingClient({
         username: student?.username,
         exerciseType: RESULT_TYPE,
         exerciseTitle: TITLE,
-        durationSeconds: ONE_MINUTE_SECONDS,
+        durationSeconds: attempt.readingDurationSeconds,
         correctCount: attempt.correctWords,
         wrongCount: attempt.readingErrors,
         score: attempt.correctWords,
@@ -229,6 +269,7 @@ export function OneMinuteOralReadingClient({
     const comprehensionTotal = selectedText.comprehensionQuestions.length;
     const nextResult: AttemptResult = {
       wordsRead,
+      readingDurationSeconds: readingDurationSeconds ?? ONE_MINUTE_SECONDS,
       readingErrors: validateReadingErrors(readingErrors, wordsRead),
       correctWords: calculateCorrectWords(wordsRead, readingErrors),
       comprehensionCorrect,
@@ -340,11 +381,27 @@ export function OneMinuteOralReadingClient({
   if (phase === "reading") {
     return (
       <ExerciseStage title={TITLE} subtitle={`${gradeLabel(grade)} · Metni sesli oku`} onExit={handleExit} status={timerStats}>
-        <div className={styles.flowPanel}>{renderPassage(false)}<p className={styles.readingHint}>Metne odaklan. Son kelimeyi süre bitince işaretleyeceksin.</p></div>
+        <div className={styles.flowPanel}>
+          {renderPassage(false)}
+          <p className={styles.readingHint}>Metne odaklan. Son kelimeyi süre bitince işaretleyeceksin.</p>
+          <div className={styles.actionRow}>
+            <p className={styles.instruction}>Metni tamamladıysan, süre bitmeden bitirdiğini bildirebilirsin.</p>
+            <button type="button" className={styles.finishButton} onClick={handleOpenFinishConfirmation}>Metni Bitirdim</button>
+          </div>
+          {finishConfirmationOpen ? (
+            <div className={styles.finishConfirmation} role="dialog" aria-modal="false" aria-labelledby="finish-confirmation-title">
+              <h3 id="finish-confirmation-title">Metnin tamamını okudun mu?</h3>
+              <p>Süre işlemeye devam ediyor.</p>
+              <div className={styles.confirmationActions}>
+                <button type="button" className={styles.secondaryButton} onClick={handleCancelFinishConfirmation}>Okumaya Devam Et</button>
+                <button type="button" className={styles.primaryButton} onClick={handleConfirmEarlyFinish}>Evet, Bitirdim</button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </ExerciseStage>
     );
   }
-
   if (phase === "time-up") {
     return (
       <ExerciseStage title={TITLE} subtitle="Okuma tamamlandı" onExit={handleExit} status={<FixedExerciseStat label="Süre" value="00:00" tone="bad" />}>
@@ -407,6 +464,7 @@ export function OneMinuteOralReadingClient({
             <Kpi label="Okuma Hatası" value={result.readingErrors} tone="amber" />
             <Kpi label="Doğru Okunan" value={result.correctWords} tone="green" />
             <Kpi label="Anlama" value={`${result.comprehensionCorrect} / ${result.comprehensionTotal}`} tone="purple" />
+            <Kpi label="Okuma Süresi" value={formatReadingDuration(result.readingDurationSeconds)} tone="teal" />
           </div>
           <div className={styles.resultMeta}><span>Metin: <strong>{selectedText.title}</strong></span><span>Sınıf: <strong>{gradeLabel(grade)}</strong></span></div>
           <ExerciseEndScreenActions showReplay={false} onReplay={() => undefined} backHref="/egzersizler" exitHref="/ogrenci" exitLabel="Ana Sayfaya Dön" />
@@ -424,6 +482,6 @@ function QuestionCard({ question, index, selectedAnswer, onAnswer }: { question:
   return <fieldset className={styles.questionCard}><legend>{index + 1}. {question.question}</legend><div className={styles.optionGrid}>{question.options.map((option, optionIndex) => <button key={option} type="button" className={`${styles.optionButton} ${selectedAnswer === optionIndex ? styles.selectedOption : ""}`} aria-pressed={selectedAnswer === optionIndex} onClick={() => onAnswer(question.id, optionIndex)}><span>{String.fromCharCode(65 + optionIndex)}</span>{option}</button>)}</div></fieldset>;
 }
 
-function Kpi({ label, value, tone }: { label: string; value: string | number; tone: "blue" | "amber" | "green" | "purple" }) {
+function Kpi({ label, value, tone }: { label: string; value: string | number; tone: "blue" | "amber" | "green" | "purple" | "teal" }) {
   return <article className={`${styles.kpi} ${styles[`kpi${tone}`]}`}><span>{label}</span><strong>{value}</strong></article>;
 }
