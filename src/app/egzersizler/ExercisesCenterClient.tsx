@@ -392,6 +392,14 @@ const EXERCISE_GROUPS: ExerciseGroup[] = [
         tags: ["Okuma", "Anlama"],
       },
       {
+        title: "Hecele – Dinle – Oku",
+        description: "Heceleri dinle, kelimeyi birleştir ve sen oku.",
+        href: "/egzersizler/hecele-dinle-oku",
+        icon: "HD",
+        image: "/exercise-visuals/exercises/comprehension.svg",
+        tags: ["Okuma", "Anlama"],
+      },
+      {
         title: "Duygulu Okuma",
         description: "Çarkı çevir, duyguyu keşfet ve cümleyi canlandırarak sesli oku!",
         href: "/egzersizler/duygulu-okuma",

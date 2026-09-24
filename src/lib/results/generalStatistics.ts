@@ -231,6 +231,7 @@ const EXERCISE_TYPE_META: Record<ExerciseType, { categoryId: string; route: stri
   "reading-speed-test": { categoryId: "assessment", route: "/egzersizler/okuma-hizi-testi" },
   "one-minute-oral-reading": { categoryId: "assessment", route: "/egzersizler/bir-dakika-sesli-okuma" },
   "listen-then-read": { categoryId: "assessment", route: "/egzersizler/dinle-sen-oku" },
+  "hecele-dinle-oku": { categoryId: "assessment", route: "/egzersizler/hecele-dinle-oku" },
   "emotional-reading": { categoryId: "assessment", route: "/egzersizler/duygulu-okuma" },
   "thirteen-point-emoji-tracking": { categoryId: "eye", route: "/egzersizler/13-nokta-emoji-takip" },
   "growing-shapes-hexagon": { categoryId: "eye", route: "/egzersizler/buyuyen-sekiller-altigen" },

@@ -172,6 +172,17 @@ const DETAIL_SCHEMAS: Record<string, Record<string, DetailRule>> = {
     speechRateMode: { type: "string", values: ["slow", "normal"] },
     completedAt: { type: "string", maxLength: 40 },
   },
+  "hecele-dinle-oku": {
+    grade: { type: "integer", min: 1, max: 2 },
+    supportLevel: { type: "string", values: ["very-slow", "slow", "word-by-word"] },
+    tasksCompleted: { type: "integer", min: 0, max: 8 },
+    taskTypes: { type: "string", maxLength: 80 },
+    sessionItemIds: { type: "string", maxLength: 1_024 },
+    replayCount: { type: "integer", min: 0, max: 100 },
+    syllableRevealCount: { type: "integer", min: 0, max: 100 },
+    scoreMeaning: { type: "string", maxLength: 120 },
+    completedAt: { type: "string", maxLength: 40 },
+  },
   "emotional-reading": {
     grade: { type: "integer", min: 1, max: 4 },
     mode: { type: "string", values: ["emotion-task", "acting"] },

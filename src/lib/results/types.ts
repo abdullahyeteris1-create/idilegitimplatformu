@@ -25,6 +25,7 @@ export type ExerciseType =
   | "reading-speed-test"
   | "one-minute-oral-reading"
   | "listen-then-read"
+  | "hecele-dinle-oku"
   | "emotional-reading"
   | "thirteen-point-emoji-tracking"
   | "growing-shapes-hexagon"

@@ -345,6 +345,15 @@ export const ASSIGNMENT_EXERCISE_CATALOG: AssignmentExerciseDefinition[] = [
     supportedSettings: ["grade", "textId"],
   },
   {
+    slug: "hecele-dinle-oku",
+    title: "Hecele – Dinle – Oku",
+    route: "/egzersizler/hecele-dinle-oku",
+    resultExerciseType: "hecele-dinle-oku",
+    category: "comprehension",
+    assignmentEnabled: true,
+    supportedSettings: ["grade", "supportLevel"],
+  },
+  {
     slug: "duygulu-okuma",
     title: "Duygulu Okuma",
     route: "/egzersizler/duygulu-okuma",
