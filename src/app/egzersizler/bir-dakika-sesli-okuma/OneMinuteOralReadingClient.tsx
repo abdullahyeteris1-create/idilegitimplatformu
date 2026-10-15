@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { FixedExerciseStat } from "@/components/exercises/FixedExerciseStage";
 import { ExerciseEndScreenActions } from "@/components/exercises/ExerciseEndScreenActions";
 import { ExerciseStage } from "@/components/exercises/ExerciseStage";
@@ -25,14 +26,16 @@ import {
 } from "@/lib/one-minute-reading/metrics";
 import {
   getRandomTextForGrade,
+  filterReadingTexts,
   ONE_MINUTE_READING_GRADES,
+  type OneMinuteReadingDifficultyFilter,
   type OneMinuteComprehensionQuestion,
   type OneMinuteReadingGrade,
   type OneMinuteReadingText,
 } from "@/lib/one-minute-reading/content";
 import styles from "./one-minute-oral-reading.module.css";
 
-type Phase = "intro" | "grade" | "ready" | "reading" | "time-up" | "marking" | "errors" | "comprehension" | "result";
+type Phase = "intro" | "library" | "ready" | "reading" | "time-up" | "marking" | "errors" | "comprehension" | "result";
 
 type AttemptResult = {
   wordsRead: number;
@@ -66,6 +69,7 @@ export function OneMinuteOralReadingClient({
   const { navigateTo } = useExerciseExitNavigation();
   const [phase, setPhase] = useState<Phase>("intro");
   const [grade, setGrade] = useState<OneMinuteReadingGrade>(1);
+  const [difficultyFilter, setDifficultyFilter] = useState<OneMinuteReadingDifficultyFilter>("all");
   const [selectedText, setSelectedText] = useState<OneMinuteReadingText>(() => getRandomTextForGrade(1));
   const [remainingSeconds, setRemainingSeconds] = useState(ONE_MINUTE_SECONDS);
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -109,6 +113,14 @@ export function OneMinuteOralReadingClient({
     setGrade(nextGrade);
     setSelectedText(getRandomTextForGrade(nextGrade));
     resetAttemptState();
+    setDifficultyFilter("all");
+    setPhase("library");
+  };
+
+  const handleTextSelect = (text: OneMinuteReadingText) => {
+    setGrade(text.grade);
+    setSelectedText(text);
+    resetAttemptState();
     setPhase("ready");
   };
 
@@ -116,6 +128,11 @@ export function OneMinuteOralReadingClient({
     setSelectedText(getRandomTextForGrade(grade, selectedText.id));
     resetAttemptState();
     setPhase("ready");
+  };
+
+  const handleBrowseLibrary = () => {
+    resetAttemptState();
+    setPhase("library");
   };
 
   const handleStartReading = () => {
@@ -337,27 +354,85 @@ export function OneMinuteOralReadingClient({
           <h2>1 Dakika Sesli Okuma</h2>
           <p>Metni sesli oku. Süre dolduğunda kaldığın son kelimeyi işaretle.</p>
           <p className={styles.supportiveText}>Okurken acele etmek yerine doğru ve anlaşılır okumaya çalış.</p>
-          <button type="button" className={styles.primaryButton} onClick={() => setPhase("grade")}>Çalışmaya Başla</button>
+          <button type="button" className={styles.primaryButton} onClick={() => setPhase("library")}>Metin Kütüphanesini Aç</button>
         </div>
       </ExerciseStage>
     );
   }
 
-  if (phase === "grade") {
+  if (phase === "library") {
     return (
-      <ExerciseStage title={TITLE} subtitle="Önce sınıfını seç" onExit={handleExit}>
-        <div className={styles.centerPanel}>
-          <span className={styles.eyebrow}>Seviye seçimi</span>
-          <h2>Hangi sınıf için okuyorsun?</h2>
-          <div className={styles.gradeGrid}>
+      <ExerciseStage title={TITLE} subtitle="Sana uygun bir metin seç" onExit={handleExit}>
+        <section className={styles.libraryPanel} aria-labelledby="reading-library-title">
+          <div className={styles.libraryHeader}>
+            <div>
+              <span className={styles.eyebrow}>Resimli metin kütüphanesi</span>
+              <h2 id="reading-library-title">Bugün hangi hikâyeyi okuyalım?</h2>
+              <p>Sınıfını ve okuma seviyeni seç, ilgini çeken bir metni aç.</p>
+            </div>
+            <span className={styles.libraryCount}>{filterReadingTexts(grade, difficultyFilter).length} metin</span>
+          </div>
+          <div className={styles.libraryToolbar}>
+            <div className={styles.libraryTabs} role="group" aria-label="Sınıf seçimi">
             {ONE_MINUTE_READING_GRADES.map((option) => (
-              <button key={option} type="button" className={styles.gradeButton} onClick={() => handleGradeSelect(option)}>
-                <strong>{option}. sınıf</strong>
-                <span>{"2 özgün metin"}</span>
+              <button
+                key={option}
+                type="button"
+                aria-pressed={grade === option}
+                className={`${styles.libraryTab} ${grade === option ? styles.libraryTabActive : ""}`}
+                onClick={() => grade !== option && handleGradeSelect(option)}
+              >
+                {option}. sınıf <span>{filterReadingTexts(option).length}</span>
+              </button>
+            ))}
+            </div>
+            <div className={styles.difficultyFilters} aria-label="Zorluk filtresi">
+              {([
+                ["all", "Tümü"],
+                ["easy", "Kolay"],
+                ["medium", "Orta"],
+                ["hard", "Zor"],
+              ] as [OneMinuteReadingDifficultyFilter, string][]).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`${styles.difficultyFilter} ${difficultyFilter === value ? styles.difficultyFilterActive : ""}`}
+                  aria-pressed={difficultyFilter === value}
+                  onClick={() => setDifficultyFilter(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={styles.textLibraryGrid}>
+            {filterReadingTexts(grade, difficultyFilter).map((text, index) => (
+              <button key={text.id} type="button" className={styles.textCard} onClick={() => handleTextSelect(text)}>
+                <span className={styles.coverFrame}>
+                  <Image
+                    src={text.coverImagePath}
+                    alt={text.coverDescription}
+                    width={640}
+                    height={420}
+                    className={styles.coverImage}
+                    priority={index < 4}
+                  />
+                  <span className={`${styles.difficultyBadge} ${styles[`difficulty${text.difficulty}`]}`}>
+                    {text.difficulty === "easy" ? "Kolay" : text.difficulty === "medium" ? "Orta" : "Zor"}
+                  </span>
+                </span>
+                <span className={styles.textCardContent}>
+                  <strong>{text.title}</strong>
+                  <span className={styles.textCardMeta}>{text.wordCount} kelime <span aria-hidden="true">·</span> {text.category}</span>
+                  <span className={styles.textCardAction}>Bu metni seç <span aria-hidden="true">→</span></span>
+                </span>
               </button>
             ))}
           </div>
-        </div>
+          {filterReadingTexts(grade, difficultyFilter).length === 0 ? (
+            <p className={styles.emptyLibrary}>Bu seviyede henüz metin yok. Başka bir filtre seçebilirsin.</p>
+          ) : null}
+        </section>
       </ExerciseStage>
     );
   }
@@ -370,7 +445,8 @@ export function OneMinuteOralReadingClient({
           {renderPassage(false)}
           <p className={styles.instruction}>Hazır olduğunda okumaya başla. Sayaç düğmeye bastığında çalışır.</p>
           <div className={styles.actionRow}>
-            <button type="button" className={styles.secondaryButton} onClick={handleNewText}>Başka Metin Seç</button>
+            <button type="button" className={styles.secondaryButton} onClick={handleBrowseLibrary}>Kütüphaneye Dön</button>
+            <button type="button" className={styles.secondaryButton} onClick={handleNewText}>Rastgele Metin</button>
             <button type="button" className={styles.primaryButton} onClick={handleStartReading}>Okumaya Başla</button>
           </div>
         </div>
@@ -468,7 +544,7 @@ export function OneMinuteOralReadingClient({
           </div>
           <div className={styles.resultMeta}><span>Metin: <strong>{selectedText.title}</strong></span><span>Sınıf: <strong>{gradeLabel(grade)}</strong></span></div>
           <ExerciseEndScreenActions showReplay={false} onReplay={() => undefined} backHref="/egzersizler" exitHref="/ogrenci" exitLabel="Ana Sayfaya Dön" />
-          <div className={styles.resultActions}><button type="button" className={styles.secondaryButton} onClick={handleNewText}>Yeni Metin</button><button type="button" className={styles.secondaryButton} onClick={() => { resetAttemptState(); setPhase("ready"); }}>Tekrar Çalış</button></div>
+          <div className={styles.resultActions}><button type="button" className={styles.secondaryButton} onClick={handleBrowseLibrary}>Metin Kütüphanesi</button><button type="button" className={styles.secondaryButton} onClick={handleNewText}>Rastgele Metin</button><button type="button" className={styles.secondaryButton} onClick={() => { resetAttemptState(); setPhase("ready"); }}>Tekrar Çalış</button></div>
           {saveStatus === "saving" ? <p className={styles.saveNote} role="status">Sonuç kaydediliyor...</p> : null}
         </div>
       </ExerciseStage>

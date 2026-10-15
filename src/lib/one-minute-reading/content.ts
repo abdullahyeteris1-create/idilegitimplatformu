@@ -13,11 +13,18 @@ export type OneMinuteReadingText = {
   grade: OneMinuteReadingGrade;
   paragraphs: string[];
   comprehensionQuestions: OneMinuteComprehensionQuestion[];
+  difficulty: "easy" | "medium" | "hard";
+  category: string;
+  wordCount: number;
+  coverDescription: string;
+  coverImagePath: string;
 };
+
+import { ONE_MINUTE_READING_ADDITIONS } from "./content-additions";
 
 export const ONE_MINUTE_READING_GRADES: OneMinuteReadingGrade[] = [1, 2, 3, 4];
 
-export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
+const EXISTING_READING_TEXTS = [
   {
     id: "ormanda-ilkbahar",
     title: "Ormanda İlkbahar",
@@ -130,7 +137,38 @@ export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
       { id: "sokak-lambalari-3", question: "Güvenli bir sokak için başka ne gereklidir?", options: ["Dikkatli davranmak ve trafik kurallarına uymak", "Lambaları kapatmak", "Parkta daha uzun kalmak"], correctAnswer: 0 },
     ],
   },
+] satisfies Omit<OneMinuteReadingText, "difficulty" | "category" | "wordCount" | "coverDescription" | "coverImagePath">[];
+
+const EXISTING_TEXT_DETAILS: Record<string, Pick<OneMinuteReadingText, "difficulty" | "category" | "coverDescription">> = {
+  "ormanda-ilkbahar": { difficulty: "easy", category: "Doğa", coverDescription: "Güneşli ilkbahar ormanında kuşları ve çiçekleri keşfeden çocuklar." },
+  "mavi-bisiklet": { difficulty: "medium", category: "Ulaşım", coverDescription: "Kaskını takıp mavi bisikletini süren Ece ve babası." },
+  "tohumdan-cicege": { difficulty: "easy", category: "Bilim", coverDescription: "Pencere önündeki saksıda filizlenen fasulye tohumu." },
+  "kayip-sapka": { difficulty: "medium", category: "Macera", coverDescription: "Ağacın dalındaki kırmızı şapkasını bulan Ali." },
+  "arilarin-gorevi": { difficulty: "easy", category: "Doğa", coverDescription: "Çiçekler arasında polen taşıyan arılar ve bahçıvan Zeynep." },
+  "kutuphane-kurali": { difficulty: "medium", category: "Kitaplar", coverDescription: "Kitap sayfalarını özenle çeviren Deniz, okul kütüphanesinde." },
+  "yagmurun-yolculugu": { difficulty: "easy", category: "Su Döngüsü", coverDescription: "Buluttan yaprağa, toprağa ve dereye uzanan yağmur damlası." },
+  "sokak-lambalari": { difficulty: "medium", category: "Güvenlik", coverDescription: "Alacakaranlıkta yaya geçidini kullanan çocuklar ve yanan sokak lambaları." },
+};
+
+export const ONE_MINUTE_READING_TEXTS: OneMinuteReadingText[] = [
+  ...EXISTING_READING_TEXTS.map((text) => ({
+    ...text,
+    ...EXISTING_TEXT_DETAILS[text.id],
+    wordCount: text.paragraphs.join(" ").trim().split(/\s+/u).length,
+    coverImagePath: `/exercise-visuals/one-minute-reading/${text.id}.webp`,
+  })),
+  ...ONE_MINUTE_READING_ADDITIONS,
 ];
+
+export type OneMinuteReadingDifficulty = OneMinuteReadingText["difficulty"];
+export type OneMinuteReadingDifficultyFilter = "all" | OneMinuteReadingDifficulty;
+
+export function filterReadingTexts(
+  grade: OneMinuteReadingGrade,
+  difficulty: OneMinuteReadingDifficultyFilter = "all",
+): OneMinuteReadingText[] {
+  return ONE_MINUTE_READING_TEXTS.filter((text) => text.grade === grade && (difficulty === "all" || text.difficulty === difficulty));
+}
 
 export function getTextsForGrade(grade: OneMinuteReadingGrade): OneMinuteReadingText[] {
   return ONE_MINUTE_READING_TEXTS.filter((text) => text.grade === grade);

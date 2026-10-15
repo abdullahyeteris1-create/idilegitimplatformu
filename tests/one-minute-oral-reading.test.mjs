@@ -13,7 +13,7 @@ import {
   ONE_MINUTE_SECONDS,
   validateReadingErrors,
 } from "../src/lib/one-minute-reading/metrics.ts";
-import { getTextsForGrade, ONE_MINUTE_READING_TEXTS } from "../src/lib/one-minute-reading/content.ts";
+import { filterReadingTexts, getTextsForGrade, ONE_MINUTE_READING_TEXTS } from "../src/lib/one-minute-reading/content.ts";
 
 const clientSource = await readFile(new URL("../src/app/egzersizler/bir-dakika-sesli-okuma/OneMinuteOralReadingClient.tsx", import.meta.url), "utf8");
 
@@ -25,25 +25,32 @@ function getSourceBlock(startMarker, endMarker) {
   return clientSource.slice(start, end);
 }
 
-test("all 8 passages are within the intended grade ranges", () => {
+test("all 60 passages are within the intended grade ranges and preserve the original eight IDs", () => {
   const ranges = new Map([
-    [1, [60, 70]],
-    [2, [75, 90]],
-    [3, [90, 110]],
-    [4, [110, 130]],
+    [1, [60, 90]],
+    [2, [70, 95]],
+    [3, [90, 115]],
+    [4, [110, 140]],
   ]);
+  const originalIds = ["ormanda-ilkbahar", "mavi-bisiklet", "tohumdan-cicege", "kayip-sapka", "arilarin-gorevi", "kutuphane-kurali", "yagmurun-yolculugu", "sokak-lambalari"];
 
-  assert.equal(ONE_MINUTE_READING_TEXTS.length, 8);
-  for (const grade of [1, 2, 3, 4]) assert.equal(getTextsForGrade(grade).length, 2);
+  assert.equal(ONE_MINUTE_READING_TEXTS.length, 60);
+  assert.equal(new Set(ONE_MINUTE_READING_TEXTS.map((text) => text.id)).size, 60);
+  for (const id of originalIds) assert.ok(ONE_MINUTE_READING_TEXTS.some((text) => text.id === id), `missing original text ${id}`);
+  for (const grade of [1, 2, 3, 4]) assert.equal(getTextsForGrade(grade).length, 15);
   for (const text of ONE_MINUTE_READING_TEXTS) {
     const [minimum, maximum] = ranges.get(text.grade);
     const wordCount = countReadingWords(text.paragraphs.join(" "));
     assert.ok(wordCount >= minimum && wordCount <= maximum, `${text.title}: ${wordCount}`);
+    assert.equal(text.wordCount, wordCount, `${text.title}: stored word count`);
+    assert.ok(text.title && text.category && text.coverDescription, `${text.id}: missing library metadata`);
   }
 });
 
-test("all 24 comprehension questions remain structurally valid", () => {
-  assert.equal(ONE_MINUTE_READING_TEXTS.reduce((total, text) => total + text.comprehensionQuestions.length, 0), 24);
+test("all 180 comprehension questions remain structurally valid and uniquely identified", () => {
+  const allQuestions = ONE_MINUTE_READING_TEXTS.flatMap((text) => text.comprehensionQuestions);
+  assert.equal(allQuestions.length, 180);
+  assert.equal(new Set(allQuestions.map((question) => question.id)).size, 180);
   for (const text of ONE_MINUTE_READING_TEXTS) {
     assert.equal(text.comprehensionQuestions.length, 3, text.title);
     for (const question of text.comprehensionQuestions) {
@@ -53,6 +60,46 @@ test("all 24 comprehension questions remain structurally valid", () => {
       assert.equal(new Set(question.options).size, question.options.length, question.id);
     }
   }
+});
+
+test("library filters return the selected class and requested difficulty", () => {
+  for (const grade of [1, 2, 3, 4]) {
+    assert.equal(filterReadingTexts(grade, "all").length, 15);
+    for (const difficulty of ["easy", "medium", "hard"]) {
+      const results = filterReadingTexts(grade, difficulty);
+      assert.ok(results.length > 0, `${grade}. sınıf ${difficulty}`);
+      assert.ok(results.every((text) => text.grade === grade && text.difficulty === difficulty));
+    }
+  }
+});
+
+test("every library cover points to an existing optimized WebP asset", async () => {
+  for (const text of ONE_MINUTE_READING_TEXTS) {
+    assert.match(text.coverImagePath, /^\/exercise-visuals\/one-minute-reading\/.+\.webp$/u, text.id);
+    const asset = await readFile(new URL(`../public${text.coverImagePath}`, import.meta.url));
+    assert.equal(asset.toString("ascii", 0, 4), "RIFF", text.id);
+    assert.ok(asset.length > 10_000, `${text.id}: unexpectedly small cover`);
+  }
+});
+
+test("cover manifest describes all 60 available local images", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../public/exercise-visuals/one-minute-reading/manifest.json", import.meta.url), "utf8"));
+  assert.equal(manifest.total, 60);
+  assert.equal(manifest.coversAvailable, 60);
+  assert.equal(manifest.entries.length, 60);
+  assert.ok(manifest.entries.every((entry) => entry.status === "available" && entry.coverDescription && entry.bytes > 10_000));
+});
+
+test("library offers class tabs, difficulty filters, and resets state when selecting a story", () => {
+  assert.match(clientSource, /role="group" aria-label="Sınıf seçimi"/);
+  assert.match(clientSource, /"all", "Tümü"/);
+  assert.match(clientSource, /"easy", "Kolay"/);
+  assert.match(clientSource, /"medium", "Orta"/);
+  assert.match(clientSource, /"hard", "Zor"/);
+  assert.match(clientSource, /onClick=\{\(\) => handleTextSelect\(text\)\}/);
+  const selectBlock = getSourceBlock("const handleTextSelect", "const handleNewText");
+  assert.match(selectBlock, /setSelectedText\(text\)/);
+  assert.match(selectBlock, /resetAttemptState\(\)/);
 });
 
 test("timer starts from a timestamp and normal timeout remains 60 seconds", () => {
