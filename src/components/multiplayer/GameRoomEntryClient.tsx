@@ -69,7 +69,7 @@ export function GameRoomEntryClient({ role }: { role: GameRoomRole }) {
             <label className="text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200">
               Maksimum oyuncu
               <select value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-slate-950 [data-idil-theme=dark]:border-slate-600 [data-idil-theme=dark]:bg-slate-900 [data-idil-theme=dark]:text-white">
-                {(gameType === MEMORY_RACE_GAME_TYPE ? [2, 3, 4] : [2, 4, 6, 8, 12, 16, 24]).map((value) => <option key={value} value={value}>{value} oyuncu</option>)}
+                {(gameType === MEMORY_RACE_GAME_TYPE ? [2, 3, 4, 5, 6, 7] : [2, 4, 6, 8, 12, 16, 24]).map((value) => <option key={value} value={value}>{value} oyuncu</option>)}
               </select>
             </label>
             {gameType === MEMORY_RACE_GAME_TYPE ? <label className="text-sm font-bold text-slate-700 [data-idil-theme=dark]:text-slate-200 sm:col-span-2">

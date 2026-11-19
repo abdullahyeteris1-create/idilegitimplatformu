@@ -82,7 +82,7 @@ function mapDatabaseError(error: { message?: string } | null): never {
     invalid_level: [400, "Hafıza Yarışı seviyesi geçersiz."],
     invalid_board: [500, "Hafıza Yarışı kartları oluşturulamadı."],
     not_enough_players: [409, "Hafıza Yarışı için en az 2 aktif oyuncu gerekli."],
-    too_many_players: [409, "Hafıza Yarışı en fazla 4 aktif oyuncuyla oynanabilir."],
+    too_many_players: [409, "Hafıza Yarışı en fazla 7 aktif oyuncuyla oynanabilir."],
   };
   const match = Object.entries(messages).find(([key]) => value.includes(key));
   throw new GameRoomError(match?.[1][0] ?? 500, match?.[1][1] ?? "Oyun odası işlemi tamamlanamadı.");
