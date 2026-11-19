@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const settings = gameType === MEMORY_RACE_GAME_TYPE ? { level: rawSettings.level } : {};
     if (gameType === MEMORY_RACE_GAME_TYPE) {
       if (!isMemoryRaceLevel(settings.level)) throw new GameRoomError(400, "Hafıza Yarışı seviyesi geçersiz.");
-      if (maxPlayers < 2 || maxPlayers > 4) throw new GameRoomError(400, "Hafıza Yarışı 2-4 oyuncuyla oynanabilir.");
+      if (maxPlayers < 2 || maxPlayers > 7) throw new GameRoomError(400, "Hafıza Yarışı 2-7 oyuncuyla oynanabilir.");
     }
     const room = await createGameRoom(actor, maxPlayers, gameType, settings);
     return NextResponse.json({ ok: true, ...room }, { status: 201 });
